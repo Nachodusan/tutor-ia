@@ -1,0 +1,21 @@
+node_modules/
+.next/
+dist/
+.turbo/
+*.log
+
+# Python (sidecars)
+.venv/
+__pycache__/
+nohup.out
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+
+# Archivos subidos por usuarios (desarrollo local)
+/uploads/

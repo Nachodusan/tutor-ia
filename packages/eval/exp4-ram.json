@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-07-14T06:15:24.565Z",
+  "base": "http://localhost:11434",
+  "system": {
+    "totalGb": 16,
+    "freeGb": 0.06927490234375,
+    "usedGb": 15.93072509765625
+  },
+  "loadedModels": [
+    {
+      "name": "qwen2.5:7b",
+      "totalGb": 4.319511717185378,
+      "vramGb": 4.319511717185378,
+      "ramGb": 0
+    }
+  ],
+  "totalLoadedGb": 4.319511717185378,
+  "budget": [
+    {
+      "name": "LLM 3B (voz)",
+      "gb": 2.2,
+      "note": "alternable con el 7B"
+    },
+    {
+      "name": "LLM 7B (tareas)",
+      "gb": 5.2,
+      "note": "alternable con el 3B"
+    },
+    {
+      "name": "bge-m3 (embeddings)",
+      "gb": 0.6
+    },
+    {
+      "name": "reranker",
+      "gb": 0.6
+    },
+    {
+      "name": "whisper (STT)",
+      "gb": 0.5
+    },
+    {
+      "name": "piper (TTS)",
+      "gb": 0.1
+    },
+    {
+      "name": "postgres",
+      "gb": 0.3
+    },
+    {
+      "name": "next + browser",
+      "gb": 2
+    }
+  ]
+}

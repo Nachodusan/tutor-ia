@@ -1,0 +1,75 @@
+{
+  "generatedAt": "2026-07-14T06:36:11.746Z",
+  "base": "http://localhost:11434",
+  "taskModel": "qwen2.5:7b",
+  "voiceModel": "qwen2.5:3b",
+  "numCtx": 8192,
+  "reps": 3,
+  "budget": {
+    "prefillMs": 600,
+    "firstSentenceMs": 400,
+    "firstSentenceTokens": 18
+  },
+  "rows": [
+    {
+      "model": "qwen2.5:3b",
+      "targetTokens": 1000,
+      "promptTokens": 1160,
+      "prefillMs": 2202.435,
+      "promptTps": 526.6897774508668,
+      "evalTps": 41.04874995153967,
+      "ttftMs": 2226.7962777777775,
+      "firstSentenceMs": 2640.938
+    },
+    {
+      "model": "qwen2.5:3b",
+      "targetTokens": 2000,
+      "promptTokens": 2232,
+      "prefillMs": 4555.601,
+      "promptTps": 489.94633199878575,
+      "evalTps": 39.39773988298871,
+      "ttftMs": 4580.983166666666,
+      "firstSentenceMs": 5012.48
+    },
+    {
+      "model": "qwen2.5:3b",
+      "targetTokens": 4000,
+      "promptTokens": 4395,
+      "prefillMs": 10634.499,
+      "promptTps": 413.2775789437754,
+      "evalTps": 36.83594009002704,
+      "ttftMs": 10661.6464,
+      "firstSentenceMs": 11123.1522
+    },
+    {
+      "model": "qwen2.5:7b",
+      "targetTokens": 1000,
+      "promptTokens": 1160,
+      "prefillMs": 5208.528,
+      "promptTps": 222.7116759284005,
+      "evalTps": 20.296922986475252,
+      "ttftMs": 5257.796551724138,
+      "firstSentenceMs": 6095.361931034483
+    },
+    {
+      "model": "qwen2.5:7b",
+      "targetTokens": 2000,
+      "promptTokens": 2232,
+      "prefillMs": 10573.381,
+      "promptTps": 211.0961479587277,
+      "evalTps": 19.8015745665845,
+      "ttftMs": 10623.882034482758,
+      "firstSentenceMs": 11482.399620689655
+    },
+    {
+      "model": "qwen2.5:7b",
+      "targetTokens": 4000,
+      "promptTokens": 4395,
+      "prefillMs": 22394.277,
+      "promptTps": 196.25549867048622,
+      "evalTps": 18.929355644733857,
+      "ttftMs": 22447.105,
+      "firstSentenceMs": 23345.180999999997
+    }
+  ]
+}

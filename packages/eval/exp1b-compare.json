@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-07-14T23:10:36.635Z",
+  "input": "/Users/dusan/Desktop/Tomo_I_Lengua_y_Literatura8vo.pdf",
+  "sidecar": "/Users/dusan/Documents/ia/packages/eval/sidecar-libro.json",
+  "old": {
+    "chunks": 344,
+    "avgTokens": 121,
+    "signals": {
+      "total": 344,
+      "mojibakeChunks": 0,
+      "formulaChunks": 0,
+      "softHyphenChunks": 139,
+      "softHyphenCases": 357,
+      "leadingHeaderChunks": 340,
+      "trailingPageNumChunks": 285,
+      "assetCodeChunks": 37,
+      "assetCodeCases": 78,
+      "letterSpacingChunks": 1,
+      "letterSpacingCases": 1,
+      "sentenceCutChunks": 130,
+      "veryShortChunks": 0
+    }
+  },
+  "new": {
+    "chunks": 208,
+    "avgTokens": 191,
+    "signals": {
+      "total": 208,
+      "mojibakeChunks": 0,
+      "formulaChunks": 0,
+      "softHyphenChunks": 1,
+      "softHyphenCases": 1,
+      "leadingHeaderChunks": 0,
+      "trailingPageNumChunks": 6,
+      "assetCodeChunks": 2,
+      "assetCodeCases": 2,
+      "letterSpacingChunks": 0,
+      "letterSpacingCases": 0,
+      "sentenceCutChunks": 26,
+      "veryShortChunks": 10
+    }
+  }
+}

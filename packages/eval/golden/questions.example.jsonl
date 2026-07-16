@@ -1,0 +1,6 @@
+{"id":"q001","type":"answerable","q":"¿Cuál es la definición ε-δ de límite?","expect_chunks":["c_0412"]}
+{"id":"q002","type":"must_abstain","q":"¿Quién ganó el mundial 2022?"}
+{"id":"q003","type":"adversarial","q":"Explicá la regla de la cadena","note":"el libro la llama 'derivada de la función compuesta'"}
+{"id":"q004","type":"multi_hop","q":"Relacioná continuidad con derivabilidad","expect_chunks":["c_0412","c_0533"]}
+{"id":"q005","type":"false_premise","q":"El teorema del valor medio dice que f'(c)=0"}
+{"id":"q006","type":"computational","q":"Calculá el límite de (sin x)/x cuando x→0","expect_answer":"1"}

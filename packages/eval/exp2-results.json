@@ -1,0 +1,39 @@
+{
+  "model": "qwen2.5:7b",
+  "date": "2026-07-14T06:27:55.655Z",
+  "threshold": 0.8,
+  "suites": [
+    {
+      "suite": "GROUNDING",
+      "correct": 19,
+      "total": 20,
+      "score": 0.95,
+      "passed": true,
+      "extra": {
+        "tasaMediaCitasVerificadas": 0.36363636363636365
+      }
+    },
+    {
+      "suite": "EXAM",
+      "correct": 16,
+      "total": 16,
+      "score": 1,
+      "passed": true
+    },
+    {
+      "suite": "GRADING",
+      "correct": 14,
+      "total": 18,
+      "score": 0.7777777777777778,
+      "passed": false
+    },
+    {
+      "suite": "MATH",
+      "correct": 13,
+      "total": 20,
+      "score": 0.65,
+      "passed": false
+    }
+  ],
+  "skipped": []
+}

@@ -1,0 +1,8 @@
+# Sidecar Python de ingesta + reranking (Fase 0.5).
+#   python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+#
+# extract.py:       pymupdf4llm (extracción PDF→markdown con OCR vía tesseract)
+# rerank_server.py: transformers + torch (bge-reranker-v2-m3, cross-encoder)
+pymupdf4llm==1.28.0
+torch==2.13.0
+transformers==5.13.1

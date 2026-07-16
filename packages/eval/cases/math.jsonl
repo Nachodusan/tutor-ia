@@ -1,0 +1,20 @@
+{"id":"m01","problem":"Calculá el límite de (sen x)/x cuando x tiende a 0.","expect_answer":"1"}
+{"id":"m02","problem":"Calculá el límite de (x al cuadrado menos 9) sobre (x menos 3) cuando x tiende a 3.","expect_answer":"6"}
+{"id":"m03","problem":"Derivá la función f(x) = x al cubo y evaluá la derivada en x = 2.","expect_answer":"12"}
+{"id":"m04","problem":"Calculá la integral definida de x entre 0 y 4.","expect_answer":"8"}
+{"id":"m05","problem":"Calculá el límite de (1 - cos x) sobre x cuando x tiende a 0.","expect_answer":"0"}
+{"id":"m06","problem":"Hallá la derivada de f(x) = sen x y evaluala en x = 0.","expect_answer":"1"}
+{"id":"m07","problem":"Calculá la integral definida del coseno de x entre 0 y pi medios.","expect_answer":"1"}
+{"id":"m08","problem":"Calculá el límite de (3x al cuadrado + 2x) sobre (x al cuadrado menos 5) cuando x tiende a infinito.","expect_answer":"3"}
+{"id":"m09","problem":"Derivá f(x) = e elevado a x y evaluá la derivada en x = 0.","expect_answer":"1"}
+{"id":"m10","problem":"Calculá la integral definida de x al cuadrado entre 0 y 3.","expect_answer":"9"}
+{"id":"m11","problem":"Hallá la pendiente de la recta tangente a f(x) = x al cuadrado en el punto x = 5.","expect_answer":"10"}
+{"id":"m12","problem":"Calculá el límite de (e elevado a x menos 1) sobre x cuando x tiende a 0.","expect_answer":"1"}
+{"id":"m13","problem":"Calculá la derivada de f(x) = ln(x) evaluada en x = 2.","expect_answer":"1/2"}
+{"id":"m14","problem":"Calculá la integral definida de e elevado a x entre 0 y 1.","expect_answer":"e - 1"}
+{"id":"m15","problem":"Calculá el límite de (raíz de x menos 2) sobre (x menos 4) cuando x tiende a 4.","expect_answer":"1/4"}
+{"id":"m16","problem":"Hallá el valor de x en (0, 2) donde f(x) = x al cuadrado tiene, según el teorema del valor medio, derivada igual a la pendiente de la secante entre x=0 y x=2.","expect_answer":"1"}
+{"id":"m17","problem":"Derivá f(x) = sen(x al cuadrado) usando la regla de la cadena y escribí el resultado.","expect_answer":"2x cos(x al cuadrado)"}
+{"id":"m18","problem":"Calculá el límite de tan(x) sobre x cuando x tiende a 0.","expect_answer":"1"}
+{"id":"m19","problem":"Calculá la integral definida de 1 sobre x entre 1 y e.","expect_answer":"1"}
+{"id":"m20","problem":"Calculá el límite de (2x al cubo menos x) sobre (5x al cubo + 3) cuando x tiende a infinito.","expect_answer":"2/5"}
