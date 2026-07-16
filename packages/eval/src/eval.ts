@@ -32,6 +32,8 @@ import {
   getTutorContext,
   verifyClaims,
   verifyAnswerA3,
+  checkFalsePremise,
+  buildFalsePremiseDirective,
   type RawClaim,
 } from "@tutor-ia/core";
 import { entails } from "@tutor-ia/rag";
@@ -177,9 +179,19 @@ async function runQuestion(
       const context = ctx.chunks
         .map((c, i) => `[Fragmento ${i + 1}]\n${c.content}`)
         .join("\n\n");
+      // Replicar el flujo de PRODUCCIÓN: chequear premisa falsa y, si el material
+      // la contradice, anteponer la directiva de corrección (si no, el eval no
+      // mediría lo que el chat realmente hace ante false_premise).
+      const premise = await checkFalsePremise(
+        gq.q,
+        ctx.chunks.map((c) => c.content),
+      );
+      const userTurn = premise.falsePremise
+        ? `${buildFalsePremiseDirective(premise.premise!)}\n\n${buildTutorUserTurn(gq.q, context)}`
+        : buildTutorUserTurn(gq.q, context);
       const answer = await chatText([
         { role: "system", content: TUTOR_SYSTEM },
-        { role: "user", content: buildTutorUserTurn(gq.q, context) },
+        { role: "user", content: userTurn },
       ]);
       const raw = await chatJSON<{ claims: RawClaim[] }>(
         [
