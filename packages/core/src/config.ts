@@ -41,10 +41,13 @@ export const config = {
 
   /**
    * Umbral de entailment (0-1) para dar una oración por respaldada (A3).
-   * Prototipado sobre chunks reales: paráfrasis fieles ≥0.85, contradicciones
-   * burdas ~0.30, off-topic 0.0 → 0.5 con margen. OJO: contradicciones sutiles
-   * on-topic pueden superarlo (es relevancia, no NLI); pendiente de validar con
-   * el set etiquetado de contradicciones.
+   * LÍMITE MEDIDO (pnpm eval a3-validate, 60 triples etiquetados): A3 acepta el
+   * 100% de las paráfrasis fieles y atrapa lo off-topic, PERO deja pasar ~80% de
+   * las CONTRADICCIONES sutiles on-topic (ej: "1/4+1/6=6/12" puntúa 0.99), y
+   * ningún umbral lo corrige (a 0.9 aún se cuela 75%). Es un cross-encoder de
+   * relevancia, no un NLI direccional. → A3 verifica "¿es de este tema?", no
+   * "¿es cierto?": defensa PARCIAL contra "relevante pero falso". El fix real es
+   * un NLI direccional (pendiente). No sobrevender esta capa como garantía.
    */
   entailMinScore: numberEnv("ENTAIL_MIN_SCORE", 0.5),
 

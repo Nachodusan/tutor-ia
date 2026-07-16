@@ -14,7 +14,8 @@
     "rerank-test": "tsx src/rerank-test.ts",
     "calibrate": "tsx src/calibrate.ts",
     "eval": "tsx src/eval.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "a3-validate": "tsx src/a3-validate.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",
