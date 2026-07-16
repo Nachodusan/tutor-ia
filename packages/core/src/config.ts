@@ -7,8 +7,10 @@ export const config = {
   /** Endpoint del servidor Ollama local. */
   ollamaBaseUrl: process.env.OLLAMA_BASE_URL ?? "http://localhost:11434",
 
-  /** Modelo de lenguaje local. Qwen2.5-7B sigue instrucciones muy bien. */
-  llmModel: process.env.LLM_MODEL ?? "qwen2.5:7b-instruct",
+  /** Modelo de lenguaje local. Qwen2.5-7B sigue instrucciones muy bien.
+   *  El tag de Ollama es "qwen2.5:7b" (SIN -instruct); con -instruct una corrida
+   *  sin env override pega model-not-found. Ver HANDOFF §2. */
+  llmModel: process.env.LLM_MODEL ?? "qwen2.5:7b",
 
   /**
    * Temperatura baja = respuestas deterministas y conservadoras.

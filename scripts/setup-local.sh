@@ -29,17 +29,21 @@ fi
 echo "==> 2/5 Creando la base 'tutor' si no existe…"
 createdb tutor 2>/dev/null || echo "  (ya existe)"
 
-echo "==> 3/5 Aplicando esquema, modelo del alumno y seed…"
+echo "==> 3/5 Aplicando esquema, modelo del alumno, híbrido y seed…"
 psql "$DB_URL" -f packages/db/schema.sql
 psql "$DB_URL" -f packages/db/schema_student_model.sql
+# schema_hybrid.sql es OBLIGATORIO: define match_chunks_dense/lexical y el
+# tsvector que usan retrieval híbrido e ingesta v2. Sin él, el retrieval revienta.
+psql "$DB_URL" -f packages/db/schema_hybrid.sql
 psql "$DB_URL" -f packages/db/seed.sql
 
 echo "==> 4/5 Descargando modelos locales en Ollama…"
 if ! command -v ollama >/dev/null 2>&1; then
   echo "  ⚠ Ollama no está instalado. Instálalo desde https://ollama.com y reintenta este paso."
 else
-  ollama pull "${LLM_MODEL:-qwen2.5:7b-instruct}"       # tareas (examen, corrección, verificación)
-  ollama pull "${LLM_VOICE_MODEL:-qwen2.5:3b-instruct}" # voz (Fase 5, latencia baja)
+  # OJO: el tag de Ollama es "qwen2.5:7b" (SIN -instruct); ver HANDOFF §2.
+  ollama pull "${LLM_MODEL:-qwen2.5:7b}"       # tareas (examen, corrección, verificación)
+  ollama pull "${LLM_VOICE_MODEL:-qwen2.5:3b}" # voz (Fase 5, latencia baja)
   ollama pull "${EMBEDDING_MODEL:-bge-m3}"              # embeddings
 fi
 

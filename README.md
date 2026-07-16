@@ -45,7 +45,7 @@ pnpm dev
 
 `setup-local.sh` hace por ti:
 - instala/arranca Postgres nativo + pgvector y crea la base `tutor`
-- aplica `schema.sql`, `schema_student_model.sql` y `seed.sql`
+- aplica `schema.sql`, `schema_student_model.sql`, `schema_hybrid.sql` y `seed.sql`
 - `ollama pull` de `qwen2.5:7b-instruct`, `qwen2.5:3b-instruct` y `bge-m3`
 
 > Mac Apple Silicon (16GB+) corre bien el 7B. **No tengas el 3B y el 7B cargados
