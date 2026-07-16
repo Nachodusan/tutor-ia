@@ -96,6 +96,48 @@ ${params.context}
 === FIN ===`;
 }
 
+/**
+ * Grading DESCOMPUESTO (§4-C, Eje "correcto"). Paso 1: partir la respuesta de
+ * referencia en PUNTOS CLAVE atómicos. El exp2 mostró que la corrección
+ * holística falla por SEVERIDAD (marca correctas como incorrectas): descomponer
+ * en checks binarios por punto, tolerantes a la paráfrasis, corrige ese sesgo.
+ */
+export function buildKeyPointsPrompt(params: {
+  prompt: string;
+  reference: string;
+  rubric?: string;
+}): string {
+  return `Descomponé la RESPUESTA DE REFERENCIA en sus PUNTOS CLAVE atómicos: cada punto es UNA idea/afirmación independiente y verificable por separado. Ni más granular (no partas una idea en dos) ni menos (no juntes dos ideas). Usá la rúbrica, si está, para saber qué cuenta como punto.
+
+Pregunta: ${params.prompt}
+Respuesta de referencia: ${params.reference}${params.rubric ? `\nRúbrica: ${params.rubric}` : ""}
+
+Devolvé {"points": ["...", "..."]}.`;
+}
+
+/**
+ * Grading descompuesto — Paso 2: por cada punto clave, ¿la respuesta del
+ * estudiante lo cubre? Generoso con la FORMA (paráfrasis, sinónimos, orden),
+ * estricto con el CONTENIDO (la idea tiene que estar, correcta).
+ */
+export function buildPointChecksPrompt(params: {
+  points: string[];
+  studentAnswer: string;
+}): string {
+  return `Para CADA punto clave, decidí si la RESPUESTA DEL ESTUDIANTE lo cubre. Reglas:
+- Generoso con la FORMA: aceptá paráfrasis, sinónimos, otro orden, notación distinta.
+- Estricto con el CONTENIDO: la idea del punto tiene que estar Y ser correcta. Si el estudiante la contradice o la omite, no está cubierto.
+- No exijas las palabras exactas de la referencia.
+
+PUNTOS CLAVE:
+${params.points.map((p, i) => `${i + 1}. ${p}`).join("\n")}
+
+RESPUESTA DEL ESTUDIANTE:
+${params.studentAnswer}
+
+Devolvé {"checks": [{"point": "<texto del punto>", "covered": true|false}]} con un elemento por punto, en el mismo orden.`;
+}
+
 /** Corrección de respuestas. */
 export function buildGradingPrompt(params: {
   examJson: string;

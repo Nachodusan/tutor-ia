@@ -63,6 +63,37 @@ export const VERIFIER_SCHEMA = {
   additionalProperties: false,
 } as const;
 
+/** Puntos clave extraídos de una respuesta de referencia (grading descompuesto). */
+export const KEYPOINTS_SCHEMA = {
+  type: "object",
+  properties: {
+    points: { type: "array", items: { type: "string" } },
+  },
+  required: ["points"],
+  additionalProperties: false,
+} as const;
+
+/** Checks binarios por punto clave contra la respuesta del estudiante. */
+export const POINTCHECKS_SCHEMA = {
+  type: "object",
+  properties: {
+    checks: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          point: { type: "string" },
+          covered: { type: "boolean" },
+        },
+        required: ["point", "covered"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["checks"],
+  additionalProperties: false,
+} as const;
+
 export const GRADING_SCHEMA = {
   type: "object",
   properties: {

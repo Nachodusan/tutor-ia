@@ -2,7 +2,7 @@
  * Generación y corrección de exámenes en MODO LOCAL con salida estructurada
  * (Ollama `format` + JSON Schema). Estricto: solo desde el material.
  */
-import { retrieve, formatContext } from "@tutor-ia/rag";
+import { retrieveRanked, citationLabel } from "@tutor-ia/rag";
 import { chatJSON } from "./client";
 import { config } from "./config";
 import {
@@ -31,19 +31,23 @@ export async function generateExam(req: GenerateExamRequest): Promise<Exam> {
   const difficulty = req.difficulty ?? "medium";
   const types = req.types ?? ["mcq", "true_false", "open"];
 
-  const all = await retrieve(req.topic ?? "resumen general del material", {
+  // Retrieval con el MISMO gate que el chat (híbrido + reranker), no el coseno
+  // legacy: el examen se genera sobre material realmente fundamentado.
+  const ranked = await retrieveRanked(req.topic ?? "resumen general del material", {
     userId: req.userId,
     subjectId: req.subjectId,
-    matchCount: 16,
+    k: 16,
+    candidatePool: 40,
+    minRerankScore: config.rerankMinScore,
   });
-  // Anti-alucinación: solo material suficientemente relevante.
-  const chunks = all.filter((c) => c.similarity >= config.minSimilarity);
-  if (chunks.length === 0) {
+  if (!ranked.grounded || ranked.chunks.length === 0) {
     throw new Error(
       "No hay material indexado suficiente para generar el examen. Sube apuntes primero.",
     );
   }
-  const context = formatContext(chunks);
+  const context = ranked.chunks
+    .map((c, i) => `[Fragmento ${i + 1} — ${citationLabel(c)}]\n${c.content}`)
+    .join("\n\n");
 
   return chatJSON<Exam>(
     [

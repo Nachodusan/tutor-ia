@@ -7,3 +7,4 @@ export * from "./prompts";
 export * from "./tutor";
 export * from "./verify";
 export * from "./exams";
+export * from "./grading";

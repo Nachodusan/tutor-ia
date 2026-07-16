@@ -16,7 +16,8 @@
     "eval": "tsx src/eval.ts",
     "typecheck": "tsc --noEmit",
     "a3-validate": "tsx src/a3-validate.ts",
-    "nli-validate": "tsx src/nli-validate.ts"
+    "nli-validate": "tsx src/nli-validate.ts",
+    "exp5": "tsx src/exp5-correcto.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",
