@@ -1,20 +1,26 @@
 import {
   getTutorContext,
   streamTutorAnswer,
+  verifyAnswer,
   abstentionText,
   RERANKER_DOWN,
 } from "@tutor-ia/core";
 import { getCurrentUserId } from "@/lib/auth";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+// La generación del 7B (con recarga por keep_alive:0) + verificación A3 puede
+// superar los 60s en respuestas largas.
+export const maxDuration = 120;
 
 /**
  * POST /api/chat
  * body: { question: string, subjectId?: string, history?: {role, content}[] }
  *
- * Respuesta: stream de texto plano. La primera línea es un JSON con las citas,
- * prefijado con "\x1e" (record separator); el resto es la respuesta en vivo.
+ * Respuesta: stream de texto plano.
+ *  - Primera línea: JSON con citas + grounded, prefijado con "\x1e".
+ *  - Cuerpo: la respuesta del modelo token a token.
+ *  - Última línea: JSON {verification} prefijado con "\x1e" — el verificador A3
+ *    (Fase 2) comprueba cada oración por entailment contra el material.
  */
 export async function POST(req: Request) {
   const userId = await getCurrentUserId(req);
@@ -66,9 +72,18 @@ export async function POST(req: Request) {
           );
         } else {
           // 2) Reenviar el texto del modelo local token a token.
+          let full = "";
           for await (const chunk of streamTutorAnswer(tutorReq, ctx)) {
+            full += chunk;
             controller.enqueue(encoder.encode(chunk));
           }
+          // 3) Verificación A3 post-respuesta (capa 5): cada oración contra el
+          //    material. Se emite como frame final para que la UI marque lo no
+          //    respaldado — el diferenciador "no alucina" EN el producto.
+          const verification = await verifyAnswer(ctx, full);
+          controller.enqueue(
+            encoder.encode("\n\x1e" + JSON.stringify({ verification }) + "\n"),
+          );
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Error del modelo";

@@ -7,7 +7,8 @@
  *  2) Prompt estricto (ver prompts.ts) que obliga a citar y a abstenerse.
  *  3) Decodificación conservadora (temperatura baja, ver config.ts).
  *  4) Citas devueltas a la UI para que el estudiante verifique.
- *  5) Verificador opcional (config.enableVerifier).
+ *  5) Verificador A3 post-respuesta (verify.ts) — ACTIVO por defecto; cada
+ *     oración se comprueba por entailment contra el material (Fase 2).
  */
 import {
   retrieveRanked,
@@ -15,15 +16,10 @@ import {
   citationLabel,
   type RankedChunk,
 } from "@tutor-ia/rag";
-import { chatStream, chatText, chatJSON, type ChatMsg } from "./client";
+import { chatStream, chatText, type ChatMsg } from "./client";
 import { config } from "./config";
-import {
-  TUTOR_SYSTEM,
-  ABSTENTION,
-  buildTutorUserTurn,
-  buildVerifierPrompt,
-} from "./prompts";
-import { VERIFIER_SCHEMA } from "./schemas";
+import { TUTOR_SYSTEM, ABSTENTION, buildTutorUserTurn } from "./prompts";
+import { verifyAnswerA3 } from "./verify";
 import type { ChatMessage, Citation } from "./types";
 
 /** Formatea los fragmentos rankeados como contexto citable ("[Fragmento 1 — pág. 87 · …]"). */
@@ -139,23 +135,32 @@ export async function* streamTutorAnswer(
 export interface VerifierResult {
   grounded: boolean;
   unsupported: string[];
+  /** Cuántas oraciones sustantivas se verificaron (0 = nada que verificar). */
+  checked?: number;
+  /** true → el verificador no pudo correr: la respuesta queda NO verificada. */
+  unavailable?: boolean;
 }
 
 /**
- * Capa 5 (opcional): verifica que la respuesta esté respaldada por el material.
- * Úsalo tras generar una respuesta completa cuando config.enableVerifier=true.
+ * Capa 5 (A3, ACTIVA por defecto): verifica cada oración de la respuesta por
+ * entailment contra los chunks del contexto — determinista, sin LLM extra
+ * (~100ms/oración). RAG_ENABLE_VERIFIER=0 la apaga. Ver verify.ts.
  */
 export async function verifyAnswer(
   ctx: TutorContext,
   answer: string,
 ): Promise<VerifierResult> {
   if (!config.enableVerifier) return { grounded: true, unsupported: [] };
-  const context = formatRankedContext(ctx.chunks);
-  return chatJSON<VerifierResult>(
-    [{ role: "user", content: buildVerifierPrompt({ context, answer }) }],
-    VERIFIER_SCHEMA,
-    { temperature: 0 },
+  const v = await verifyAnswerA3(
+    answer,
+    ctx.chunks.map((c) => c.content),
   );
+  return {
+    grounded: v.grounded,
+    unsupported: v.unsupported,
+    checked: v.checked,
+    unavailable: v.unavailable,
+  };
 }
 
 /** Variante no-streaming que integra el verificador; útil para el modo voz. */

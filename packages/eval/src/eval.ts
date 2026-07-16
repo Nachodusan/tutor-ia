@@ -31,6 +31,7 @@ import {
   chatJSON,
   getTutorContext,
   verifyClaims,
+  verifyAnswerA3,
   type RawClaim,
 } from "@tutor-ia/core";
 import { entails } from "@tutor-ia/rag";
@@ -146,6 +147,10 @@ export interface QResult extends PerQuestionResult {
   errored: boolean;
   /** Baseline A2-solo (string-match): alucinación ANTES del entailment A3. */
   hallucinatedA2Only: boolean;
+  /** Veredicto del verificador de PRODUCCIÓN (verify.ts) sobre esta respuesta. */
+  hallucinatedProd: boolean;
+  /** false si el verificador prod no pudo correr para esta pregunta. */
+  prodKnown: boolean;
 }
 
 async function runQuestion(
@@ -163,6 +168,8 @@ async function runQuestion(
   //    un timeout del 7B marca la pregunta como no-evaluable, NO tira toda la corrida.
   let hallucinated = false;
   let hallucinatedA2Only = false;
+  let hallucinatedProd = false;
+  let prodKnown = false;
   let hallucinationKnown = false;
   let errored = false;
   if (!abstained && DO_HALLUCINATION) {
@@ -189,9 +196,12 @@ async function runQuestion(
       // si la cita literal matchea (A2) O si el cross-encoder dice que algún chunk
       // la implica (entailment >= umbral). Esto rescata las paráfrasis fieles que
       // el string-match perdía (la causa del hallucination_rate 30% inflado).
+      // Las "inferida" (sin cita) TAMBIÉN pasan por entailment: antes se saltaban
+      // toda verificación y un invento declarado como inferencia pasaba limpio
+      // (subestimaba la métrica — hallazgo de la auditoría).
       let unsupported = false;
       for (const c of report.claims) {
-        if (c.label !== "fuera_del_material") continue; // respaldada/inferida: ok
+        if (c.label === "respaldada") continue; // cita literal ya verificada
         // Chunk citado si el modelo lo indicó y es válido; si no, todos.
         const candidates =
           c.chunkIndex && chunkTexts[c.chunkIndex - 1] != null
@@ -205,6 +215,16 @@ async function runQuestion(
       }
       hallucinated = unsupported;
       hallucinationKnown = true;
+
+      // Métrica PROD: el MISMO verificador que corre en producción (verify.ts,
+      // oraciones + entailment, sin claims del LLM), aplicado a la respuesta ya
+      // generada. Mide lo que un estudiante recibiría — la brecha eval-vs-prod
+      // se mide acá en vez de asumirse cerrada.
+      const prodV = await verifyAnswerA3(answer, chunkTexts);
+      if (!prodV.unavailable) {
+        hallucinatedProd = !prodV.grounded;
+        prodKnown = true;
+      }
     } catch {
       errored = true; // timeout/fallo del LLM: no contamos esta para alucinación
     }
@@ -219,6 +239,8 @@ async function runQuestion(
     hallucinationKnown,
     errored,
     hallucinatedA2Only,
+    hallucinatedProd,
+    prodKnown,
   };
 }
 
@@ -348,11 +370,20 @@ async function main() {
       : evaluable.filter(pick).length / evaluable.length;
   const hallA2 = rateOf((r) => r.hallucinatedA2Only);
   const hallHybrid = rateOf((r) => r.hallucinated);
+  const prodEvaluable = evaluable.filter((r) => r.prodKnown);
+  const hallProd =
+    prodEvaluable.length === 0
+      ? 0
+      : prodEvaluable.filter((r) => r.hallucinatedProd).length /
+        prodEvaluable.length;
   console.log(
     `\n🔬 A3 entailment (umbral ${ENTAIL_MIN}) — mismas generaciones:\n` +
-      `   hallucination_rate  A2-solo (string-match): ${fmtPct(hallA2)}\n` +
-      `   hallucination_rate  A2+A3 (híbrido):        ${fmtPct(hallHybrid)}\n` +
-      `   Δ = ${fmtPct(hallHybrid - hallA2)}  (sobre ${evaluable.length} respuestas evaluables)`,
+      `   hallucination_rate  A2-solo (string-match):   ${fmtPct(hallA2)}\n` +
+      `   hallucination_rate  A2+A3 (claims, +inferida): ${fmtPct(hallHybrid)}\n` +
+      `   hallucination_rate  PROD (verify.ts, oraciones): ${fmtPct(hallProd)} (n=${prodEvaluable.length})\n` +
+      `   Δ claims = ${fmtPct(hallHybrid - hallA2)}  (sobre ${evaluable.length} respuestas evaluables)\n` +
+      `   La fila PROD es el verificador que corre en el chat real — lo que un\n` +
+      `   estudiante recibiría marcado. Divergencia claims-vs-prod = brecha a vigilar.`,
   );
 
   // Tabla final contra objetivos §9.2.

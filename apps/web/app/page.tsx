@@ -9,6 +9,14 @@ interface Citation {
   page: number | null;
 }
 
+/** Veredicto del verificador A3 (frame final del stream de /api/chat). */
+interface Verification {
+  grounded: boolean;
+  unsupported: string[];
+  checked?: number;
+  unavailable?: boolean;
+}
+
 export default function Home() {
   return (
     <main style={{ maxWidth: 860, margin: "0 auto", padding: "32px 20px" }}>
@@ -79,6 +87,7 @@ function ChatPanel() {
   const [answer, setAnswer] = useState("");
   const [citations, setCitations] = useState<Citation[]>([]);
   const [grounded, setGrounded] = useState(true);
+  const [verification, setVerification] = useState<Verification | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function ask() {
@@ -87,6 +96,7 @@ function ChatPanel() {
     setAnswer("");
     setCitations([]);
     setGrounded(true);
+    setVerification(null);
 
     const res = await fetch("/api/chat", {
       method: "POST",
@@ -124,7 +134,24 @@ function ChatPanel() {
           citationsParsed = true;
         }
       }
-      if (citationsParsed) setAnswer(buffer);
+      if (citationsParsed) {
+        // Un \x1e posterior abre el frame FINAL: la verificación A3. Todo lo
+        // anterior es la respuesta; el frame no se muestra como texto.
+        const rs = buffer.indexOf("\x1e");
+        if (rs === -1) {
+          setAnswer(buffer);
+        } else {
+          setAnswer(buffer.slice(0, rs).trimEnd());
+          const nl = buffer.indexOf("\n", rs);
+          const frame = nl === -1 ? buffer.slice(rs + 1) : buffer.slice(rs + 1, nl);
+          try {
+            const meta = JSON.parse(frame);
+            if (meta.verification) setVerification(meta.verification);
+          } catch {
+            /* frame incompleto: llega en el próximo read */
+          }
+        }
+      }
     }
     setLoading(false);
   }
@@ -167,6 +194,41 @@ function ChatPanel() {
       )}
       {answer && (
         <div style={{ whiteSpace: "pre-wrap", marginTop: 12 }}>{answer}</div>
+      )}
+      {answer && grounded && verification && (
+        <div style={{ marginTop: 12, fontSize: 13 }}>
+          {verification.unavailable ? (
+            <span style={{ color: "#9fb0c0" }}>
+              ⚪ No pude verificar esta respuesta contra tu material (verificador
+              no disponible).
+            </span>
+          ) : verification.grounded ? (
+            (verification.checked ?? 0) > 0 && (
+              <span style={{ color: "#7ee787" }}>
+                ✓ Verificado: {verification.checked}{" "}
+                {verification.checked === 1 ? "afirmación" : "afirmaciones"} con
+                respaldo en tu material.
+              </span>
+            )
+          ) : (
+            <div
+              style={{
+                padding: "8px 10px",
+                borderRadius: 6,
+                background: "#3a2a12",
+                color: "#f0c674",
+              }}
+            >
+              ⚠️ No encontré respaldo en tu material para:
+              <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+                {verification.unsupported.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ul>
+              Verificalo con las fuentes antes de estudiarlo como cierto.
+            </div>
+          )}
+        </div>
       )}
       {citations.length > 0 && (
         <div style={{ color: "#9fb0c0", marginTop: 12, fontSize: 13 }}>

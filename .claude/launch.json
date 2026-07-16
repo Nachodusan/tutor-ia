@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@tutor-ia/web", "dev"],
+      "port": 3000,
+      "env": {
+        "DATABASE_URL": "postgresql://localhost:5432/tutor",
+        "EMBEDDING_MODEL": "bge-m3",
+        "LLM_MODEL": "qwen2.5:7b",
+        "RERANK_BASE_URL": "http://127.0.0.1:8790",
+        "RERANK_MIN_SCORE": "0.3",
+        "ENTAIL_MIN_SCORE": "0.5"
+      }
+    }
+  ]
+}

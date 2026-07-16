@@ -41,7 +41,13 @@ export async function extractWithSidecar(
   const { stdout } = await execFileAsync(
     opts?.pyBin ?? PY_BIN,
     [opts?.script ?? PY_SCRIPT, pdfPath],
-    { maxBuffer: 256 * 1024 * 1024 }, // el JSON de un libro grande supera 1MB
+    {
+      maxBuffer: 256 * 1024 * 1024, // el JSON de un libro grande supera 1MB
+      // Un PDF patológico no debe colgar la ingesta para siempre (los otros
+      // procesos externos — embed, rerank — ya tienen timeout; este faltaba).
+      timeout: Number(process.env.INGEST_SIDECAR_TIMEOUT_MS ?? "600000"),
+      killSignal: "SIGKILL",
+    },
   );
   return JSON.parse(stdout) as SidecarDoc;
 }

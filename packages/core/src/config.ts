@@ -32,11 +32,21 @@ export const config = {
   minSimilarity: numberEnv("RAG_MIN_SIMILARITY", 0.35),
 
   /**
-   * Verificador anti-alucinación (capa 5): tras responder, una segunda pasada
-   * comprueba que cada afirmación esté respaldada por el material. Cuesta
-   * latencia extra; desactivado por defecto en local. Ver docs/anti-alucinaciones.md
+   * Verificador anti-alucinación (capa 5, A3): tras responder, cada oración se
+   * comprueba por entailment (cross-encoder) contra el material. Determinista y
+   * barato (~100ms/oración en MPS, sin LLM extra) → ACTIVO por defecto desde la
+   * Fase 2. RAG_ENABLE_VERIFIER=0 lo apaga. Ver verify.ts.
    */
-  enableVerifier: boolEnv("RAG_ENABLE_VERIFIER", false),
+  enableVerifier: boolEnv("RAG_ENABLE_VERIFIER", true),
+
+  /**
+   * Umbral de entailment (0-1) para dar una oración por respaldada (A3).
+   * Prototipado sobre chunks reales: paráfrasis fieles ≥0.85, contradicciones
+   * burdas ~0.30, off-topic 0.0 → 0.5 con margen. OJO: contradicciones sutiles
+   * on-topic pueden superarlo (es relevancia, no NLI); pendiente de validar con
+   * el set etiquetado de contradicciones.
+   */
+  entailMinScore: numberEnv("ENTAIL_MIN_SCORE", 0.5),
 
   /**
    * Umbral del reranker cross-encoder (0-1) para el gate de abstención (capa A1).
