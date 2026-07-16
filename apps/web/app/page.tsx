@@ -12,6 +12,9 @@ interface Citation {
 /** Veredicto del verificador A3 (frame final del stream de /api/chat). */
 interface Verification {
   grounded: boolean;
+  /** Oraciones que el material CONTRADICE (alerta fuerte). */
+  contradicted: string[];
+  /** Oraciones sin respaldo en el material (alerta suave). */
   unsupported: string[];
   checked?: number;
   unavailable?: boolean;
@@ -211,21 +214,43 @@ function ChatPanel() {
               </span>
             )
           ) : (
-            <div
-              style={{
-                padding: "8px 10px",
-                borderRadius: 6,
-                background: "#3a2a12",
-                color: "#f0c674",
-              }}
-            >
-              ⚠️ No encontré respaldo en tu material para:
-              <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
-                {verification.unsupported.map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ul>
-              Verificalo con las fuentes antes de estudiarlo como cierto.
+            <div style={{ display: "grid", gap: 8 }}>
+              {verification.contradicted?.length > 0 && (
+                <div
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: 6,
+                    background: "#3a1518",
+                    color: "#f0a0a0",
+                  }}
+                >
+                  🚩 Tu material dice lo <strong>contrario</strong> de esto:
+                  <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+                    {verification.contradicted.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                  No lo estudies como cierto: revisá las fuentes.
+                </div>
+              )}
+              {verification.unsupported?.length > 0 && (
+                <div
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: 6,
+                    background: "#3a2a12",
+                    color: "#f0c674",
+                  }}
+                >
+                  ⚠️ No encontré respaldo en tu material para:
+                  <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+                    {verification.unsupported.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                  Verificalo con las fuentes antes de estudiarlo como cierto.
+                </div>
+              )}
             </div>
           )}
         </div>

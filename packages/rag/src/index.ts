@@ -8,3 +8,4 @@ export * from "./ingest-v2";
 export * from "./retrieve";
 export * from "./retrieve-hybrid";
 export * from "./rerank";
+export * from "./nli";

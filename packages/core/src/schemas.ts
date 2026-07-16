@@ -1,7 +1,22 @@
 /**
- * JSON Schemas para structured outputs de Claude (output_config.format).
- * Garantizan que el examen y la corrección lleguen con formato parseable.
+ * JSON Schemas para structured outputs del LLM local (Ollama `format`).
+ * Garantizan que el examen, la corrección y la extracción de presuposiciones
+ * lleguen con formato parseable.
  */
+
+/**
+ * Presuposiciones de una pregunta: las afirmaciones que la pregunta da por
+ * ciertas (para chequearlas contra el material y detectar premisas falsas).
+ * Ej: "¿Por qué la mediana de las notas es 7,0?" presupone "La mediana es 7,0".
+ */
+export const PRESUPPOSITION_SCHEMA = {
+  type: "object",
+  properties: {
+    presupposes: { type: "array", items: { type: "string" } },
+  },
+  required: ["presupposes"],
+  additionalProperties: false,
+} as const;
 
 export const EXAM_SCHEMA = {
   type: "object",

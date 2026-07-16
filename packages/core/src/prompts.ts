@@ -44,6 +44,32 @@ Responde a la pregunta usando SOLO lo anterior. Si no está, usa la frase de abs
 Pregunta: ${question}`;
 }
 
+/**
+ * Extracción de PRESUPOSICIONES de la pregunta (para detectar premisas falsas).
+ * Pedimos las afirmaciones factuales que la pregunta da por ciertas, como frases
+ * declarativas autocontenidas. Preguntas abiertas ("¿qué es X?") no presuponen
+ * hechos concretos → lista vacía.
+ */
+export function buildPresuppositionPrompt(question: string): string {
+  return `Extraé las PRESUPOSICIONES factuales de la siguiente pregunta: las afirmaciones concretas que la pregunta da por ciertas (no lo que se pregunta, sino lo que se asume). Devolvelas como frases declarativas autocontenidas.
+
+Ejemplos:
+- "¿Por qué la mediana de las notas es 7,0?" → ["La mediana de las notas es 7,0."]
+- "¿Cómo mató Orson Welles al vagabundo?" → ["Orson Welles mató a un vagabundo."]
+- "¿Qué es la fotosíntesis?" → []  (no asume ningún hecho concreto)
+- "¿Cuál es la capital de Francia?" → []  (pregunta abierta, sin presuposición factual)
+
+No infieras de más: solo lo que la pregunta afirma implícitamente. Si no hay ninguna, devolvé lista vacía.
+
+Pregunta: ${question}`;
+}
+
+/** Directiva que se antepone al turno del tutor cuando el material CONTRADICE
+ *  una premisa de la pregunta: corregir, no seguir la corriente. */
+export function buildFalsePremiseDirective(premise: string): string {
+  return `⚠️ AVISO: la pregunta asume que "${premise}", pero el material indica LO CONTRARIO. NO confirmes esa premisa. Empezá tu respuesta señalando explícitamente que esa suposición no coincide con el material, citá qué dice el material en su lugar, y recién después respondé lo que corresponda.`;
+}
+
 /** Generación de examen — solo desde el material. */
 export function buildExamGenerationPrompt(params: {
   context: string;

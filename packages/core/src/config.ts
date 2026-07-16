@@ -40,16 +40,31 @@ export const config = {
   enableVerifier: boolEnv("RAG_ENABLE_VERIFIER", true),
 
   /**
-   * Umbral de entailment (0-1) para dar una oración por respaldada (A3).
-   * LÍMITE MEDIDO (pnpm eval a3-validate, 60 triples etiquetados): A3 acepta el
-   * 100% de las paráfrasis fieles y atrapa lo off-topic, PERO deja pasar ~80% de
-   * las CONTRADICCIONES sutiles on-topic (ej: "1/4+1/6=6/12" puntúa 0.99), y
-   * ningún umbral lo corrige (a 0.9 aún se cuela 75%). Es un cross-encoder de
-   * relevancia, no un NLI direccional. → A3 verifica "¿es de este tema?", no
-   * "¿es cierto?": defensa PARCIAL contra "relevante pero falso". El fix real es
-   * un NLI direccional (pendiente). No sobrevender esta capa como garantía.
+   * Umbral del cross-encoder de RELEVANCIA (A3 débil, `entails`). Se conserva
+   * para retrieval/rescate, NO para el verificador de producción: mide relevancia,
+   * no verdad (dejaba pasar ~80% de contradicciones — pnpm eval nli-validate).
    */
   entailMinScore: numberEnv("ENTAIL_MIN_SCORE", 0.5),
+
+  /**
+   * Verificador de producción = NLI DIRECCIONAL (mDeBERTa-v3 xnli). Medido sobre
+   * el set etiquetado (nli-validate): contradicciones detectadas 80% (leak como
+   * respaldada 5%, vs 80% del reranker); neutral leak 0% (vs 40%); recall sobre
+   * paráfrasis fieles 65% en single-chunk (mejor en prod: 8 chunks). Sesgo
+   * conservador a propósito: para un tutor "no alucina", marcar de más una
+   * respuesta correcta es preferible a bendecir una falsa.
+   */
+  nliMinEntail: numberEnv("NLI_MIN_ENTAIL", 0.5),
+  nliMinContra: numberEnv("NLI_MIN_CONTRA", 0.5),
+
+  /**
+   * Detección de PREMISA FALSA antes de responder (Fase 2): extrae las
+   * presuposiciones de la pregunta y, si el material las contradice (NLI), le
+   * ordena al tutor corregirlas en vez de seguirles la corriente. Era el peor
+   * fracaso del eval (false_premise 100%). Cuesta 1 llamada extra al LLM solo
+   * cuando la pregunta presupone hechos. RAG_FALSE_PREMISE_CHECK=0 lo apaga.
+   */
+  enableFalsePremiseCheck: boolEnv("RAG_FALSE_PREMISE_CHECK", true),
 
   /**
    * Umbral del reranker cross-encoder (0-1) para el gate de abstención (capa A1).

@@ -2,6 +2,8 @@ import {
   getTutorContext,
   streamTutorAnswer,
   verifyAnswer,
+  checkFalsePremise,
+  buildFalsePremiseDirective,
   abstentionText,
   RERANKER_DOWN,
 } from "@tutor-ia/core";
@@ -71,9 +73,19 @@ export async function POST(req: Request) {
             encoder.encode(ctx.rerankerDown ? RERANKER_DOWN : abstentionText()),
           );
         } else {
+          // 1.5) ¿La pregunta trae una premisa que el material contradice? Si sí,
+          //      le ordenamos al tutor corregirla en vez de seguirle la corriente
+          //      (era el peor fracaso del eval: false_premise).
+          const premise = await checkFalsePremise(
+            tutorReq.question,
+            ctx.chunks.map((c) => c.content),
+          );
+          const warning = premise.falsePremise
+            ? buildFalsePremiseDirective(premise.premise!)
+            : undefined;
           // 2) Reenviar el texto del modelo local token a token.
           let full = "";
-          for await (const chunk of streamTutorAnswer(tutorReq, ctx)) {
+          for await (const chunk of streamTutorAnswer(tutorReq, ctx, warning)) {
             full += chunk;
             controller.enqueue(encoder.encode(chunk));
           }
