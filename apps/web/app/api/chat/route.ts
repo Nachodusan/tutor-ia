@@ -3,6 +3,7 @@ import {
   streamTeaching,
   teachingAbstention,
   teachingCitations,
+  socialReply,
   verifyAnswerA3,
   RERANKER_DOWN,
 } from "@tutor-ia/core";
@@ -31,10 +32,25 @@ export async function POST(req: Request) {
   const body = (await req.json()) as {
     question?: string;
     subjectId?: string | null;
+    subjectName?: string | null;
     history?: { role: "user" | "assistant"; content: string }[];
   };
   if (!body.question?.trim()) {
     return new Response("Falta 'question'.", { status: 400 });
+  }
+
+  // Mensaje social (saludo, gracias, chau): responder conversacional, sin gate.
+  const social = socialReply(body.question, body.subjectName ?? undefined);
+  if (social) {
+    const enc = new TextEncoder();
+    const s = new ReadableStream({
+      start(controller) {
+        controller.enqueue(enc.encode("\x1e" + JSON.stringify({ citations: [], grounded: true }) + "\n"));
+        controller.enqueue(enc.encode(social));
+        controller.close();
+      },
+    });
+    return new Response(s, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache" } });
   }
 
   const teachReq = {

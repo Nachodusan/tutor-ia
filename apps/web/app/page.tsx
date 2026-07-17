@@ -84,7 +84,7 @@ export default function Home() {
     const patch = (p: Partial<Msg>) => setMessages((m) => { const c = [...m]; c[c.length - 1] = { ...c[c.length - 1], ...p } as Msg; return c; });
     let displayed = "";
     try {
-      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, subjectId: subjectId || null, history }) });
+      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, subjectId: subjectId || null, subjectName: subject ? subjectLabel(subject) : null, history }) });
       if (!res.body) { patch({ content: "Error: sin respuesta.", streaming: false }); return ""; }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();

@@ -101,6 +101,29 @@ export function teachingAbstention(): string {
   return ABSTENTION;
 }
 
+// Mensajes SOCIALES (saludo, agradecimiento, despedida, afirmación). No son
+// preguntas sobre el material → NO deben pasar por el gate de abstención; el
+// tutor responde conversacionalmente. Anclados a FIN de mensaje para no tragarse
+// preguntas reales ("hola, explicame la célula" → sí va a enseñanza).
+const GREETING_RE = /^\s*(hola+|buenas|buen[oa]s?\s*(d[ií]as|tardes|noches)?|buen\s*d[ií]a|hey|hi|hello|qu[ée]\s*tal|c[óo]mo\s*(est[áa]s|and[áa]s|va|te\s*va)|saludos|holis)[\s,.!¡¿?]*$/i;
+const THANKS_RE = /^\s*(much[ao]s?\s*)?(gracias|genial|perfecto|buen[íi]simo|excelente|ok|okey|okay|dale|listo|entend[íi]|clar[íi]?simo|de\s*acuerdo)[\s,.!]*$/i;
+const BYE_RE = /^\s*(chau+|chao|adi[óo]s|nos\s*vemos|hasta\s*(luego|pronto|ma[ñn]ana)|bye|me\s*voy)[\s,.!]*$/i;
+
+/**
+ * Respuesta conversacional a un mensaje SOCIAL, o null si es una consulta real
+ * (que debe ir al flujo de enseñanza). Mantiene el tono de facilitador e invita
+ * a un tema.
+ */
+export function socialReply(question: string, subjectName?: string): string | null {
+  const q = question.trim();
+  if (!q) return null;
+  const tema = subjectName ? ` de ${subjectName}` : "";
+  if (GREETING_RE.test(q)) return `¡Hola! 😊 Soy tu tutor${tema}. ¿Qué tema querés que te explique?`;
+  if (BYE_RE.test(q)) return "¡Chau! Volvé cuando quieras seguir estudiando. 👋";
+  if (THANKS_RE.test(q)) return `¡Buenísimo! ¿Seguimos con otro tema${tema}, o querés que profundice en algo?`;
+  return null;
+}
+
 /** Cita legible del primer fragmento citable (para la UI). */
 export function teachingCitations(ctx: TeachingContext) {
   return ctx.citable.map((c, i) => ({
