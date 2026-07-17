@@ -33,19 +33,22 @@ async function main() {
   if (!uid) { console.error("❌ Falta EVAL_USER_ID"); process.exit(2); }
   const sql = getSql();
 
-  const grades = (await readdir(ROOT)).filter((g) => /_b[áa]sico$/i.test(g)).sort();
+  const grades = (await readdir(ROOT)).filter((g) => /_(b[áa]sico|medio)$/i.test(g)).sort();
   let done = 0, skipped = 0, failed = 0, totalChunks = 0;
   const t0 = Date.now();
 
   for (const gradeDir of grades) {
     const gradeNum = GRADE_RE.exec(gradeDir)?.[1];
-    const grade = gradeNum ? `${gradeNum}B` : gradeDir;
+    const isMedio = /medio/i.test(gradeDir);
+    const grade = gradeNum ? `${gradeNum}${isMedio ? "M" : "B"}` : gradeDir;
     const gradePath = join(ROOT, gradeDir);
     for (const subjDir of (await readdir(gradePath)).sort()) {
       const subjPath = join(gradePath, subjDir);
       if (!(await stat(subjPath)).isDirectory()) continue;
       const subjectArea = subjDir;
-      const subjectName = `${prettySubject(subjDir)} ${gradeNum ?? gradeDir}º`;
+      // " Medio" solo en media: mantiene estables los títulos de básica (resumable)
+      // y evita colisión de nombres entre "Matemática 1º" (básica) y media.
+      const subjectName = `${prettySubject(subjDir)} ${gradeNum ?? gradeDir}º${isMedio ? " Medio" : ""}`;
 
       const files = (await readdir(subjPath)).filter((f) => f.toLowerCase().endsWith(".pdf"));
       const targets = files.map((f) => ({ f, kind: classify(f) })).filter((x) => x.kind);
