@@ -1,20 +1,28 @@
 # HANDOFF — Tutor IA local (para retomar en un chat nuevo)
 
-> Documento de traspaso. Leé esto primero. Estado al **2026-07-14**.
-> Corre TODO en la Mac del usuario (**Apple M4, 16 GB**). El proyecto vive en
-> `/Users/dusan/Documents/ia`. Plan maestro: `~/.claude/plans/quiero-que-generes-un-lucky-beacon.md` (Plan v2).
+> Documento de traspaso. Leé esto primero. Corre TODO en la Mac del usuario
+> (**Apple M4, 16 GB**). El proyecto vive en `/Users/dusan/Documents/ia`.
+
+> ⚠️ **REENFOQUE (Plan v3, 2026-07-16) — leer la memoria `tutor-ia-estado.md` para el estado vivo.**
+> El tutor **NO resuelve ejercicios ni matemática** (medido en `exp5`: el 7B lo tiene topado). ES un
+> **facilitador conceptual con enseñanza adaptativa**: explica el material, cita, verifica comprensión
+> y **cambia de método si el alumno no entiende**. Anti-alucinación intacto. Arquitectura nueva: **RAG de
+> DOBLE CORPUS TIPADO** — Texto del Estudiante (contenido, el "qué" citable) + Guía Didáctica (pedagogía,
+> el "cómo", chunks tipados por bloque anclados al OA). **Piloto E2E validado** (Ciencias Naturales 1º
+> Básico). Las secciones de abajo describen el Plan v2 (fundamentado/correcto) — la maquinaria
+> anti-alucinación sigue vigente; los exámenes/corrección/voz salieron o se reordenaron. Ver README y memoria.
 
 ---
 
-## 1. Qué es
+## 1. Qué es (Plan v2 — base, ver banner arriba para el reenfoque)
 
-Tutor de estudio **100% local y privado**: el estudiante sube sus apuntes/libros y una IA
-lo ayuda a estudiar **solo con ese material** (RAG), con chat + exámenes + (futuro) voz.
+Tutor de estudio **100% local y privado**: el estudiante estudia **solo con su material** (RAG).
 Diferenciador: **no alucina** — responde citando la fuente o **se abstiene**. Modelo
 conservador. Nada sale de la máquina (sin nube).
 
 **Idea central del Plan v2:** separar **fundamentado** (¿la respuesta está en el material?)
-de **correcto** (¿está bien?). Son dos ejes con maquinaria distinta.
+de **correcto** (¿está bien?). En Plan v3 el eje "correcto" salió de scope (medido) y el foco
+pasó a **facilitar la comprensión conceptual**.
 
 ---
 

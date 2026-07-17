@@ -19,7 +19,8 @@
     "nli-validate": "tsx src/nli-validate.ts",
     "exp5": "tsx src/exp5-correcto.ts",
     "pilot-ingest": "tsx src/pilot-ingest.ts",
-    "pilot-session": "tsx src/pilot-session.ts"
+    "pilot-session": "tsx src/pilot-session.ts",
+    "exp6": "tsx src/exp6-ensenanza.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",
