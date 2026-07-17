@@ -23,11 +23,61 @@ export default function Home() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
+  const [ttsOn, setTtsOn] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recRef = useRef<MediaRecorder | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     fetch("/api/subjects").then((r) => r.json()).then((j) => setSubjects(j.subjects ?? [])).catch(() => {});
   }, []);
+
+  // --- VOZ (100% local: whisper.cpp STT + macOS say TTS vía /api/voice) ---
+  async function speak(text: string) {
+    if (!text.trim()) return;
+    try {
+      audioRef.current?.pause();
+      const res = await fetch("/api/voice/tts", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) return;
+      const url = URL.createObjectURL(await res.blob());
+      const a = new Audio(url);
+      audioRef.current = a;
+      a.onended = () => URL.revokeObjectURL(url);
+      await a.play();
+    } catch { /* audio no disponible */ }
+  }
+
+  async function toggleMic() {
+    if (recording) { recRef.current?.stop(); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+      rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+      rec.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setRecording(false);
+        setTranscribing(true);
+        try {
+          const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
+          const res = await fetch("/api/voice/stt", { method: "POST", body: blob });
+          const j = await res.json();
+          if (j.text?.trim()) send(j.text.trim());
+        } catch { /* */ }
+        setTranscribing(false);
+      };
+      recRef.current = rec;
+      rec.start();
+      setRecording(true);
+    } catch {
+      alert("No pude acceder al micrófono. Revisá los permisos.");
+    }
+  }
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
@@ -53,7 +103,7 @@ export default function Home() {
       if (!res.body) { patch({ content: "Error: sin respuesta.", streaming: false }); return; }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let buffer = ""; let citationsParsed = false;
+      let buffer = ""; let citationsParsed = false; let displayed = "";
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -67,15 +117,17 @@ export default function Home() {
         }
         if (citationsParsed) {
           const rs = buffer.indexOf("\x1e");
-          if (rs === -1) patch({ content: buffer });
+          if (rs === -1) { displayed = buffer; patch({ content: buffer }); }
           else {
-            patch({ content: buffer.slice(0, rs).trimEnd() });
+            displayed = buffer.slice(0, rs).trimEnd();
+            patch({ content: displayed });
             const nl = buffer.indexOf("\n", rs);
             const frame = nl === -1 ? buffer.slice(rs + 1) : buffer.slice(rs + 1, nl);
             try { const meta = JSON.parse(frame); if (meta.verification) patch({ verification: meta.verification }); } catch { /* */ }
           }
         }
       }
+      if (ttsOn && displayed) speak(displayed);
     } catch { patch({ content: "Error de red." }); }
     finally { patch({ streaming: false }); setLoading(false); }
   }
@@ -129,6 +181,10 @@ export default function Home() {
           <div style={{ fontWeight: 600, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subject ? subjectLabel(subject) : "Tutor"}</div>
           <div style={{ color: C.dim, fontSize: 12 }}>{grade && gradeLabel(grade)}</div>
         </div>
+        <button onClick={() => { setTtsOn((v) => !v); if (ttsOn) audioRef.current?.pause(); }} title={ttsOn ? "Lectura en voz alta: activada" : "Leer respuestas en voz alta"}
+          style={{ background: ttsOn ? C.accent : C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 15, flexShrink: 0 }}>
+          {ttsOn ? "🔊" : "🔈"}
+        </button>
         <button onClick={reset} style={{ background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontSize: 13, flexShrink: 0 }}>Cambiar</button>
       </header>
 
@@ -137,18 +193,22 @@ export default function Home() {
           {messages.length === 0 ? (
             <EmptyState subject={subject} onPick={send} />
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>{messages.map((m, i) => <Bubble key={i} m={m} />)}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>{messages.map((m, i) => <Bubble key={i} m={m} onSpeak={() => speak(m.content)} />)}</div>
           )}
         </div>
       </div>
 
       <div style={{ borderTop: `1px solid ${C.border}`, background: C.panel2 }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "12px 16px", display: "flex", gap: 8, alignItems: "flex-end" }}>
+          <button onClick={toggleMic} disabled={transcribing || loading} title={recording ? "Detener" : "Hablar"}
+            style={{ background: recording ? "#c0392b" : C.panel, color: C.text, border: `1px solid ${recording ? "#c0392b" : C.border}`, borderRadius: 10, padding: "11px 14px", cursor: transcribing || loading ? "default" : "pointer", fontSize: 17, flexShrink: 0 }}>
+            {transcribing ? "…" : recording ? "⏹" : "🎙️"}
+          </button>
           <textarea
             value={question} rows={1}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder={messages.length ? "¿No entendiste? Pedí otra explicación…" : "¿Qué querés que te explique?"}
+            placeholder={recording ? "Escuchando… hablá y tocá ⏹" : transcribing ? "Transcribiendo…" : messages.length ? "¿No entendiste? Pedí otra explicación…" : "¿Qué querés que te explique?"}
             style={{ flex: 1, resize: "none", maxHeight: 160, background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 12px", fontSize: 15, lineHeight: 1.4, fontFamily: "inherit" }}
           />
           <button onClick={() => send()} disabled={loading || !question.trim()}
@@ -203,7 +263,7 @@ function EmptyState({ subject, onPick }: { subject?: Subject; onPick: (t: string
   );
 }
 
-function Bubble({ m }: { m: Msg }) {
+function Bubble({ m, onSpeak }: { m: Msg; onSpeak?: () => void }) {
   if (m.role === "user")
     return <div style={{ alignSelf: "flex-end", maxWidth: "82%", background: C.userBubble, borderRadius: "14px 14px 4px 14px", padding: "10px 14px", fontSize: 15, lineHeight: 1.5 }}>{m.content}</div>;
   return (
@@ -211,7 +271,13 @@ function Bubble({ m }: { m: Msg }) {
       {m.streaming && !m.content ? (
         <div style={{ color: C.dim, fontSize: 15 }}>Pensando…</div>
       ) : (
-        <div style={{ whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.6 }}>{m.content}</div>
+        <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
+          <div style={{ whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.6, flex: 1 }}>{m.content}</div>
+          {m.content && !m.streaming && onSpeak && (
+            <button onClick={onSpeak} title="Leer en voz alta"
+              style={{ background: "none", border: "none", color: C.dim, cursor: "pointer", fontSize: 15, flexShrink: 0, padding: 2 }}>🔊</button>
+          )}
+        </div>
       )}
       {m.content && m.grounded === false && <Note color="#f0c674" bg="#3a2a12">⚠️ Fuera de tu material — me abstuve para no inventar.</Note>}
       <VerificationBadge v={m.verification} grounded={m.grounded} />

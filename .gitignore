@@ -20,3 +20,6 @@ nohup.out
 
 # Archivos subidos por usuarios (desarrollo local)
 /uploads/
+
+# Modelos de voz (descargados)
+packages/ingest-py/whisper-models/
