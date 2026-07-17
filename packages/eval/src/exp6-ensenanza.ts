@@ -79,17 +79,20 @@ async function main() {
       conceptual = !!j.conceptual; distinta = !!j.distinta;
     } catch { /* juez falló */ }
 
+    // Detección de citación tolerante al formato: "(pág X)", "página 27",
+    // "según el material/texto/guía", "Fragmento N".
+    const CITA_RE = /\(\s*p[áa]g|p[áa]g(?:ina)?\.?\s*\d|seg[uú]n (?:el|la|tu|los|las) (?:material|texto|gu[íi]a|apunte|fragmento)|fragmento\s*\d/i;
     const pedaTypes = Object.entries(r1.ctx.pedagogy).filter(([, v]: any) => v.length).map(([k]) => k);
     rows.push({
       q, grounded: true,
       source: r1.ctx.citableSource, oas: r1.ctx.oas.join(","),
-      cita: /\(p[áa]g/i.test(a1),
+      cita: CITA_RE.test(a1),
       chequea: /\?/.test(a1.trim().split("\n").filter(Boolean).at(-1) ?? ""),
       usoPedagogia: pedaTypes.length > 0,
       turno2Grounded: r2.grounded,
       conceptual, distinta,
     });
-    console.log(`· ${q.slice(0, 40)} → grounded(${r1.ctx.citableSource}) cita=${/\(p[áa]g/i.test(a1)} adaptó=${distinta} conceptual=${conceptual}`);
+    console.log(`· ${q.slice(0, 40)} → grounded(${r1.ctx.citableSource}) cita=${CITA_RE.test(a1)} adaptó=${distinta} conceptual=${conceptual}`);
   }
 
   // Scorecard
