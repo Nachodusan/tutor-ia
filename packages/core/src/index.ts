@@ -5,6 +5,7 @@ export * from "./schemas";
 export * from "./groundedness";
 export * from "./prompts";
 export * from "./tutor";
+export * from "./teaching";
 export * from "./verify";
 export * from "./exams";
 export * from "./grading";
