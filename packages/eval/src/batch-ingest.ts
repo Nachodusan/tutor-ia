@@ -27,7 +27,9 @@ function classify(fname: string): CorpusKind | null {
 }
 
 const GRADE_RE = /^(\d+)_/;
-const prettySubject = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+// Capitaliza la 1ª letra de cada palabra (Unicode-safe; \b\w rompe con acentos).
+const prettySubject = (s: string) =>
+  s.split(/[_\s]+/).filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
 async function main() {
   if (!uid) { console.error("❌ Falta EVAL_USER_ID"); process.exit(2); }
