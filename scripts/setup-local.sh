@@ -35,6 +35,8 @@ psql "$DB_URL" -f packages/db/schema_student_model.sql
 # schema_hybrid.sql es OBLIGATORIO: define match_chunks_dense/lexical y el
 # tsvector que usan retrieval híbrido e ingesta v2. Sin él, el retrieval revienta.
 psql "$DB_URL" -f packages/db/schema_hybrid.sql
+# Doble corpus tipado (contenido + pedagogía): campos curriculares en chunks/documents.
+psql "$DB_URL" -f packages/db/schema_dual_corpus.sql
 psql "$DB_URL" -f packages/db/seed.sql
 
 echo "==> 4/5 Descargando modelos locales en Ollama…"
