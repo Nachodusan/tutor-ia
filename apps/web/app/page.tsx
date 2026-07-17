@@ -1,38 +1,36 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Citation {
   index: number;
-  documentId: string;
   chunkId: string;
   page: number | null;
+  source?: "content" | "pedagogy";
 }
 
-/** Veredicto del verificador A3 (frame final del stream de /api/chat). */
+/** Veredicto del verificador NLI (frame final del stream de /api/chat). */
 interface Verification {
   grounded: boolean;
-  /** Oraciones que el material CONTRADICE (alerta fuerte). */
   contradicted: string[];
-  /** Oraciones sin respaldo en el material (alerta suave). */
   unsupported: string[];
   checked?: number;
   unavailable?: boolean;
 }
 
-export default function Home() {
-  return (
-    <main style={{ maxWidth: 860, margin: "0 auto", padding: "32px 20px" }}>
-      <h1 style={{ marginBottom: 4 }}>📚 Tutor IA</h1>
-      <p style={{ color: "#9fb0c0", marginTop: 0 }}>
-        Sube tus apuntes o libros y estudia con una IA que se apoya en tu propio
-        material.
-      </p>
-      <UploadPanel />
-      <ChatPanel />
-      <ExamPanel />
-    </main>
-  );
+interface Msg {
+  role: "user" | "assistant";
+  content: string;
+  citations?: Citation[];
+  verification?: Verification | null;
+  grounded?: boolean;
+}
+
+interface Subject {
+  id: string;
+  name: string;
+  content_chunks: number;
+  pedagogy_chunks: number;
 }
 
 const card: React.CSSProperties = {
@@ -42,7 +40,6 @@ const card: React.CSSProperties = {
   padding: 20,
   marginTop: 24,
 };
-
 const button: React.CSSProperties = {
   background: "#2f81f7",
   color: "white",
@@ -52,30 +49,85 @@ const button: React.CSSProperties = {
   cursor: "pointer",
   fontWeight: 600,
 };
+const input: React.CSSProperties = {
+  flex: 1,
+  background: "#0b0f14",
+  border: "1px solid #1e2a3a",
+  borderRadius: 8,
+  color: "#e6edf3",
+  padding: "8px 10px",
+};
+
+export default function Home() {
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjectId, setSubjectId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/subjects")
+      .then((r) => r.json())
+      .then((j) => {
+        setSubjects(j.subjects ?? []);
+        if (j.subjects?.[0]) setSubjectId(j.subjects[0].id);
+      })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <main style={{ maxWidth: 820, margin: "0 auto", padding: "32px 20px" }}>
+      <h1 style={{ marginBottom: 4 }}>📚 Tutor IA</h1>
+      <p style={{ color: "#9fb0c0", marginTop: 0 }}>
+        Un tutor que te ayuda a <strong>entender</strong> tu material: te explica,
+        cita la fuente y se adapta si no entendés. No inventa: si algo no está, te
+        lo dice.
+      </p>
+
+      <section style={card}>
+        <h2 style={{ marginTop: 0 }}>Materia</h2>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <select
+            style={{ ...input, flex: 1 }}
+            value={subjectId ?? ""}
+            onChange={(e) => setSubjectId(e.target.value || null)}
+          >
+            <option value="">Todo mi material</option>
+            {subjects.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.content_chunks}+{s.pedagogy_chunks} chunks)
+              </option>
+            ))}
+          </select>
+        </div>
+      </section>
+
+      <UploadPanel />
+      <ChatPanel subjectId={subjectId} />
+    </main>
+  );
+}
 
 function UploadPanel() {
-  const [status, setStatus] = useState<string>("");
+  const [status, setStatus] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function upload() {
     const file = fileRef.current?.files?.[0];
     if (!file) return;
     setStatus("Subiendo e indexando…");
-    const form = new FormData();
-    form.append("file", file);
-    form.append("title", file.name);
-    const res = await fetch("/api/documents", { method: "POST", body: form });
-    const json = await res.json();
-    setStatus(
-      res.ok
-        ? `✅ Listo: ${file.name}`
-        : `❌ ${json.error ?? "Error al procesar"}`,
-    );
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("title", file.name);
+      const res = await fetch("/api/documents", { method: "POST", body: form });
+      const json = await res.json().catch(() => ({}));
+      setStatus(res.ok ? `✅ Listo: ${file.name}` : `❌ ${json.error ?? "Error al procesar"}`);
+    } catch {
+      setStatus("❌ Error de red al subir.");
+    }
   }
 
   return (
     <section style={card}>
-      <h2 style={{ marginTop: 0 }}>1 · Sube material</h2>
+      <h2 style={{ marginTop: 0 }}>Subir material</h2>
       <input ref={fileRef} type="file" accept=".pdf,.txt,.md" />
       <button style={{ ...button, marginLeft: 8 }} onClick={upload}>
         Subir e indexar
@@ -85,232 +137,161 @@ function UploadPanel() {
   );
 }
 
-function ChatPanel() {
+function ChatPanel({ subjectId }: { subjectId: string | null }) {
+  const [messages, setMessages] = useState<Msg[]>([]);
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [citations, setCitations] = useState<Citation[]>([]);
-  const [grounded, setGrounded] = useState(true);
-  const [verification, setVerification] = useState<Verification | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function ask() {
-    if (!question.trim()) return;
+    const q = question.trim();
+    if (!q || loading) return;
     setLoading(true);
-    setAnswer("");
-    setCitations([]);
-    setGrounded(true);
-    setVerification(null);
+    setQuestion("");
+    const history = messages.map((m) => ({ role: m.role, content: m.content }));
+    const userMsg: Msg = { role: "user", content: q };
+    const botMsg: Msg = { role: "assistant", content: "", grounded: true };
+    setMessages((m) => [...m, userMsg, botMsg]);
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
-    });
-    if (!res.body) {
-      setAnswer("Error: sin respuesta.");
+    const patchBot = (patch: Partial<Msg>) =>
+      setMessages((m) => {
+        const copy = [...m];
+        copy[copy.length - 1] = { ...copy[copy.length - 1], ...patch } as Msg;
+        return copy;
+      });
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: q, subjectId, history }),
+      });
+      if (!res.body) {
+        patchBot({ content: "Error: sin respuesta." });
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let citationsParsed = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        if (!citationsParsed && buffer.startsWith("\x1e")) {
+          const nl = buffer.indexOf("\n");
+          if (nl !== -1) {
+            try {
+              const meta = JSON.parse(buffer.slice(1, nl));
+              patchBot({ citations: meta.citations ?? [], grounded: meta.grounded !== false });
+            } catch { /* ignore */ }
+            buffer = buffer.slice(nl + 1);
+            citationsParsed = true;
+          }
+        }
+        if (citationsParsed) {
+          const rs = buffer.indexOf("\x1e");
+          if (rs === -1) {
+            patchBot({ content: buffer });
+          } else {
+            patchBot({ content: buffer.slice(0, rs).trimEnd() });
+            const nl = buffer.indexOf("\n", rs);
+            const frame = nl === -1 ? buffer.slice(rs + 1) : buffer.slice(rs + 1, nl);
+            try {
+              const meta = JSON.parse(frame);
+              if (meta.verification) patchBot({ verification: meta.verification });
+            } catch { /* frame incompleto */ }
+          }
+        }
+      }
+    } catch {
+      patchBot({ content: "Error de red." });
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let citationsParsed = false;
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      // La primera línea (prefijada con \x1e) trae las citas.
-      if (!citationsParsed && buffer.startsWith("\x1e")) {
-        const nl = buffer.indexOf("\n");
-        if (nl !== -1) {
-          try {
-            const meta = JSON.parse(buffer.slice(1, nl));
-            setCitations(meta.citations ?? []);
-            setGrounded(meta.grounded !== false);
-          } catch {
-            /* ignore */
-          }
-          buffer = buffer.slice(nl + 1);
-          citationsParsed = true;
-        }
-      }
-      if (citationsParsed) {
-        // Un \x1e posterior abre el frame FINAL: la verificación A3. Todo lo
-        // anterior es la respuesta; el frame no se muestra como texto.
-        const rs = buffer.indexOf("\x1e");
-        if (rs === -1) {
-          setAnswer(buffer);
-        } else {
-          setAnswer(buffer.slice(0, rs).trimEnd());
-          const nl = buffer.indexOf("\n", rs);
-          const frame = nl === -1 ? buffer.slice(rs + 1) : buffer.slice(rs + 1, nl);
-          try {
-            const meta = JSON.parse(frame);
-            if (meta.verification) setVerification(meta.verification);
-          } catch {
-            /* frame incompleto: llega en el próximo read */
-          }
-        }
-      }
-    }
-    setLoading(false);
   }
 
   return (
     <section style={card}>
-      <h2 style={{ marginTop: 0 }}>2 · Pregúntale a tu material</h2>
+      <h2 style={{ marginTop: 0 }}>Estudiá con el tutor</h2>
+
+      <div style={{ display: "grid", gap: 14, marginBottom: 14 }}>
+        {messages.map((m, i) => (
+          <div key={i}>
+            {m.role === "user" ? (
+              <div style={{ color: "#9fb0c0" }}>
+                <strong>Vos:</strong> {m.content}
+              </div>
+            ) : (
+              <div>
+                {m.content && (
+                  <div style={{ whiteSpace: "pre-wrap" }}>{m.content}</div>
+                )}
+                {m.content && m.grounded === false && (
+                  <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 6, background: "#3a2a12", color: "#f0c674", fontSize: 13 }}>
+                    ⚠️ Fuera de tu material — el tutor se abstuvo para no inventar.
+                  </div>
+                )}
+                <VerificationBadge v={m.verification} grounded={m.grounded} />
+                {m.citations && m.citations.length > 0 && (
+                  <div style={{ color: "#9fb0c0", marginTop: 8, fontSize: 13 }}>
+                    Fuentes:{" "}
+                    {m.citations
+                      .map((c) => `#${c.index}${c.page != null ? ` (pág. ${c.page})` : ""}${c.source === "pedagogy" ? " · guía" : ""}`)
+                      .join(", ")}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
       <div style={{ display: "flex", gap: 8 }}>
         <input
-          style={{
-            flex: 1,
-            background: "#0b0f14",
-            border: "1px solid #1e2a3a",
-            borderRadius: 8,
-            color: "#e6edf3",
-            padding: "8px 10px",
-          }}
+          style={input}
           value={question}
-          placeholder="Ej: ¿Qué es la fotosíntesis según mis apuntes?"
+          placeholder={messages.length ? "¿No entendiste? Pedí otra explicación…" : "¿Qué querés que te explique?"}
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && ask()}
         />
         <button style={button} onClick={ask} disabled={loading}>
-          {loading ? "…" : "Preguntar"}
+          {loading ? "…" : "Enviar"}
         </button>
       </div>
-      {answer && !grounded && (
-        <div
-          style={{
-            marginTop: 12,
-            padding: "6px 10px",
-            borderRadius: 6,
-            background: "#3a2a12",
-            color: "#f0c674",
-            fontSize: 13,
-          }}
-        >
-          ⚠️ Fuera de tu material — la IA se abstuvo para no inventar.
-        </div>
-      )}
-      {answer && (
-        <div style={{ whiteSpace: "pre-wrap", marginTop: 12 }}>{answer}</div>
-      )}
-      {answer && grounded && verification && (
-        <div style={{ marginTop: 12, fontSize: 13 }}>
-          {verification.unavailable ? (
-            <span style={{ color: "#9fb0c0" }}>
-              ⚪ No pude verificar esta respuesta contra tu material (verificador
-              no disponible).
-            </span>
-          ) : verification.grounded ? (
-            (verification.checked ?? 0) > 0 && (
-              <span style={{ color: "#7ee787" }}>
-                ✓ Verificado: {verification.checked}{" "}
-                {verification.checked === 1 ? "afirmación" : "afirmaciones"} con
-                respaldo en tu material.
-              </span>
-            )
-          ) : (
-            <div style={{ display: "grid", gap: 8 }}>
-              {verification.contradicted?.length > 0 && (
-                <div
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: 6,
-                    background: "#3a1518",
-                    color: "#f0a0a0",
-                  }}
-                >
-                  🚩 Tu material dice lo <strong>contrario</strong> de esto:
-                  <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
-                    {verification.contradicted.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                  No lo estudies como cierto: revisá las fuentes.
-                </div>
-              )}
-              {verification.unsupported?.length > 0 && (
-                <div
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: 6,
-                    background: "#3a2a12",
-                    color: "#f0c674",
-                  }}
-                >
-                  ⚠️ No encontré respaldo en tu material para:
-                  <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
-                    {verification.unsupported.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                  Verificalo con las fuentes antes de estudiarlo como cierto.
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-      {citations.length > 0 && (
-        <div style={{ color: "#9fb0c0", marginTop: 12, fontSize: 13 }}>
-          Fuentes:{" "}
-          {citations
-            .map((c) => `#${c.index}${c.page != null ? ` (pág. ${c.page})` : ""}`)
-            .join(", ")}
-        </div>
-      )}
     </section>
   );
 }
 
-function ExamPanel() {
-  const [status, setStatus] = useState("");
-  const [exam, setExam] = useState<{ examId: string; exam: any } | null>(null);
-
-  async function generate() {
-    setStatus("Generando examen…");
-    setExam(null);
-    const res = await fetch("/api/exams", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "generate", numQuestions: 5 }),
-    });
-    const json = await res.json();
-    if (!res.ok) {
-      setStatus(`❌ ${typeof json === "string" ? json : json.error ?? "Error"}`);
-      return;
-    }
-    setExam(json);
-    setStatus(`✅ ${json.exam.title} — ${json.exam.questions.length} preguntas`);
-  }
-
+function VerificationBadge({ v, grounded }: { v?: Verification | null; grounded?: boolean }) {
+  if (!v || grounded === false) return null;
+  if (v.unavailable)
+    return <div style={{ marginTop: 8, color: "#9fb0c0", fontSize: 13 }}>⚪ No pude verificar esta respuesta contra tu material.</div>;
+  if (v.grounded)
+    return (v.checked ?? 0) > 0 ? (
+      <div style={{ marginTop: 8, color: "#7ee787", fontSize: 13 }}>
+        ✓ Verificado: {v.checked} {v.checked === 1 ? "afirmación" : "afirmaciones"} con respaldo en tu material.
+      </div>
+    ) : null;
   return (
-    <section style={card}>
-      <h2 style={{ marginTop: 0 }}>3 · Genera un examen</h2>
-      <button style={button} onClick={generate}>
-        Generar examen (5 preguntas)
-      </button>
-      <div style={{ color: "#9fb0c0", marginTop: 8 }}>{status}</div>
-      {exam && (
-        <ol style={{ marginTop: 12 }}>
-          {exam.exam.questions.map((q: any) => (
-            <li key={q.id} style={{ marginBottom: 10 }}>
-              <div>{q.prompt}</div>
-              {q.type === "mcq" && (
-                <ul>
-                  {q.options?.map((o: string, i: number) => (
-                    <li key={i}>{o}</li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ol>
+    <div style={{ display: "grid", gap: 8, marginTop: 8, fontSize: 13 }}>
+      {v.contradicted?.length > 0 && (
+        <div style={{ padding: "8px 10px", borderRadius: 6, background: "#3a1518", color: "#f0a0a0" }}>
+          🚩 Tu material dice lo <strong>contrario</strong> de esto:
+          <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+            {v.contradicted.map((s, i) => <li key={i}>{s}</li>)}
+          </ul>
+        </div>
       )}
-    </section>
+      {v.unsupported?.length > 0 && (
+        <div style={{ padding: "8px 10px", borderRadius: 6, background: "#3a2a12", color: "#f0c674" }}>
+          ⚠️ No encontré respaldo en tu material para:
+          <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+            {v.unsupported.map((s, i) => <li key={i}>{s}</li>)}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }

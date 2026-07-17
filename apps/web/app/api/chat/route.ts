@@ -1,28 +1,30 @@
 import {
-  getTutorContext,
-  streamTutorAnswer,
-  verifyAnswer,
-  checkFalsePremise,
-  buildFalsePremiseDirective,
-  abstentionText,
+  getTeachingContext,
+  streamTeaching,
+  teachingAbstention,
+  teachingCitations,
+  verifyAnswerA3,
   RERANKER_DOWN,
 } from "@tutor-ia/core";
 import { getCurrentUserId } from "@/lib/auth";
 
 export const runtime = "nodejs";
-// La generación del 7B (con recarga por keep_alive:0) + verificación A3 puede
+// Generación del 7B (con recarga por keep_alive:0) + verificación NLI puede
 // superar los 60s en respuestas largas.
 export const maxDuration = 120;
 
+// El estudiante señala que no entendió → el tutor cambia de estrategia.
+const STRUGGLE_RE =
+  /no (lo |la )?entend|no s[ée]\b|m[áa]s f[áa]cil|otra vez|otra forma|de nuevo|no me qued[óo] claro|no capt|no entiendo|repet[íi]|explic[áa].*(otra|de nuevo)/i;
+
 /**
- * POST /api/chat
- * body: { question: string, subjectId?: string, history?: {role, content}[] }
+ * POST /api/chat — tutor FACILITADOR (Plan v3).
+ * body: { question, subjectId?, history? }
  *
- * Respuesta: stream de texto plano.
- *  - Primera línea: JSON con citas + grounded, prefijado con "\x1e".
- *  - Cuerpo: la respuesta del modelo token a token.
- *  - Última línea: JSON {verification} prefijado con "\x1e" — el verificador A3
- *    (Fase 2) comprueba cada oración por entailment contra el material.
+ * Stream de texto plano con 3 partes (protocolo de frames):
+ *  - Frame inicial "\x1e{citations, grounded}\n"
+ *  - Cuerpo: la explicación del facilitador token a token.
+ *  - Frame final "\x1e{verification}\n" — verificación NLI por oración.
  */
 export async function POST(req: Request) {
   const userId = await getCurrentUserId(req);
@@ -31,21 +33,21 @@ export async function POST(req: Request) {
     subjectId?: string | null;
     history?: { role: "user" | "assistant"; content: string }[];
   };
-
   if (!body.question?.trim()) {
     return new Response("Falta 'question'.", { status: 400 });
   }
 
-  const tutorReq = {
+  const teachReq = {
     userId,
     subjectId: body.subjectId ?? null,
     question: body.question,
     history: body.history ?? [],
+    struggling: STRUGGLE_RE.test(body.question),
   };
 
-  let ctx;
+  let res;
   try {
-    ctx = await getTutorContext(tutorReq);
+    res = await getTeachingContext(teachReq);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Error recuperando contexto";
     return new Response(msg, { status: 500 });
@@ -54,47 +56,29 @@ export async function POST(req: Request) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      // 1) Enviar metadatos primero (citas + si está "fundamentado").
+      // 1) Frame de citas + si está fundamentado.
+      const citations = res.grounded ? teachingCitations(res.ctx) : [];
       controller.enqueue(
-        encoder.encode(
-          "\x1e" +
-            JSON.stringify({
-              citations: ctx.citations,
-              grounded: ctx.grounded,
-            }) +
-            "\n",
-        ),
+        encoder.encode("\x1e" + JSON.stringify({ citations, grounded: res.grounded }) + "\n"),
       );
       try {
-        // Anti-alucinación (capa 1): sin material relevante -> abstención,
-        // sin siquiera llamar al modelo. No puede inventar lo que no ejecuta.
-        if (!ctx.grounded) {
+        // Anti-alucinación (capa 1): sin material (ni TE ni GDD) → abstención,
+        // sin llamar al modelo.
+        if (!res.grounded) {
           controller.enqueue(
-            encoder.encode(ctx.rerankerDown ? RERANKER_DOWN : abstentionText()),
+            encoder.encode(res.rerankerDown ? RERANKER_DOWN : teachingAbstention()),
           );
         } else {
-          // 1.5) ¿La pregunta trae una premisa que el material contradice? Si sí,
-          //      le ordenamos al tutor corregirla en vez de seguirle la corriente
-          //      (era el peor fracaso del eval: false_premise).
-          const premise = await checkFalsePremise(
-            tutorReq.question,
-            ctx.chunks.map((c) => c.content),
-          );
-          const warning = premise.falsePremise
-            ? buildFalsePremiseDirective(premise.premise!)
-            : undefined;
-          // 2) Reenviar el texto del modelo local token a token.
+          // 2) Explicación del facilitador (el prompt lleva el flujo + adaptatividad).
           let full = "";
-          for await (const chunk of streamTutorAnswer(tutorReq, ctx, warning)) {
+          for await (const chunk of streamTeaching(teachReq, res.ctx)) {
             full += chunk;
             controller.enqueue(encoder.encode(chunk));
           }
-          // 3) Verificación A3 post-respuesta (capa 5): cada oración contra el
-          //    material. Se emite como frame final para que la UI marque lo no
-          //    respaldado — el diferenciador "no alucina" EN el producto.
-          const verification = await verifyAnswer(ctx, full);
+          // 3) Verificación NLI por oración contra el material citable (capa 5).
+          const v = await verifyAnswerA3(full, res.ctx.citable.map((c) => c.content));
           controller.enqueue(
-            encoder.encode("\n\x1e" + JSON.stringify({ verification }) + "\n"),
+            encoder.encode("\n\x1e" + JSON.stringify({ verification: v }) + "\n"),
           );
         }
       } catch (err) {
@@ -107,9 +91,6 @@ export async function POST(req: Request) {
   });
 
   return new Response(stream, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "no-cache",
-    },
+    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache" },
   });
 }

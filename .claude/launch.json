@@ -12,6 +12,8 @@
         "LLM_MODEL": "qwen2.5:7b",
         "RERANK_BASE_URL": "http://127.0.0.1:8790",
         "RERANK_MIN_SCORE": "0.3",
+        "RERANK_TIMEOUT_MS": "60000",
+        "NLI_TIMEOUT_MS": "60000",
         "ENTAIL_MIN_SCORE": "0.5"
       }
     }
