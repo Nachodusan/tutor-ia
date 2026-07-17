@@ -25,6 +25,11 @@ import sys
 
 import fitz  # pymupdf
 
+# El TE de grados bajos es muy visual: MuPDF escupe "syntax error: unknown
+# keyword" por operadores de gráficos vectoriales. Son inofensivos pero
+# contaminaban stdout (que debe ser SOLO JSON) → los silenciamos.
+fitz.TOOLS.mupdf_display_errors(False)
+
 # Encabezados de bloque de la GDD -> pedagogy_type normalizado. Los 5 canónicos
 # del plan + los secundarios útiles (errores frecuentes, etc.). El resto -> None
 # (texto general de la lección, no un bloque tipado).
@@ -47,6 +52,12 @@ _HEADER_RES = [(re.compile(rf"^\s*{pat}\b", re.I), typ) for pat, typ in BLOCK_HE
 
 # "Unidad 1 • Lección 1" (acepta • · - o "y"), tolerante a saltos de línea.
 _RUN_HEADER = re.compile(r"unidad\s*(\d+)\s*[•·\-–]\s*lecci[oó]n\s*(\d+)", re.I)
+# Para el TE (contenido), unidad/lección aparecen por separado. Guardas contra el
+# índice (unidades/lecciones con número absurdo = referencias de página).
+_UNIT_ONLY = re.compile(r"unidad\s*(\d+)", re.I)
+_LESSON_ONLY = re.compile(r"lecci[oó]n\s*(\d+)", re.I)
+_MAX_UNIT = 20
+_MAX_LESSON = 30
 # Fila de planificación: "Lección 1 (13 h)" seguida (misma o próx. línea) de "OA6. ..."
 _PLAN_LESSON = re.compile(r"lecci[oó]n\s*(\d+)\s*\(", re.I)
 _PLAN_OA = re.compile(r"\bOA\s*(\d+)\s*[.\-:]?\s*(.+)", re.I)
@@ -98,10 +109,21 @@ def extract(pdf_path, kind):
     unit = lesson = None  # se arrastran entre páginas si la página no los repite
     for i in range(doc.page_count):
         text = doc[i].get_text()
-        # (unit, lesson) del encabezado corriente de la página (colapsando saltos)
-        m = _RUN_HEADER.search(re.sub(r"\s+", " ", text))
+        flat = re.sub(r"\s+", " ", text)
+        # (unit, lesson) del encabezado corriente combinado (GDD).
+        m = _RUN_HEADER.search(flat)
         if m:
             unit, lesson = int(m.group(1)), int(m.group(2))
+        elif kind == "content" and "índice" not in flat.lower() and "indice" not in flat.lower():
+            # TE: unidad/lección por separado, con guardas contra el índice.
+            mu = _UNIT_ONLY.search(flat)
+            if mu and int(mu.group(1)) <= _MAX_UNIT:
+                u = int(mu.group(1))
+                if u != unit:
+                    unit, lesson = u, None  # nueva unidad → resetear lección
+            ml = _LESSON_ONLY.search(flat)
+            if ml and int(ml.group(1)) <= _MAX_LESSON:
+                lesson = int(ml.group(1))
         oa_info = plan.get((unit, lesson), {})
         oa = oa_info.get("oa")
         topic = oa_info.get("oa_text")

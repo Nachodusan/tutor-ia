@@ -17,6 +17,12 @@ export interface HybridChunk {
   headingPath: string | null;
   pageStart: number | null;
   pageEnd: number | null;
+  /** Doble corpus tipado (Plan v3): rol + metadata curricular. */
+  corpusRole: string | null;
+  pedagogyType: string | null;
+  unit: number | null;
+  lesson: number | null;
+  oa: string | null;
   /** Posición (1-based) en el ranking denso / léxico; null si no apareció. */
   denseRank: number | null;
   lexicalRank: number | null;
@@ -35,6 +41,8 @@ export interface HybridOptions {
   poolPerSide?: number;
   /** Constante de RRF (default 60; estándar de la literatura). */
   rrfK?: number;
+  /** Filtrar por corpus: 'content' | 'pedagogy' | null (todo). */
+  corpusRole?: string | null;
 }
 
 interface Row {
@@ -45,6 +53,11 @@ interface Row {
   page_start: number | null;
   page_end: number | null;
   score: number;
+  corpus_role: string | null;
+  pedagogy_type: string | null;
+  unit: number | null;
+  lesson: number | null;
+  oa: string | null;
 }
 
 export async function retrieveHybrid(
@@ -59,12 +72,13 @@ export async function retrieveHybrid(
 
   const embedding = toVectorLiteral(await embedQuery(query));
 
+  const role = opts.corpusRole ?? null;
   const [dense, lexical] = await Promise.all([
     sql<Row[]>`
-      select * from match_chunks_dense(${embedding}::vector, ${opts.userId}::uuid, ${subject}, ${pool})
+      select * from match_chunks_dense(${embedding}::vector, ${opts.userId}::uuid, ${subject}, ${pool}, ${role})
     `,
     sql<Row[]>`
-      select * from match_chunks_lexical(${query}, ${opts.userId}::uuid, ${subject}, ${pool})
+      select * from match_chunks_lexical(${query}, ${opts.userId}::uuid, ${subject}, ${pool}, ${role})
     `,
   ]);
 
@@ -80,6 +94,11 @@ export async function retrieveHybrid(
         headingPath: r.heading_path,
         pageStart: r.page_start,
         pageEnd: r.page_end,
+        corpusRole: r.corpus_role,
+        pedagogyType: r.pedagogy_type,
+        unit: r.unit,
+        lesson: r.lesson,
+        oa: r.oa,
         denseRank: null,
         lexicalRank: null,
         denseScore: null,

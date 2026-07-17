@@ -47,3 +47,66 @@ alter table chunks add column if not exists topic         text;
 create index if not exists idx_chunks_curriculum on chunks(corpus_role, unit, lesson);
 create index if not exists idx_chunks_oa on chunks(oa) where oa is not null;
 create index if not exists idx_chunks_pedagogy_type on chunks(pedagogy_type) where pedagogy_type is not null;
+
+-- -----------------------------------------------------------------------------
+-- Retrieval TIPADO: extiende match_chunks_dense/lexical con filtro por
+-- corpus_role y devuelve la metadata curricular (para separar el "qué" del
+-- "cómo" y priorizar bloques de pedagogía por tipo). Backward-compatible: el
+-- parámetro es opcional (default null = todo) y las columnas nuevas se ignoran
+-- si el llamador no las usa. DROP+CREATE porque cambia el tipo de retorno.
+-- -----------------------------------------------------------------------------
+drop function if exists match_chunks_dense(vector, uuid, uuid, int);
+create function match_chunks_dense(
+  query_embedding vector(1024),
+  p_user_id       uuid,
+  p_subject_id    uuid default null,
+  match_count     int default 20,
+  p_corpus_role   text default null
+)
+returns table (
+  chunk_id uuid, document_id uuid, content text, heading_path text,
+  page_start int, page_end int, score float,
+  corpus_role text, pedagogy_type text, unit int, lesson int, oa text
+) language sql stable as $$
+  select
+    c.id, c.document_id, c.content, c.heading_path, c.page_start, c.page_end,
+    1 - (c.embedding <=> query_embedding) as score,
+    c.corpus_role, c.pedagogy_type, c.unit, c.lesson, c.oa
+  from chunks c
+  join documents d on d.id = c.document_id
+  where d.status = 'ready'
+    and (d.owner_user_id = p_user_id or d.owner_user_id is null)
+    and (p_subject_id is null or d.subject_id = p_subject_id)
+    and (p_corpus_role is null or c.corpus_role = p_corpus_role)
+    and c.embedding is not null
+  order by c.embedding <=> query_embedding
+  limit match_count;
+$$;
+
+drop function if exists match_chunks_lexical(text, uuid, uuid, int);
+create function match_chunks_lexical(
+  query_text    text,
+  p_user_id     uuid,
+  p_subject_id  uuid default null,
+  match_count   int default 20,
+  p_corpus_role text default null
+)
+returns table (
+  chunk_id uuid, document_id uuid, content text, heading_path text,
+  page_start int, page_end int, score float,
+  corpus_role text, pedagogy_type text, unit int, lesson int, oa text
+) language sql stable as $$
+  select
+    c.id, c.document_id, c.content, c.heading_path, c.page_start, c.page_end,
+    ts_rank_cd(c.content_tsv, plainto_tsquery('spanish', query_text)) as score,
+    c.corpus_role, c.pedagogy_type, c.unit, c.lesson, c.oa
+  from chunks c
+  join documents d on d.id = c.document_id
+  where d.status = 'ready'
+    and (d.owner_user_id = p_user_id or d.owner_user_id is null)
+    and (p_subject_id is null or d.subject_id = p_subject_id)
+    and (p_corpus_role is null or c.corpus_role = p_corpus_role)
+    and c.content_tsv @@ plainto_tsquery('spanish', query_text)
+  order by score desc
+  limit match_count;
+$$;
