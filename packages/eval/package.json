@@ -20,7 +20,8 @@
     "exp5": "tsx src/exp5-correcto.ts",
     "pilot-ingest": "tsx src/pilot-ingest.ts",
     "pilot-session": "tsx src/pilot-session.ts",
-    "exp6": "tsx src/exp6-ensenanza.ts"
+    "exp6": "tsx src/exp6-ensenanza.ts",
+    "batch-ingest": "tsx src/batch-ingest.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",
