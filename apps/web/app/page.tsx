@@ -12,9 +12,15 @@ const C = {
   text: "#e6edf3", dim: "#9fb0c0", accent: "#2f81f7", userBubble: "#1b2735",
 };
 
+// VAD por nivel de audio (detección de fin-de-habla en el navegador).
+const SPEECH_THRESH = 6;   // nivel (0-128) por encima del cual hay voz
+const SILENCE_MS = 1200;   // silencio tras hablar para dar por cerrado el turno
+
 const gradeLabel = (g: string) => `${g.slice(0, -1)}° ${g.endsWith("M") ? "Medio" : "Básico"}`;
 const gradeSort = (g: string) => (g.endsWith("M") ? 100 : 0) + Number(g.slice(0, -1) || 0);
 const subjectLabel = (s: Subject) => s.name.replace(/\s+\d+º.*$/, "").trim();
+
+type CallState = "idle" | "listening" | "thinking" | "speaking";
 
 export default function Home() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -26,84 +32,63 @@ export default function Home() {
   const [ttsOn, setTtsOn] = useState(false);
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  const [callState, setCallState] = useState<CallState>("idle");
   const scrollRef = useRef<HTMLDivElement>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const rafRef = useRef<number>(0);
+  const callRef = useRef(false); // espejo sin stale-closure
+
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
   useEffect(() => {
     fetch("/api/subjects").then((r) => r.json()).then((j) => setSubjects(j.subjects ?? [])).catch(() => {});
   }, []);
-
-  // --- VOZ (100% local: whisper.cpp STT + macOS say TTS vía /api/voice) ---
-  async function speak(text: string) {
-    if (!text.trim()) return;
-    try {
-      audioRef.current?.pause();
-      const res = await fetch("/api/voice/tts", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      if (!res.ok) return;
-      const url = URL.createObjectURL(await res.blob());
-      const a = new Audio(url);
-      audioRef.current = a;
-      a.onended = () => URL.revokeObjectURL(url);
-      await a.play();
-    } catch { /* audio no disponible */ }
-  }
-
-  async function toggleMic() {
-    if (recording) { recRef.current?.stop(); return; }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const rec = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
-      rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-      rec.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        setRecording(false);
-        setTranscribing(true);
-        try {
-          const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
-          const res = await fetch("/api/voice/stt", { method: "POST", body: blob });
-          const j = await res.json();
-          if (j.text?.trim()) send(j.text.trim());
-        } catch { /* */ }
-        setTranscribing(false);
-      };
-      recRef.current = rec;
-      rec.start();
-      setRecording(true);
-    } catch {
-      alert("No pude acceder al micrófono. Revisá los permisos.");
-    }
-  }
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
 
   const subject = subjects.find((s) => s.id === subjectId);
   const grades = [...new Set(subjects.map((s) => s.grade).filter(Boolean) as string[])].sort((a, b) => gradeSort(a) - gradeSort(b));
   const gradeSubjects = subjects.filter((s) => s.grade === grade).sort((a, b) => subjectLabel(a).localeCompare(subjectLabel(b)));
 
-  function reset() { setGrade(""); setSubjectId(""); setMessages([]); }
+  function reset() { if (callRef.current) endCall(); setGrade(""); setSubjectId(""); setMessages([]); }
 
-  async function send(text?: string) {
+  // --- VOZ ---
+  function speak(text: string): Promise<void> {
+    return new Promise(async (resolve) => {
+      if (!text.trim()) return resolve();
+      try {
+        audioRef.current?.pause();
+        const res = await fetch("/api/voice/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+        if (!res.ok) return resolve();
+        const url = URL.createObjectURL(await res.blob());
+        const a = new Audio(url);
+        audioRef.current = a;
+        a.onended = () => { URL.revokeObjectURL(url); resolve(); };
+        a.onerror = () => resolve();
+        await a.play();
+      } catch { resolve(); }
+    });
+  }
+
+  /** Envía una pregunta al tutor y resuelve con el texto final de la respuesta. */
+  async function send(text?: string): Promise<string> {
     const q = (text ?? question).trim();
-    if (!q || loading) return;
+    if (!q || loading) return "";
     setLoading(true); setQuestion("");
-    const history = messages.map((m) => ({ role: m.role, content: m.content }));
+    const history = messagesRef.current.map((m) => ({ role: m.role, content: m.content }));
     setMessages((m) => [...m, { role: "user", content: q }, { role: "assistant", content: "", grounded: true, streaming: true }]);
     const patch = (p: Partial<Msg>) => setMessages((m) => { const c = [...m]; c[c.length - 1] = { ...c[c.length - 1], ...p } as Msg; return c; });
+    let displayed = "";
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q, subjectId: subjectId || null, history }),
-      });
-      if (!res.body) { patch({ content: "Error: sin respuesta.", streaming: false }); return; }
+      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, subjectId: subjectId || null, history }) });
+      if (!res.body) { patch({ content: "Error: sin respuesta.", streaming: false }); return ""; }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let buffer = ""; let citationsParsed = false; let displayed = "";
+      let buffer = ""; let citationsParsed = false;
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -119,43 +104,127 @@ export default function Home() {
           const rs = buffer.indexOf("\x1e");
           if (rs === -1) { displayed = buffer; patch({ content: buffer }); }
           else {
-            displayed = buffer.slice(0, rs).trimEnd();
-            patch({ content: displayed });
+            displayed = buffer.slice(0, rs).trimEnd(); patch({ content: displayed });
             const nl = buffer.indexOf("\n", rs);
             const frame = nl === -1 ? buffer.slice(rs + 1) : buffer.slice(rs + 1, nl);
             try { const meta = JSON.parse(frame); if (meta.verification) patch({ verification: meta.verification }); } catch { /* */ }
           }
         }
       }
-      if (ttsOn && displayed) speak(displayed);
+      if (ttsOn && !callRef.current && displayed) speak(displayed);
     } catch { patch({ content: "Error de red." }); }
     finally { patch({ streaming: false }); setLoading(false); }
+    return displayed;
   }
 
-  // --- Onboarding: paso 1 (grado) ---
+  // --- Micrófono puntual (grabar → transcribir → enviar) ---
+  async function toggleMic() {
+    if (recording) { recRef.current?.stop(); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+      rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+      rec.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setRecording(false); setTranscribing(true);
+        try {
+          const res = await fetch("/api/voice/stt", { method: "POST", body: new Blob(chunks, { type: rec.mimeType || "audio/webm" }) });
+          const j = await res.json();
+          if (j.text?.trim()) send(j.text.trim());
+        } catch { /* */ }
+        setTranscribing(false);
+      };
+      recRef.current = rec; rec.start(); setRecording(true);
+    } catch { alert("No pude acceder al micrófono. Revisá los permisos."); }
+  }
+
+  // --- MODO CONVERSACIÓN (manos libres): escuchar → pensar → hablar → escuchar ---
+  async function startCall() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const ctx = new AudioContext();
+      audioCtxRef.current = ctx;
+      const src = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      src.connect(analyser);
+      analyserRef.current = analyser;
+      callRef.current = true;
+      listen();
+    } catch { alert("No pude acceder al micrófono. Revisá los permisos."); }
+  }
+
+  function listen() {
+    if (!callRef.current || !streamRef.current || !analyserRef.current) return;
+    setCallState("listening");
+    const rec = new MediaRecorder(streamRef.current);
+    const chunks: Blob[] = [];
+    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    rec.onstop = () => handleUtterance(chunks, rec.mimeType);
+    recRef.current = rec;
+    rec.start();
+
+    const analyser = analyserRef.current;
+    const data = new Uint8Array(analyser.fftSize);
+    let speechDetected = false;
+    let lastLoud = performance.now();
+    const tick = () => {
+      if (!callRef.current || recRef.current !== rec || rec.state !== "recording") return;
+      analyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i++) sum += Math.abs(data[i]! - 128);
+      const level = sum / data.length;
+      const now = performance.now();
+      if (level > SPEECH_THRESH) { speechDetected = true; lastLoud = now; }
+      if (speechDetected && now - lastLoud > SILENCE_MS) { rec.stop(); return; }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  }
+
+  async function handleUtterance(chunks: Blob[], mime: string) {
+    if (!callRef.current) return;
+    setCallState("thinking");
+    let text = "";
+    try {
+      const res = await fetch("/api/voice/stt", { method: "POST", body: new Blob(chunks, { type: mime || "audio/webm" }) });
+      text = (await res.json()).text?.trim() ?? "";
+    } catch { /* */ }
+    if (!callRef.current) return;
+    if (!text) { listen(); return; } // no se entendió: volver a escuchar
+    const answer = await send(text);
+    if (!callRef.current) return;
+    setCallState("speaking");
+    await speak(answer);
+    if (callRef.current) listen();
+  }
+
+  function endCall() {
+    callRef.current = false;
+    cancelAnimationFrame(rafRef.current);
+    try { if (recRef.current?.state === "recording") recRef.current.stop(); } catch { /* */ }
+    audioRef.current?.pause();
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    audioCtxRef.current?.close().catch(() => {});
+    streamRef.current = null; analyserRef.current = null; audioCtxRef.current = null;
+    setCallState("idle");
+  }
+
+  // --- Onboarding: grado ---
   if (!grade) {
     return (
       <Centered>
         <div style={{ fontSize: 44, marginBottom: 12 }}>📚</div>
         <h1 style={{ margin: "0 0 6px", fontSize: 26 }}>Hola 👋</h1>
         <p style={{ color: C.dim, margin: "0 0 26px", fontSize: 16 }}>¿En qué curso vas?</p>
-        <Group label="Básica">
-          {grades.filter((g) => g.endsWith("B")).map((g) => (
-            <Pill key={g} onClick={() => setGrade(g)}>{gradeLabel(g)}</Pill>
-          ))}
-        </Group>
-        {grades.some((g) => g.endsWith("M")) && (
-          <Group label="Media">
-            {grades.filter((g) => g.endsWith("M")).map((g) => (
-              <Pill key={g} onClick={() => setGrade(g)}>{gradeLabel(g)}</Pill>
-            ))}
-          </Group>
-        )}
+        <Group label="Básica">{grades.filter((g) => g.endsWith("B")).map((g) => <Pill key={g} onClick={() => setGrade(g)}>{gradeLabel(g)}</Pill>)}</Group>
+        {grades.some((g) => g.endsWith("M")) && <Group label="Media">{grades.filter((g) => g.endsWith("M")).map((g) => <Pill key={g} onClick={() => setGrade(g)}>{gradeLabel(g)}</Pill>)}</Group>}
       </Centered>
     );
   }
-
-  // --- Onboarding: paso 2 (materia) ---
+  // --- Onboarding: materia ---
   if (!subjectId) {
     return (
       <Centered>
@@ -163,9 +232,7 @@ export default function Home() {
         <h1 style={{ margin: "0 0 6px", fontSize: 24 }}>¿Qué querés estudiar?</h1>
         <p style={{ color: C.dim, margin: "0 0 24px", fontSize: 15 }}>{gradeLabel(grade)}</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", maxWidth: 560 }}>
-          {gradeSubjects.map((s) => (
-            <Pill key={s.id} onClick={() => { setSubjectId(s.id); setMessages([]); }}>{subjectLabel(s)}</Pill>
-          ))}
+          {gradeSubjects.map((s) => <Pill key={s.id} onClick={() => { setSubjectId(s.id); setMessages([]); }}>{subjectLabel(s)}</Pill>)}
           {gradeSubjects.length === 0 && <span style={{ color: C.dim }}>No hay materias para este curso.</span>}
         </div>
       </Centered>
@@ -181,53 +248,66 @@ export default function Home() {
           <div style={{ fontWeight: 600, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subject ? subjectLabel(subject) : "Tutor"}</div>
           <div style={{ color: C.dim, fontSize: 12 }}>{grade && gradeLabel(grade)}</div>
         </div>
-        <button onClick={() => { setTtsOn((v) => !v); if (ttsOn) audioRef.current?.pause(); }} title={ttsOn ? "Lectura en voz alta: activada" : "Leer respuestas en voz alta"}
-          style={{ background: ttsOn ? C.accent : C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 15, flexShrink: 0 }}>
-          {ttsOn ? "🔊" : "🔈"}
+        <button onClick={startCall} title="Conversar por voz (manos libres)"
+          style={{ background: C.accent, color: "white", border: "none", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+          🎧 Conversar
         </button>
+        <button onClick={() => { setTtsOn((v) => !v); if (ttsOn) audioRef.current?.pause(); }} title={ttsOn ? "Lectura en voz alta: activada" : "Leer respuestas en voz alta"}
+          style={{ background: ttsOn ? C.accent : C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 15, flexShrink: 0 }}>{ttsOn ? "🔊" : "🔈"}</button>
         <button onClick={reset} style={{ background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontSize: 13, flexShrink: 0 }}>Cambiar</button>
       </header>
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "24px 16px 8px" }}>
-          {messages.length === 0 ? (
-            <EmptyState subject={subject} onPick={send} />
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>{messages.map((m, i) => <Bubble key={i} m={m} onSpeak={() => speak(m.content)} />)}</div>
-          )}
+          {messages.length === 0 ? <EmptyState subject={subject} onPick={send} />
+            : <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>{messages.map((m, i) => <Bubble key={i} m={m} onSpeak={() => speak(m.content)} />)}</div>}
         </div>
       </div>
 
       <div style={{ borderTop: `1px solid ${C.border}`, background: C.panel2 }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "12px 16px", display: "flex", gap: 8, alignItems: "flex-end" }}>
-          <button onClick={toggleMic} disabled={transcribing || loading} title={recording ? "Detener" : "Hablar"}
+          <button onClick={toggleMic} disabled={transcribing || loading} title={recording ? "Detener" : "Hablar (una vez)"}
             style={{ background: recording ? "#c0392b" : C.panel, color: C.text, border: `1px solid ${recording ? "#c0392b" : C.border}`, borderRadius: 10, padding: "11px 14px", cursor: transcribing || loading ? "default" : "pointer", fontSize: 17, flexShrink: 0 }}>
             {transcribing ? "…" : recording ? "⏹" : "🎙️"}
           </button>
-          <textarea
-            value={question} rows={1}
+          <textarea value={question} rows={1}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
             placeholder={recording ? "Escuchando… hablá y tocá ⏹" : transcribing ? "Transcribiendo…" : messages.length ? "¿No entendiste? Pedí otra explicación…" : "¿Qué querés que te explique?"}
-            style={{ flex: 1, resize: "none", maxHeight: 160, background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 12px", fontSize: 15, lineHeight: 1.4, fontFamily: "inherit" }}
-          />
+            style={{ flex: 1, resize: "none", maxHeight: 160, background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 12px", fontSize: 15, lineHeight: 1.4, fontFamily: "inherit" }} />
           <button onClick={() => send()} disabled={loading || !question.trim()}
-            style={{ background: loading || !question.trim() ? C.border : C.accent, color: "white", border: "none", borderRadius: 10, padding: "11px 18px", cursor: loading ? "default" : "pointer", fontWeight: 600, fontSize: 15, whiteSpace: "nowrap" }}>
-            {loading ? "…" : "Enviar"}
-          </button>
+            style={{ background: loading || !question.trim() ? C.border : C.accent, color: "white", border: "none", borderRadius: 10, padding: "11px 18px", cursor: loading ? "default" : "pointer", fontWeight: 600, fontSize: 15, whiteSpace: "nowrap" }}>{loading ? "…" : "Enviar"}</button>
         </div>
         <p style={{ textAlign: "center", color: C.dim, fontSize: 11, margin: "0 0 8px" }}>El tutor solo usa tu material · cita la fuente o se abstiene</p>
       </div>
+
+      {callState !== "idle" && <CallOverlay state={callState} subject={subject ? subjectLabel(subject) : ""} onEnd={endCall} />}
+    </div>
+  );
+}
+
+function CallOverlay({ state, subject, onEnd }: { state: CallState; subject: string; onEnd: () => void }) {
+  const label = state === "listening" ? "Escuchando…" : state === "thinking" ? "Pensando…" : "Hablando…";
+  const emoji = state === "listening" ? "🎤" : state === "thinking" ? "💭" : "🗣️";
+  const pulse = state === "listening";
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(11,15,20,0.96)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24, zIndex: 50 }}>
+      <div style={{ color: C.dim, fontSize: 15 }}>{subject}</div>
+      <div style={{ fontSize: 80, animation: pulse ? "tpulse 1.4s ease-in-out infinite" : undefined }}>{emoji}</div>
+      <div style={{ fontSize: 22, fontWeight: 600 }}>{label}</div>
+      <div style={{ color: C.dim, fontSize: 14, maxWidth: 320, textAlign: "center" }}>
+        {state === "listening" ? "Hablá cuando quieras. Cuando pares, te respondo." : "…"}
+      </div>
+      <button onClick={onEnd} style={{ marginTop: 12, background: "#c0392b", color: "white", border: "none", borderRadius: 999, padding: "14px 28px", cursor: "pointer", fontSize: 16, fontWeight: 600 }}>
+        ✕ Terminar
+      </button>
+      <style>{`@keyframes tpulse { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.12); opacity: .7 } }`}</style>
     </div>
   );
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", background: C.bg, color: C.text, padding: 20 }}>
-      {children}
-    </div>
-  );
+  return <div style={{ height: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", background: C.bg, color: C.text, padding: 20 }}>{children}</div>;
 }
 function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -238,12 +318,7 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 function Pill({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
-  return (
-    <button onClick={onClick}
-      style={{ background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 999, padding: "10px 18px", cursor: "pointer", fontSize: 15 }}>
-      {children}
-    </button>
-  );
+  return <button onClick={onClick} style={{ background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 999, padding: "10px 18px", cursor: "pointer", fontSize: 15 }}>{children}</button>;
 }
 const backLink: React.CSSProperties = { background: "none", border: "none", color: C.dim, cursor: "pointer", fontSize: 14, marginBottom: 16 };
 
@@ -255,9 +330,7 @@ function EmptyState({ subject, onPick }: { subject?: Subject; onPick: (t: string
       <h2 style={{ color: C.text, margin: "0 0 6px", fontSize: 20 }}>{area}</h2>
       <p style={{ margin: "0 0 20px", fontSize: 14.5, lineHeight: 1.5 }}>Te explico los temas con ejemplos, cito la fuente y me adapto si no entendés.</p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 520, margin: "0 auto" }}>
-        {examples.map((ex, i) => (
-          <button key={i} onClick={() => onPick(ex)} style={{ background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer", fontSize: 14 }}>{ex}</button>
-        ))}
+        {examples.map((ex, i) => <button key={i} onClick={() => onPick(ex)} style={{ background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer", fontSize: 14 }}>{ex}</button>)}
       </div>
     </div>
   );
@@ -268,26 +341,18 @@ function Bubble({ m, onSpeak }: { m: Msg; onSpeak?: () => void }) {
     return <div style={{ alignSelf: "flex-end", maxWidth: "82%", background: C.userBubble, borderRadius: "14px 14px 4px 14px", padding: "10px 14px", fontSize: 15, lineHeight: 1.5 }}>{m.content}</div>;
   return (
     <div style={{ alignSelf: "flex-start", maxWidth: "92%" }}>
-      {m.streaming && !m.content ? (
-        <div style={{ color: C.dim, fontSize: 15 }}>Pensando…</div>
-      ) : (
-        <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
-          <div style={{ whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.6, flex: 1 }}>{m.content}</div>
-          {m.content && !m.streaming && onSpeak && (
-            <button onClick={onSpeak} title="Leer en voz alta"
-              style={{ background: "none", border: "none", color: C.dim, cursor: "pointer", fontSize: 15, flexShrink: 0, padding: 2 }}>🔊</button>
-          )}
-        </div>
-      )}
+      {m.streaming && !m.content ? <div style={{ color: C.dim, fontSize: 15 }}>Pensando…</div>
+        : (
+          <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
+            <div style={{ whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.6, flex: 1 }}>{m.content}</div>
+            {m.content && !m.streaming && onSpeak && <button onClick={onSpeak} title="Leer en voz alta" style={{ background: "none", border: "none", color: C.dim, cursor: "pointer", fontSize: 15, flexShrink: 0, padding: 2 }}>🔊</button>}
+          </div>
+        )}
       {m.content && m.grounded === false && <Note color="#f0c674" bg="#3a2a12">⚠️ Fuera de tu material — me abstuve para no inventar.</Note>}
       <VerificationBadge v={m.verification} grounded={m.grounded} />
       {m.citations && m.citations.length > 0 && (
         <div style={{ color: C.dim, marginTop: 10, fontSize: 12.5, display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {m.citations.map((c) => (
-            <span key={c.index} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 6, padding: "2px 8px" }}>
-              {c.page != null ? `pág. ${c.page}` : `#${c.index}`}{c.source === "pedagogy" ? " · guía" : ""}
-            </span>
-          ))}
+          {m.citations.map((c) => <span key={c.index} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 6, padding: "2px 8px" }}>{c.page != null ? `pág. ${c.page}` : `#${c.index}`}{c.source === "pedagogy" ? " · guía" : ""}</span>)}
         </div>
       )}
     </div>
@@ -299,22 +364,11 @@ function Note({ children, color, bg }: { children: React.ReactNode; color: strin
 function VerificationBadge({ v, grounded }: { v?: Verification | null; grounded?: boolean }) {
   if (!v || grounded === false) return null;
   if (v.unavailable) return <div style={{ marginTop: 8, color: C.dim, fontSize: 12.5 }}>⚪ No pude verificar esta respuesta contra tu material.</div>;
-  if (v.grounded)
-    return (v.checked ?? 0) > 0 ? (
-      <div style={{ marginTop: 8, color: "#7ee787", fontSize: 12.5 }}>✓ Verificado contra tu material ({v.checked} {v.checked === 1 ? "afirmación" : "afirmaciones"}).</div>
-    ) : null;
+  if (v.grounded) return (v.checked ?? 0) > 0 ? <div style={{ marginTop: 8, color: "#7ee787", fontSize: 12.5 }}>✓ Verificado contra tu material ({v.checked} {v.checked === 1 ? "afirmación" : "afirmaciones"}).</div> : null;
   return (
     <div style={{ display: "grid", gap: 8, marginTop: 8, fontSize: 13 }}>
-      {v.contradicted?.length > 0 && (
-        <Note color="#f0a0a0" bg="#3a1518">🚩 Tu material dice lo <strong>contrario</strong> de esto:
-          <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>{v.contradicted.map((s, i) => <li key={i}>{s}</li>)}</ul>
-        </Note>
-      )}
-      {v.unsupported?.length > 0 && (
-        <Note color="#f0c674" bg="#3a2a12">⚠️ No encontré respaldo en tu material para:
-          <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>{v.unsupported.map((s, i) => <li key={i}>{s}</li>)}</ul>
-        </Note>
-      )}
+      {v.contradicted?.length > 0 && <Note color="#f0a0a0" bg="#3a1518">🚩 Tu material dice lo <strong>contrario</strong> de esto:<ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>{v.contradicted.map((s, i) => <li key={i}>{s}</li>)}</ul></Note>}
+      {v.unsupported?.length > 0 && <Note color="#f0c674" bg="#3a2a12">⚠️ No encontré respaldo en tu material para:<ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>{v.unsupported.map((s, i) => <li key={i}>{s}</li>)}</ul></Note>}
     </div>
   );
 }
