@@ -12,9 +12,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         style={{
           margin: 0,
           fontFamily:
-            "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
-          background: "#0b0f14",
-          color: "#e6edf3",
+            "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif",
+          background: "#FFFFFF",
+          color: "#201C2B",
         }}
       >
         {children}

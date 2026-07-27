@@ -4,6 +4,7 @@ import {
   teachingAbstention,
   teachingCitations,
   socialReply,
+  needsTopicReply,
   verifyAnswerA3,
   RERANKER_DOWN,
 } from "@tutor-ia/core";
@@ -34,19 +35,26 @@ export async function POST(req: Request) {
     subjectId?: string | null;
     subjectName?: string | null;
     history?: { role: "user" | "assistant"; content: string }[];
+    unit?: number | null;
+    lesson?: number | null;
   };
   if (!body.question?.trim()) {
     return new Response("Falta 'question'.", { status: 400 });
   }
 
-  // Mensaje social (saludo, gracias, chau): responder conversacional, sin gate.
-  const social = socialReply(body.question, body.subjectName ?? undefined);
-  if (social) {
+  // Mensaje social (saludo, gracias, chau) o pedido VAGO sin tema ("dame un
+  // ejemplo" como primer mensaje): responder conversacional, sin gate ni
+  // abstención. Evita el "Fuera de tu material" cuando el retrieval no tiene
+  // de qué agarrarse.
+  const conversational =
+    socialReply(body.question, body.subjectName ?? undefined) ??
+    needsTopicReply(body.question, (body.history?.length ?? 0) > 0, body.subjectName ?? undefined);
+  if (conversational) {
     const enc = new TextEncoder();
     const s = new ReadableStream({
       start(controller) {
         controller.enqueue(enc.encode("\x1e" + JSON.stringify({ citations: [], grounded: true }) + "\n"));
-        controller.enqueue(enc.encode(social));
+        controller.enqueue(enc.encode(conversational));
         controller.close();
       },
     });
@@ -59,14 +67,25 @@ export async function POST(req: Request) {
     question: body.question,
     history: body.history ?? [],
     struggling: STRUGGLE_RE.test(body.question),
+    unit: body.unit ?? null,
+    lesson: body.lesson ?? null,
   };
 
   let res;
   try {
     res = await getTeachingContext(teachReq);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Error recuperando contexto";
-    return new Response(msg, { status: 500 });
+  } catch {
+    // Fallo de retrieval (p. ej. reranker ocupado/timeout): NO dejamos la
+    // burbuja vacía; respondemos con un mensaje amable y reintentable.
+    const enc = new TextEncoder();
+    const s = new ReadableStream({
+      start(controller) {
+        controller.enqueue(enc.encode("\x1e" + JSON.stringify({ citations: [], grounded: true }) + "\n"));
+        controller.enqueue(enc.encode("Uf, tuve un problemita para traer tu material (a veces el buscador se satura). Probá de nuevo en un momento, o reformulá el tema. 🙏"));
+        controller.close();
+      },
+    });
+    return new Response(s, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache" } });
   }
 
   const encoder = new TextEncoder();

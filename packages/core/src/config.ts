@@ -69,10 +69,12 @@ export const config = {
   /**
    * Umbral del reranker cross-encoder (0-1) para el gate de abstención (capa A1).
    * CALIBRADO sobre el golden set (§9.3): material relevante ≥0.092, irrelevante
-   * ≤0.0024 → plateau seguro 0.05-0.50. 0.3 da abstención verdadera 100% / falsa 3%
-   * con margen para queries near-miss. Ver docs/fase-1-hallazgos.md.
+   * ≤0.0024 → plateau seguro 0.05-0.50. Bajado a 0.18 (de 0.3) para un tutor
+   * FLEXIBLE: preguntas mal formuladas igual encuentran material; el anti-invento
+   * se apoya en el prompt (no inventar datos) + la detección de deriva, no en un
+   * gate estricto. Ver docs/fase-1-hallazgos.md.
    */
-  rerankMinScore: numberEnv("RERANK_MIN_SCORE", 0.3),
+  rerankMinScore: numberEnv("RERANK_MIN_SCORE", 0.18),
 } as const;
 
 function numberEnv(name: string, fallback: number): number {

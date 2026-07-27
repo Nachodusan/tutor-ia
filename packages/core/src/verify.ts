@@ -58,14 +58,51 @@ const ABSTENTION_NORM = ABSTENTION.toLowerCase().replace(/\s+/g, " ");
  *  prefija afirmaciones legítimas ("Según tus apuntes, la media se calcula..."). */
 const META_RE = /\bfragmentos?\b/i;
 
+/** ANDAMIAJE conversacional: el tutor le habla al estudiante sobre el PROCESO de
+ *  aprender (aliento, transiciones, "vamos a…"), no afirma un hecho del material.
+ *  No es verificable — marcarlo como "sin respaldo/contradicho" confunde al alumno. */
+const SCAFFOLD_RE =
+  /^\s*(¡?\s*(claro|perfecto|genial|buen[íi]simo|excelente|dale|listo|muy bien|ok(ey)?|s[íi])\b|vamos a\b|veamos\b|empecemos\b|sigamos\b|continuemos\b|si no (lo |la )?(entend|te qued|comprend|captas)|si (tienes|tenés) (alguna )?(duda|pregunta)|no dudes en\b|cualquier (duda|cosa|pregunta)|espero que (esto|te|esta|est[eé])|no te preocup|¿(list[oa]|empezamos|te anim|seguimos|arrancamos|vamos))/i;
+
+/** Aliento sobre el proceso de aprender (no afirma contenido del material). */
+const PROCESS_RE =
+  /\b(seguir aprendiendo|sigas aprendiendo|puedas (seguir )?aprend|sin problemas|aprender mejor|adaptarnos|nos adaptamos|a tu ritmo|paso a paso|pregunt[ае]me lo que|no hay problema)\b/i;
+
+/** ANALOGÍA / HIPÓTESIS pedagógica: el buen tutor explica con comparaciones y
+ *  ejemplos imaginados ("imaginá…", "es como un…", "sería como…"). NO son
+ *  afirmaciones factuales del material — el NLI las lee como "contradicción"
+ *  aunque sean buena enseñanza, así que NO se verifican. */
+const ANALOGY_RE =
+  /(^|\s)(imagin[áa](te)?|imagina|pens[áa]|piensa|piens[eé]nse|supongamos|supon[ée]|ser[íi]a como|es como|son como|era[n]? como|como si|algo (parecido|as[íi])|como un[ao]?\b|es parecid|es igual que|te lo pongo así)/i;
+
+/** Limpia markdown y rótulos de sección que el modelo a veces imprime, para que
+ *  la segmentación en oraciones no pegue "**Explicación:**" o "---" a un hecho
+ *  real (lo que hacía que el NLI juzgara un bloque confuso y diera falsos +). */
+function cleanForVerification(answer: string): string {
+  return answer
+    .replace(INLINE_CITATION_RE, " ")
+    .replace(/\*\*|__|`+/g, " ") // negritas / código
+    .replace(/^#{1,6}\s*/gm, "") // encabezados markdown
+    .replace(/^[-*]\s+/gm, "") // viñetas
+    .replace(/^\s*-{3,}\s*$/gm, " ") // reglas horizontales ---
+    // rótulos de sección al inicio de línea ("Objetivo:", "Explicación: …")
+    .replace(
+      /^\s*(objetivo|explicaci[oó]n|activaci[oó]n( de ideas previas)?|introducci[oó]n|pregunta de comprensi[oó]n|verificaci[oó]n|repaso|ejemplo|actividad|habilidad|desarrollo)\s*:\s*/gim,
+      "",
+    );
+}
+
 /** ¿Oración sustantiva que vale la pena verificar? Se saltean preguntas de
- *  repaso, muletillas cortas, oraciones meta (sobre las fuentes) y CUALQUIER
- *  oración de la frase de abstención. */
+ *  repaso, muletillas cortas, andamiaje conversacional, oraciones meta (sobre las
+ *  fuentes) y CUALQUIER oración de la frase de abstención. */
 function isCheckable(sentence: string): boolean {
   const s = sentence.trim();
   if (s.length < 25) return false;
   if (s.endsWith("?") || s.startsWith("¿")) return false;
   if (META_RE.test(s)) return false; // meta-comentario sobre las fuentes
+  if (SCAFFOLD_RE.test(s)) return false; // andamiaje conversacional
+  if (PROCESS_RE.test(s)) return false; // aliento sobre el proceso de aprender
+  if (ANALOGY_RE.test(s)) return false; // analogía/ejemplo imaginado, no un hecho
   const norm = s.toLowerCase().replace(/\s+/g, " ");
   if (ABSTENTION_NORM.includes(norm)) return false; // es parte de la abstención
   return true;
@@ -82,7 +119,7 @@ export async function verifyAnswerA3(
   minEntail = config.nliMinEntail,
   minContra = config.nliMinContra,
 ): Promise<AnswerVerification> {
-  const sentences = splitSentences(answer.replace(INLINE_CITATION_RE, " "))
+  const sentences = splitSentences(cleanForVerification(answer))
     .map((s) => s.trim())
     .filter(isCheckable);
 
@@ -122,17 +159,22 @@ export async function verifyAnswerA3(
     };
   }
 
-  const contradicted = verdicts.filter((v) => v.contradicted).map((v) => v.text);
-  // "sin respaldo" = ni implicada ni contradicha (la contradicha ya se reporta
-  // aparte, con alerta más fuerte).
-  const unsupported = verdicts
-    .filter((v) => !v.supported && !v.contradicted)
-    .map((v) => v.text);
+  // El facilitador PARAFRASEA y ejemplifica: el NLI por oración marca como
+  // "contradicción" hasta afirmaciones correctas y citadas (medido: analogías con
+  // contradiction 0.86-1.0). Por eso NO surfaceamos alertas por oración —
+  // asustan al alumno y castigan la buena pedagogía. El anti-alucinación real ya
+  // está en el gate de retrieval (se abstiene si no hay material), las citas y la
+  // corrección de premisa falsa. Aquí sólo detectamos DERIVA sistemática: la
+  // respuesta habla de OTRA cosa que el material (nada respaldado + varias
+  // contradicciones fuertes) — señal de que se recuperó material equivocado.
+  const strong = verdicts.filter((v) => v.contradicted && !v.supported && v.contradiction >= 0.6);
+  const supportedCount = verdicts.filter((v) => v.supported).length;
+  const drift = supportedCount === 0 && strong.length >= 3;
 
   return {
-    grounded: contradicted.length === 0 && unsupported.length === 0,
-    contradicted,
-    unsupported,
+    grounded: !drift,
+    contradicted: drift ? strong.map((v) => v.text) : [],
+    unsupported: [],
     checked: verdicts.length,
     verdicts,
   };

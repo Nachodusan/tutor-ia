@@ -6,11 +6,35 @@ interface Citation { index: number; chunkId: string; page: number | null; source
 interface Verification { grounded: boolean; contradicted: string[]; unsupported: string[]; checked?: number; unavailable?: boolean }
 interface Msg { role: "user" | "assistant"; content: string; citations?: Citation[]; verification?: Verification | null; grounded?: boolean; streaming?: boolean }
 interface Subject { id: string; name: string; grade: string | null; subject_area: string | null; content_chunks: string; pedagogy_chunks: string }
+interface Profile { name: string; grade: string; priority: string[] }
+interface PlanItem { n: number; title: string; focus: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
+interface TestItem { n: number; topic: string; question: string; options: string[]; correct: number; explain: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
 
+const PROFILE_KEY = "tutor_profile";
+const planKey = (id: string) => `tutor_plan_${id}`;
+const stripOptLetter = (o: string) => o.replace(/^\s*[A-Da-d1-4]\s*[)\.\-:]\s+/, "").trim();
+
+// ── BLOQUES & AURORA · tokens (claro, 100% fuentes de sistema, offline) ──
 const C = {
-  bg: "#0a0e14", panel: "#141b26", panel2: "#0d131c", border: "#232f40",
-  text: "#e8eef5", dim: "#93a3b5", accent: "#4b8bf5", accent2: "#7c5cff", userBubble: "#1c2836", ok: "#5fd18b",
+  bg: "#FFFFFF", panel: "#FFFFFF", panel2: "#F4F2EC", ink: "#191621", border: "#EAE4D8",
+  text: "#201C2B", dim: "#5E5769",
+  accent: "#2B44FF",        // COBALTO — marca / estructura (mundo Panel)
+  accentSoft: "#6C5CE7",    // LAVANDA — conversación (mundo Aurora)
+  coral: "#FF5C3A", sun: "#FFC63D", peach: "#FF9E7B",
+  ok: "#1F9D57", okBg: "#E7F6EE", okTx: "#0A6B52",
+  warn: "#B87400", warnBg: "#FBF0D3", warnTx: "#8A5A00",
+  bad: "#D42419", badBg: "#FCE6E4", badTx: "#B01A12",
+  userBubble: "#EDE9FF",
 };
+const AURORA = "radial-gradient(circle at 38% 30%, #9DA8FF, #B6A8F5 32%, #FF9E7B 82%, #FFC7A6)";
+const CTA = `linear-gradient(135deg, ${C.accentSoft}, #8A78F0)`; // lavanda (Aurora)
+const FONT = {
+  round: "'ui-rounded', 'SF Pro Rounded', -apple-system, system-ui, sans-serif",
+  sans: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif",
+  mono: "ui-monospace, 'SF Mono', Menlo, Monaco, monospace",
+};
+const HARD = (c: string) => `4px 4px 0 0 ${c}`;
+const SOFT = "0 6px 20px -8px rgba(40,30,60,.20)";
 
 const SPEECH_THRESH = 6;
 const SILENCE_MS = 1200;
@@ -18,6 +42,38 @@ const SILENCE_MS = 1200;
 const gradeLabel = (g: string) => `${g.slice(0, -1)}° ${g.endsWith("M") ? "Medio" : "Básico"}`;
 const gradeSort = (g: string) => (g.endsWith("M") ? 100 : 0) + Number(g.slice(0, -1) || 0);
 const subjectLabel = (s: Subject) => s.name.replace(/\s+\d+º.*$/, "").trim();
+
+// Limpia la prosa del tutor para MOSTRARLA: saca citas de página y muletillas de
+// fuente que el 7B a veces mete en el texto. Las referencias van aparte (chips).
+function cleanTutorText(t: string): string {
+  return t
+    .replace(/\s*\((?:p[áa]gs?\.?|p\.)\s*\d+(?:\s*[-–—]\s*\d+)?\)/gi, "") // (pág. 8) (págs. 8-9)
+    .replace(/\bseg[úu]n\s+(el|tu|los|la|las)\s+(material|fragmento|apunte|texto|gu[íi]a)s?\b[,:]?\s*/gi, "")
+    .replace(/\(\s*\)/g, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]+([.,;:!?…])/g, "$1")
+    // re-capitaliza inicio de oración (por si quedó minúscula al sacar "Según…,")
+    .replace(/(^|[.!?¡¿]\s+)([a-záéíóúüñ])/g, (_m, p: string, c: string) => p + c.toUpperCase());
+}
+
+// Familia de materias (bloques): color estable por materia
+const SUBJECT_FAMILY = ["#FF5C3A", "#2B44FF", "#10A37F", "#7A3CF0", "#F5389B", "#FFC63D"];
+function subjectColor(s: Subject): string {
+  const n = `${s.subject_area ?? ""} ${s.name ?? ""}`.toLowerCase();
+  if (/lengua|lenguaje|comunic|literat/.test(n)) return "#FF5C3A";
+  if (/matem|c[aá]lculo/.test(n)) return "#2B44FF";
+  if (/cien|biolog|f[ií]sic|qu[ií]mic|natur/.test(n)) return "#10A37F";
+  if (/histor|geograf|social|filosof|c[ií]vic/.test(n)) return "#7A3CF0";
+  if (/ingl|idiom|extranjer/.test(n)) return "#F5389B";
+  if (/art|m[uú]sic|tecno|educaci[oó]n f/.test(n)) return "#FFC63D";
+  let h = 0; for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0;
+  return SUBJECT_FAMILY[h % SUBJECT_FAMILY.length]!;
+}
+function isLight(hex: string): boolean {
+  const c = hex.replace("#", "");
+  const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
+  return 0.299 * r + 0.587 * g + 0.114 * b > 150;
+}
 
 type CallState = "idle" | "listening" | "thinking" | "speaking";
 
@@ -27,7 +83,6 @@ const svg = (size = 22, color = "currentColor", stroke = 1.8) => ({
   width: size, height: size, viewBox: "0 0 24 24", fill: "none",
   stroke: color, strokeWidth: stroke, strokeLinecap: "round" as const, strokeLinejoin: "round" as const,
 });
-const IconCap = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M22 10 12 5 2 10l10 5 10-5Z" /><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5" /></svg>);
 const IconWave = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M2 12h2" /><path d="M6 8v8" /><path d="M10 5v14" /><path d="M14 8v8" /><path d="M18 10v4" /><path d="M22 12h0" /></svg>);
 const IconVolume = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M11 5 6 9H2v6h4l5 4V5Z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 5.5a9 9 0 0 1 0 13" /></svg>);
 const IconVolumeOff = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M11 5 6 9H2v6h4l5 4V5Z" /><path d="m22 9-6 6" /><path d="m16 9 6 6" /></svg>);
@@ -39,10 +94,26 @@ const IconSwap = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, col
 const IconX = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>);
 const IconCheck = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M20 6 9 17l-5-5" /></svg>);
 const IconAlert = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M12 9v4" /><path d="M12 17h0" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /></svg>);
+const IconUser = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>);
+const IconSettings = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></svg>);
+const IconBook = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" /></svg>);
+const IconStar = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z" /></svg>);
+const IconArrow = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>);
+const IconList = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>);
+const IconSpark = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" /></svg>);
+const IconClipboard = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><path d="m9 14 2 2 4-4" /></svg>);
+const IconChevron = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="m9 18 6-6-6-6" /></svg>);
+
+// Orbe aurora en miniatura (marca / avatar-puente)
+function AuroraDot({ size = 22, square = false, ink = false }: { size?: number; square?: boolean; ink?: boolean }) {
+  return <span style={{ width: size, height: size, borderRadius: square ? size * 0.28 : "50%", background: AURORA, flexShrink: 0, display: "inline-block", border: ink ? `2px solid ${C.ink}` : undefined }} />;
+}
 
 export default function Home() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [grade, setGrade] = useState<string>("");
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [subjectId, setSubjectId] = useState<string>("");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [question, setQuestion] = useState("");
@@ -51,6 +122,15 @@ export default function Home() {
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [callState, setCallState] = useState<CallState>("idle");
+  const [plan, setPlan] = useState<PlanItem[] | null>(null); // null=no generado, []=sin plan, [...]=plan
+  const [planDone, setPlanDone] = useState<number[]>([]);
+  const [planOpen, setPlanOpen] = useState(false);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [test, setTest] = useState<TestItem[] | null>(null); // null=no generada, []=sin material
+  const [testAns, setTestAns] = useState<Record<number, number>>({});
+  const [testSubmitted, setTestSubmitted] = useState(false);
+  const [testOpen, setTestOpen] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -64,13 +144,74 @@ export default function Home() {
   messagesRef.current = messages;
 
   useEffect(() => { fetch("/api/subjects").then((r) => r.json()).then((j) => setSubjects(j.subjects ?? [])).catch(() => {}); }, []);
+  useEffect(() => {
+    try { const raw = localStorage.getItem(PROFILE_KEY); if (raw) setProfile(JSON.parse(raw)); } catch { /* */ }
+    setLoaded(true);
+  }, []);
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
+  useEffect(() => {
+    setPlanOpen(false);
+    setTest(null); setTestAns({}); setTestSubmitted(false); setTestOpen(false);
+    if (!subjectId) { setPlan(null); setPlanDone([]); return; }
+    try {
+      const raw = localStorage.getItem(planKey(subjectId));
+      if (raw) { const j = JSON.parse(raw); setPlan(j.items ?? null); setPlanDone(j.done ?? []); }
+      else { setPlan(null); setPlanDone([]); }
+    } catch { setPlan(null); setPlanDone([]); }
+  }, [subjectId]);
 
   const subject = subjects.find((s) => s.id === subjectId);
-  const grades = [...new Set(subjects.map((s) => s.grade).filter(Boolean) as string[])].sort((a, b) => gradeSort(a) - gradeSort(b));
-  const gradeSubjects = subjects.filter((s) => s.grade === grade).sort((a, b) => subjectLabel(a).localeCompare(subjectLabel(b)));
+  const grade = profile?.grade ?? "";
 
-  function reset() { if (callRef.current) endCall(); setGrade(""); setSubjectId(""); setMessages([]); }
+  function savePlan(items: PlanItem[] | null, done: number[]) {
+    if (!subjectId) return;
+    try {
+      if (items && items.length) localStorage.setItem(planKey(subjectId), JSON.stringify({ items, done }));
+      else localStorage.removeItem(planKey(subjectId));
+    } catch { /* */ }
+  }
+  async function generatePlan() {
+    if (planLoading || !subjectId) return;
+    setPlanLoading(true);
+    try {
+      const res = await fetch("/api/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subjectId, subjectName: subject ? subjectLabel(subject) : null }) });
+      const j = await res.json();
+      const items: PlanItem[] = j.items ?? [];
+      setPlan(items); setPlanDone([]); savePlan(items, []);
+      if (items.length) setPlanOpen(true);
+    } catch { setPlan([]); }
+    finally { setPlanLoading(false); }
+  }
+  function startTopic(item: PlanItem) {
+    setPlanOpen(false);
+    const focus = item.focus ? ` (${item.focus})` : "";
+    send(`Quiero estudiar: ${item.title}${focus}. Enseñámelo desde el principio, paso a paso y con ejemplos.`, { unit: item.unit, lesson: item.lesson });
+  }
+  function toggleDone(n: number) {
+    setPlanDone((d) => { const nd = d.includes(n) ? d.filter((x) => x !== n) : [...d, n]; savePlan(plan, nd); return nd; });
+  }
+
+  // ── Simulación de prueba ──
+  async function generateTest() {
+    if (testLoading || !subjectId) return;
+    setTestLoading(true); setTestOpen(true); setTest(null); setTestAns({}); setTestSubmitted(false);
+    try {
+      const res = await fetch("/api/test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subjectId, subjectName: subject ? subjectLabel(subject) : null }) });
+      const j = await res.json();
+      setTest(j.items ?? []);
+    } catch { setTest([]); }
+    finally { setTestLoading(false); }
+  }
+  function openTest() { if (test && test.length > 0) setTestOpen(true); else generateTest(); }
+  function answerTest(n: number, idx: number) { if (testSubmitted) return; setTestAns((a) => ({ ...a, [n]: idx })); }
+  function studyWeak(it: TestItem) {
+    setTestOpen(false);
+    send(`Quiero repasar: ${it.topic}. Explicámelo simple, desde el principio y con un ejemplo.`, { unit: it.unit, lesson: it.lesson });
+  }
+
+  function saveProfile(p: Profile) { setProfile(p); try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch { /* */ } }
+  function logout() { if (callRef.current) endCall(); setSubjectId(""); setMessages([]); setProfile(null); try { localStorage.removeItem(PROFILE_KEY); } catch { /* */ } }
+  function toDashboard() { if (callRef.current) endCall(); setSubjectId(""); setMessages([]); }
 
   function speak(text: string): Promise<void> {
     return new Promise(async (resolve) => {
@@ -107,7 +248,7 @@ export default function Home() {
     });
   }
 
-  async function send(text?: string): Promise<string> {
+  async function send(text?: string, topic?: { unit: number | null; lesson: number | null }): Promise<string> {
     const q = (text ?? question).trim();
     if (!q || loading) return "";
     setLoading(true); setQuestion("");
@@ -116,7 +257,7 @@ export default function Home() {
     const patch = (p: Partial<Msg>) => setMessages((m) => { const c = [...m]; c[c.length - 1] = { ...c[c.length - 1], ...p } as Msg; return c; });
     let displayed = "";
     try {
-      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, subjectId: subjectId || null, subjectName: subject ? subjectLabel(subject) : null, history }) });
+      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, subjectId: subjectId || null, subjectName: subject ? subjectLabel(subject) : null, history, ...(topic ? { unit: topic.unit, lesson: topic.lesson } : {}) }) });
       if (!res.body) { patch({ content: "Error: sin respuesta.", streaming: false }); return ""; }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -134,15 +275,16 @@ export default function Home() {
         }
         if (citationsParsed) {
           const rs = buffer.indexOf("\x1e");
-          if (rs === -1) { displayed = buffer; patch({ content: buffer }); }
+          if (rs === -1) { displayed = buffer; patch({ content: cleanTutorText(buffer) }); }
           else {
-            displayed = buffer.slice(0, rs).trimEnd(); patch({ content: displayed });
+            displayed = buffer.slice(0, rs).trimEnd(); patch({ content: cleanTutorText(displayed) });
             const nl = buffer.indexOf("\n", rs);
             const frame = nl === -1 ? buffer.slice(rs + 1) : buffer.slice(rs + 1, nl);
             try { const meta = JSON.parse(frame); if (meta.verification) patch({ verification: meta.verification }); } catch { /* */ }
           }
         }
       }
+      displayed = cleanTutorText(displayed);
       if (ttsOn && !callRef.current && displayed) speak(displayed);
     } catch { patch({ content: "Error de red." }); }
     finally { patch({ streaming: false }); setLoading(false); }
@@ -227,69 +369,84 @@ export default function Home() {
     setCallState("idle");
   }
 
-  if (!grade) {
+  if (!loaded) return <Centered><span style={{ color: C.dim }}><Dots /></span></Centered>;
+  if (!profile || editing) {
     return (
-      <Centered>
-        <div style={{ marginBottom: 14, color: C.accent }}><IconCap size={52} stroke={1.5} /></div>
-        <h1 style={{ margin: "0 0 6px", fontSize: 26 }}>Hola 👋</h1>
-        <p style={{ color: C.dim, margin: "0 0 26px", fontSize: 16 }}>¿En qué curso vas?</p>
-        <Group label="Básica">{grades.filter((g) => g.endsWith("B")).map((g) => <Pill key={g} onClick={() => setGrade(g)}>{gradeLabel(g)}</Pill>)}</Group>
-        {grades.some((g) => g.endsWith("M")) && <Group label="Media">{grades.filter((g) => g.endsWith("M")).map((g) => <Pill key={g} onClick={() => setGrade(g)}>{gradeLabel(g)}</Pill>)}</Group>}
-      </Centered>
+      <Onboarding
+        subjects={subjects}
+        initial={editing ? profile ?? undefined : undefined}
+        onCancel={editing ? () => setEditing(false) : undefined}
+        onDone={(p) => { saveProfile(p); setEditing(false); if (subjectId && subject?.grade !== p.grade) toDashboard(); }}
+      />
     );
   }
   if (!subjectId) {
     return (
-      <Centered>
-        <button onClick={() => setGrade("")} style={backLink}><IconBack size={15} /> {gradeLabel(grade)}</button>
-        <h1 style={{ margin: "0 0 6px", fontSize: 24 }}>¿Qué querés estudiar?</h1>
-        <p style={{ color: C.dim, margin: "0 0 24px", fontSize: 15 }}>{gradeLabel(grade)}</p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", maxWidth: 560 }}>
-          {gradeSubjects.map((s) => <Pill key={s.id} onClick={() => { setSubjectId(s.id); setMessages([]); }}>{subjectLabel(s)}</Pill>)}
-          {gradeSubjects.length === 0 && <span style={{ color: C.dim }}>No hay materias para este curso.</span>}
-        </div>
-      </Centered>
+      <Dashboard
+        profile={profile}
+        subjects={subjects}
+        onStudy={(id) => { setSubjectId(id); setMessages([]); }}
+        onEdit={() => setEditing(true)}
+        onLogout={logout}
+      />
     );
   }
 
+  // ── Conversación (mundo Aurora) ──
   return (
-    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: C.bg, color: C.text }}>
-      <header style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderBottom: `1px solid ${C.border}`, background: C.panel2 }}>
-        <span style={{ color: C.accent, display: "flex" }}><IconCap size={24} /></span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subject ? subjectLabel(subject) : "Tutor"}</div>
-          <div style={{ color: C.dim, fontSize: 12 }}>{grade && gradeLabel(grade)}</div>
-        </div>
+    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: C.bg, color: C.text, fontFamily: FONT.sans }}>
+      <header style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderBottom: `1px solid ${C.border}`, background: C.bg }}>
+        <button onClick={toDashboard} title="Volver al panel"
+          style={{ display: "flex", alignItems: "center", gap: 9, background: "none", border: "none", color: C.text, cursor: "pointer", padding: "5px 7px", borderRadius: 12, minWidth: 0, flex: 1 }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = C.panel2)} onMouseLeave={(e) => (e.currentTarget.style.background = "none")}>
+          <span style={{ color: C.dim, display: "flex", flexShrink: 0 }}><IconBack size={20} /></span>
+          <AuroraDot size={26} />
+          <span style={{ minWidth: 0, textAlign: "left" }}>
+            <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 700, fontSize: 15.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subject ? subjectLabel(subject) : "Tutor"}</span>
+            <span style={{ display: "block", color: C.dim, fontSize: 12 }}>{grade && gradeLabel(grade)} · Volver al panel</span>
+          </span>
+        </button>
+        {plan && plan.length > 0 && (
+          <IconBtn soft active={planOpen} onClick={() => setPlanOpen((o) => !o)} title="Plan de estudio"><IconList size={18} /></IconBtn>
+        )}
+        <IconBtn soft active={testOpen} onClick={openTest} title="Simulación de prueba"><IconClipboard size={18} /></IconBtn>
         <button onClick={startCall} title="Conversar por voz (manos libres)"
-          style={{ display: "flex", alignItems: "center", gap: 6, background: `linear-gradient(135deg, ${C.accent}, ${C.accent2})`, color: "white", border: "none", borderRadius: 9, padding: "8px 13px", cursor: "pointer", fontSize: 13.5, fontWeight: 600, flexShrink: 0 }}>
+          style={{ display: "flex", alignItems: "center", gap: 6, background: CTA, color: "#fff", border: "none", borderRadius: 999, padding: "9px 15px", cursor: "pointer", fontFamily: FONT.round, fontSize: 13.5, fontWeight: 700, flexShrink: 0, boxShadow: "0 6px 16px -6px rgba(108,92,231,.5)" }}>
           <IconWave size={17} /> Conversar
         </button>
-        <IconBtn onClick={() => { setTtsOn((v) => !v); if (ttsOn) audioRef.current?.pause(); }} active={ttsOn} title={ttsOn ? "Lectura en voz alta activada" : "Leer respuestas en voz alta"}>
+        <IconBtn soft onClick={() => { setTtsOn((v) => !v); if (ttsOn) audioRef.current?.pause(); }} active={ttsOn} title={ttsOn ? "Lectura en voz alta activada" : "Leer respuestas en voz alta"}>
           {ttsOn ? <IconVolume size={18} /> : <IconVolumeOff size={18} />}
         </IconBtn>
-        <IconBtn onClick={reset} title="Cambiar de materia"><IconSwap size={17} /></IconBtn>
+        <IconBtn soft onClick={toDashboard} title="Volver al panel"><IconSwap size={17} /></IconBtn>
       </header>
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "24px 16px 8px" }}>
-          {messages.length === 0 ? <EmptyState subject={subject} onPick={send} />
-            : <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>{messages.map((m, i) => <Bubble key={i} m={m} onSpeak={() => speak(m.content)} />)}</div>}
+          {testOpen
+            ? <TestView items={test} loading={testLoading} answers={testAns} submitted={testSubmitted} subject={subject} onAnswer={answerTest} onSubmit={() => setTestSubmitted(true)} onRetake={generateTest} onStudy={studyWeak} onClose={() => setTestOpen(false)} />
+            : planOpen && plan && plan.length > 0
+              ? <PlanView items={plan} done={planDone} subject={subject} loading={planLoading} onStart={startTopic} onToggle={toggleDone} onRegen={generatePlan} />
+              : messages.length === 0
+                ? <StartScreen subject={subject} plan={plan} loading={planLoading} onPick={send} onGenerate={generatePlan} onOpenPlan={() => setPlanOpen(true)} onTest={openTest} testLoading={testLoading} />
+                : <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>{messages.map((m, i) => <Bubble key={i} m={m} onSpeak={() => speak(m.content)} />)}</div>}
         </div>
       </div>
 
-      <div style={{ borderTop: `1px solid ${C.border}`, background: C.panel2 }}>
+      <div style={{ borderTop: `1px solid ${C.border}`, background: C.bg }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "12px 16px", display: "flex", gap: 8, alignItems: "flex-end" }}>
           <button onClick={toggleMic} disabled={transcribing || loading} title={recording ? "Detener" : "Hablar (una vez)"}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, background: recording ? "#c0392b" : C.panel, color: recording ? "white" : C.text, border: `1px solid ${recording ? "#c0392b" : C.border}`, borderRadius: 12, cursor: transcribing || loading ? "default" : "pointer", flexShrink: 0 }}>
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, background: recording ? C.coral : C.panel2, color: recording ? "#fff" : C.text, border: `1px solid ${recording ? C.coral : C.border}`, borderRadius: 14, cursor: transcribing || loading ? "default" : "pointer", flexShrink: 0 }}>
             {transcribing ? <Dots /> : recording ? <IconStop size={18} /> : <IconMic size={19} />}
           </button>
           <textarea value={question} rows={1}
             onChange={(e) => setQuestion(e.target.value)}
+            onFocus={(e) => (e.currentTarget.style.borderColor = C.accentSoft)}
+            onBlur={(e) => (e.currentTarget.style.borderColor = C.border)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
             placeholder={recording ? "Escuchando…" : transcribing ? "Transcribiendo…" : messages.length ? "¿No entendiste? Pedí otra explicación…" : "¿Qué querés que te explique?"}
-            style={{ flex: 1, resize: "none", maxHeight: 160, background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 15, lineHeight: 1.4, fontFamily: "inherit" }} />
+            style={{ flex: 1, resize: "none", maxHeight: 160, background: C.panel2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 14, padding: "12px 14px", fontSize: 15, lineHeight: 1.4, fontFamily: FONT.sans, outline: "none", transition: "border-color .15s" }} />
           <button onClick={() => send()} disabled={loading || !question.trim()} title="Enviar"
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, background: loading || !question.trim() ? C.border : `linear-gradient(135deg, ${C.accent}, ${C.accent2})`, color: "white", border: "none", borderRadius: 12, cursor: loading ? "default" : "pointer", flexShrink: 0 }}>
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, background: loading || !question.trim() ? C.border : CTA, color: "#fff", border: "none", borderRadius: 14, cursor: loading ? "default" : "pointer", flexShrink: 0 }}>
             {loading ? <Dots /> : <IconSend size={19} />}
           </button>
         </div>
@@ -301,7 +458,7 @@ export default function Home() {
   );
 }
 
-// --- Orbe de voz animado (reacciona a la amplitud real) ---
+// --- Orbe aurora animado (reacciona a la amplitud real) ---
 function VoiceOrb({ levelRef, state }: { levelRef: React.RefObject<number>; state: CallState }) {
   const orb = useRef<HTMLDivElement>(null);
   const ring = useRef<HTMLDivElement>(null);
@@ -309,26 +466,21 @@ function VoiceOrb({ levelRef, state }: { levelRef: React.RefObject<number>; stat
     let raf = 0;
     const loop = () => {
       const lvl = state === "thinking" ? 0.12 + 0.08 * (0.5 + 0.5 * Math.sin(Date.now() / 260)) : (levelRef.current ?? 0);
-      const s = 1 + lvl * 0.55;
+      const s = 1 + lvl * 0.45;
       if (orb.current) {
         orb.current.style.transform = `scale(${s.toFixed(3)})`;
-        orb.current.style.boxShadow = `0 0 ${(30 + lvl * 90).toFixed(0)}px ${(6 + lvl * 26).toFixed(0)}px rgba(90,140,255,${(0.25 + lvl * 0.5).toFixed(2)})`;
+        orb.current.style.boxShadow = `0 0 ${(28 + lvl * 80).toFixed(0)}px ${(8 + lvl * 24).toFixed(0)}px rgba(255,158,123,${(0.28 + lvl * 0.4).toFixed(2)})`;
       }
-      if (ring.current) ring.current.style.transform = `scale(${(1.15 + lvl * 0.7).toFixed(3)})`, ring.current.style.opacity = `${(0.35 + lvl * 0.4).toFixed(2)}`;
+      if (ring.current) ring.current.style.transform = `scale(${(1.15 + lvl * 0.7).toFixed(3)})`, ring.current.style.opacity = `${(0.3 + lvl * 0.4).toFixed(2)}`;
       raf = requestAnimationFrame(loop);
     };
     loop();
     return () => cancelAnimationFrame(raf);
   }, [state, levelRef]);
-  const g = state === "speaking"
-    ? `radial-gradient(circle at 35% 30%, #a9c6ff, ${C.accent} 45%, ${C.accent2} 100%)`
-    : state === "thinking"
-      ? `radial-gradient(circle at 35% 30%, #c3ccdd, #7f8bad 55%, #5b6488 100%)`
-      : `radial-gradient(circle at 35% 30%, #bfe0ff, #4b8bf5 45%, #6f5cff 100%)`;
   return (
     <div style={{ position: "relative", width: 200, height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div ref={ring} style={{ position: "absolute", width: 150, height: 150, borderRadius: "50%", border: `2px solid ${C.accent}`, filter: "blur(1px)" }} />
-      <div ref={orb} style={{ width: 128, height: 128, borderRadius: "50%", background: g, willChange: "transform, box-shadow", transition: state === "thinking" ? "background .4s" : undefined }} />
+      <div ref={ring} style={{ position: "absolute", width: 150, height: 150, borderRadius: "50%", border: `2px solid ${C.accentSoft}`, filter: "blur(1px)" }} />
+      <div ref={orb} style={{ width: 128, height: 128, borderRadius: "50%", background: AURORA, willChange: "transform, box-shadow", opacity: state === "thinking" ? 0.85 : 1, transition: "opacity .4s" }} />
     </div>
   );
 }
@@ -336,16 +488,16 @@ function VoiceOrb({ levelRef, state }: { levelRef: React.RefObject<number>; stat
 function CallOverlay({ state, levelRef, subject, lastMsg, onEnd }: { state: CallState; levelRef: React.RefObject<number>; subject: string; lastMsg?: Msg; onEnd: () => void }) {
   const label = state === "listening" ? "Escuchando…" : state === "thinking" ? "Pensando…" : "Hablando…";
   return (
-    <div style={{ position: "fixed", inset: 0, background: "radial-gradient(circle at 50% 35%, #121a28, #070a10)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, zIndex: 50, padding: 24 }}>
-      <div style={{ color: C.dim, fontSize: 14, letterSpacing: 0.3 }}>{subject}</div>
+    <div style={{ position: "fixed", inset: 0, background: "radial-gradient(circle at 50% 32%, #F7F5FF, #FFFFFF)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, zIndex: 50, padding: 24, color: C.text }}>
+      <div style={{ color: C.dim, fontFamily: FONT.round, fontWeight: 600, fontSize: 14, letterSpacing: 0.3 }}>{subject}</div>
       <VoiceOrb levelRef={levelRef} state={state} />
-      <div style={{ fontSize: 22, fontWeight: 600, marginTop: 4 }}>{label}</div>
+      <div style={{ fontFamily: FONT.round, fontSize: 22, fontWeight: 700, marginTop: 4 }}>{label}</div>
       <div style={{ color: C.dim, fontSize: 14, maxWidth: 360, textAlign: "center", minHeight: 40, lineHeight: 1.5 }}>
         {state === "listening" ? "Hablá cuando quieras. Cuando pares, te respondo."
           : state === "speaking" && lastMsg?.role === "assistant" ? clip(lastMsg.content)
             : "Un momento…"}
       </div>
-      <button onClick={onEnd} style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8, background: "#c0392b", color: "white", border: "none", borderRadius: 999, padding: "14px 26px", cursor: "pointer", fontSize: 15, fontWeight: 600 }}>
+      <button onClick={onEnd} style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8, background: C.coral, color: "#fff", border: "none", borderRadius: 999, padding: "13px 26px", cursor: "pointer", fontFamily: FONT.round, fontSize: 15, fontWeight: 700, boxShadow: "0 8px 18px -6px rgba(255,92,58,.5)" }}>
         <IconX size={18} /> Terminar
       </button>
     </div>
@@ -353,10 +505,18 @@ function CallOverlay({ state, levelRef, subject, lastMsg, onEnd }: { state: Call
 }
 const clip = (t: string) => { const s = t.replace(/\s+/g, " ").trim(); return s.length > 130 ? s.slice(0, 130) + "…" : s; };
 
-function IconBtn({ children, onClick, active, title }: { children: React.ReactNode; onClick: () => void; active?: boolean; title?: string }) {
+// Botón de icono: soft (Aurora) o bloque (Panel)
+function IconBtn({ children, onClick, active, title, soft }: { children: React.ReactNode; onClick: () => void; active?: boolean; title?: string; soft?: boolean }) {
+  const bd = soft ? C.border : C.ink;
   return (
     <button onClick={onClick} title={title}
-      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, background: active ? C.accent : C.panel, color: C.text, border: `1px solid ${active ? C.accent : C.border}`, borderRadius: 9, cursor: "pointer", flexShrink: 0 }}>
+      style={{
+        display: "flex", alignItems: "center", justifyContent: "center", width: soft ? 40 : 40, height: 40,
+        background: active ? (soft ? "rgba(108,92,231,.12)" : "rgba(43,68,255,.10)") : (soft ? C.panel2 : C.panel),
+        color: active ? (soft ? C.accentSoft : C.accent) : C.text,
+        border: `${soft ? 1 : 2}px solid ${active ? (soft ? C.accentSoft : C.accent) : bd}`,
+        borderRadius: soft ? 12 : 11, cursor: "pointer", flexShrink: 0,
+      }}>
       {children}
     </button>
   );
@@ -368,70 +528,494 @@ function Dots() {
   </span>);
 }
 function Centered({ children }: { children: React.ReactNode }) {
-  return <div style={{ height: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", background: `radial-gradient(circle at 50% 30%, #0f1622, ${C.bg})`, color: C.text, padding: 20 }}>{children}</div>;
+  return <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", background: C.bg, color: C.text, fontFamily: FONT.sans, padding: 20 }}>{children}</div>;
 }
 function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 18, width: "100%", maxWidth: 560 }}>
-      <div style={{ color: C.dim, fontSize: 12, marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>{label}</div>
+      <div style={{ color: C.dim, fontFamily: FONT.round, fontWeight: 700, fontSize: 12, marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>{label}</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>{children}</div>
     </div>
   );
 }
-function Pill({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
-  return <button onClick={onClick} style={{ background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 18px", cursor: "pointer", fontSize: 15, transition: "border-color .15s" }}
-    onMouseEnter={(e) => (e.currentTarget.style.borderColor = C.accent)} onMouseLeave={(e) => (e.currentTarget.style.borderColor = C.border)}>{children}</button>;
+// Pill estilo bloque (borde de tinta); activo = cobalto
+function Pill({ children, onClick, active }: { children: React.ReactNode; onClick: () => void; active?: boolean }) {
+  return <button onClick={onClick} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: active ? "rgba(43,68,255,.10)" : C.panel, color: active ? C.accent : C.text, border: `1.5px solid ${active ? C.accent : C.ink}`, borderRadius: 999, padding: "9px 16px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 600, fontSize: 14.5, transition: "background .15s, box-shadow .15s" }}
+    onMouseEnter={(e) => { if (!active) e.currentTarget.style.boxShadow = HARD(C.accent); }} onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "none")}>{children}</button>;
 }
-const backLink: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: C.dim, cursor: "pointer", fontSize: 14, marginBottom: 16 };
+const backLink: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: C.dim, cursor: "pointer", fontFamily: FONT.round, fontWeight: 600, fontSize: 14, marginBottom: 16 };
 
-function EmptyState({ subject, onPick }: { subject?: Subject; onPick: (t: string) => void }) {
-  const area = subject ? subjectLabel(subject) : "tu material";
-  const examples = [`Explicame un tema de ${area}`, "Dame un ejemplo concreto", "¿Por qué es importante esto?"];
+// --- Onboarding: nombre → grado → materias a priorizar (mundo Bloques) ---
+function Onboarding({ subjects, initial, onCancel, onDone }: { subjects: Subject[]; initial?: Profile; onCancel?: () => void; onDone: (p: Profile) => void }) {
+  const [step, setStep] = useState(initial ? 2 : 0);
+  const [name, setName] = useState(initial?.name ?? "");
+  const [grade, setGrade] = useState(initial?.grade ?? "");
+  const [priority, setPriority] = useState<string[]>(initial?.priority ?? []);
+  const grades = [...new Set(subjects.map((s) => s.grade).filter(Boolean) as string[])].sort((a, b) => gradeSort(a) - gradeSort(b));
+  const gradeSubjects = subjects.filter((s) => s.grade === grade).sort((a, b) => subjectLabel(a).localeCompare(subjectLabel(b)));
+  const toggle = (id: string) => setPriority((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  const pickGrade = (g: string) => { if (g !== grade) setPriority([]); setGrade(g); setStep(2); };
+  const back = () => { if (step === 0) onCancel?.(); else setStep((s) => (s === 2 ? 1 : 0)); };
+
   return (
-    <div style={{ textAlign: "center", padding: "36px 8px", color: C.dim }}>
-      <div style={{ color: C.accent, display: "flex", justifyContent: "center", marginBottom: 12 }}><IconCap size={40} stroke={1.5} /></div>
-      <h2 style={{ color: C.text, margin: "0 0 6px", fontSize: 21 }}>{area}</h2>
-      <p style={{ margin: "0 0 22px", fontSize: 14.5, lineHeight: 1.5 }}>Te explico los temas con ejemplos, cito la fuente y me adapto si no entendés.</p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 520, margin: "0 auto" }}>
-        {examples.map((ex, i) => <button key={i} onClick={() => onPick(ex)} style={{ background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 999, padding: "9px 15px", cursor: "pointer", fontSize: 14 }}>{ex}</button>)}
+    <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", textAlign: "center", background: C.bg, color: C.text, fontFamily: FONT.sans }}>
+      {/* Barra de progreso ARRIBA del todo, centrada y separada del contenido */}
+      <div style={{ padding: "48px 24px 0" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", maxWidth: 760, margin: "0 auto" }}>
+          <div style={{ justifySelf: "start" }}>
+            {(step > 0 || onCancel) && <button onClick={back} style={{ ...backLink, marginBottom: 0 }}><IconBack size={15} /> {step === 0 ? "Cancelar" : "Atrás"}</button>}
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>{[0, 1, 2].map((i) => <span key={i} style={{ width: 26, height: 8, borderRadius: 3, border: `1.5px solid ${C.ink}`, background: i <= step ? C.accent : C.panel }} />)}</div>
+          <span />
+        </div>
+      </div>
+      {/* Contenido centrado en el espacio restante */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "12px 20px 80px" }}>
+        <div style={{ width: "100%", maxWidth: 600 }}>
+
+        {step === 0 && (
+          <>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}><AuroraDot size={54} /></div>
+            <h1 style={{ margin: "0 0 6px", fontFamily: FONT.round, fontWeight: 800, fontSize: 30 }}>Hola 👋</h1>
+            <p style={{ color: C.dim, margin: "0 0 24px", fontSize: 16 }}>¿Cómo te llamás?</p>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) setStep(1); }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = C.accent)}
+              onBlur={(e) => (e.currentTarget.style.borderColor = C.ink)}
+              placeholder="Tu nombre"
+              style={{ width: "100%", maxWidth: 340, textAlign: "center", background: C.panel, color: C.text, border: `2px solid ${C.ink}`, borderRadius: 14, padding: "13px 16px", fontFamily: FONT.round, fontWeight: 600, fontSize: 17, outline: "none", transition: "border-color .15s" }} />
+            <div style={{ marginTop: 24 }}>
+              <BigBtn disabled={!name.trim()} onClick={() => setStep(1)}>Continuar <IconArrow size={17} /></BigBtn>
+            </div>
+          </>
+        )}
+
+        {step === 1 && (
+          <>
+            <h1 style={{ margin: "0 0 6px", fontFamily: FONT.round, fontWeight: 800, fontSize: 26 }}>{name.trim() ? `${name.trim()}, ¿en qué curso vas?` : "¿En qué curso vas?"}</h1>
+            <p style={{ color: C.dim, margin: "0 0 26px", fontSize: 15 }}>Elegí tu grado.</p>
+            <Group label="Básica">{grades.filter((g) => g.endsWith("B")).map((g) => <Pill key={g} active={g === grade} onClick={() => pickGrade(g)}>{gradeLabel(g)}</Pill>)}</Group>
+            {grades.some((g) => g.endsWith("M")) && <Group label="Media">{grades.filter((g) => g.endsWith("M")).map((g) => <Pill key={g} active={g === grade} onClick={() => pickGrade(g)}>{gradeLabel(g)}</Pill>)}</Group>}
+          </>
+        )}
+
+        {step === 2 && (
+          <>
+            <h1 style={{ margin: "0 0 6px", fontFamily: FONT.round, fontWeight: 800, fontSize: 25 }}>¿Qué te interesa priorizar?</h1>
+            <p style={{ color: C.dim, margin: "0 0 22px", fontSize: 15 }}>Elegí una o más materias de {gradeLabel(grade)}. Las tendrás a mano en tu panel.</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", maxWidth: 560, margin: "0 auto" }}>
+              {gradeSubjects.map((s) => {
+                const on = priority.includes(s.id);
+                return <Pill key={s.id} active={on} onClick={() => toggle(s.id)}>{on ? <IconCheck size={14} /> : <span style={{ width: 10, height: 10, borderRadius: 3, background: subjectColor(s) }} />} {subjectLabel(s)}</Pill>;
+              })}
+              {gradeSubjects.length === 0 && <span style={{ color: C.dim }}>No hay materias para este curso.</span>}
+            </div>
+            <div style={{ marginTop: 26 }}>
+              <BigBtn disabled={priority.length === 0} onClick={() => onDone({ name: name.trim() || "Alumno", grade, priority })}>
+                {initial ? "Guardar" : "Crear mi panel"} <IconArrow size={17} />
+              </BigBtn>
+              {priority.length > 0 && <p style={{ color: C.dim, fontSize: 12.5, marginTop: 10 }}>{priority.length} {priority.length === 1 ? "materia elegida" : "materias elegidas"}</p>}
+            </div>
+          </>
+        )}
+        </div>
       </div>
     </div>
   );
 }
 
-function Bubble({ m, onSpeak }: { m: Msg; onSpeak?: () => void }) {
-  if (m.role === "user")
-    return <div style={{ alignSelf: "flex-end", maxWidth: "82%", background: C.userBubble, borderRadius: "16px 16px 5px 16px", padding: "10px 14px", fontSize: 15, lineHeight: 1.5 }}>{m.content}</div>;
+// CTA cobalto (bloque con sombra dura) — mundo Panel
+function BigBtn({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
   return (
-    <div style={{ alignSelf: "flex-start", maxWidth: "92%" }}>
-      {m.streaming && !m.content ? <div style={{ color: C.dim, fontSize: 15 }}><Dots /></div>
-        : (
-          <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
-            <div style={{ whiteSpace: "pre-wrap", fontSize: 15, lineHeight: 1.65, flex: 1 }}>{m.content}</div>
-            {m.content && !m.streaming && onSpeak && <button onClick={onSpeak} title="Leer en voz alta" style={{ background: "none", border: "none", color: C.dim, cursor: "pointer", flexShrink: 0, padding: 2, display: "flex" }}><IconVolume size={16} /></button>}
+    <button onClick={onClick} disabled={disabled}
+      style={{ display: "inline-flex", alignItems: "center", gap: 8, background: disabled ? C.panel2 : C.accent, color: disabled ? C.dim : "#fff", border: `2px solid ${disabled ? C.border : C.ink}`, borderRadius: 14, padding: "13px 24px", cursor: disabled ? "default" : "pointer", fontFamily: FONT.round, fontSize: 15.5, fontWeight: 700, boxShadow: disabled ? "none" : HARD(C.coral), transition: "transform .12s, box-shadow .12s" }}
+      onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.transform = "translate(-2px,-2px)"; e.currentTarget.style.boxShadow = `6px 6px 0 0 ${C.coral}`; } }}
+      onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = disabled ? "none" : HARD(C.coral); }}>
+      {children}
+    </button>
+  );
+}
+
+// --- Panel del alumno (mundo Bloques) ---
+function Dashboard({ profile, subjects, onStudy, onEdit, onLogout }: { profile: Profile; subjects: Subject[]; onStudy: (id: string) => void; onEdit: () => void; onLogout: () => void }) {
+  const prio = profile.priority.map((id) => subjects.find((s) => s.id === id)).filter(Boolean) as Subject[];
+  const others = subjects.filter((s) => s.grade === profile.grade && !profile.priority.includes(s.id)).sort((a, b) => subjectLabel(a).localeCompare(subjectLabel(b)));
+  return (
+    <div style={{ minHeight: "100dvh", overflowY: "auto", background: C.bg, color: C.text, fontFamily: FONT.sans }}>
+      <div style={{ maxWidth: 820, margin: "0 auto", padding: "26px 18px 60px" }}>
+        <header style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 30 }}>
+          <AuroraDot size={52} square ink />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: FONT.round, fontSize: 24, fontWeight: 800, letterSpacing: -0.3 }}>Hola, {profile.name} 👋</div>
+            <div style={{ color: C.dim, fontSize: 14 }}>{gradeLabel(profile.grade)} · {prio.length} {prio.length === 1 ? "materia prioritaria" : "materias prioritarias"}</div>
           </div>
+          <IconBtn onClick={onEdit} title="Editar perfil"><IconSettings size={17} /></IconBtn>
+          <IconBtn onClick={onLogout} title="Cambiar de alumno"><IconSwap size={17} /></IconBtn>
+        </header>
+
+        <SectionTitle icon={<IconStar size={15} />}>Tus materias</SectionTitle>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 16, marginBottom: 36 }}>
+          {prio.map((s) => <SubjectCard key={s.id} s={s} onClick={() => onStudy(s.id)} />)}
+          {prio.length === 0 && <p style={{ color: C.dim, fontSize: 14 }}>No elegiste materias prioritarias. Tocá el engranaje para editarlas.</p>}
+        </div>
+
+        {others.length > 0 && (
+          <>
+            <SectionTitle icon={<IconBook size={15} />}>Otras materias de {gradeLabel(profile.grade)}</SectionTitle>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
+              {others.map((s) => <Pill key={s.id} onClick={() => onStudy(s.id)}><span style={{ width: 10, height: 10, borderRadius: 3, background: subjectColor(s) }} /> {subjectLabel(s)}</Pill>)}
+            </div>
+          </>
         )}
-      {m.content && m.grounded === false && <Note color="#f0c674" bg="#3a2a12"><IconAlert size={15} /> Fuera de tu material — me abstuve para no inventar.</Note>}
-      <VerificationBadge v={m.verification} grounded={m.grounded} />
-      {m.citations && m.citations.length > 0 && (
-        <div style={{ color: C.dim, marginTop: 10, fontSize: 12.5, display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {m.citations.map((c) => <span key={c.index} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 6, padding: "3px 9px" }}>{c.page != null ? `pág. ${c.page}` : `#${c.index}`}{c.source === "pedagogy" ? " · guía" : ""}</span>)}
+      </div>
+    </div>
+  );
+}
+
+function SectionTitle({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.dim, fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 14 }}><span style={{ width: 18, height: 3, borderRadius: 2, background: C.coral }} />{icon} {children}</div>;
+}
+
+// Tarjeta de materia = bloque con borde de tinta + sombra dura del color de su materia
+function SubjectCard({ s, onClick }: { s: Subject; onClick: () => void }) {
+  const hasGuide = Number(s.pedagogy_chunks) > 0;
+  const col = subjectColor(s);
+  const onCol = isLight(col) ? C.ink : "#fff";
+  return (
+    <button onClick={onClick}
+      style={{ position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", gap: 10, textAlign: "left", background: C.panel, color: C.text, border: `2px solid ${C.ink}`, borderRadius: 16, padding: "16px", cursor: "pointer", boxShadow: HARD(col), transition: "transform .13s, box-shadow .13s" }}
+      onMouseEnter={(e) => { e.currentTarget.style.transform = "translate(-2px,-2px)"; e.currentTarget.style.boxShadow = `6px 6px 0 0 ${col}`; }}
+      onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = HARD(col); }}>
+      <div style={{ position: "absolute", top: -14, right: -14, width: 34, height: 34, borderRadius: "50%", background: col }} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+        <span style={{ width: 34, height: 34, borderRadius: 10, background: col, color: onCol, display: "grid", placeItems: "center" }}><IconBook size={20} /></span>
+      </div>
+      <div style={{ fontFamily: FONT.round, fontSize: 17, fontWeight: 700, lineHeight: 1.25 }}>{subjectLabel(s)}</div>
+      <div style={{ color: C.dim, fontSize: 12.5 }}>{hasGuide ? "Con guía docente" : "Material disponible"}</div>
+    </button>
+  );
+}
+
+// --- Simulación de prueba (mundo Panel · bloques) ---
+function TestView({ items, loading, answers, submitted, subject, onAnswer, onSubmit, onRetake, onStudy, onClose }: { items: TestItem[] | null; loading: boolean; answers: Record<number, number>; submitted: boolean; subject?: Subject; onAnswer: (n: number, i: number) => void; onSubmit: () => void; onRetake: () => void; onStudy: (it: TestItem) => void; onClose: () => void }) {
+  const area = subject ? subjectLabel(subject) : "";
+  if (loading || items === null) {
+    return (
+      <div style={{ textAlign: "center", padding: "58px 8px", color: C.dim }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}><AuroraDot size={56} /></div>
+        <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 18, color: C.text }}>Armando tu prueba…</div>
+        <div style={{ marginTop: 6, fontSize: 13.5 }}>Leo tu material y preparo las preguntas.</div>
+        <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}><Dots /></div>
+      </div>
+    );
+  }
+  if (items.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: "50px 8px", color: C.dim }}>
+        <p style={{ fontSize: 14, lineHeight: 1.5 }}>No pude armar una prueba para esta materia todavía.</p>
+        <div style={{ marginTop: 14 }}><BigBtn onClick={onClose}>Volver</BigBtn></div>
+      </div>
+    );
+  }
+  const answered = items.filter((it) => answers[it.n] != null).length;
+  const results = items.map((it) => ({ it, ok: answers[it.n] === it.correct }));
+  const score = results.filter((r) => r.ok).length;
+  const weak = results.filter((r) => !r.ok).map((r) => r.it);
+  const strong = results.filter((r) => r.ok).map((r) => r.it);
+  return (
+    <div style={{ padding: "4px 2px 20px" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
+        <div>
+          <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 21 }}>Simulación de prueba</div>
+          <div style={{ color: C.dim, fontSize: 13.5 }}>{area} · {submitted ? `${score} de ${items.length} correctas` : `${answered} de ${items.length} respondidas`}</div>
+        </div>
+        <button onClick={onClose} title="Cerrar" style={{ display: "inline-flex", alignItems: "center", gap: 6, background: C.panel, color: C.text, border: `1.5px solid ${C.ink}`, borderRadius: 999, padding: "7px 13px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 600, fontSize: 13, flexShrink: 0 }}>
+          <IconBack size={14} /> Salir
+        </button>
+      </div>
+
+      {submitted && <ResultBanner score={score} total={items.length} weak={weak} strong={strong} onStudy={onStudy} onRetake={onRetake} />}
+
+      <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+        {items.map((it) => <QuestionCard key={it.n} item={it} chosen={answers[it.n]} submitted={submitted} onAnswer={onAnswer} />)}
+      </div>
+
+      {!submitted && (
+        <div style={{ marginTop: 20, textAlign: "center" }}>
+          <BigBtn disabled={answered < items.length} onClick={onSubmit}>Corregir la prueba <IconCheck size={17} /></BigBtn>
+          {answered < items.length && <p style={{ color: C.dim, fontSize: 12.5, marginTop: 10 }}>Respondé las {items.length} preguntas para corregir.</p>}
         </div>
       )}
     </div>
   );
 }
-function Note({ children, color, bg }: { children: React.ReactNode; color: string; bg: string }) {
-  return <div style={{ marginTop: 8, padding: "8px 11px", borderRadius: 9, background: bg, color, fontSize: 13, display: "flex", gap: 7, alignItems: "flex-start" }}>{children}</div>;
+
+function QuestionCard({ item, chosen, submitted, onAnswer }: { item: TestItem; chosen: number | undefined; submitted: boolean; onAnswer: (n: number, i: number) => void }) {
+  const shadow = submitted ? (chosen === item.correct ? HARD(C.ok) : HARD(C.bad)) : "none";
+  return (
+    <div style={{ background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 14, padding: "14px 16px", boxShadow: shadow }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+        <span style={{ width: 26, height: 26, flexShrink: 0, borderRadius: 8, display: "grid", placeItems: "center", background: C.accent, color: "#fff", border: `2px solid ${C.ink}`, fontFamily: FONT.round, fontWeight: 800, fontSize: 13 }}>{item.n}</span>
+        <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 15.5, color: C.text, lineHeight: 1.35 }}>{item.question}</span>
+      </div>
+      <div style={{ display: "grid", gap: 8 }}>
+        {item.options.map((o, idx) => {
+          const isChosen = chosen === idx;
+          const isCorrect = idx === item.correct;
+          let bg = C.panel, bd = C.border, col = C.text, dot = C.border, mark: React.ReactNode = null;
+          if (submitted) {
+            if (isCorrect) { bg = "rgba(31,157,87,.10)"; bd = C.ok; col = C.okTx; dot = C.ok; mark = <IconCheck size={15} color={C.ok} />; }
+            else if (isChosen) { bg = "rgba(212,36,25,.08)"; bd = C.bad; col = C.badTx; dot = C.bad; mark = <IconX size={14} color={C.bad} />; }
+          } else if (isChosen) { bg = "rgba(43,68,255,.10)"; bd = C.accent; col = C.accent; dot = C.accent; }
+          return (
+            <button key={idx} onClick={() => onAnswer(item.n, idx)} disabled={submitted}
+              style={{ display: "flex", alignItems: "center", gap: 11, textAlign: "left", background: bg, border: `1.5px solid ${bd}`, borderRadius: 11, padding: "10px 12px", cursor: submitted ? "default" : "pointer", fontFamily: FONT.sans, fontSize: 14.5, color: col }}>
+              <span style={{ width: 18, height: 18, flexShrink: 0, borderRadius: "50%", border: `2px solid ${dot}`, background: (isChosen || (submitted && isCorrect)) ? dot : "transparent" }} />
+              <span style={{ flex: 1, minWidth: 0 }}>{stripOptLetter(o)}</span>
+              {mark}
+            </button>
+          );
+        })}
+      </div>
+      {submitted && item.explain && (
+        <div style={{ marginTop: 11, fontSize: 13, color: C.dim, lineHeight: 1.5, background: C.panel2, borderRadius: 10, padding: "9px 12px" }}>
+          <b style={{ color: C.text, fontFamily: FONT.round }}>Por qué:</b> {item.explain}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResultBanner({ score, total, weak, strong, onStudy, onRetake }: { score: number; total: number; weak: TestItem[]; strong: TestItem[]; onStudy: (it: TestItem) => void; onRetake: () => void }) {
+  const pct = Math.round((score / total) * 100);
+  const tone = pct >= 80 ? C.ok : pct >= 50 ? C.warn : C.bad;
+  const msg = pct >= 80 ? "¡Muy bien! Dominás casi todo." : pct >= 50 ? "¡Buen trabajo! Reforcemos algunas cosas." : "Tranqui, repasemos juntos lo que cuesta.";
+  const lbl = { fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, textTransform: "uppercase" as const, letterSpacing: 0.4, color: C.dim, marginBottom: 9, display: "flex", alignItems: "center", gap: 7 };
+  return (
+    <div style={{ background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 16, padding: 18, boxShadow: HARD(tone), marginTop: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ width: 62, height: 62, borderRadius: 14, background: `${tone}22`, color: tone, display: "grid", placeItems: "center", fontFamily: FONT.round, fontWeight: 800, fontSize: 19, flexShrink: 0, border: `2px solid ${tone}` }}>{score}/{total}</div>
+        <div>
+          <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 19, color: C.text }}>{pct}% correcto</div>
+          <div style={{ fontSize: 13.5, color: C.dim }}>{msg}</div>
+        </div>
+      </div>
+
+      {weak.length > 0 && (
+        <div style={{ marginTop: 18 }}>
+          <div style={lbl}>📌 Para reforzar</div>
+          <div style={{ display: "grid", gap: 8 }}>
+            {weak.map((it) => (
+              <div key={it.n} style={{ display: "flex", alignItems: "center", gap: 10, background: C.panel2, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 12px" }}>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 700, fontSize: 14.5, color: C.text }}>{it.topic}</span>
+                  {it.p0 != null && <span style={{ display: "block", fontFamily: FONT.mono, fontSize: 11.5, color: C.dim }}>pág. {it.p0}{it.p1 && it.p1 !== it.p0 ? `–${it.p1}` : ""}</span>}
+                </span>
+                <button onClick={() => onStudy(it)}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 5, background: C.accent, color: "#fff", border: `2px solid ${C.ink}`, borderRadius: 10, padding: "7px 13px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 700, fontSize: 13, flexShrink: 0, boxShadow: HARD(C.coral) }}>
+                  Estudiar <IconArrow size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {strong.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <div style={lbl}>💪 Lo que dominás</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+            {strong.map((it) => <span key={it.n} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: C.okBg, color: C.okTx, border: `1px solid ${C.ok}`, borderRadius: 999, padding: "5px 12px", fontFamily: FONT.round, fontWeight: 600, fontSize: 13 }}><IconCheck size={13} /> {it.topic}</span>)}
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginTop: 18, textAlign: "center" }}>
+        <button onClick={onRetake} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: C.panel, color: C.text, border: `1.5px solid ${C.ink}`, borderRadius: 999, padding: "9px 18px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 700, fontSize: 14 }}>
+          <IconSpark size={15} /> Otra prueba nueva
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Primera conversación: elegir tema puntual o que el tutor arme un plan.
+function StartScreen({ subject, plan, loading, onPick, onGenerate, onOpenPlan, onTest, testLoading }: { subject?: Subject; plan: PlanItem[] | null; loading: boolean; onPick: (t: string) => void; onGenerate: () => void; onOpenPlan: () => void; onTest: () => void; testLoading: boolean }) {
+  const area = subject ? subjectLabel(subject) : "tu material";
+  const examples = [`Explicame un tema de ${area}`, `Dame un ejemplo de ${area}`, `¿Qué es lo más importante de ${area}?`];
+  const hasPlan = !!plan && plan.length > 0;
+  const noPlan = !!plan && plan.length === 0;
+  return (
+    <div style={{ textAlign: "center", padding: "28px 8px", color: C.dim }}>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}><AuroraDot size={64} /></div>
+      <h2 style={{ color: C.text, margin: "0 0 6px", fontFamily: FONT.round, fontWeight: 800, fontSize: 23 }}>{area}</h2>
+      <p style={{ margin: "0 0 22px", fontSize: 14.5, lineHeight: 1.5 }}>¿Ya sabés qué querés estudiar, o te armo un plan?</p>
+
+      <div style={{ maxWidth: 460, margin: "0 auto 12px" }}>
+        {hasPlan ? (
+          <PlanCta onClick={onOpenPlan} icon={<IconList size={20} />} title="Seguir tu plan de estudio" sub={`${plan!.length} temas · tocá para ver`} />
+        ) : noPlan ? (
+          <div style={{ background: C.panel2, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 13.5, color: C.dim, lineHeight: 1.5 }}>
+            No pude armar un plan automático para esta materia. Decime abajo qué tema querés estudiar y arrancamos.
+          </div>
+        ) : (
+          <PlanCta onClick={onGenerate} loading={loading} icon={<IconSpark size={20} />} title={loading ? "Armando tu plan…" : "No sé por dónde empezar"} sub={loading ? "Leyendo tu material" : "Armame un plan de estudio con mi material"} />
+        )}
+      </div>
+
+      <div style={{ maxWidth: 460, margin: "0 auto 24px" }}>
+        <button onClick={onTest} disabled={testLoading}
+          style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C.panel, color: C.text, border: `2px solid ${C.ink}`, borderRadius: 16, padding: "13px 16px", cursor: testLoading ? "default" : "pointer", boxShadow: HARD(C.sun), transition: "transform .12s, box-shadow .12s" }}
+          onMouseEnter={(e) => { if (!testLoading) { e.currentTarget.style.transform = "translate(-2px,-2px)"; e.currentTarget.style.boxShadow = `6px 6px 0 0 ${C.sun}`; } }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = HARD(C.sun); }}>
+          <span style={{ width: 38, height: 38, borderRadius: 11, background: "rgba(255,198,61,.2)", color: "#8A5A00", display: "grid", placeItems: "center", flexShrink: 0 }}>{testLoading ? <Dots /> : <IconClipboard size={19} />}</span>
+          <span style={{ minWidth: 0 }}>
+            <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 15.5 }}>{testLoading ? "Armando tu prueba…" : "Simulación de prueba"}</span>
+            <span style={{ display: "block", fontSize: 12.5, color: C.dim }}>Ponete a prueba y mirá qué reforzar</span>
+          </span>
+        </button>
+      </div>
+
+      <p style={{ margin: "0 0 12px", fontSize: 13, color: C.dim }}>{hasPlan ? "O preguntá algo puntual 👇" : "¿Tenés un tema en mente? Escribilo abajo 👇"}</p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 520, margin: "0 auto" }}>
+        {examples.map((ex, i) => <button key={i} onClick={() => onPick(ex)}
+          style={{ background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 999, padding: "9px 15px", cursor: "pointer", fontSize: 14, boxShadow: SOFT, transition: "border-color .15s" }}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = C.accentSoft)} onMouseLeave={(e) => (e.currentTarget.style.borderColor = C.border)}>{ex}</button>)}
+      </div>
+    </div>
+  );
+}
+// CTA del plan = bloque cobalto con sombra dura (mundo Panel dentro del chat)
+function PlanCta({ onClick, icon, title, sub, loading }: { onClick: () => void; icon: React.ReactNode; title: string; sub: string; loading?: boolean }) {
+  return (
+    <button onClick={onClick} disabled={loading}
+      style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C.accent, color: "#fff", border: `2px solid ${C.ink}`, borderRadius: 16, padding: "15px 18px", cursor: loading ? "default" : "pointer", boxShadow: HARD(C.coral), transition: "transform .12s, box-shadow .12s" }}
+      onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.transform = "translate(-2px,-2px)"; e.currentTarget.style.boxShadow = `6px 6px 0 0 ${C.coral}`; } }}
+      onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = HARD(C.coral); }}>
+      <span style={{ width: 40, height: 40, borderRadius: 11, background: "rgba(255,255,255,.18)", display: "grid", placeItems: "center", flexShrink: 0 }}>{loading ? <Dots /> : icon}</span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 16 }}>{title}</span>
+        <span style={{ display: "block", fontSize: 12.5, opacity: 0.9 }}>{sub}</span>
+      </span>
+    </button>
+  );
+}
+
+// Vista del plan de estudio (mundo Panel · bloques)
+function PlanView({ items, done, subject, loading, onStart, onToggle, onRegen }: { items: PlanItem[]; done: number[]; subject?: Subject; loading: boolean; onStart: (it: PlanItem) => void; onToggle: (n: number) => void; onRegen: () => void }) {
+  const area = subject ? subjectLabel(subject) : "";
+  const nextN = items.find((it) => !done.includes(it.n))?.n ?? -1;
+  return (
+    <div style={{ padding: "4px 2px 16px" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+        <div>
+          <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 21 }}>Tu plan de estudio</div>
+          <div style={{ color: C.dim, fontSize: 13.5 }}>{area} · {done.length} de {items.length} listos</div>
+        </div>
+        <button onClick={onRegen} disabled={loading} title="Armar otro plan"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, background: C.panel, color: C.text, border: `1.5px solid ${C.ink}`, borderRadius: 999, padding: "7px 13px", cursor: loading ? "default" : "pointer", fontFamily: FONT.round, fontWeight: 600, fontSize: 13, flexShrink: 0 }}>
+          {loading ? <Dots /> : <><IconSpark size={15} /> Rehacer</>}
+        </button>
+      </div>
+      <div style={{ display: "flex", gap: 4, marginBottom: 18 }}>
+        {items.map((it) => <span key={it.n} style={{ flex: 1, height: 6, borderRadius: 3, background: done.includes(it.n) ? C.ok : C.panel2, border: `1px solid ${done.includes(it.n) ? C.ok : C.border}` }} />)}
+      </div>
+      <div style={{ display: "grid", gap: 11 }}>
+        {items.map((it) => <PlanItemCard key={it.n} item={it} done={done.includes(it.n)} next={it.n === nextN} onStart={() => onStart(it)} onToggle={() => onToggle(it.n)} />)}
+      </div>
+      <p style={{ textAlign: "center", color: C.dim, fontSize: 12, marginTop: 16 }}>Tocá un tema para que el tutor te lo explique. Se guarda tu avance.</p>
+    </div>
+  );
+}
+function PlanItemCard({ item, done, next, onStart, onToggle }: { item: PlanItem; done: boolean; next: boolean; onStart: () => void; onToggle: () => void }) {
+  const pages = item.p0 != null ? (item.p1 && item.p1 !== item.p0 ? `pág. ${item.p0}–${item.p1}` : `pág. ${item.p0}`) : "";
+  return (
+    <div style={{ position: "relative", display: "flex", alignItems: "stretch", gap: 0, background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 14, boxShadow: next ? HARD(C.accent) : "none", opacity: done && !next ? 0.62 : 1, transition: "box-shadow .12s, transform .12s" }}>
+      <button onClick={onStart} title="Estudiar este tema"
+        style={{ flex: 1, minWidth: 0, display: "flex", gap: 12, alignItems: "flex-start", textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: "13px 6px 13px 14px" }}>
+        <span style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 9, display: "grid", placeItems: "center", background: done ? C.ok : C.accent, color: "#fff", border: `2px solid ${C.ink}`, fontFamily: FONT.round, fontWeight: 800, fontSize: 14 }}>
+          {done ? <IconCheck size={15} /> : item.n}
+        </span>
+        <span style={{ minWidth: 0 }}>
+          <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 700, fontSize: 15.5, color: C.text }}>{item.title}</span>
+          {item.focus && <span style={{ display: "block", color: C.dim, fontSize: 13, lineHeight: 1.45, marginTop: 2 }}>{item.focus}</span>}
+          <span style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+            {pages && <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: C.dim }}>{pages}</span>}
+            {next && <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 10.5, letterSpacing: 0.3, textTransform: "uppercase", color: "#fff", background: C.accent, borderRadius: 999, padding: "2px 8px" }}>Empezá por acá</span>}
+          </span>
+        </span>
+      </button>
+      <button onClick={onToggle} title={done ? "Marcar como pendiente" : "Marcar como visto"}
+        style={{ flexShrink: 0, width: 46, display: "grid", placeItems: "center", background: "none", border: "none", borderLeft: `1px solid ${C.border}`, color: done ? C.ok : C.dim, cursor: "pointer" }}>
+        <IconCheck size={18} />
+      </button>
+    </div>
+  );
+}
+
+// Chip de cita (Aurora) — pastilla mono con esquina doblada
+function CiteChip({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 6, background: C.panel2, border: `1px solid ${C.border}`, borderRadius: 10, padding: "5px 11px", fontFamily: FONT.mono, fontSize: 12.5, color: C.dim, overflow: "hidden" }}>
+      {children}
+      <span style={{ position: "absolute", top: 0, right: 0, width: 0, height: 0, borderStyle: "solid", borderWidth: "0 9px 9px 0", borderColor: `transparent ${C.bg} transparent transparent` }} />
+    </span>
+  );
+}
+
+// Burbuja de mensaje (mundo Aurora)
+function Bubble({ m, onSpeak }: { m: Msg; onSpeak?: () => void }) {
+  const [refsOpen, setRefsOpen] = useState(false);
+  if (m.role === "user")
+    return <div style={{ alignSelf: "flex-end", maxWidth: "82%", background: C.userBubble, color: "#2B2740", borderRadius: "18px 18px 6px 18px", padding: "11px 15px", fontSize: 15, lineHeight: 1.5 }}>{m.content}</div>;
+  return (
+    <div style={{ alignSelf: "flex-start", maxWidth: "94%" }}>
+      {m.streaming && !m.content ? <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: "18px 18px 18px 6px", padding: "12px 16px", boxShadow: SOFT, color: C.dim, fontSize: 15, display: "inline-block" }}><Dots /></div>
+        : (
+          <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: "18px 18px 18px 6px", padding: "13px 16px", boxShadow: SOFT, display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <div style={{ whiteSpace: "pre-wrap", fontSize: 16, lineHeight: 1.6, flex: 1 }}>{m.content}</div>
+            {m.content && !m.streaming && onSpeak && <button onClick={onSpeak} title="Leer en voz alta" style={{ background: "none", border: "none", color: C.accentSoft, cursor: "pointer", flexShrink: 0, padding: 2, display: "flex" }}><IconVolume size={16} /></button>}
+          </div>
+        )}
+      <VerificationBadge v={m.verification} grounded={m.grounded} />
+      {m.citations && m.citations.length > 0 && (() => {
+        const seen = new Set<string>();
+        const refs = m.citations.filter((c) => { const k = `${c.page}·${c.source ?? ""}`; if (seen.has(k)) return false; seen.add(k); return true; });
+        return (
+          <div style={{ marginTop: 11 }}>
+            <button onClick={() => setRefsOpen((o) => !o)} title={refsOpen ? "Ocultar fuentes" : "Ver de dónde salió esto"}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, background: refsOpen ? "rgba(108,92,231,.10)" : C.panel2, border: `1px solid ${refsOpen ? C.accentSoft : C.border}`, borderRadius: 999, padding: "5px 12px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 700, fontSize: 11, letterSpacing: 0.4, textTransform: "uppercase", color: refsOpen ? C.accentSoft : C.dim, transition: "border-color .15s, background .15s" }}
+              onMouseEnter={(e) => { if (!refsOpen) e.currentTarget.style.borderColor = C.accentSoft; }} onMouseLeave={(e) => { if (!refsOpen) e.currentTarget.style.borderColor = C.border; }}>
+              <span style={{ display: "flex", transform: refsOpen ? "rotate(90deg)" : "none", transition: "transform .18s" }}><IconChevron size={13} /></span>
+              Fuentes en tu material ({refs.length})
+            </button>
+            {refsOpen && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 9 }}>
+                {refs.map((c) => <CiteChip key={c.index}>{c.page != null ? `pág. ${c.page}` : `#${c.index}`}{c.source === "pedagogy" ? " · guía" : ""}</CiteChip>)}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+function Note({ children, tone }: { children: React.ReactNode; tone: "warn" | "bad" }) {
+  const t = tone === "bad" ? { c: C.badTx, bg: C.badBg } : { c: C.warnTx, bg: C.warnBg };
+  return <div style={{ marginTop: 8, padding: "9px 12px", borderRadius: 12, background: t.bg, color: t.c, fontSize: 13, display: "flex", gap: 7, alignItems: "flex-start", lineHeight: 1.5 }}>{children}</div>;
 }
 function VerificationBadge({ v, grounded }: { v?: Verification | null; grounded?: boolean }) {
   if (!v || grounded === false) return null;
   if (v.unavailable) return <div style={{ marginTop: 8, color: C.dim, fontSize: 12.5 }}>No pude verificar esta respuesta contra tu material.</div>;
-  if (v.grounded) return (v.checked ?? 0) > 0 ? <div style={{ marginTop: 8, color: C.ok, fontSize: 12.5, display: "flex", gap: 5, alignItems: "center" }}><IconCheck size={14} /> Verificado contra tu material ({v.checked} {v.checked === 1 ? "afirmación" : "afirmaciones"}).</div> : null;
+  if (v.grounded) return (v.checked ?? 0) > 0 ? (
+    <div style={{ marginTop: 9, display: "inline-flex", gap: 6, alignItems: "center", background: C.okBg, color: C.okTx, fontFamily: FONT.round, fontWeight: 700, fontSize: 12, padding: "6px 11px", borderRadius: 12 }}>
+      <IconCheck size={14} /> Verificado ({v.checked} {v.checked === 1 ? "afirmación" : "afirmaciones"})
+    </div>
+  ) : null;
   return (
     <div style={{ display: "grid", gap: 8, marginTop: 8, fontSize: 13 }}>
-      {v.contradicted?.length > 0 && <Note color="#f0a0a0" bg="#3a1518"><IconAlert size={15} /><span>Tu material dice lo <strong>contrario</strong> de esto:<ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>{v.contradicted.map((s, i) => <li key={i}>{s}</li>)}</ul></span></Note>}
-      {v.unsupported?.length > 0 && <Note color="#f0c674" bg="#3a2a12"><IconAlert size={15} /><span>No encontré respaldo en tu material para:<ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>{v.unsupported.map((s, i) => <li key={i}>{s}</li>)}</ul></span></Note>}
+      {v.contradicted?.length > 0 && <Note tone="bad"><IconAlert size={15} /><span>Tu material dice lo <strong>contrario</strong> de esto:<ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>{v.contradicted.map((s, i) => <li key={i}>{s}</li>)}</ul></span></Note>}
+      {v.unsupported?.length > 0 && <Note tone="warn"><IconAlert size={15} /><span>No encontré respaldo en tu material para:<ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>{v.unsupported.map((s, i) => <li key={i}>{s}</li>)}</ul></span></Note>}
     </div>
   );
 }

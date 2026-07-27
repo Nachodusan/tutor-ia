@@ -14,7 +14,7 @@ import {
 } from "@tutor-ia/rag";
 import { chatStream, type ChatMsg } from "./client";
 import { config } from "./config";
-import { TEACHING_SYSTEM, ABSTENTION, buildTeachingTurn } from "./prompts";
+import { TEACHING_SYSTEM, buildTeachingTurn } from "./prompts";
 import type { ChatMessage } from "./types";
 
 export interface TeachRequest {
@@ -24,14 +24,19 @@ export interface TeachRequest {
   history?: ChatMessage[];
   /** true → el estudiante no entendió; el tutor debe cambiar de estrategia. */
   struggling?: boolean;
+  /** Estudio dirigido por el plan: unidad/lección del tema elegido. */
+  unit?: number | null;
+  lesson?: number | null;
 }
 
 /** Etiquetas legibles de los tipos de pedagogía para el prompt. */
 const TYPE_LABEL: Record<string, string> = {
+  proposito: "Propósito / objetivo de aprendizaje",
   ideas_previas: "Activación de ideas previas",
   ambiente_aprendizaje: "Ambiente/actividad de aprendizaje",
   habilidad: "Habilidad a desarrollar",
-  evaluacion: "Cómo evaluar la comprensión",
+  errores_frecuentes: "Errores frecuentes del alumno (anticipalos)",
+  evaluacion: "Qué se evalúa en la prueba (foco de evaluación)",
   solucionario: "Respuesta esperada (solucionario)",
 };
 
@@ -77,7 +82,10 @@ function retrievalQuery(req: TeachRequest): string {
     .slice(-2)
     .map((m) => m.content)
     .join(" ");
-  return `${prevUser} ${req.question}`.trim();
+  // Un pedido vago ("dame otro ejemplo", "no entendí") NO aporta tema y diluye el
+  // retrieval; si ya hay tema en la charla, dejá que ése mande.
+  const q = prevUser && VAGUE_RE.test(req.question.trim()) ? "" : req.question;
+  return `${prevUser} ${q}`.trim();
 }
 
 /** Recupera el contexto de enseñanza (contenido + pedagogía) con gate. */
@@ -87,6 +95,8 @@ export async function getTeachingContext(req: TeachRequest): Promise<TeachingRes
       userId: req.userId,
       subjectId: req.subjectId,
       minRerankScore: config.rerankMinScore,
+      unit: req.unit ?? null,
+      lesson: req.lesson ?? null,
     });
     return { ctx, grounded: ctx.grounded };
   } catch (err) {
@@ -98,7 +108,7 @@ export async function getTeachingContext(req: TeachRequest): Promise<TeachingRes
 }
 
 export function teachingAbstention(): string {
-  return ABSTENTION;
+  return "Mmm, eso puntual no lo encuentro en tu material y no quiero tirarte un dato inventado. ¿Lo reformulás, o querés que veamos otro tema? También podés armar un plan de estudio o hacer una simulación de prueba. 😊";
 }
 
 // Mensajes SOCIALES (saludo, agradecimiento, despedida, afirmación). No son
@@ -122,6 +132,23 @@ export function socialReply(question: string, subjectName?: string): string | nu
   if (BYE_RE.test(q)) return "¡Chau! Volvé cuando quieras seguir estudiando. 👋";
   if (THANKS_RE.test(q)) return `¡Buenísimo! ¿Seguimos con otro tema${tema}, o querés que profundice en algo?`;
   return null;
+}
+
+// Pedido VAGO sin tema: "dame un ejemplo", "¿por qué es importante?", "explicá
+// mejor", "más", "no entendí"… Si llega como PRIMER mensaje (sin un tema en la
+// charla), el retrieval no tiene de qué agarrarse y el tutor se abstenía. En vez
+// de eso, pedimos amablemente el tema (nunca el cartel de abstención).
+const VAGUE_RE =
+  /^\s*(?:¿?\s*(?:por|para)\s*qu[ée]\s+(?:es\s+)?importante(?:\s+esto)?\??|(?:dame|da|quiero|pon[ée]me|tir[áa]me)\s+(?:un|otro)?\s*ejemplo(?:\s+concreto)?|otro\s+ejemplo|m[áa]s\s+ejemplos?|explic[áa](?:me)?\s+(?:mejor|de\s+nuevo|otra\s+vez|eso|m[áa]s|otra\s+forma)|no\s+entend[íi](?:\s+nada)?|no\s+s[ée]|otra\s+vez|de\s+nuevo|m[áa]s|ampli[áa](?:me)?|profundiz[áa])\s*[.!?]*\s*$/i;
+
+/** Si es un pedido vago SIN tema previo, devuelve un empujón conversacional para
+ *  que el alumno elija tema; null si hay contexto o la pregunta trae tema. */
+export function needsTopicReply(question: string, hasContext: boolean, subjectName?: string): string | null {
+  if (hasContext) return null;
+  const q = question.trim();
+  if (q.length > 90 || !VAGUE_RE.test(q)) return null;
+  const tema = subjectName ? ` de ${subjectName}` : "";
+  return `¡Dale! ¿Sobre qué tema${tema} querés que te ayude? Decime uno —o tocá un tema de tu plan— y te lo explico con un ejemplo. 😊`;
 }
 
 /** Cita legible del primer fragmento citable (para la UI). */
