@@ -1,94 +1,246 @@
 /**
- * BATCH de ingesta (Plan v3) — todos los libros de la básica, con roles tipados.
+ * BATCH de ingesta — guiado por el MANIFIESTO, no por regex sobre el nombre.
+ *
  * RESUMABLE: saltea documentos ya ingestados (status='ready'), así sobrevive
- * interrupciones y se puede re-correr. Robusto: un PDF que falla no tumba el batch.
+ * interrupciones y se puede re-correr.
  *
  * Uso:
- *   EVAL_USER_ID=... pnpm --filter @tutor-ia/eval batch-ingest [rootDir]
- *   BATCH_DRY=1 ... → solo clasifica y cuenta, sin extraer ni embeber.
+ *   EVAL_USER_ID=... pnpm --filter @tutor-ia/eval batch-ingest [rootDir] [manifestCsv]
+ *   BATCH_DRY=1 ... → valida y cuenta, sin extraer ni embeber.
+ *
+ * QUÉ CAMBIÓ Y POR QUÉ. Antes la clasificación era `PED_RE`/`CON_RE` sobre el
+ * nombre de archivo, y fallaba en silencio en las dos direcciones:
+ *   · `teacher´s_book_–_volumen_{1,2}` (inglés 1º y 2º medio) no matcheaba
+ *     `teacher.?s_guide` → 4 guías docentes desaparecieron sin un warning, y
+ *     esas materias figuraban como "sin GDD" aunque el archivo estaba en disco.
+ *   · `leo_primero_cuaderno_de_actividades` sí matcheaba `leo_primero` → 4
+ *     cuadernos de ejercicios entraron como contenido citable y contaminaron el
+ *     retrieval del alumno con actividades sin resolver.
+ * Ahora la verdad la fija el manifiesto y el disco tiene que coincidir con él
+ * EXACTAMENTE, o la corrida aborta antes de tocar la base.
+ *
+ * `tipo` (qué es) e `indexado` (si entra a la búsqueda) son campos separados a
+ * propósito: los ejercicios se registran con indexado=false en vez de tirarse,
+ * porque se van a usar para generar pruebas. Ahí será cambiar el flag y
+ * re-indexar, no volver a extraer y re-embeber todo el PDF.
  */
-import { readdir, stat } from "node:fs/promises";
-import { join, basename } from "node:path";
+import { join, resolve } from "node:path";
 import { getSql } from "@tutor-ia/db";
 import { ingestCurriculum, type CorpusKind } from "@tutor-ia/rag";
+import {
+  ManifestError,
+  assertCorpusMatchesManifest,
+  assertNombresVisibles,
+  gradeFor,
+  loadManifest,
+  subjectNameFor,
+  titleFor,
+  type ManifestRow,
+} from "./corpus-manifest";
 
-const ROOT = process.argv[2] ?? "/Users/dusan/Documents/libros/basica";
+const HERE = new URL(".", import.meta.url).pathname;
+const ROOT = process.argv[2] ?? "/Users/dusan/Documents/libros";
+const MANIFEST = process.argv[3] ?? resolve(HERE, "../corpus-manifest.csv");
 const uid = process.env.EVAL_USER_ID!;
 const DRY = process.env.BATCH_DRY === "1";
 
-const PED_RE = /gu[íi]a_did[áa]ctica|teacher.?s_guide/i;
-const CON_RE = /texto_del_estudiante|leo_primero|student.?s_book/i;
-
-/** Clasifica un PDF por nombre. Pedagogía se chequea PRIMERO (hay "GDD de leo_primero"). */
-function classify(fname: string): CorpusKind | null {
-  if (PED_RE.test(fname)) return "pedagogy";
-  if (CON_RE.test(fname)) return "content";
-  return null; // cuaderno, láminas, recortable, activity_book → fuera
+/** El corpus tipado de la base solo distingue contenido de pedagogía. Los
+ *  ejercicios no se indexan, así que no necesitan rol propio. */
+function corpusKind(row: ManifestRow): CorpusKind {
+  return row.tipo === "pedagogia" ? "pedagogy" : "content";
 }
 
-const GRADE_RE = /^(\d+)_/;
-// Capitaliza la 1ª letra de cada palabra (Unicode-safe; \b\w rompe con acentos).
-const prettySubject = (s: string) =>
-  s.split(/[_\s]+/).filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+/** Dos filas no pueden producir el mismo título: la segunda se perdería. */
+function assertTitulosUnicos(rows: ManifestRow[]): void {
+  const m = new Map<string, string[]>();
+  for (const r of rows.filter((x) => x.indexado)) {
+    const k = titleFor(r);
+    m.set(k, [...(m.get(k) ?? []), r.ruta]);
+  }
+  const dup = [...m].filter(([, v]) => v.length > 1);
+  if (dup.length) {
+    console.error(
+      `❌ ${dup.length} título(s) de documento colisionan: dos filas del manifiesto\n` +
+        `   producirían el mismo registro y una se perdería.\n\n` +
+        dup.map(([k, v]) => `     "${k}"\n${v.map((x) => `       · ${x}`).join("\n")}`).join("\n") +
+        `\n`,
+    );
+    process.exit(1);
+  }
+}
 
 async function main() {
-  if (!uid) { console.error("❌ Falta EVAL_USER_ID"); process.exit(2); }
+  if (!uid) {
+    console.error("❌ Falta EVAL_USER_ID.");
+    process.exit(2);
+  }
+
+  console.log(`\n📚 Ingesta guiada por manifiesto`);
+  console.log(`   corpus:     ${ROOT}`);
+  console.log(`   manifiesto: ${MANIFEST}\n`);
+
+  // 1) Cargar y validar el manifiesto (formato, tipos, rutas duplicadas).
+  // 2) REGLA DE ORO: disco ≡ manifiesto, o no se empieza.
+  // Las dos cosas ANTES de abrir la base: si el corpus no está descrito por
+  // completo, no se toca nada.
+  let rows: ManifestRow[];
+  try {
+    rows = await loadManifest(MANIFEST);
+    await assertCorpusMatchesManifest(ROOT, rows);
+    assertNombresVisibles(rows);
+  } catch (e) {
+    if (e instanceof ManifestError) {
+      console.error(`❌ ${e.message}\n`);
+      process.exit(1);
+    }
+    throw e;
+  }
+  assertTitulosUnicos(rows);
+
+  const pendientes = rows.filter((r) => r.verificar);
+  const aIndexar = rows.filter((r) => r.indexado);
+  const materias = new Map<string, ManifestRow[]>();
+  for (const r of aIndexar) {
+    const k = subjectNameFor(r);
+    const list = materias.get(k) ?? [];
+    list.push(r);
+    materias.set(k, list);
+  }
+
+  console.log(`✅ Manifiesto ≡ disco: ${rows.length} PDFs, sin diferencias.`);
+  console.log(
+    `   ${rows.filter((r) => r.tipo === "contenido").length} contenido · ` +
+      `${rows.filter((r) => r.tipo === "pedagogia").length} pedagogía · ` +
+      `${rows.filter((r) => r.tipo === "ejercicios").length} ejercicios`,
+  );
+  console.log(`   ${aIndexar.length} a indexar · ${rows.length - aIndexar.length} sin indexar`);
+  console.log(`   ${materias.size} materias`);
+  if (pendientes.length) {
+    console.log(`\n⚠️  ${pendientes.length} fila(s) con verificar=si (clasificación sin confirmar):`);
+    for (const r of pendientes) console.log(`     · ${r.ruta}`);
+  }
+  console.log("");
+
+  // El dry-run NO ESCRIBE en la base. Antes creaba filas en `subjects` aunque
+  // dijera "solo clasifica y cuenta": validar el manifiesto dejaba efectos.
+  // Sí LEE, para poder reportar el delta (qué se saltea, qué se ingiere, qué
+  // queda huérfano) sin tener que adivinarlo por fuera.
+  if (DRY) {
+    const sqlRO = getSql();
+    const esperados = new Map(rows.filter((r) => r.indexado).map((r) => [titleFor(r), r]));
+    const enBase = await sqlRO<{ title: string; status: string; n: number }[]>`
+      select d.title, d.status, count(c.id)::int as n
+      from documents d left join chunks c on c.document_id = d.id
+      where d.owner_user_id = ${uid} group by d.title, d.status`;
+    const listos = new Set(enBase.filter((d) => d.status === "ready").map((d) => d.title));
+    const enBaseTitulos = new Set(enBase.map((d) => d.title));
+    const seSaltean = [...esperados.keys()].filter((t) => listos.has(t));
+    const seIngieren = [...esperados.keys()].filter((t) => !listos.has(t));
+    const huerfanos = enBase.filter((d) => !esperados.has(d.title));
+
+    console.log(`${"═".repeat(60)}`);
+    console.log(`DELTA contra la base (solo lectura):`);
+    console.log(`   ya están (se saltean): ${seSaltean.length}`);
+    console.log(`   se ingieren:           ${seIngieren.length}`);
+    for (const t of seIngieren.slice(0, 30)) console.log(`      + ${t}`);
+    if (seIngieren.length > 30) console.log(`      … y ${seIngieren.length - 30} más`);
+    console.log(
+      `   huérfanos en la base:  ${huerfanos.length}` +
+        ` (${huerfanos.reduce((s, d) => s + d.n, 0)} chunks)`,
+    );
+    void enBaseTitulos;
+    console.log(`\nBATCH (dry-run) — ${aIndexar.length} filas indexables · ${materias.size} materias · base NO modificada`);
+    await sqlRO.end();
+    process.exit(0);
+  }
+
   const sql = getSql();
 
-  const grades = (await readdir(ROOT)).filter((g) => /_(b[áa]sico|medio)$/i.test(g)).sort();
+  // LA REGLA DE ORO, DEL LADO DE LA BASE. El resumable empareja por título; un
+  // documento que ya está en la base y NO corresponde a ninguna fila del
+  // manifiesto no se re-ingiere ni se borra: se queda indexado para siempre y el
+  // alumno lo sigue viendo. Si se dejara pasar, esta corrida DUPLICARÍA el
+  // corpus en vez de migrarlo.
+  //
+  // Hoy pasa por dos motivos reales: (a) 158 títulos viejos tienen la
+  // capitalización rota tras el acento ("MatemáTica", "IngléS") por un bug ya
+  // corregido en el armado del nombre, y (b) las materias "Sumo Primero Nº" y
+  // "Lengua 8vo" dejan de existir al colapsar en matemática.
+  //
+  // No borramos por cuenta propia: eso es decisión del dueño de los datos.
+  // Frenamos y lo decimos. INGEST_ALLOW_STALE=1 sigue igual, a sabiendas.
+  const esperados = new Set(rows.filter((r) => r.indexado).map(titleFor));
+  const enBase = await sql<{ title: string; n: number }[]>`
+    select d.title, count(c.id)::int as n
+    from documents d left join chunks c on c.document_id = d.id
+    where d.owner_user_id = ${uid} group by d.title`;
+  const huerfanos = enBase.filter((d) => !esperados.has(d.title));
+  if (huerfanos.length > 0 && process.env.INGEST_ALLOW_STALE !== "1") {
+    const chunks = huerfanos.reduce((s, d) => s + d.n, 0);
+    console.error(
+      `❌ Hay ${huerfanos.length} documento(s) en la base que el manifiesto ya no describe\n` +
+        `   (${chunks} chunks). Si se ingiere ahora, el corpus queda DUPLICADO: los\n` +
+        `   viejos siguen indexados y se suman los nuevos.\n\n` +
+        huerfanos.slice(0, 12).map((d) => `     · ${d.title}  (${d.n} chunks)`).join("\n") +
+        (huerfanos.length > 12 ? `\n     … y ${huerfanos.length - 12} más` : "") +
+        `\n\n   Decidí qué hacer con ellos (migrar o borrar) y volvé a correr.\n` +
+        `   Para ingerir igual, a sabiendas: INGEST_ALLOW_STALE=1\n`,
+    );
+    await sql.end();
+    process.exit(1);
+  }
+
   let done = 0, skipped = 0, failed = 0, totalChunks = 0;
   const t0 = Date.now();
 
-  for (const gradeDir of grades) {
-    const gradeNum = GRADE_RE.exec(gradeDir)?.[1];
-    const isMedio = /medio/i.test(gradeDir);
-    const grade = gradeNum ? `${gradeNum}${isMedio ? "M" : "B"}` : gradeDir;
-    const gradePath = join(ROOT, gradeDir);
-    for (const subjDir of (await readdir(gradePath)).sort()) {
-      const subjPath = join(gradePath, subjDir);
-      if (!(await stat(subjPath)).isDirectory()) continue;
-      const subjectArea = subjDir;
-      // " Medio" solo en media: mantiene estables los títulos de básica (resumable)
-      // y evita colisión de nombres entre "Matemática 1º" (básica) y media.
-      const subjectName = `${prettySubject(subjDir)} ${gradeNum ?? gradeDir}º${isMedio ? " Medio" : ""}`;
+  // Una materia por (curso × materia_canonica): `sumo_primero` colapsa dentro de
+  // matemática, así que el alumno ve UNA materia y no dos.
+  for (const [subjectName, filas] of [...materias].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const first = filas[0]!;
+    const grade = gradeFor(first);
+    const subjectArea = first.materiaCanonica;
 
-      const files = (await readdir(subjPath)).filter((f) => f.toLowerCase().endsWith(".pdf"));
-      const targets = files.map((f) => ({ f, kind: classify(f) })).filter((x) => x.kind);
-      if (targets.length === 0) continue;
+    let subjectId: string;
+    const found = await sql<{ id: string }[]>`
+      select id from subjects where user_id=${uid} and name=${subjectName} limit 1`;
+    if (found[0]) subjectId = found[0].id;
+    else {
+      const [ins] = await sql<{ id: string }[]>`
+        insert into subjects (user_id, name, description)
+        values (${uid}, ${subjectName}, 'Corpus MINEDUC — doble corpus') returning id`;
+      subjectId = ins!.id;
+    }
 
-      // Materia idempotente por nombre (una por grado×asignatura).
-      let subjectId: string;
-      const found = await sql<{ id: string }[]>`select id from subjects where user_id=${uid} and name=${subjectName} limit 1`;
-      if (found[0]) subjectId = found[0].id;
-      else {
-        const [ins] = await sql<{ id: string }[]>`
-          insert into subjects (user_id, name, description) values (${uid}, ${subjectName}, 'Básica — doble corpus') returning id`;
-        subjectId = ins!.id;
-      }
+    for (const row of filas) {
+      const title = titleFor(row);
+      const kind = corpusKind(row);
 
-      for (const { f, kind } of targets) {
-        const title = `${subjectName} — ${basename(f, ".pdf").replace(/_/g, " ")}`;
-        // Resumable: si ya está ready, saltear.
-        const existing = await sql<{ status: string }[]>`
-          select status from documents where owner_user_id=${uid} and title=${title} limit 1`;
-        if (existing[0]?.status === "ready") { skipped++; continue; }
+      const existing = await sql<{ status: string }[]>`
+        select status from documents where owner_user_id=${uid} and title=${title} limit 1`;
+      if (existing[0]?.status === "ready") { skipped++; continue; }
 
-        if (DRY) { console.log(`  [dry] ${grade}/${subjectArea} · ${kind} · ${f}`); done++; continue; }
-
-        // Documento (borra intento previo no-ready para reingesta limpia).
-        await sql`delete from documents where owner_user_id=${uid} and title=${title}`;
-        const [doc] = await sql<{ id: string }[]>`
-          insert into documents (owner_user_id, subject_id, title, source_type, kind, grade, subject_area, status)
-          values (${uid}, ${subjectId}, ${title}, 'pdf', ${kind}, ${grade}, ${subjectArea}, 'pending') returning id`;
-        const tt = Date.now();
-        try {
-          const { chunks } = await ingestCurriculum({ documentId: doc!.id, pdfPath: join(subjPath, f), kind: kind! });
-          totalChunks += chunks; done++;
-          console.log(`  ✅ ${grade}/${subjectArea} · ${kind} · ${basename(f)} → ${chunks} chunks (${((Date.now() - tt) / 1000).toFixed(0)}s)`);
-        } catch (e) {
-          failed++;
-          console.log(`  ❌ ${grade}/${subjectArea} · ${basename(f)} → ${e instanceof Error ? e.message : String(e)}`);
-        }
+      await sql`delete from documents where owner_user_id=${uid} and title=${title}`;
+      // storage_path AHORA se guarda: antes quedaba NULL y no había forma de ir
+      // de un chunk a su archivo fuente.
+      const [doc] = await sql<{ id: string }[]>`
+        insert into documents (owner_user_id, subject_id, title, source_type, storage_path, kind, grade, subject_area, status)
+        values (${uid}, ${subjectId}, ${title}, 'pdf', ${row.ruta}, ${kind}, ${grade}, ${subjectArea}, 'pending')
+        returning id`;
+      const tt = Date.now();
+      try {
+        const { chunks } = await ingestCurriculum({
+          documentId: doc!.id,
+          pdfPath: join(ROOT, row.ruta),
+          kind,
+        });
+        totalChunks += chunks;
+        done++;
+        console.log(
+          `  ✅ ${grade}/${subjectArea} · ${kind} · ${row.ruta.split("/").pop()} → ${chunks} chunks (${((Date.now() - tt) / 1000).toFixed(0)}s)`,
+        );
+      } catch (e) {
+        failed++;
+        console.log(`  ❌ ${grade}/${subjectArea} · ${row.ruta} → ${e instanceof Error ? e.message : String(e)}`);
       }
     }
   }
@@ -97,7 +249,7 @@ async function main() {
   console.log(`BATCH ${DRY ? "(dry-run) " : ""}— ${done} ingestados, ${skipped} saltados (ya ready), ${failed} fallidos`);
   console.log(`${totalChunks} chunks · ${((Date.now() - t0) / 60000).toFixed(1)} min`);
   await sql.end();
-  process.exit(0);
+  process.exit(failed > 0 ? 1 : 0);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

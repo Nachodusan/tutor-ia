@@ -107,6 +107,23 @@ export async function getTeachingContext(req: TeachRequest): Promise<TeachingRes
   }
 }
 
+/**
+ * El estudiante señala que NO entendió → el tutor cambia de estrategia en vez de
+ * repetir (activa el bloque de adaptatividad en `buildTeachingTurn`).
+ *
+ * Vive acá, no en la route, para que el golden set pueda ejercer EXACTAMENTE el
+ * mismo prompt que producción. Mientras estuvo duplicado en la route, el eval
+ * nunca activaba esta rama —la que el propio prompt declara "lo más importante"—
+ * y medía un turno que el alumno no recibe.
+ */
+export const STRUGGLE_RE =
+  /no (lo |la )?entend|no s[ée]\b|m[áa]s f[áa]cil|otra vez|otra forma|de nuevo|no me qued[óo] claro|no capt|no entiendo|repet[íi]|explic[áa].*(otra|de nuevo)/i;
+
+/** ¿El alumno está trabado? Único criterio, compartido por la route y el eval. */
+export function isStruggling(question: string): boolean {
+  return STRUGGLE_RE.test(question);
+}
+
 export function teachingAbstention(): string {
   return "Mmm, eso puntual no lo encuentro en tu material y no quiero tirarte un dato inventado. ¿Lo reformulás, o querés que veamos otro tema? También podés armar un plan de estudio o hacer una simulación de prueba. 😊";
 }

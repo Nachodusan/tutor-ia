@@ -48,10 +48,12 @@ export interface RawClaim {
   /**
    * Substring literal del material que la respalda. Vacío/omitido si el modelo
    * la declara como inferencia propia (no textual).
+   * Puede venir `null`: el modo estricto de Structured Outputs no admite campos
+   * opcionales, así que se piden siempre y se marcan nullables (ver CLAIMS_SCHEMA).
    */
-  quote?: string;
+  quote?: string | null;
   /** Índice del fragmento citado (1-based, como se numeran en el contexto). */
-  chunkIndex?: number;
+  chunkIndex?: number | null;
 }
 
 export interface VerifiedClaim extends RawClaim {
@@ -121,10 +123,14 @@ export const CLAIMS_SCHEMA = {
         type: "object",
         properties: {
           text: { type: "string" },
-          quote: { type: "string" },
-          chunkIndex: { type: "integer" },
+          // En strict mode NO existen los campos opcionales: van todos en
+          // "required" y la ausencia se expresa como null. El consumidor
+          // (verifyClaims) ya usa chequeos truthy, así que null se comporta
+          // igual que el `undefined` de antes.
+          quote: { type: ["string", "null"] },
+          chunkIndex: { type: ["integer", "null"] },
         },
-        required: ["text"],
+        required: ["text", "quote", "chunkIndex"],
         additionalProperties: false,
       },
     },

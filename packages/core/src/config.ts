@@ -12,6 +12,70 @@ export const config = {
    *  sin env override pega model-not-found. Ver HANDOFF §2. */
   llmModel: process.env.LLM_MODEL ?? "qwen2.5:7b",
 
+  /** LLM_MODEL crudo (sin default). Cada provider aplica el SUYO: si la variable
+   *  no está, Ollama usa "qwen2.5:7b" y DeepInfra su modelo remoto. */
+  llmModelEnv: process.env.LLM_MODEL?.trim() || undefined,
+
+  /**
+   * Base URL del proveedor compatible con OpenAI. El mismo modelo lo sirven
+   * varios (DeepInfra, Scaleway, Novita, Alibaba, Parasail, GMI…), así que
+   * apuntar a otro es cambiar esta variable, sin tocar código.
+   * OJO: el model ID NO es igual entre proveedores
+   *   Qwen/Qwen3.6-35B-A3B (DeepInfra) · qwen/qwen3.6-35b-a3b (Novita)
+   *   qwen/qwen3.6-35b-a3b:fp8 (Scaleway) · qwen3.6-35b-a3b (Alibaba)
+   * Al cambiar de proveedor hay que ajustar también LLM_MODEL.
+   */
+  llmBaseUrl:
+    process.env.LLM_BASE_URL ??
+    process.env.DEEPINFRA_BASE_URL ??
+    "https://api.deepinfra.com/v1/openai",
+
+  /**
+   * Razonamiento ("thinking") del modelo. Default OFF: con Qwen3.6 medimos
+   * 191 tokens de salida para 3 de respuesta útil (64x). Se manda SIEMPRE
+   * explícito, nunca se hereda el default del proveedor.
+   */
+  reasoning: (process.env.LLM_REASONING?.trim().toLowerCase() === "on"
+    ? "on"
+    : "off") as "on" | "off",
+
+  /**
+   * Escape hatch: lista de interruptores de razonamiento a mandar, separados
+   * por coma (chat_template_kwargs,reasoning_effort,reasoning,enable_thinking).
+   * Vacío = todos. Sirve si un proveedor estricto rechaza claves desconocidas.
+   */
+  reasoningParams: process.env.LLM_REASONING_PARAMS?.trim() || undefined,
+
+  /** Timeout del provider REMOTO. Local tiene los suyos (abajo). */
+  llmTimeoutMs: intEnv("LLM_TIMEOUT_MS", 60_000),
+
+  /** Streaming local: 0 = SIN timeout (comportamiento histórico de client.ts).
+   *  Un turno con el 7B recargando por keep_alive:0 llega a 2-3 min. */
+  ollamaStreamTimeoutMs: intEnv("OLLAMA_STREAM_TIMEOUT_MS", 0),
+
+  /** JSON local: 180s, como el LLM_JSON_TIMEOUT_MS histórico. */
+  ollamaJsonTimeoutMs: intEnv("LLM_JSON_TIMEOUT_MS", 180_000),
+
+  /** Reintentos (además del intento inicial). Solo 429/5xx; nunca otros 4xx. */
+  llmMaxRetries: intEnv("LLM_MAX_RETRIES", 2),
+
+  /**
+   * Tope de tokens de SALIDA por llamada. Explícito a propósito: sin esto, una
+   * API paga puede generar sin límite y la factura se vuelve impredecible.
+   * Los call sites que ya pasan su propio maxTokens (900/1400) mandan sobre esto.
+   */
+  maxTokens: intEnv("LLM_MAX_TOKENS", 2048),
+
+  /** Semilla (best-effort en ambos proveedores). Ayuda a reproducir corridas. */
+  seed: process.env.LLM_SEED != null ? intEnv("LLM_SEED", 0) : undefined,
+
+  /**
+   * TOPE DE GASTO: tokens acumulados por corrida. Al superarlo, la próxima
+   * llamada aborta con LLMError kind="budget_exceeded". 0 = sin límite.
+   * Pensado para el golden set (133 preguntas × 2 llamadas × reintentos).
+   */
+  maxTokensPerRun: intEnv("LLM_MAX_TOKENS_PER_RUN", 0),
+
   /**
    * Temperatura baja = respuestas deterministas y conservadoras.
    * 0.1 hace que el modelo se ciña al material y no "improvise".

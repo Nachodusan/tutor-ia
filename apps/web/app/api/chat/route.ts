@@ -7,6 +7,10 @@ import {
   needsTopicReply,
   verifyAnswerA3,
   RERANKER_DOWN,
+  isStruggling,
+  config,
+  logDecision,
+  looksLikeSelfAbstention,
 } from "@tutor-ia/core";
 import { getCurrentUserId } from "@/lib/auth";
 
@@ -15,9 +19,11 @@ export const runtime = "nodejs";
 // superar los 60s en respuestas largas.
 export const maxDuration = 120;
 
-// El estudiante señala que no entendió → el tutor cambia de estrategia.
-const STRUGGLE_RE =
-  /no (lo |la )?entend|no s[ée]\b|m[áa]s f[áa]cil|otra vez|otra forma|de nuevo|no me qued[óo] claro|no capt|no entiendo|repet[íi]|explic[áa].*(otra|de nuevo)/i;
+/** `ctx.pedagogy` viene AGRUPADO por tipo (proposito, evaluacion, …), no plano. */
+const countPedagogy = (p: Record<string, unknown[]> | null | undefined): number =>
+  p ? Object.values(p).reduce((n, arr) => n + (arr?.length ?? 0), 0) : 0;
+// STRUGGLE_RE / isStruggling viven en core: el golden set tiene que activar la
+// MISMA rama adaptativa del prompt que activa el chat.
 
 /**
  * POST /api/chat — tutor FACILITADOR (Plan v3).
@@ -29,6 +35,7 @@ const STRUGGLE_RE =
  *  - Frame final "\x1e{verification}\n" — verificación NLI por oración.
  */
 export async function POST(req: Request) {
+  const t0 = Date.now();
   const userId = await getCurrentUserId(req);
   const body = (await req.json()) as {
     question?: string;
@@ -46,10 +53,22 @@ export async function POST(req: Request) {
   // ejemplo" como primer mensaje): responder conversacional, sin gate ni
   // abstención. Evita el "Fuera de tu material" cuando el retrieval no tiene
   // de qué agarrarse.
-  const conversational =
-    socialReply(body.question, body.subjectName ?? undefined) ??
-    needsTopicReply(body.question, (body.history?.length ?? 0) > 0, body.subjectName ?? undefined);
+  // Se evalúan por separado SOLO para poder distinguirlos en el log: el `??`
+  // colapsaba las dos causas en una y no se podía saber cuál de los dos regex
+  // se estaba comiendo preguntas reales. Misma semántica que antes.
+  const social = socialReply(body.question, body.subjectName ?? undefined);
+  const vague = social
+    ? null
+    : needsTopicReply(body.question, (body.history?.length ?? 0) > 0, body.subjectName ?? undefined);
+  const conversational = social ?? vague;
   if (conversational) {
+    logDecision({
+      route: "chat",
+      abstained: true,
+      cause: social ? "social" : "vague",
+      chars: conversational.length,
+      ms: Date.now() - t0,
+    });
     const enc = new TextEncoder();
     const s = new ReadableStream({
       start(controller) {
@@ -66,7 +85,7 @@ export async function POST(req: Request) {
     subjectId: body.subjectId ?? null,
     question: body.question,
     history: body.history ?? [],
-    struggling: STRUGGLE_RE.test(body.question),
+    struggling: isStruggling(body.question),
     unit: body.unit ?? null,
     lesson: body.lesson ?? null,
   };
@@ -77,6 +96,13 @@ export async function POST(req: Request) {
   } catch {
     // Fallo de retrieval (p. ej. reranker ocupado/timeout): NO dejamos la
     // burbuja vacía; respondemos con un mensaje amable y reintentable.
+    logDecision({
+      route: "chat",
+      abstained: true,
+      cause: "retrieval_error",
+      directed: teachReq.unit != null,
+      ms: Date.now() - t0,
+    });
     const enc = new TextEncoder();
     const s = new ReadableStream({
       start(controller) {
@@ -103,6 +129,22 @@ export async function POST(req: Request) {
           controller.enqueue(
             encoder.encode(res.rerankerDown ? RERANKER_DOWN : teachingAbstention()),
           );
+          // El gate cortó. `topScore` existe aun sin material: es el mejor
+          // candidato que NO llegó al umbral — sirve para ver si quedó cerca
+          // (0.16 vs 0.18 = umbral mal calibrado) o lejísimos (0.002 = la
+          // materia no tiene material, causa completamente distinta).
+          logDecision({
+            route: "chat",
+            abstained: true,
+            cause: res.rerankerDown ? "reranker_down" : "gate",
+            topScore: res.ctx?.topScore ?? null,
+            threshold: config.rerankMinScore,
+            citableSource: res.ctx?.citableSource ?? null,
+            nCitable: res.ctx?.citable?.length ?? 0,
+            nPedagogy: countPedagogy(res.ctx?.pedagogy as never),
+            directed: teachReq.unit != null,
+            ms: Date.now() - t0,
+          });
         } else {
           // 2) Explicación del facilitador (el prompt lleva el flujo + adaptatividad).
           let full = "";
@@ -115,10 +157,38 @@ export async function POST(req: Request) {
           controller.enqueue(
             encoder.encode("\n\x1e" + JSON.stringify({ verification: v }) + "\n"),
           );
+          // TUVO material y llamó al modelo. `selfAbstain` es la señal decisiva:
+          // si sale true, el gate hizo bien su trabajo y el que se abstuvo fue
+          // el PROMPT. Es lo único que separa "umbral mal calibrado" de
+          // "instrucciones demasiado defensivas".
+          logDecision({
+            route: "chat",
+            abstained: false,
+            cause: "answered",
+            topScore: res.ctx.topScore ?? null,
+            threshold: config.rerankMinScore,
+            citableSource: res.ctx.citableSource ?? null,
+            nCitable: res.ctx.citable.length,
+            nPedagogy: countPedagogy(res.ctx.pedagogy as never),
+            directed: teachReq.unit != null,
+            selfAbstain: looksLikeSelfAbstention(full),
+            drift: v?.grounded === false,
+            nliUnavailable: v?.unavailable === true,
+            nliChecked: v?.checked ?? null,
+            chars: full.length,
+            ms: Date.now() - t0,
+          });
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Error del modelo";
         controller.enqueue(encoder.encode(`\n[error] ${msg}`));
+        logDecision({
+          route: "chat",
+          abstained: true,
+          cause: "model_error",
+          directed: teachReq.unit != null,
+          ms: Date.now() - t0,
+        });
       } finally {
         controller.close();
       }

@@ -10,10 +10,10 @@ dist/
 __pycache__/
 nohup.out
 
-# Env
+# Env — todo .env queda fuera; solo se trackea el ejemplo (sin secretos).
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # OS
 .DS_Store
@@ -23,3 +23,9 @@ nohup.out
 
 # Modelos de voz (descargados)
 packages/ingest-py/whisper-models/
+
+# Respaldos de la base antes de migraciones (datos, no fuente)
+backups/
+
+# Salida de una corrida del eval, no fuente (se reescribe en cada run)
+eval-results.json

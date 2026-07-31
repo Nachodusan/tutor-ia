@@ -78,8 +78,12 @@ export async function POST(req: Request) {
           properties: {
             topic: { type: "string" },
             question: { type: "string" },
-            options: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 },
-            correct: { type: "integer", minimum: 0, maximum: 3 },
+            // Sin minItems/maxItems/minimum/maximum: el modo estricto de
+            // Structured Outputs no los soporta. No se pierde garantía —
+            // más abajo se descarta la pregunta si no trae 4 opciones y se
+            // clampea `correct` al rango 0-3.
+            options: { type: "array", items: { type: "string" } },
+            correct: { type: "integer" },
             explain: { type: "string" },
           },
         },

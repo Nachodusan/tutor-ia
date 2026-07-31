@@ -10,8 +10,46 @@ interface Profile { name: string; grade: string; priority: string[] }
 interface PlanItem { n: number; title: string; focus: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
 interface TestItem { n: number; topic: string; question: string; options: string[]; correct: number; explain: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
 
+// Un tema que el alumno falló en la prueba. Se guarda con unit/lesson para que
+// "Reforzar" pueda disparar ESTUDIO DIRIGIDO (sin eso el retrieval se abstiene).
+interface WeakTopic { topic: string; unit: number | null; lesson: number | null; misses: number; lastAt: number }
+interface SubjectProgress { weak: WeakTopic[]; lastScore?: { score: number; total: number; at: number } }
+/** Lo que el panel muestra de cada materia. Se arma leyendo las dos claves. */
+interface SubjectStats { planDone: number; planTotal: number; weak: WeakTopic[]; lastScore?: { score: number; total: number; at: number } }
+
 const PROFILE_KEY = "tutor_profile";
 const planKey = (id: string) => `tutor_plan_${id}`;
+const progressKey = (id: string) => `tutor_progress_${id}`;
+/** Tope de temas a reforzar en el panel: una lista larga desmotiva y empuja el
+ *  resto del panel fuera de pantalla. Los que sobran se cuentan abajo. */
+const REVIEW_MAX = 6;
+
+function readProgress(id: string): SubjectProgress {
+  try {
+    const raw = localStorage.getItem(progressKey(id));
+    if (!raw) return { weak: [] };
+    const j = JSON.parse(raw) as SubjectProgress;
+    return { weak: Array.isArray(j.weak) ? j.weak : [], lastScore: j.lastScore };
+  } catch { return { weak: [] }; }
+}
+
+/** Progreso del plan + errores pendientes de una materia. Solo cliente. */
+function readStats(id: string): SubjectStats {
+  let planDone = 0, planTotal = 0;
+  try {
+    const raw = localStorage.getItem(planKey(id));
+    if (raw) {
+      const j = JSON.parse(raw) as { items?: PlanItem[]; done?: number[] };
+      planTotal = j.items?.length ?? 0;
+      // Se cuentan solo los "listos" que siguen existiendo en el plan: si el
+      // alumno regenera el plan, un número viejo no debe inflar el progreso.
+      const ns = new Set((j.items ?? []).map((i) => i.n));
+      planDone = (j.done ?? []).filter((n) => ns.has(n)).length;
+    }
+  } catch { /* */ }
+  const p = readProgress(id);
+  return { planDone, planTotal, weak: p.weak, lastScore: p.lastScore };
+}
 const stripOptLetter = (o: string) => o.replace(/^\s*[A-Da-d1-4]\s*[)\.\-:]\s+/, "").trim();
 
 // ── BLOQUES & AURORA · tokens (claro, 100% fuentes de sistema, offline) ──
@@ -131,6 +169,7 @@ export default function Home() {
   const [testSubmitted, setTestSubmitted] = useState(false);
   const [testOpen, setTestOpen] = useState(false);
   const [testLoading, setTestLoading] = useState(false);
+  const [stats, setStats] = useState<Record<string, SubjectStats>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -162,6 +201,28 @@ export default function Home() {
 
   const subject = subjects.find((s) => s.id === subjectId);
   const grade = profile?.grade ?? "";
+
+  // Estadísticas del panel. Se releen al volver al panel (subjectId="") porque
+  // el alumno pudo marcar lecciones o rendir una prueba mientras estaba adentro.
+  useEffect(() => {
+    if (subjectId || !subjects.length) return;
+    const next: Record<string, SubjectStats> = {};
+    for (const s of subjects) next[s.id] = readStats(s.id);
+    setStats(next);
+  }, [subjectId, subjects]);
+
+  /**
+   * "Reforzar" desde el panel: abre la materia Y arranca el estudio dirigido.
+   * El id va EXPLÍCITO a send() porque `setSubjectId` no se ve en este tick.
+   * (Se probó con un efecto disparado por estado: en dev StrictMode lo ejecuta
+   * dos veces y mandaba la pregunta duplicada.)
+   */
+  function reinforce(id: string, w: WeakTopic) {
+    setSubjectId(id);
+    setMessages([]);
+    send(`Quiero repasar: ${w.topic}. Explicámelo simple, desde el principio y con un ejemplo.`,
+      { unit: w.unit, lesson: w.lesson }, id);
+  }
 
   function savePlan(items: PlanItem[] | null, done: number[]) {
     if (!subjectId) return;
@@ -208,6 +269,31 @@ export default function Home() {
     setTestOpen(false);
     send(`Quiero repasar: ${it.topic}. Explicámelo simple, desde el principio y con un ejemplo.`, { unit: it.unit, lesson: it.lesson });
   }
+  /**
+   * Corrige y GUARDA en qué falló. Un tema acertado sale de la lista: así el
+   * "para reforzar" del panel se vacía solo cuando el alumno lo domina, en vez
+   * de acumular errores viejos para siempre.
+   */
+  function submitTest() {
+    setTestSubmitted(true);
+    if (!test || !subjectId) return;
+    try {
+      const prev = readProgress(subjectId);
+      const weak = [...prev.weak];
+      let score = 0;
+      for (const it of test) {
+        const ok = testAns[it.n] === it.correct;
+        if (ok) score++;
+        const i = weak.findIndex((w) => w.topic === it.topic);
+        if (ok) { if (i >= 0) weak.splice(i, 1); continue; }
+        if (i >= 0) weak[i] = { ...weak[i], misses: weak[i].misses + 1, lastAt: Date.now(), unit: it.unit, lesson: it.lesson };
+        else weak.push({ topic: it.topic, unit: it.unit, lesson: it.lesson, misses: 1, lastAt: Date.now() });
+      }
+      const next: SubjectProgress = { weak, lastScore: { score, total: test.length, at: Date.now() } };
+      localStorage.setItem(progressKey(subjectId), JSON.stringify(next));
+      setStats((s) => ({ ...s, [subjectId]: { ...readStats(subjectId) } }));
+    } catch { /* */ }
+  }
 
   function saveProfile(p: Profile) { setProfile(p); try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch { /* */ } }
   function logout() { if (callRef.current) endCall(); setSubjectId(""); setMessages([]); setProfile(null); try { localStorage.removeItem(PROFILE_KEY); } catch { /* */ } }
@@ -248,16 +334,27 @@ export default function Home() {
     });
   }
 
-  async function send(text?: string, topic?: { unit: number | null; lesson: number | null }): Promise<string> {
+  /**
+   * `forSubjectId` sirve para arrancar en una materia que se acaba de elegir en
+   * el mismo tick (Reforzar desde el panel): el estado todavía no se actualizó.
+   * Cuando viene, la conversación arranca limpia — el historial es de otra materia.
+   */
+  async function send(
+    text?: string,
+    topic?: { unit: number | null; lesson: number | null },
+    forSubjectId?: string,
+  ): Promise<string> {
     const q = (text ?? question).trim();
     if (!q || loading) return "";
     setLoading(true); setQuestion("");
-    const history = messagesRef.current.map((m) => ({ role: m.role, content: m.content }));
+    const sid = forSubjectId ?? subjectId;
+    const subj = forSubjectId ? subjects.find((s) => s.id === forSubjectId) : subject;
+    const history = forSubjectId ? [] : messagesRef.current.map((m) => ({ role: m.role, content: m.content }));
     setMessages((m) => [...m, { role: "user", content: q }, { role: "assistant", content: "", grounded: true, streaming: true }]);
     const patch = (p: Partial<Msg>) => setMessages((m) => { const c = [...m]; c[c.length - 1] = { ...c[c.length - 1], ...p } as Msg; return c; });
     let displayed = "";
     try {
-      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, subjectId: subjectId || null, subjectName: subject ? subjectLabel(subject) : null, history, ...(topic ? { unit: topic.unit, lesson: topic.lesson } : {}) }) });
+      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, subjectId: sid || null, subjectName: subj ? subjectLabel(subj) : null, history, ...(topic ? { unit: topic.unit, lesson: topic.lesson } : {}) }) });
       if (!res.body) { patch({ content: "Error: sin respuesta.", streaming: false }); return ""; }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -385,7 +482,9 @@ export default function Home() {
       <Dashboard
         profile={profile}
         subjects={subjects}
+        stats={stats}
         onStudy={(id) => { setSubjectId(id); setMessages([]); }}
+        onReinforce={reinforce}
         onEdit={() => setEditing(true)}
         onLogout={logout}
       />
@@ -423,7 +522,7 @@ export default function Home() {
       <div ref={scrollRef} style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "24px 16px 8px" }}>
           {testOpen
-            ? <TestView items={test} loading={testLoading} answers={testAns} submitted={testSubmitted} subject={subject} onAnswer={answerTest} onSubmit={() => setTestSubmitted(true)} onRetake={generateTest} onStudy={studyWeak} onClose={() => setTestOpen(false)} />
+            ? <TestView items={test} loading={testLoading} answers={testAns} submitted={testSubmitted} subject={subject} onAnswer={answerTest} onSubmit={submitTest} onRetake={generateTest} onStudy={studyWeak} onClose={() => setTestOpen(false)} />
             : planOpen && plan && plan.length > 0
               ? <PlanView items={plan} done={planDone} subject={subject} loading={planLoading} onStart={startTopic} onToggle={toggleDone} onRegen={generatePlan} />
               : messages.length === 0
@@ -637,9 +736,14 @@ function BigBtn({ children, onClick, disabled }: { children: React.ReactNode; on
 }
 
 // --- Panel del alumno (mundo Bloques) ---
-function Dashboard({ profile, subjects, onStudy, onEdit, onLogout }: { profile: Profile; subjects: Subject[]; onStudy: (id: string) => void; onEdit: () => void; onLogout: () => void }) {
+function Dashboard({ profile, subjects, stats, onStudy, onReinforce, onEdit, onLogout }: { profile: Profile; subjects: Subject[]; stats: Record<string, SubjectStats>; onStudy: (id: string) => void; onReinforce: (id: string, w: WeakTopic) => void; onEdit: () => void; onLogout: () => void }) {
   const prio = profile.priority.map((id) => subjects.find((s) => s.id === id)).filter(Boolean) as Subject[];
   const others = subjects.filter((s) => s.grade === profile.grade && !profile.priority.includes(s.id)).sort((a, b) => subjectLabel(a).localeCompare(subjectLabel(b)));
+  // Para reforzar: de TODAS las materias (no solo las prioritarias — el alumno
+  // pudo rendir una prueba en cualquiera). Lo más fallado y reciente primero.
+  const toReview = subjects
+    .flatMap((s) => (stats[s.id]?.weak ?? []).map((w) => ({ s, w })))
+    .sort((a, b) => b.w.misses - a.w.misses || b.w.lastAt - a.w.lastAt);
   return (
     <div style={{ minHeight: "100dvh", overflowY: "auto", background: C.bg, color: C.text, fontFamily: FONT.sans }}>
       <div style={{ maxWidth: 820, margin: "0 auto", padding: "26px 18px 60px" }}>
@@ -655,9 +759,26 @@ function Dashboard({ profile, subjects, onStudy, onEdit, onLogout }: { profile: 
 
         <SectionTitle icon={<IconStar size={15} />}>Tus materias</SectionTitle>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 16, marginBottom: 36 }}>
-          {prio.map((s) => <SubjectCard key={s.id} s={s} onClick={() => onStudy(s.id)} />)}
+          {prio.map((s) => <SubjectCard key={s.id} s={s} st={stats[s.id]} onClick={() => onStudy(s.id)} />)}
           {prio.length === 0 && <p style={{ color: C.dim, fontSize: 14 }}>No elegiste materias prioritarias. Tocá el engranaje para editarlas.</p>}
         </div>
+
+        {toReview.length > 0 && (
+          <>
+            <SectionTitle icon={<IconAlert size={15} />}>Para reforzar</SectionTitle>
+            <p style={{ color: C.dim, fontSize: 13.5, marginTop: -6, marginBottom: 14, lineHeight: 1.5 }}>
+              Temas que fallaste en las pruebas. Tocá uno y te lo explico de nuevo desde el principio.
+            </p>
+            <div style={{ display: "grid", gap: 10, marginBottom: toReview.length > REVIEW_MAX ? 12 : 36 }}>
+              {toReview.slice(0, REVIEW_MAX).map(({ s, w }) => <WeakCard key={`${s.id}-${w.topic}`} s={s} w={w} onClick={() => onReinforce(s.id, w)} />)}
+            </div>
+            {toReview.length > REVIEW_MAX && (
+              <p style={{ color: C.dim, fontSize: 13, marginBottom: 36 }}>
+                Y {toReview.length - REVIEW_MAX} tema{toReview.length - REVIEW_MAX === 1 ? "" : "s"} más. Reforzá estos primero.
+              </p>
+            )}
+          </>
+        )}
 
         {others.length > 0 && (
           <>
@@ -677,10 +798,14 @@ function SectionTitle({ icon, children }: { icon: React.ReactNode; children: Rea
 }
 
 // Tarjeta de materia = bloque con borde de tinta + sombra dura del color de su materia
-function SubjectCard({ s, onClick }: { s: Subject; onClick: () => void }) {
+function SubjectCard({ s, st, onClick }: { s: Subject; st?: SubjectStats; onClick: () => void }) {
   const hasGuide = Number(s.pedagogy_chunks) > 0;
   const col = subjectColor(s);
   const onCol = isLight(col) ? C.ink : "#fff";
+  const total = st?.planTotal ?? 0;
+  const done = st?.planDone ?? 0;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const weak = st?.weak.length ?? 0;
   return (
     <button onClick={onClick}
       style={{ position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", gap: 10, textAlign: "left", background: C.panel, color: C.text, border: `2px solid ${C.ink}`, borderRadius: 16, padding: "16px", cursor: "pointer", boxShadow: HARD(col), transition: "transform .13s, box-shadow .13s" }}
@@ -691,7 +816,68 @@ function SubjectCard({ s, onClick }: { s: Subject; onClick: () => void }) {
         <span style={{ width: 34, height: 34, borderRadius: 10, background: col, color: onCol, display: "grid", placeItems: "center" }}><IconBook size={20} /></span>
       </div>
       <div style={{ fontFamily: FONT.round, fontSize: 17, fontWeight: 700, lineHeight: 1.25 }}>{subjectLabel(s)}</div>
-      <div style={{ color: C.dim, fontSize: 12.5 }}>{hasGuide ? "Con guía docente" : "Material disponible"}</div>
+
+      {total > 0 ? (
+        <div style={{ position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+            <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, color: C.text }}>
+              {done} de {total} {total === 1 ? "lección" : "lecciones"}
+            </span>
+            <span style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 12.5, color: done === total ? C.okTx : C.dim }}>
+              {done === total ? "¡Completo!" : `${pct}%`}
+            </span>
+          </div>
+          {/* Barra: riel con borde de tinta (Bloques), relleno del color de la materia. */}
+          <div style={{ height: 9, borderRadius: 999, background: C.panel2, border: `1.5px solid ${C.ink}`, overflow: "hidden" }}>
+            <div style={{ width: `${pct}%`, height: "100%", background: done === total ? C.ok : col, transition: "width .25s" }} />
+          </div>
+        </div>
+      ) : (
+        <div style={{ color: C.dim, fontSize: 12.5 }}>{hasGuide ? "Con guía docente" : "Material disponible"}</div>
+      )}
+
+      {(weak > 0 || st?.lastScore) && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, position: "relative" }}>
+          {weak > 0 && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: C.badBg, color: C.badTx, border: `1.5px solid ${C.badTx}`, borderRadius: 999, padding: "2px 8px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
+              <IconAlert size={11} /> {weak} para reforzar
+            </span>
+          )}
+          {st?.lastScore && (() => {
+            // El color sigue a la nota: un 0/6 en verde leía como logro.
+            const r = st.lastScore.total > 0 ? st.lastScore.score / st.lastScore.total : 0;
+            const t = r >= 0.6 ? { bg: C.okBg, tx: C.okTx } : r >= 0.4 ? { bg: C.warnBg, tx: C.warnTx } : { bg: C.badBg, tx: C.badTx };
+            return (
+              <span style={{ background: t.bg, color: t.tx, border: `1.5px solid ${t.tx}`, borderRadius: 999, padding: "2px 8px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
+                Prueba: {st.lastScore.score}/{st.lastScore.total}
+              </span>
+            );
+          })()}
+        </div>
+      )}
+    </button>
+  );
+}
+
+// Tema fallado en una prueba → toca y arranca ESTUDIO DIRIGIDO de esa lección.
+function WeakCard({ s, w, onClick }: { s: Subject; w: WeakTopic; onClick: () => void }) {
+  const col = subjectColor(s);
+  return (
+    <button onClick={onClick}
+      style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", width: "100%", background: C.panel, color: C.text, border: `2px solid ${C.ink}`, borderRadius: 14, padding: "12px 14px", cursor: "pointer", transition: "transform .13s, box-shadow .13s" }}
+      onMouseEnter={(e) => { e.currentTarget.style.transform = "translate(-2px,-2px)"; e.currentTarget.style.boxShadow = HARD(col); }}
+      onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
+      <span style={{ width: 10, height: 34, flexShrink: 0, borderRadius: 4, background: col }} />
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 700, fontSize: 15, lineHeight: 1.3 }}>{w.topic}</span>
+        <span style={{ display: "block", color: C.dim, fontSize: 12.5, marginTop: 2 }}>
+          {subjectLabel(s)}
+          {w.misses > 1 && <> · fallado {w.misses} veces</>}
+        </span>
+      </span>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0, background: CTA, color: "#fff", border: `2px solid ${C.ink}`, borderRadius: 999, padding: "6px 12px", fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5 }}>
+        Reforzar <IconArrow size={13} />
+      </span>
     </button>
   );
 }

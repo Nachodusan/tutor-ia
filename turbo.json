@@ -1,9 +1,58 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "DATABASE_URL",
+    "DEEPINFRA_API_KEY",
+    "DEEPINFRA_BASE_URL",
+    "DEV_USER_ID",
+    "EMBEDDING_MODEL",
+    "ENTAIL_MIN_SCORE",
+    "EVAL_USER_ID",
+    "LLM_API_KEY",
+    "LLM_BASE_URL",
+    "LLM_JSON_TIMEOUT_MS",
+    "LLM_LOG",
+    "LLM_MAX_RETRIES",
+    "LLM_MAX_TOKENS",
+    "LLM_MAX_TOKENS_PER_RUN",
+    "LLM_MODEL",
+    "LLM_NUM_CTX",
+    "LLM_PROVIDER",
+    "LLM_REASONING",
+    "LLM_REASONING_PARAMS",
+    "LLM_SEED",
+    "LLM_TEMPERATURE",
+    "LLM_TIMEOUT_MS",
+    "LLM_TOP_P",
+    "LLM_VOICE_MODEL",
+    "NLI_MIN_CONTRA",
+    "NLI_MIN_ENTAIL",
+    "NLI_TIMEOUT_MS",
+    "OLLAMA_BASE_URL",
+    "OLLAMA_STREAM_TIMEOUT_MS",
+    "RAG_ENABLE_VERIFIER",
+    "RAG_FALSE_PREMISE_CHECK",
+    "RAG_MIN_SIMILARITY",
+    "RERANK_BASE_URL",
+    "RERANK_MIN_SCORE",
+    "RERANK_TIMEOUT_MS",
+    "TTS_VOICE",
+    "WHISPER_BIN",
+    "WHISPER_MODEL"
+  ],
+  "globalDependencies": [
+    ".env"
+  ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**"
+      ]
     },
     "dev": {
       "cache": false,
@@ -11,7 +60,9 @@
     },
     "lint": {},
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     }
   }
 }

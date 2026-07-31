@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tutor-ia/rag": "workspace:*"
+    "@tutor-ia/rag": "workspace:*",
+    "openai": "^7.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",

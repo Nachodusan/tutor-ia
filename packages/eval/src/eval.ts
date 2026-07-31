@@ -26,14 +26,19 @@ import { fileURLToPath } from "node:url";
 import {
   CLAIMS_SCHEMA,
   TUTOR_SYSTEM,
-  buildTutorUserTurn,
-  chatText,
   chatJSON,
-  getTutorContext,
+  config,
+  describeActiveLLM,
+  formatUsageTotals,
+  getTeachingContext,
+  getUsageTotals,
+  isStruggling,
+  logDecision,
+  looksLikeSelfAbstention,
+  streamTeaching,
   verifyClaims,
   verifyAnswerA3,
-  checkFalsePremise,
-  buildFalsePremiseDirective,
+  type DecisionCause,
   type RawClaim,
 } from "@tutor-ia/core";
 import { entails } from "@tutor-ia/rag";
@@ -147,6 +152,18 @@ const ENTAIL_MIN = Number(process.env.EVAL_ENTAIL_MIN ?? "0.5");
 export interface QResult extends PerQuestionResult {
   /** el LLM falló/timeout al verificar (no cuenta para hallucinationRate). */
   errored: boolean;
+  /** Causa del corte (decision-log): "gate" | "answered" | "reranker_down"… */
+  cause: DecisionCause;
+  /** Score del reranker del mejor citable (el que se compara con el umbral). */
+  topScore: number;
+  /** "content" | "pedagogy" | "none" — de dónde salió el material citable. */
+  citableSource: string;
+  /** El modelo TUVO material y aun así se abstuvo solo (culpa del prompt). */
+  selfAbstained: boolean;
+  /** ms de la pregunta completa (retrieval + generación + verificación del eval). */
+  ms: number;
+  /** ms COMPARABLES con producción: retrieval + generación, sin el verificador. */
+  msProd: number;
   /** Baseline A2-solo (string-match): alucinación ANTES del entailment A3. */
   hallucinatedA2Only: boolean;
   /** Veredicto del verificador de PRODUCCIÓN (verify.ts) sobre esta respuesta. */
@@ -160,11 +177,28 @@ async function runQuestion(
   userId: string,
   subjectId: string | null,
 ): Promise<QResult> {
-  // 1) RETRIEVAL + GATE (rápido, sin LLM): base de recall/precisión/abstención.
-  const ctx = await getTutorContext({ userId, subjectId, question: gq.q });
-  const retrievedIds = ctx.chunks.map((c) => c.chunkId);
-  const abstained = !ctx.grounded;
+  const t0 = Date.now();
+  // 1) RETRIEVAL + GATE — el MISMO de producción (`getTeachingContext`, corpus
+  //    dual TE+GDD con fallback), no el legacy `getTutorContext` de un solo
+  //    corpus. Antes el golden set medía un pipeline que el alumno no toca.
+  // `struggling` se calcula con el MISMO criterio que la route (isStruggling,
+  // exportado por core). Sin esto el eval nunca ejercía la rama adaptativa del
+  // prompt —la que TEACHING_SYSTEM declara "lo más importante"— y medía un turno
+  // distinto del que recibe el alumno.
+  const teachReq = {
+    userId,
+    subjectId,
+    question: gq.q,
+    history: [],
+    struggling: isStruggling(gq.q),
+  };
+  const res = await getTeachingContext(teachReq);
+  const ctx = res.ctx;
+  const retrievedIds = res.grounded ? ctx.citable.map((c) => c.chunkId) : [];
+  const abstained = !res.grounded;
   const expectedIds = gq.expect_chunks ?? [];
+  const topScore = ctx?.topScore ?? 0;
+  const citableSource = ctx?.citableSource ?? "none";
 
   // 2) ALUCINACIÓN (opcional, con LLM): solo si respondió. Guardada por try/catch:
   //    un timeout del 7B marca la pregunta como no-evaluable, NO tira toda la corrida.
@@ -174,25 +208,29 @@ async function runQuestion(
   let prodKnown = false;
   let hallucinationKnown = false;
   let errored = false;
+  let selfAbstained = false;
+  let msProd = 0;
   if (!abstained && DO_HALLUCINATION) {
     try {
-      const context = ctx.chunks
+      const chunks = ctx.citable;
+      const context = chunks
         .map((c, i) => `[Fragmento ${i + 1}]\n${c.content}`)
         .join("\n\n");
-      // Replicar el flujo de PRODUCCIÓN: chequear premisa falsa y, si el material
-      // la contradice, anteponer la directiva de corrección (si no, el eval no
-      // mediría lo que el chat realmente hace ante false_premise).
-      const premise = await checkFalsePremise(
-        gq.q,
-        ctx.chunks.map((c) => c.content),
-      );
-      const userTurn = premise.falsePremise
-        ? `${buildFalsePremiseDirective(premise.premise!)}\n\n${buildTutorUserTurn(gq.q, context)}`
-        : buildTutorUserTurn(gq.q, context);
-      const answer = await chatText([
-        { role: "system", content: TUTOR_SYSTEM },
-        { role: "user", content: userTurn },
-      ]);
+      // 2) GENERACIÓN — se consume el MISMO generador que usa /api/chat, así que
+      //    el system prompt (TEACHING_SYSTEM), el armado del turno user
+      //    (buildTeachingTurn con MATERIAL + GUÍA) y los parámetros de generación
+      //    salen de la función real. Nada duplicado acá.
+      //    OJO: ya NO se corre checkFalsePremise. /api/chat tampoco lo corre
+      //    (está solo en el camino legacy tutor.ts), así que ejecutarlo hacía que
+      //    el eval midiera un flujo que el alumno no recibe.
+      let answer = "";
+      for await (const chunk of streamTeaching(teachReq, ctx)) answer += chunk;
+      // Corte de latencia COMPARABLE con producción: retrieval + stream. Lo que
+      // sigue (claims + entailment) es instrumentación del eval que el chat no
+      // hace; incluirlo inflaba la "latencia media" del reporte.
+      msProd = Date.now() - t0;
+      // ¿Tuvo material y aun así dijo "no puedo"? Eso NO es el gate: es el prompt.
+      selfAbstained = looksLikeSelfAbstention(answer);
       const raw = await chatJSON<{ claims: RawClaim[] }>(
         [
           { role: "system", content: TUTOR_SYSTEM },
@@ -201,7 +239,7 @@ async function runQuestion(
         CLAIMS_SCHEMA,
         { temperature: 0 },
       );
-      const chunkTexts = ctx.chunks.map((c) => c.content);
+      const chunkTexts = chunks.map((c) => c.content);
       const report = verifyClaims(raw.claims ?? [], chunkTexts);
       hallucinatedA2Only = report.hasUnsupported; // baseline string-match (antes de A3)
       // A3 (Fase 2): verificación híbrida. Una afirmación se considera respaldada
@@ -242,6 +280,30 @@ async function runQuestion(
     }
   }
 
+  const cause: DecisionCause = abstained
+    ? res.rerankerDown
+      ? "reranker_down"
+      : "gate"
+    : errored
+      ? "model_error"
+      : "answered";
+  const ms = Date.now() - t0;
+  if (msProd === 0) msProd = ms; // abstuvo: no hubo generación, el corte es el mismo
+  // Misma línea [decision] que emite /api/chat: permite atribuir cada abstención
+  // a su causa y comparar corridas con distinto umbral sin parsear este JSON.
+  logDecision({
+    route: "eval",
+    abstained,
+    cause,
+    topScore,
+    threshold: config.rerankMinScore,
+    citableSource,
+    nCitable: retrievedIds.length,
+    directed: false,
+    selfAbstain: abstained ? undefined : selfAbstained,
+    ms,
+  });
+
   return {
     type: gq.type,
     retrievedIds,
@@ -253,6 +315,12 @@ async function runQuestion(
     hallucinatedA2Only,
     hallucinatedProd,
     prodKnown,
+    cause,
+    topScore,
+    citableSource,
+    selfAbstained,
+    ms,
+    msProd,
   };
 }
 
@@ -276,9 +344,12 @@ function passes(t: Target, value: number): boolean {
 }
 
 async function main() {
-  console.log("\n🧪 Eval harness — Fase 1 (§9)");
+  console.log("\n🧪 Eval harness — camino de PRODUCCIÓN (TEACHING_SYSTEM)");
+  console.log("   Requiere Postgres (golden ingestado) + Ollama (embeddings) + sidecar rerank.");
+  console.log(`   motor:   ${describeActiveLLM()}`);
+  console.log(`   umbral:  RERANK_MIN_SCORE=${config.rerankMinScore}`);
   console.log(
-    "   Requiere Postgres (PDFs del golden ingestados) + Ollama corriendo.\n",
+    `   tope:    LLM_MAX_TOKENS_PER_RUN=${config.maxTokensPerRun || "SIN TOPE"}\n`,
   );
 
   const userId = process.env.EVAL_USER_ID;
@@ -290,7 +361,32 @@ async function main() {
     );
     process.exit(2);
   }
+  // ⚠️ SIN ALCANCE DE MATERIA EL GOLDEN SET NO MIDE NADA.
+  // El golden se etiquetó contra UN libro (todos sus expect_chunks son de
+  // "Lengua 8vo"); las must_abstain dicen cosas como "esto es matemática, no
+  // aparece en un libro de Lengua". Con subjectId=null el retrieval barre las 73
+  // materias del corpus y ENCUENTRA el área del triángulo en Matemática: la
+  // pregunta se responde, true_abstention se desploma y cualquier barrido de
+  // umbral queda sin sentido. Producción SIEMPRE manda subjectId (el chat solo
+  // se abre dentro de una materia), así que acotarlo también acerca el eval al
+  // camino real. Fallar ruidoso > medir en silencio contra el corpus equivocado.
   const subjectId = process.env.EVAL_SUBJECT_ID ?? null;
+  if (!subjectId && process.env.EVAL_ALLOW_ALL_SUBJECTS !== "1") {
+    console.error(
+      "❌ Falta EVAL_SUBJECT_ID: el uuid de la materia contra la que se etiquetó\n" +
+        "   el golden set. Sin esto el retrieval busca en TODO el corpus (73\n" +
+        "   materias) y las preguntas 'must_abstain' encuentran material en otra\n" +
+        "   materia → true_abstention deja de medir lo que dice medir.\n\n" +
+        "   Para correr igual, a sabiendas: EVAL_ALLOW_ALL_SUBJECTS=1",
+    );
+    process.exit(2);
+  }
+  if (!subjectId) {
+    console.log(
+      "⚠️  EVAL_ALLOW_ALL_SUBJECTS=1 — corriendo SIN acotar materia.\n" +
+        "   must_abstain y adversarial NO son interpretables en esta corrida.\n",
+    );
+  }
 
   // Chequeo de vida de Ollama antes de gastar tiempo.
   const models = await listModels();
@@ -319,7 +415,10 @@ async function main() {
     );
   }
 
+  let timeoutsRetrieval = 0;
   const results: QResult[] = [];
+  // id → resultado, para no emparejar por índice al serializar (ver perQuestion).
+  const byId = new Map<string, QResult>();
   for (const gq of questions) {
     process.stdout.write(`  · ${gq.id} [${gq.type}] ... `);
     let r: QResult;
@@ -347,6 +446,7 @@ async function main() {
         name === "AbortError" ||
         /timeout|aborted/i.test(msg)
       ) {
+          timeoutsRetrieval++;
         console.log(`⏱ timeout en retrieval — ${gq.id} saltada (excluida)`);
         continue;
       }
@@ -359,6 +459,7 @@ async function main() {
         ` · ${r.retrievedIds.length} chunks`,
     );
     results.push(r);
+    byId.set(gq.id, r);
   }
 
   const erroredCount = results.filter((r) => r.errored).length;
@@ -416,8 +517,33 @@ async function main() {
   }
   console.log("   └──────────────────────┴─────────┴──────────┴──────┘");
   console.log(
-    `\n${allOk ? "✅ Todos los objetivos cumplidos." : "❌ Hay objetivos sin cumplir (calibrá RAG_MIN_SIMILARITY, ver §9.3)."}\n`,
+    `\n${allOk ? "✅ Todos los objetivos cumplidos." : "❌ Hay objetivos sin cumplir (calibrá RERANK_MIN_SCORE)."}\n`,
   );
+
+  // Atribución por causa: cuántas cortó el gate y cuántas cortó otra cosa.
+  const byCause = new Map<string, number>();
+  for (const r of results) byCause.set(r.cause, (byCause.get(r.cause) ?? 0) + 1);
+  const absc = results.filter((r) => r.abstained);
+  const selfAbs = results.filter((r) => !r.abstained && r.selfAbstained);
+  const scores = absc.map((r) => r.topScore).sort((a, b) => b - a);
+  const lat = results.map((r) => r.msProd).sort((a, b) => a - b);
+  // percentil por interpolación de rango inferior sobre el array YA ordenado
+  const pct = (xs: number[], p: number) => xs[Math.min(xs.length - 1, Math.max(0, Math.ceil(p * xs.length) - 1))] ?? 0;
+  const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+  console.log(`🔎 Atribución (umbral ${config.rerankMinScore}):`);
+  for (const [c, n] of [...byCause].sort((a, b) => b[1] - a[1])) {
+    console.log(`   ${c.padEnd(16)} ${String(n).padStart(3)}  ${fmtPct(n / results.length)}`);
+  }
+  console.log(
+    `   ── de las ${absc.length} abstenciones, TODAS por gate salvo las marcadas arriba.\n` +
+      `   auto-abstención del modelo (tuvo material y no enseñó): ${selfAbs.length}\n` +
+      `   topScore de las abstenidas (desc): ${scores.map((s) => s.toFixed(3)).join(", ") || "—"}\n` +
+      `   latencia (retrieval+generación, comparable a prod):\n` +
+      `      p50 ${(pct(lat, 0.5) / 1000).toFixed(1)}s · p90 ${(pct(lat, 0.9) / 1000).toFixed(1)}s · ` +
+      `max ${((lat[lat.length - 1] ?? 0) / 1000).toFixed(1)}s · media ${(mean(lat) / 1000).toFixed(1)}s\n` +
+      `   timeouts del reranker (preguntas EXCLUIDAS del cómputo): ${timeoutsRetrieval}\n`,
+  );
+  console.log(`💰 ${formatUsageTotals()}\n`);
 
   const outPath = resolve(process.env.INIT_CWD ?? process.cwd(), "eval-results.json");
   await writeFile(
@@ -426,8 +552,13 @@ async function main() {
       {
         generatedAt: new Date().toISOString(),
         golden: goldenPath,
-        model: process.env.LLM_MODEL ?? "qwen2.5:7b-instruct",
-        minSimilarity: process.env.RAG_MIN_SIMILARITY ?? "(default core)",
+        // El prompt que se midió. Las corridas <= 2026-07-30 usaban TUTOR_SYSTEM
+        // (deprecado) y NO son comparables punto a punto con estas.
+        promptPath: "TEACHING_SYSTEM + buildTeachingTurn (camino de /api/chat)",
+        engine: describeActiveLLM(),
+        rerankMinScore: config.rerankMinScore,
+        maxTokensPerRun: config.maxTokensPerRun,
+        usage: getUsageTotals(),
         userId,
         subjectId,
         metrics,
@@ -439,7 +570,14 @@ async function main() {
           ok: passes(t, metrics[t.key]),
         })),
         allOk,
-        perQuestion: questions.map((gq, i) => ({ ...gq, result: results[i] })),
+        // Emparejado por ID, NO por índice: el loop puede saltear preguntas con
+        // `continue` (timeout de retrieval) y `results` queda más corto. Con el
+        // índice, una sola pregunta salteada corría TODO el bloque y cada ítem
+        // aparecía con el resultado de otro.
+        perQuestion: questions.map((gq) => ({
+          ...gq,
+          result: byId.get(gq.id) ?? null,
+        })),
       },
       null,
       2,

@@ -1,4 +1,4 @@
-import { chatJSON } from "@tutor-ia/core";
+import { chatJSON, logDecision } from "@tutor-ia/core";
 import { getSql } from "@tutor-ia/db";
 import { getCurrentUserId } from "@/lib/auth";
 
@@ -24,6 +24,7 @@ interface Group {
  * inventa temas. Si la materia no tiene estructura, devuelve items: [].
  */
 export async function POST(req: Request) {
+  const t0 = Date.now();
   await getCurrentUserId(req);
   const body = (await req.json()) as { subjectId?: string; subjectName?: string };
   const subjectId = body.subjectId;
@@ -54,6 +55,7 @@ export async function POST(req: Request) {
   const chosen = clean.length >= 3 ? clean : rows;
 
   if (chosen.length < 2) {
+    logDecision({ route: "plan", abstained: true, cause: "no_structure", nCitable: rows.length, ms: Date.now() - t0 });
     return Response.json({ items: [] });
   }
 
@@ -99,8 +101,20 @@ export async function POST(req: Request) {
     );
     titled = out.items ?? [];
   } catch {
+    // OJO: este catch es SILENCIOSO. Si el LLM falla (timeout, 429, schema), el
+    // plan igual se devuelve, pero con títulos genéricos ("Unidad 1 · Lección 2")
+    // — que es exactamente el aspecto de un "plan mecánico". Sin este log, un
+    // fallo del proveedor es indistinguible de un prompt malo.
     titled = [];
   }
+  logDecision({
+    route: "plan",
+    abstained: false,
+    // Si el LLM no tituló, el plan sale genérico aunque la respuesta sea 200.
+    cause: titled.length === 0 ? "plan_llm_failed" : "answered",
+    nCitable: chosen.length,
+    ms: Date.now() - t0,
+  });
 
   const items = chosen.map((r, i) => ({
     n: i + 1,

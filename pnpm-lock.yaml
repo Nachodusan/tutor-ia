@@ -54,6 +54,9 @@ importers:
       '@tutor-ia/rag':
         specifier: workspace:*
         version: link:../rag
+      openai:
+        specifier: ^7.2.0
+        version: 7.2.0
     devDependencies:
       '@types/node':
         specifier: ^22.9.0
@@ -574,6 +577,27 @@ packages:
   node-ensure@0.0.0:
     resolution: {integrity: sha512-DRI60hzo2oKN1ma0ckc6nQWlHU69RH6xN0sjQTjMpChPfTYvKZdcQFfdYK2RWbJcKyUizSIy/l8OTGxMAM1QDw==}
 
+  openai@7.2.0:
+    resolution: {integrity: sha512-/P0jZP2WDSwSuiilTTcU4mkepzdSAiRrnTK2e9pk9KOzBoE3L9aHz2oIyIXqGbqnnMsGC0Izr223MOUhG2JuvQ==}
+    engines: {node: '>=22.0.0'}
+    peerDependencies:
+      '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
+      '@smithy/hash-node': '>=4.3.0 <5'
+      '@smithy/signature-v4': '>=5.4.0 <6'
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-node':
+        optional: true
+      '@smithy/hash-node':
+        optional: true
+      '@smithy/signature-v4':
+        optional: true
+      ws:
+        optional: true
+      zod:
+        optional: true
+
   pdf-parse@1.1.4:
     resolution: {integrity: sha512-XRIRcLgk6ZnUbsHsYXExMw+krrPE81hJ6FQPLdBNhhBefqIQKXu/WeTgNBGSwPrfU0v+UCEwn7AoAUOsVKHFvQ==}
     engines: {node: '>=6.8.1'}
@@ -969,6 +993,8 @@ snapshots:
       - babel-plugin-macros
 
   node-ensure@0.0.0: {}
+
+  openai@7.2.0: {}
 
   pdf-parse@1.1.4:
     dependencies:

@@ -32,7 +32,28 @@ export async function POST(req: Request) {
   }
 
   const title = (form.get("title") as string) || file.name;
-  const subjectId = (form.get("subjectId") as string) || null;
+
+  // subjectId es OBLIGATORIO. Antes caía a null y el documento se ingería,
+  // chunkeaba y embebía igual… quedando PERMANENTEMENTE INVISIBLE: el retrieval
+  // filtra con `d.subject_id = p_subject_id` (schema_dual_corpus.sql:79 y :107) y
+  // en SQL `NULL = uuid` es NULL, nunca true. O sea que la fila jamás pasa el
+  // WHERE de ninguna consulta acotada por materia — que es el 100% del uso real.
+  // Sin error y sin warning: el archivo "se subía bien" y no aparecía nunca.
+  // Fallar acá con 400 es lo único correcto: sin materia no hay dónde ponerlo.
+  const subjectId = (form.get("subjectId") as string)?.trim();
+  if (!subjectId) {
+    return new Response(
+      "Falta 'subjectId': un documento sin materia queda invisible para la búsqueda.",
+      { status: 400 },
+    );
+  }
+  // Tiene que existir Y ser del usuario: un uuid inventado pasaría el chequeo de
+  // arriba y volvería a producir un documento inalcanzable.
+  const [subj] = await sql<{ id: string }[]>`
+    select id from subjects where id = ${subjectId}::uuid and user_id = ${userId} limit 1`;
+  if (!subj) {
+    return new Response(`La materia '${subjectId}' no existe o no es tuya.`, { status: 400 });
+  }
   const isPdf =
     file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
   const sourceType: "pdf" | "text" = isPdf ? "pdf" : "text";

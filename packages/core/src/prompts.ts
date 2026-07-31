@@ -10,7 +10,24 @@
 export const ABSTENTION =
   "No encontré esa información en tu material. No puedo responder con seguridad sin inventar. Prueba reformular la pregunta o sube el apunte donde esté ese tema.";
 
-/** Tutor de chat por texto — estricto. */
+/**
+ * @deprecated NO LO USA EL PRODUCTO. El chat real (`/api/chat`) usa
+ * `TEACHING_SYSTEM` desde el Plan v3; este es el tutor ESTRICTO anterior.
+ *
+ * QUÉ CORRIDAS HISTÓRICAS LO MIDIERON (por eso no se borra todavía):
+ * - Todas las corridas del golden set (`pnpm eval`) hasta 2026-07-30 inclusive,
+ *   sobre qwen2.5:7b. Sus números —hallucination_rate, false_abstention,
+ *   true_abstention— describen ESTE prompt, no el que ve un alumno hoy.
+ * - `exp2-benchmark.ts`, que detecta abstención matcheando la frase `ABSTENTION`
+ *   literal (regla 3 de acá). El tutor v3 ya no emite esa frase: usa
+ *   `teachingAbstention()`, un texto distinto.
+ *
+ * Desde 2026-07-31 `eval.ts` corre por el camino de producción
+ * (`getTeachingContext` + `streamTeaching`), así que los números NUEVOS no son
+ * comparables punto a punto con los viejos. Sigue vivo únicamente como system
+ * prompt del extractor de claims (instrumentación de medición, no el tutor) y
+ * para poder releer las corridas históricas. No lo uses en código nuevo.
+ */
 export const TUTOR_SYSTEM = `Eres un tutor que ayuda a un estudiante a aprender EXCLUSIVAMENTE a partir de su propio material (los fragmentos que se te entregan como contexto).
 
 REGLAS ESTRICTAS (obligatorias):
