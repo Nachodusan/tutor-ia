@@ -284,7 +284,42 @@ packages/eval/src/
 - 🔴 **Latencia local ~2 min por turno** — `keep_alive:0` recarga el 7B en cada llamada.
   Es el peor problema de experiencia. Se resuelve con el provider remoto (medido: 1.4s vs
   8.3s) o subiendo `keep_alive` si hay RAM.
-- 🔴 **EL BASELINE DEL 2026-07-31 QUEDÓ OBSOLETO. NO LO COMPARES CON NADA.**
+- 🟢 **PRIMER BASELINE VÁLIDO — 2026-07-31, golden re-anclado (101 preguntas).**
+  Es el primero que mide lo que el alumno recibe. Contra este SÍ se compara.
+
+  | métrica | valor | objetivo | |
+  |---|---|---|---|
+  | recall@5 | 82,6% | ≥90% | ❌ |
+  | precision@gold | 68,1% | ≥80% | ❌ |
+  | hallucination_rate (claims A2+A3) | 38,4% | ≤2% | ❌ |
+  | hallucination_rate **PROD** (verify.ts) | **0,0%** (n=67) | — | — |
+  | false_abstention | **1,3%** | ≤10% | ✅ |
+  | true_abstention | **95,7%** | ≥95% | ✅ |
+
+  **Contra qué se midió:** materia `Lengua Y Literatura 8º` = el libro oficial del
+  corpus (`texto del estudiante`, 266 chunks) + sus 2 guías docentes (129 + 124).
+  NO contra `Tomo_I_Lengua_y_Literatura8vo.pdf` (el macrotipo del Tomo I), que es
+  lo que medían todas las corridas anteriores.
+  Umbral `RERANK_MIN_SCORE=0.18`, prompt de producción (`TEACHING_SYSTEM` +
+  `streamTeaching`), `Qwen/Qwen3.6-35B-A3B` con thinking off (`reason=0` en las
+  148 llamadas), 928.135 tokens, 0 reintentos.
+  Latencia p50 10,8s · p90 35,1s · max 954s. 3 preguntas EXCLUIDAS por timeout del
+  reranker (q056, q095, q122) → el cómputo real es sobre 98, no 101.
+
+  **Salvedades que hay que leer junto al número:**
+  · El 38,4% de alucinación lo produce un juez que corre bajo `TUTOR_SYSTEM`, el
+    prompt DEPRECADO. El verificador que ve el alumno (`verify.ts`) da 0,0%. Esa
+    brecha de 38 puntos mide el juez, no al tutor.
+  · `false_abstention` 1,3% = UNA pregunta (q016, adversarial por desfase de
+    vocabulario, topScore 0.0279).
+  · `true_abstention` 95,7% = 22/23. La que pasa es q123, un near-miss deliberado
+    (el libro cubre el género policial pero nunca menciona a Sherlock Holmes):
+    falla el GATE, no el etiquetado. Se deja como está a propósito.
+  · Comparado con la corrida obsoleta de abajo, `false_abstention` cae de 31,1% a
+    1,3% — pero eso NO es una mejora del sistema: es que antes se medía contra el
+    libro equivocado.
+
+- 🔴 **EL BASELINE ANTERIOR (133 preguntas) QUEDÓ OBSOLETO. NO LO COMPARES.**
   Los números `recall@5 66,3% · precision@gold 58,7% · hallucination_rate 46,2%
   (PROD 6,3%) · false_abstention 31,1% · true_abstention 100%` **ya no describen
   nada medible**. Se midieron contra un corpus que dejó de existir:
