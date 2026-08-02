@@ -1042,7 +1042,7 @@ function StartScreen({ subject, plan, loading, onPick, onGenerate, onOpenPlan, o
           <PlanCta onClick={onOpenPlan} icon={<IconList size={20} />} title="Seguir tu plan de estudio" sub={`${plan!.length} temas · tocá para ver`} />
         ) : noPlan ? (
           <div style={{ background: C.panel2, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 13.5, color: C.dim, lineHeight: 1.5 }}>
-            No pude armar un plan automático para esta materia. Decime abajo qué tema querés estudiar y arrancamos.
+            El índice de este libro no me quedó claro, así que prefiero no armarte un plan con temas equivocados. Decime abajo qué querés estudiar —o pegame el título de una lección— y arrancamos igual.
           </div>
         ) : (
           <PlanCta onClick={onGenerate} loading={loading} icon={<IconSpark size={20} />} title={loading ? "Armando tu plan…" : "No sé por dónde empezar"} sub={loading ? "Leyendo tu material" : "Armame un plan de estudio con mi material"} />

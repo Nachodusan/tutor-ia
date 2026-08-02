@@ -27,7 +27,9 @@
     "rank-capture": "tsx --env-file-if-exists=../../.env src/rank-capture.ts",
     "rank-sweep": "tsx --env-file-if-exists=../../.env src/rank-sweep.ts",
     "drift-sweep": "tsx --env-file-if-exists=../../.env src/drift-sweep.ts",
-    "eval-multiturn": "tsx --env-file-if-exists=../../.env src/eval-multiturn.ts"
+    "eval-multiturn": "tsx --env-file-if-exists=../../.env src/eval-multiturn.ts",
+    "build-sections": "tsx --env-file-if-exists=../../.env src/build-sections.ts",
+    "plan-audit": "tsx --env-file-if-exists=../../.env src/plan-audit.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",

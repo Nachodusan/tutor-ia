@@ -38,8 +38,16 @@ export const config = {
   queryNormalize: boolEnv("QUERY_NORMALIZE", true),
   /** Modelo local chico para normalizar (1 llamada corta por turno). */
   queryNormalizerModel: process.env.QUERY_NORMALIZER_MODEL ?? "qwen2.5:3b",
-  /** Techo de la llamada de normalización; al vencer se usa la consulta cruda. */
-  queryNormalizeTimeoutMs: intEnv("QUERY_NORMALIZE_TIMEOUT_MS", 2500),
+  /**
+   * Techo de la llamada de normalización; al vencer se usa la consulta cruda.
+   *
+   * 8 s y no 2,5: el modelo chico se descarga de memoria cuando Ollama lo deja
+   * inactivo, y la PRIMERA consulta tras un reinicio paga la carga (medido:
+   * 4,4 s en frío contra 340-900 ms en caliente). Con el techo en 2,5 s ese
+   * primer alumno perdía el rescate en silencio. Caliente ni se acerca a este
+   * techo, así que subirlo no cuesta latencia en el caso normal.
+   */
+  queryNormalizeTimeoutMs: intEnv("QUERY_NORMALIZE_TIMEOUT_MS", 8000),
 
   /**
    * Base URL del proveedor compatible con OpenAI. El mismo modelo lo sirven

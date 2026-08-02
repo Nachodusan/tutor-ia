@@ -40,6 +40,9 @@ psql "$DB_URL" -f packages/db/schema_dual_corpus.sql
 # Brazo léxico con OR: sin esto, plainto_tsquery exige TODOS los lexemas y el
 # brazo devuelve 0 filas en ~92% de las preguntas reales (medido 2026-08-01).
 psql "$DB_URL" -f packages/db/schema_lexical_or.sql
+# Temas del plan de estudio derivados del índice de cada libro. Se llena con
+# `pnpm --filter @tutor-ia/eval build-sections` DESPUÉS de ingestar.
+psql "$DB_URL" -f packages/db/schema_book_sections.sql
 psql "$DB_URL" -f packages/db/seed.sql
 
 echo "==> 4/5 Descargando modelos locales en Ollama…"

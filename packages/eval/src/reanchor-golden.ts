@@ -29,42 +29,12 @@
  */
 import { readFile, writeFile } from "node:fs/promises";
 import { getSql } from "@tutor-ia/db";
+import { norm, ngrams, claves, NGRAM_N as N } from "@tutor-ia/rag";
 
 const DOC_VIEJO = "Tomo_I_Lengua_y_Literatura8vo.pdf";
 const DOC_NUEVO = "Lengua Y Literatura 8º — texto del estudiante";
-const N = 4;
 
 interface Chunk { id: string; page: number | null; content: string }
-
-/** Normaliza para comparar: sin puntuación, sin dobles espacios, minúsculas. */
-function norm(s: string): string {
-  return s
-    .normalize("NFC")
-    .toLowerCase()
-    .replace(/[^\wáéíóúñü ]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function ngrams(words: string[], n = N): Set<string> {
-  const out = new Set<string>();
-  for (let i = 0; i + n <= words.length; i++) out.add(words.slice(i, i + n).join(" "));
-  return out;
-}
-
-/** Palabras vacías del español: no distinguen un pasaje de otro. */
-const STOP = new Set(
-  ("de la que el en y a los del se las por un para con no una su al lo como mas pero sus le ya o este si " +
-    "porque esta entre cuando muy sin sobre tambien me hasta hay donde quien desde todo nos durante todos " +
-    "uno les ni contra otros ese eso ante ellos e esto mi antes algunos unos yo otro otras otra el tanto esa " +
-    "estos mucho quienes nada muchos cual sea poco ella estar haber estas estaba estamos algunas algo " +
-    "nosotros mi mis tu te ti tus ellas nosotras vosotros vosotras os mio mia mios mias es son fue ser").split(" "),
-);
-
-/** Palabras de contenido de la respuesta esperada: lo que tiene que estar sí o sí. */
-function claves(texto: string): string[] {
-  return [...new Set(norm(texto).split(" "))].filter((w) => w.length >= 4 && !STOP.has(w));
-}
 
 /**
  * Frases que la `note` cita LITERALMENTE del libro. Es la señal más fuerte que

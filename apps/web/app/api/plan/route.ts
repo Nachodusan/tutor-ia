@@ -1,27 +1,24 @@
 import { chatJSON, logDecision } from "@tutor-ia/core";
-import { getSql } from "@tutor-ia/db";
+import { getPlanTopics, type PlanTopic } from "@tutor-ia/rag";
 import { getCurrentUserId } from "@/lib/auth";
 
 export const runtime = "nodejs";
 // Titular el plan con el 7B (con recarga por keep_alive:0) puede tardar.
 export const maxDuration = 120;
 
-interface Group {
-  unit: number | null;
-  lesson: number | null;
-  p0: number | null;
-  p1: number | null;
-  sample: string | null;
-}
-
 /**
  * POST /api/plan — arma un PLAN DE ESTUDIO fundamentado en el material.
  * body: { subjectId, subjectName? }
  *
- * La ESTRUCTURA (orden, cantidad, páginas) sale de la tabla de contenidos real
- * del libro (unidad/lección del corpus `content`). El LLM SOLO pone títulos y
- * la línea de "qué vas a aprender" a partir de un fragmento de muestra; no
- * inventa temas. Si la materia no tiene estructura, devuelve items: [].
+ * La ESTRUCTURA (orden, títulos, páginas) sale del ÍNDICE REAL del libro, vía
+ * `getPlanTopics` — la misma fuente que usa /api/test. El LLM SOLO reescribe el
+ * título para que sea corto y motivador y agrega la línea de "qué vas a
+ * aprender"; no inventa temas ni decide el orden.
+ *
+ * Antes esto agrupaba por `chunks.unit/lesson`, metadata rota que producía temas
+ * como "Organización del texto de estudio · pág. 8-138". Si el libro no tiene un
+ * índice legible ni grupos sanos, devuelve items: [] — un plan equivocado es
+ * peor que ninguno, porque el alumno estudia lo que no es.
  */
 export async function POST(req: Request) {
   const t0 = Date.now();
@@ -32,41 +29,16 @@ export async function POST(req: Request) {
     return Response.json({ error: "Falta subjectId" }, { status: 400 });
   }
 
-  const sql = getSql();
-  const rows = (await sql`
-    select ch.unit, ch.lesson,
-           min(ch.page) as p0,
-           max(ch.page) as p1,
-           left(string_agg(ch.content, ' ' order by ch.page, ch.chunk_index), 700) as sample
-    from chunks ch
-    join documents d on d.id = ch.document_id
-    where d.subject_id = ${subjectId}
-      and ch.corpus_role = 'content'
-      and (ch.unit is not null or ch.lesson is not null)
-    group by ch.unit, ch.lesson
-    order by ch.unit nulls last, ch.lesson nulls last
-    limit 14
-  `) as unknown as Group[];
-
-  // Preferir lecciones "limpias" (unidad + lección); las filas de resumen de
-  // unidad (lección nula, rango de páginas enorme) y el material preliminar
-  // (unidad nula) sólo se usan si no hay suficientes lecciones reales.
-  const clean = rows.filter((r) => r.unit != null && r.lesson != null);
-  const chosen = clean.length >= 3 ? clean : rows;
-
-  if (chosen.length < 2) {
-    logDecision({ route: "plan", abstained: true, cause: "no_structure", nCitable: rows.length, ms: Date.now() - t0 });
+  const temas: PlanTopic[] = await getPlanTopics(subjectId, { limit: 14 });
+  if (temas.length < 2) {
+    logDecision({ route: "plan", abstained: true, cause: "no_structure", nCitable: temas.length, ms: Date.now() - t0 });
     return Response.json({ items: [] });
   }
 
-  const genericTitle = (r: Group) =>
-    r.unit != null && r.lesson != null ? `Unidad ${r.unit} · Lección ${r.lesson}`
-      : r.unit != null ? `Unidad ${r.unit}`
-        : `Lección ${r.lesson}`;
-
-  // Índice real → el LLM solo titula (mismo orden y cantidad).
-  const toc = chosen
-    .map((r, i) => `${i + 1}. ${genericTitle(r)} (pág. ${r.p0}-${r.p1}): ${(r.sample ?? "").replace(/\s+/g, " ").slice(0, 320)}`)
+  // Índice REAL que ve el LLM: el título del libro + una muestra del contenido
+  // de esas páginas exactas.
+  const toc = temas
+    .map((t, i) => `${i + 1}. ${t.title} (pág. ${t.pageStart}-${t.pageEnd}): ${t.sample.slice(0, 320)}`)
     .join("\n");
 
   const schema = {
@@ -93,7 +65,7 @@ export async function POST(req: Request) {
         },
         {
           role: "user",
-          content: `Materia: ${body.subjectName ?? ""}\n\nÍndice del libro:\n${toc}\n\nDevolvé JSON { items: [{title, focus}, ...] } con EXACTAMENTE ${chosen.length} ítems, en el mismo orden.`,
+          content: `Materia: ${body.subjectName ?? ""}\n\nÍndice del libro:\n${toc}\n\nDevolvé JSON { items: [{title, focus}, ...] } con EXACTAMENTE ${temas.length} ítems, en el mismo orden.`,
         },
       ],
       schema,
@@ -109,7 +81,7 @@ export async function POST(req: Request) {
       route: "plan",
       abstained: true,
       cause: "plan_llm_failed",
-      nCitable: chosen.length,
+      nCitable: temas.length,
       ms: Date.now() - t0,
     });
     const msg = err instanceof Error ? err.message : String(err);
@@ -124,18 +96,26 @@ export async function POST(req: Request) {
     route: "plan",
     abstained: false,
     cause: "answered",
-    nCitable: chosen.length,
+    nCitable: temas.length,
     ms: Date.now() - t0,
   });
 
-  const items = chosen.map((r, i) => ({
+  const items = temas.map((t, i) => ({
     n: i + 1,
-    title: titled[i]?.title?.trim() || genericTitle(r),
+    // Si el LLM devolvió menos ítems de los pedidos, el título del índice es un
+    // fallback mucho mejor que "Unidad 1 · Lección 2": ya es el título real.
+    title: titled[i]?.title?.trim() || t.title,
     focus: titled[i]?.focus?.trim() || "",
-    unit: r.unit,
-    lesson: r.lesson,
-    p0: r.p0,
-    p1: r.p1,
+    // Identidad estable del tema (sobrevive al rebuild de las secciones).
+    key: t.key,
+    documentId: t.documentId,
+    pageStart: t.pageStart,
+    pageEnd: t.pageEnd,
+    // Retrocompatibles: el estudio dirigido sigue usando unit/lesson por ahora.
+    unit: t.unitNo,
+    lesson: t.lessonNo,
+    p0: t.pageStart,
+    p1: t.pageEnd,
   }));
 
   return Response.json({ items });
