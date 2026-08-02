@@ -100,18 +100,30 @@ export async function POST(req: Request) {
       { maxTokens: 900 },
     );
     titled = out.items ?? [];
-  } catch {
-    // OJO: este catch es SILENCIOSO. Si el LLM falla (timeout, 429, schema), el
-    // plan igual se devuelve, pero con títulos genéricos ("Unidad 1 · Lección 2")
-    // — que es exactamente el aspecto de un "plan mecánico". Sin este log, un
-    // fallo del proveedor es indistinguible de un prompt malo.
-    titled = [];
+  } catch (err) {
+    // NO se traga el error. Antes este catch devolvía 200 con títulos genéricos
+    // ("Unidad 1 · Lección 2") cuando el LLM fallaba, y eso se ve EXACTAMENTE
+    // igual que un plan mal generado: el alumno recibía un plan mecánico y
+    // nadie se enteraba de que el proveedor había caído.
+    logDecision({
+      route: "plan",
+      abstained: true,
+      cause: "plan_llm_failed",
+      nCitable: chosen.length,
+      ms: Date.now() - t0,
+    });
+    const msg = err instanceof Error ? err.message : String(err);
+    return Response.json(
+      { error: `No pude armar el plan: falló la generación de títulos. ${msg}` },
+      { status: 502 },
+    );
   }
+  // Llegar acá ya implica que el LLM tituló: si hubiera fallado, el catch de
+  // arriba devolvió 502 y no seguimos.
   logDecision({
     route: "plan",
     abstained: false,
-    // Si el LLM no tituló, el plan sale genérico aunque la respuesta sea 200.
-    cause: titled.length === 0 ? "plan_llm_failed" : "answered",
+    cause: "answered",
     nCitable: chosen.length,
     ms: Date.now() - t0,
   });

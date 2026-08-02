@@ -29,3 +29,9 @@ backups/
 
 # Salida de una corrida del eval, no fuente (se reescribe en cada run)
 eval-results.json
+
+# Capturas del experimento de ranking (rank-capture): ~2 MB por set, regenerables
+# con `pnpm rank-capture`. La EVIDENCIA que sí se versiona son los baselines/.
+packages/eval/captures/
+packages/eval/multiturn-results.json
+packages/eval/rank-sweep-*.json

@@ -56,10 +56,11 @@ export async function POST(req: Request) {
   // Se evalúan por separado SOLO para poder distinguirlos en el log: el `??`
   // colapsaba las dos causas en una y no se podía saber cuál de los dos regex
   // se estaba comiendo preguntas reales. Misma semántica que antes.
-  const social = socialReply(body.question, body.subjectName ?? undefined);
+  const hasContext = (body.history?.length ?? 0) > 0;
+  const social = socialReply(body.question, body.subjectName ?? undefined, hasContext);
   const vague = social
     ? null
-    : needsTopicReply(body.question, (body.history?.length ?? 0) > 0, body.subjectName ?? undefined);
+    : needsTopicReply(body.question, hasContext, body.subjectName ?? undefined);
   const conversational = social ?? vague;
   if (conversational) {
     logDecision({
@@ -143,6 +144,18 @@ export async function POST(req: Request) {
             nCitable: res.ctx?.citable?.length ?? 0,
             nPedagogy: countPedagogy(res.ctx?.pedagogy as never),
             directed: teachReq.unit != null,
+            gateBypassed: res.ctx?.gateBypassed,
+            nDense: res.ctx?.stats?.nDense ?? null,
+            nLexical: res.ctx?.stats?.nLexical ?? null,
+            lexEmpty: res.ctx?.stats?.lexEmpty,
+            nCand: res.ctx?.stats?.nFused ?? null,
+            pool: res.ctx?.stats?.poolPerSide ?? null,
+            ranker: res.ctx?.stats?.ranker ?? null,
+            winnerDenseRank: res.ctx?.stats?.winnerDenseRank ?? null,
+            qNorm: res.qNorm,
+            qNormMs: res.qNormMs ?? null,
+            gateVia: res.ctx?.stats?.gateVia ?? null,
+            gapMed: res.ctx?.stats?.gapMed ?? null,
             ms: Date.now() - t0,
           });
         } else {
@@ -171,6 +184,18 @@ export async function POST(req: Request) {
             nCitable: res.ctx.citable.length,
             nPedagogy: countPedagogy(res.ctx.pedagogy as never),
             directed: teachReq.unit != null,
+            gateBypassed: res.ctx.gateBypassed,
+            nDense: res.ctx.stats?.nDense ?? null,
+            nLexical: res.ctx.stats?.nLexical ?? null,
+            lexEmpty: res.ctx.stats?.lexEmpty,
+            nCand: res.ctx.stats?.nFused ?? null,
+            pool: res.ctx.stats?.poolPerSide ?? null,
+            ranker: res.ctx.stats?.ranker ?? null,
+            winnerDenseRank: res.ctx.stats?.winnerDenseRank ?? null,
+            qNorm: res.qNorm,
+            qNormMs: res.qNormMs ?? null,
+            gateVia: res.ctx.stats?.gateVia ?? null,
+            gapMed: res.ctx.stats?.gapMed ?? null,
             selfAbstain: looksLikeSelfAbstention(full),
             drift: v?.grounded === false,
             nliUnavailable: v?.unavailable === true,

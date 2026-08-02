@@ -9,5 +9,6 @@ export * from "./ingest-curriculum";
 export * from "./retrieve";
 export * from "./retrieve-hybrid";
 export * from "./rerank";
+export * from "./ranking";
 export * from "./retrieve-teaching";
 export * from "./nli";

@@ -3,6 +3,8 @@
  * envía a la nube. Los valores por defecto están pensados para ser
  * CONSERVADORES (baja creatividad = menos alucinaciones).
  */
+import { DEFAULT_RERANK_MIN_SCORE } from "@tutor-ia/rag";
+
 export const config = {
   /** Endpoint del servidor Ollama local. */
   ollamaBaseUrl: process.env.OLLAMA_BASE_URL ?? "http://localhost:11434",
@@ -15,6 +17,29 @@ export const config = {
   /** LLM_MODEL crudo (sin default). Cada provider aplica el SUYO: si la variable
    *  no está, Ollama usa "qwen2.5:7b" y DeepInfra su modelo remoto. */
   llmModelEnv: process.env.LLM_MODEL?.trim() || undefined,
+
+  /**
+   * NORMALIZACIÓN DE LA CONSULTA DEL ALUMNO (puente de vocabulario).
+   *
+   * Medido 2026-08-01: la misma pregunta puntúa 0.24 en el cross-encoder escrita
+   * "de libro" y 0.006 escrita "profe no cacho q es..." — 17/43 preguntas de
+   * alumno se abstenían con el material correcto ya recuperado. Normalizar la
+   * consulta ANTES del retrieval tiene techo +38,4 pts de recall@5 (las mismas
+   * preguntas con formulación de libro dan 86,4% y 0 abstenciones).
+   *
+   * Solo afecta la consulta de BÚSQUEDA: el modelo docente sigue viendo las
+   * palabras del alumno (ahí el registro es señal, no ruido).
+   *
+   * APROBADO 2026-08-02 (online): alumno 45,3→62,0% de recall@5 y 44,2→20,9% de
+   * abstención indebida; golden 87,1% (neutral, ±¼ pregunta); must_abstain
+   * intactas (el fallback intentó y no rescató ninguna); qNorm=0 usos en las
+   * 101 limpias. Política cruda-primero: solo corre cuando el gate ya cortó.
+   */
+  queryNormalize: boolEnv("QUERY_NORMALIZE", true),
+  /** Modelo local chico para normalizar (1 llamada corta por turno). */
+  queryNormalizerModel: process.env.QUERY_NORMALIZER_MODEL ?? "qwen2.5:3b",
+  /** Techo de la llamada de normalización; al vencer se usa la consulta cruda. */
+  queryNormalizeTimeoutMs: intEnv("QUERY_NORMALIZE_TIMEOUT_MS", 2500),
 
   /**
    * Base URL del proveedor compatible con OpenAI. El mismo modelo lo sirven
@@ -48,6 +73,16 @@ export const config = {
 
   /** Timeout del provider REMOTO. Local tiene los suyos (abajo). */
   llmTimeoutMs: intEnv("LLM_TIMEOUT_MS", 60_000),
+
+  /**
+   * FECHA LÍMITE DURA del streaming, de extremo a extremo. Distinta de
+   * `llmTimeoutMs`: aquel se apoya en el AbortSignal que el SDK debe honrar, y
+   * NO alcanza — medido el 2026-07-31, una llamada corrió 945 SEGUNDOS con
+   * LLM_TIMEOUT_MS=180000 y terminó sin emitir un solo chunk. Este techo lo
+   * aplica nuestro propio reloj contra cada `next()` del iterador, así que se
+   * cumple aunque del otro lado nadie corte.
+   */
+  llmStreamDeadlineMs: intEnv("LLM_STREAM_DEADLINE_MS", 120_000),
 
   /** Streaming local: 0 = SIN timeout (comportamiento histórico de client.ts).
    *  Un turno con el 7B recargando por keep_alive:0 llega a 2-3 min. */
@@ -120,6 +155,17 @@ export const config = {
    */
   nliMinEntail: numberEnv("NLI_MIN_ENTAIL", 0.5),
   nliMinContra: numberEnv("NLI_MIN_CONTRA", 0.5),
+  /**
+   * Condición de DERIVA de verify.ts, parametrizada para poder calibrarla con
+   * `pnpm drift-sweep` (sobre los prodVerdicts persistidos, sin LLM ni NLI).
+   * Los defaults REPRODUCEN la condición histórica (supported=0 y ≥3
+   * contradicciones fuertes a 0.6) — que medida disparó 0/77: es un detector
+   * apagado. Cambiar estos números es una decisión que sale del sweep, no de acá.
+   */
+  driftMinChecked: intEnv("NLI_DRIFT_MIN_CHECKED", 1),
+  driftMaxSupportedFrac: numberEnv("NLI_DRIFT_MAX_SUPPORTED", 0),
+  driftMinStrong: intEnv("NLI_DRIFT_MIN_STRONG", 3),
+  driftContraMin: numberEnv("NLI_DRIFT_CONTRA_MIN", 0.6),
 
   /**
    * Detección de PREMISA FALSA antes de responder (Fase 2): extrae las
@@ -138,7 +184,7 @@ export const config = {
    * se apoya en el prompt (no inventar datos) + la detección de deriva, no en un
    * gate estricto. Ver docs/fase-1-hallazgos.md.
    */
-  rerankMinScore: numberEnv("RERANK_MIN_SCORE", 0.18),
+  rerankMinScore: numberEnv("RERANK_MIN_SCORE", DEFAULT_RERANK_MIN_SCORE),
 } as const;
 
 function numberEnv(name: string, fallback: number): number {

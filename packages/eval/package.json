@@ -22,7 +22,12 @@
     "pilot-session": "tsx --env-file-if-exists=../../.env src/pilot-session.ts",
     "exp6": "tsx --env-file-if-exists=../../.env src/exp6-ensenanza.ts",
     "batch-ingest": "tsx --env-file-if-exists=../../.env src/batch-ingest.ts",
-    "llm-smoke": "tsx --env-file-if-exists=../../.env src/llm-smoke.ts"
+    "llm-smoke": "tsx --env-file-if-exists=../../.env src/llm-smoke.ts",
+    "judge-noise": "tsx --env-file-if-exists=../../.env src/judge-noise.ts",
+    "rank-capture": "tsx --env-file-if-exists=../../.env src/rank-capture.ts",
+    "rank-sweep": "tsx --env-file-if-exists=../../.env src/rank-sweep.ts",
+    "drift-sweep": "tsx --env-file-if-exists=../../.env src/drift-sweep.ts",
+    "eval-multiturn": "tsx --env-file-if-exists=../../.env src/eval-multiturn.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",

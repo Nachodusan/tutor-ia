@@ -24,8 +24,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  CLAIMS_JUDGE_SYSTEM,
   CLAIMS_SCHEMA,
-  TUTOR_SYSTEM,
   chatJSON,
   config,
   describeActiveLLM,
@@ -41,7 +41,17 @@ import {
   type DecisionCause,
   type RawClaim,
 } from "@tutor-ia/core";
-import { entails } from "@tutor-ia/rag";
+import {
+  entails,
+  nliVerify,
+  poolPerSideFromEnv,
+  candidatePoolFromEnv,
+  contentKFromEnv,
+  rankStrategyFromEnv,
+  describeStrategy,
+} from "@tutor-ia/rag";
+import { getSql } from "@tutor-ia/db";
+import { createHash } from "node:crypto";
 import { listModels } from "./ollama";
 import {
   aggregate,
@@ -129,10 +139,10 @@ function buildClaimsPrompt(
 ): string {
   return `Descompón la RESPUESTA en afirmaciones atómicas. Para cada afirmación:
 - "text": la afirmación en una frase.
-- "quote": el substring EXACTO y LITERAL del fragmento que la respalda (copiado tal cual, sin parafrasear). Si es una inferencia tuya sin respaldo textual, dejá "quote" vacío.
-- "chunkIndex": el número de fragmento (1-based) del que sale la cita.
+- "quote": si HAY un tramo del fragmento que dice lo mismo, copialo tal cual como evidencia. Es OPCIONAL: si la afirmación está sostenida por el sentido del fragmento pero con otras palabras, dejá "quote" vacío. NO fuerces una cita literal que no exista, y NO marques como sin respaldo algo que el fragmento sí implica.
+- "chunkIndex": el número de fragmento (1-based) que la sostiene.
 
-No inventes citas: si el texto no está literal en ningún fragmento, dejá "quote" vacío.
+Parafrasear bien NO es inventar: la cita literal es evidencia cómoda cuando aparece, no el criterio.
 
 === FRAGMENTOS ===
 ${context}
@@ -164,12 +174,34 @@ export interface QResult extends PerQuestionResult {
   ms: number;
   /** ms COMPARABLES con producción: retrieval + generación, sin el verificador. */
   msProd: number;
+  /** Texto generado. Se persiste para poder RE-JUZGAR sin volver a generar:
+   *  la primera corrida no lo guardaba y re-evaluar el juez obligaba a pagar
+   *  toda la generación de nuevo. */
+  answer: string;
+  /** El retrieval se cayó por timeout. En producción el alumno recibe una
+   *  no-respuesta, así que cuenta como abstención; se marca para poder reportar
+   *  también la vista "solo evaluables". */
+  retrievalTimeout: boolean;
+  /** Cuántas afirmaciones se extrajeron de la respuesta. */
+  claimsTotal: number;
+  /** Cuántas de esas quedaron SIN respaldo según el NLI direccional. */
+  claimsSinRespaldo: number;
   /** Baseline A2-solo (string-match): alucinación ANTES del entailment A3. */
   hallucinatedA2Only: boolean;
   /** Veredicto del verificador de PRODUCCIÓN (verify.ts) sobre esta respuesta. */
   hallucinatedProd: boolean;
   /** false si el verificador prod no pudo correr para esta pregunta. */
   prodKnown: boolean;
+  /** Veredictos POR ORACIÓN del verificador de producción. Se persisten para
+   *  poder calibrar la condición de deriva (drift-sweep) sobre respuestas ya
+   *  generadas, sin volver a pagar LLM ni NLI: verifyAnswerA3 ya los calcula y
+   *  hasta ahora se colapsaban al booleano `hallucinatedProd` y se tiraban. */
+  prodVerdicts: {
+    entailment: number;
+    contradiction: number;
+    supported: boolean;
+    contradicted: boolean;
+  }[];
 }
 
 async function runQuestion(
@@ -210,6 +242,10 @@ async function runQuestion(
   let errored = false;
   let selfAbstained = false;
   let msProd = 0;
+  let answer = "";
+  let claimsTotal = 0;
+  let claimsSinRespaldo = 0;
+  let prodVerdicts: QResult["prodVerdicts"] = [];
   if (!abstained && DO_HALLUCINATION) {
     try {
       const chunks = ctx.citable;
@@ -223,7 +259,6 @@ async function runQuestion(
       //    OJO: ya NO se corre checkFalsePremise. /api/chat tampoco lo corre
       //    (está solo en el camino legacy tutor.ts), así que ejecutarlo hacía que
       //    el eval midiera un flujo que el alumno no recibe.
-      let answer = "";
       for await (const chunk of streamTeaching(teachReq, ctx)) answer += chunk;
       // Corte de latencia COMPARABLE con producción: retrieval + stream. Lo que
       // sigue (claims + entailment) es instrumentación del eval que el chat no
@@ -233,7 +268,9 @@ async function runQuestion(
       selfAbstained = looksLikeSelfAbstention(answer);
       const raw = await chatJSON<{ claims: RawClaim[] }>(
         [
-          { role: "system", content: TUTOR_SYSTEM },
+          // Juez con prompt PROPIO. Antes heredaba TUTOR_SYSTEM (el tutor
+          // estricto deprecado) y castigaba la paráfrasis fiel como invento.
+          { role: "system", content: CLAIMS_JUDGE_SYSTEM },
           { role: "user", content: buildClaimsPrompt(context, gq.q, answer) },
         ],
         CLAIMS_SCHEMA,
@@ -249,7 +286,26 @@ async function runQuestion(
       // Las "inferida" (sin cita) TAMBIÉN pasan por entailment: antes se saltaban
       // toda verificación y un invento declarado como inferencia pasaba limpio
       // (subestimaba la métrica — hallazgo de la auditoría).
-      let unsupported = false;
+      // ─── DOS CORRECCIONES AL INSTRUMENTO, cada una medida ───────────────
+      //
+      // (a) EL DISCRIMINADOR. Se usaba `entails()`, que es el cross-encoder de
+      //     RELEVANCIA. Medido contra `golden/a3-set.jsonl` (60 claims
+      //     etiquetados a mano): accuracy 60%, y deja pasar como respaldada el
+      //     **80% de las contradicciones** — o sea, es casi ciego a "on-topic
+      //     pero falso", que es justo lo que una métrica de alucinación tiene
+      //     que atrapar. El NLI direccional da 87% de accuracy sobre el mismo
+      //     set y detecta el 80% de las contradicciones, con 5% de falso
+      //     entailment. Para esta métrica el NLI es estrictamente mejor.
+      //
+      // (b) LA AGREGACIÓN. Era `any()`: bastaba UNA claim sin respaldo para
+      //     marcar la respuesta. Como el largo de la lista lo decide el LLM en
+      //     cada pasada, una claim espuria daba vuelta la pregunta entera.
+      //     Medido con la entrada FIJA (misma respuesta, 3 pasadas del juez):
+      //     el booleano oscila 45,5 / 44,2 / 49,4 (5,2 puntos de dispersión) y
+      //     la TASA oscila 14,2 / 13,9 / 14,4 (0,5 puntos). 10× más estable.
+      //     Se conservan las dos: la tasa para seguir la evolución, el booleano
+      //     para no romper la comparación con las corridas históricas.
+      let sinRespaldo = 0;
       for (const c of report.claims) {
         if (c.label === "respaldada") continue; // cita literal ya verificada
         // Chunk citado si el modelo lo indicó y es válido; si no, todos.
@@ -257,13 +313,12 @@ async function runQuestion(
           c.chunkIndex && chunkTexts[c.chunkIndex - 1] != null
             ? [chunkTexts[c.chunkIndex - 1] as string]
             : chunkTexts;
-        const score = await entails(c.text, candidates);
-        if (score < ENTAIL_MIN) {
-          unsupported = true;
-          break; // basta una no respaldada para marcar alucinación
-        }
+        const v = await nliVerify(c.text, candidates);
+        if (!v.supported) sinRespaldo++;
       }
-      hallucinated = unsupported;
+      claimsTotal = report.claims.length;
+      claimsSinRespaldo = sinRespaldo;
+      hallucinated = sinRespaldo > 0;
       hallucinationKnown = true;
 
       // Métrica PROD: el MISMO verificador que corre en producción (verify.ts,
@@ -274,6 +329,14 @@ async function runQuestion(
       if (!prodV.unavailable) {
         hallucinatedProd = !prodV.grounded;
         prodKnown = true;
+        // Solo los números por oración, sin el texto: el drift-sweep necesita
+        // (entailment, contradiction, supported, contradicted) y nada más.
+        prodVerdicts = prodV.verdicts.map((v) => ({
+          entailment: v.entailment,
+          contradiction: v.contradiction,
+          supported: v.supported,
+          contradicted: v.contradicted,
+        }));
       }
     } catch {
       errored = true; // timeout/fallo del LLM: no contamos esta para alucinación
@@ -300,6 +363,18 @@ async function runQuestion(
     citableSource,
     nCitable: retrievedIds.length,
     directed: false,
+    gateBypassed: ctx?.gateBypassed,
+    nDense: ctx?.stats?.nDense ?? null,
+    nLexical: ctx?.stats?.nLexical ?? null,
+    lexEmpty: ctx?.stats?.lexEmpty,
+    nCand: ctx?.stats?.nFused ?? null,
+    pool: ctx?.stats?.poolPerSide ?? null,
+    ranker: ctx?.stats?.ranker ?? null,
+    winnerDenseRank: ctx?.stats?.winnerDenseRank ?? null,
+    qNorm: res.qNorm,
+    qNormMs: res.qNormMs ?? null,
+    gateVia: ctx?.stats?.gateVia ?? null,
+    gapMed: ctx?.stats?.gapMed ?? null,
     selfAbstain: abstained ? undefined : selfAbstained,
     ms,
   });
@@ -321,6 +396,11 @@ async function runQuestion(
     selfAbstained,
     ms,
     msProd,
+    answer,
+    claimsTotal,
+    claimsSinRespaldo,
+    prodVerdicts,
+    retrievalTimeout: false,
   };
 }
 
@@ -405,8 +485,27 @@ async function main() {
     process.exit(1);
   }
   const questions = parseJsonl(raw);
+  // PROCEDENCIA: sha del golden + huella del corpus en el momento de la corrida.
+  // Dos corridas con goldenSha256 o corpus distintos NO son comparables; sin
+  // estos campos esa comparación inválida pasaba desapercibida (y hay 5
+  // documentos pendientes de ingestar esperando exactamente ese descuido).
+  const goldenSha256 = createHash("sha256").update(raw).digest("hex");
+  let corpusChunkCount = -1;
+  let corpusMaxCreatedAt: string | null = null;
+  try {
+    const sql = getSql();
+    const [prov] = await sql<{ n: string; max_created: string | null }[]>`
+      select count(*)::text as n, max(created_at)::text as max_created from chunks`;
+    if (prov) {
+      corpusChunkCount = Number(prov.n);
+      corpusMaxCreatedAt = prov.max_created;
+    }
+  } catch {
+    // sin DB acá el preflight de retrieval va a fallar igual, con mejor mensaje
+  }
   console.log(`📋 Golden: ${goldenPath}`);
-  console.log(`   Preguntas: ${questions.length}\n`);
+  console.log(`   Preguntas: ${questions.length} · sha ${goldenSha256.slice(0, 12)}`);
+  console.log(`   Corpus: ${corpusChunkCount} chunks · última ingesta ${corpusMaxCreatedAt ?? "?"}\n`);
   if (goldenPath.endsWith(".example.jsonl")) {
     console.log(
       "⚠️  Estás usando questions.example.jsonl (ids de chunk PLACEHOLDER).\n" +
@@ -446,8 +545,21 @@ async function main() {
         name === "AbortError" ||
         /timeout|aborted/i.test(msg)
       ) {
-          timeoutsRetrieval++;
-        console.log(`⏱ timeout en retrieval — ${gq.id} saltada (excluida)`);
+        timeoutsRetrieval++;
+        console.log(`⏱ timeout en retrieval — ${gq.id} → cuenta como ABSTENCIÓN`);
+        // En producción esto es una no-respuesta que el alumno sí sufre
+        // (route.ts responde "tuve un problemita"). Antes salía del denominador
+        // y las métricas quedaban optimistas.
+        const t: QResult = {
+          type: gq.type, retrievedIds: [], expectedIds: gq.expect_chunks ?? [],
+          abstained: true, hallucinated: false, hallucinationKnown: false,
+          errored: false, cause: "retrieval_error", topScore: 0,
+          citableSource: "none", selfAbstained: false, ms: 0, msProd: 0,
+          answer: "", claimsTotal: 0, claimsSinRespaldo: 0, retrievalTimeout: true,
+          hallucinatedA2Only: false, hallucinatedProd: false, prodKnown: false,
+          prodVerdicts: [],
+        };
+        results.push(t); byId.set(gq.id, t);
         continue;
       }
       throw err;
@@ -470,7 +582,14 @@ async function main() {
     );
   }
 
+  // DOS VISTAS de las mismas métricas:
+  //  · "totales"    incluye los timeouts de retrieval como abstención — es lo
+  //                 que el alumno vive: pregunta y no recibe explicación.
+  //  · "evaluables" los excluye — es lo comparable con corridas viejas y aísla
+  //                 la calidad del sistema de la salud del sidecar.
   const metrics = aggregate(results);
+  const evaluables = results.filter((r) => !r.retrievalTimeout);
+  const metricsEval = aggregate(evaluables);
 
   // A/B del entailment A3 sobre las MISMAS generaciones del LLM: comparamos la
   // tasa de alucinación con verificación A2-solo (string-match) vs híbrida A2+A3.
@@ -500,10 +619,14 @@ async function main() {
   );
 
   // Tabla final contra objetivos §9.2.
+  console.log(
+    `\n📐 ${results.length} preguntas · ${evaluables.length} evaluables · ` +
+      `${results.length - evaluables.length} timeouts de retrieval (cuentan como abstención en "totales")`,
+  );
   console.log("\n📊 Métricas vs. objetivos (§9.2):");
-  console.log("   ┌──────────────────────┬─────────┬──────────┬──────┐");
-  console.log("   │ métrica              │  valor  │ objetivo │  ok  │");
-  console.log("   ├──────────────────────┼─────────┼──────────┼──────┤");
+  console.log("   ┌──────────────────────┬─────────┬─────────────┬──────────┬──────┐");
+  console.log("   │ métrica              │ TOTALES │ evaluables  │ objetivo │  ok  │");
+  console.log("   ├──────────────────────┼─────────┼─────────────┼──────────┼──────┤");
   let allOk = true;
   for (const t of TARGETS) {
     const value = metrics[t.key];
@@ -512,10 +635,11 @@ async function main() {
     const label = t.label.padEnd(20);
     const goal = `${t.cmp}${(t.goal * 100).toFixed(0)}%`.padStart(8);
     console.log(
-      `   │ ${label} │ ${fmtPct(value)}  │ ${goal} │  ${ok ? "✅" : "❌"}  │`,
+      `   │ ${label} │ ${fmtPct(value)}  │ ${fmtPct(metricsEval[t.key])}      │ ${goal} │  ${ok ? "✅" : "❌"}  │`,
     );
   }
-  console.log("   └──────────────────────┴─────────┴──────────┴──────┘");
+  console.log("   └──────────────────────┴─────────┴─────────────┴──────────┴──────┘");
+  console.log("   (el ✅/❌ se juzga sobre TOTALES: es lo que recibe el alumno)");
   console.log(
     `\n${allOk ? "✅ Todos los objetivos cumplidos." : "❌ Hay objetivos sin cumplir (calibrá RERANK_MIN_SCORE)."}\n`,
   );
@@ -543,6 +667,19 @@ async function main() {
       `max ${((lat[lat.length - 1] ?? 0) / 1000).toFixed(1)}s · media ${(mean(lat) / 1000).toFixed(1)}s\n` +
       `   timeouts del reranker (preguntas EXCLUIDAS del cómputo): ${timeoutsRetrieval}\n`,
   );
+  // TASA de afirmaciones sin respaldo — la métrica estable. El booleano de la
+  // tabla se conserva para comparar con lo histórico, pero para SEGUIR la
+  // evolución hay que mirar esta: con la entrada fija oscila 0,5 puntos contra
+  // los 5,2 del booleano.
+  const conClaims = results.filter((r) => r.claimsTotal > 0);
+  const totClaims = conClaims.reduce((a, r) => a + r.claimsTotal, 0);
+  const totSin = conClaims.reduce((a, r) => a + r.claimsSinRespaldo, 0);
+  console.log(
+    `🔬 Afirmaciones (discriminador: NLI direccional, no el cross-encoder de relevancia):\n` +
+      `   ${totSin} sin respaldo de ${totClaims} en ${conClaims.length} respuestas\n` +
+      `   TASA = ${fmtPct(totClaims ? totSin / totClaims : 0)}   ← métrica estable (±0,5 pts)\n` +
+      `   booleano (≥1 sin respaldo) = ${fmtPct(metrics.hallucinationRate)}   ← histórica, ±5,2 pts\n`,
+  );
   console.log(`💰 ${formatUsageTotals()}\n`);
 
   const outPath = resolve(process.env.INIT_CWD ?? process.cwd(), "eval-results.json");
@@ -558,10 +695,28 @@ async function main() {
         engine: describeActiveLLM(),
         rerankMinScore: config.rerankMinScore,
         maxTokensPerRun: config.maxTokensPerRun,
+        // Procedencia: si alguno de estos difiere entre dos corridas, la
+        // comparación de métricas es inválida. goldenSha256 ata el set exacto;
+        // corpus* atan el estado de la base; el resto ata la config de retrieval.
+        goldenSha256,
+        corpusChunkCount,
+        corpusMaxCreatedAt,
+        // Leídos de las MISMAS funciones que usa el pipeline (rag/*FromEnv):
+        // lo que queda estampado acá es lo que efectivamente corrió.
+        retrieval: {
+          poolPerSide: poolPerSideFromEnv(),
+          candidatePool: candidatePoolFromEnv(),
+          contentK: contentKFromEnv(),
+          ranker: describeStrategy(rankStrategyFromEnv()),
+        },
         usage: getUsageTotals(),
+        claims: { total: totClaims, sinRespaldo: totSin, tasa: totClaims ? totSin / totClaims : 0 },
         userId,
         subjectId,
         metrics,
+        metricsEvaluables: metricsEval,
+        nTotales: results.length,
+        nEvaluables: evaluables.length,
         targets: TARGETS.map((t) => ({
           key: t.key,
           goal: t.goal,
@@ -587,7 +742,15 @@ async function main() {
   console.log(`💾 Resultados guardados en: ${outPath}\n`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    // Salida EXPLÍCITA: el pool de Postgres (sin idle_timeout) mantiene vivo el
+    // event loop y el proceso quedaba colgado con todo el trabajo ya hecho —
+    // medido 2026-08-01: 40 min zombi tras escribir el JSON. El writeFile del
+    // resultado ya está await-eado, así que acá no queda nada pendiente.
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });

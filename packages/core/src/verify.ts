@@ -167,9 +167,19 @@ export async function verifyAnswerA3(
   // corrección de premisa falsa. Aquí sólo detectamos DERIVA sistemática: la
   // respuesta habla de OTRA cosa que el material (nada respaldado + varias
   // contradicciones fuertes) — señal de que se recuperó material equivocado.
-  const strong = verdicts.filter((v) => v.contradicted && !v.supported && v.contradiction >= 0.6);
-  const supportedCount = verdicts.filter((v) => v.supported).length;
-  const drift = supportedCount === 0 && strong.length >= 3;
+  // Parametrizada para calibrarla con datos (drift-sweep sobre prodVerdicts).
+  // Con los defaults reproduce la condición histórica: supported=0 (frac<=0) y
+  // >=3 contradicciones fuertes a 0.6 — que medida disparó 0/77 (apagada).
+  const strong = verdicts.filter(
+    (v) => v.contradicted && !v.supported && v.contradiction >= config.driftContraMin,
+  );
+  const supportedFrac = verdicts.length
+    ? verdicts.filter((v) => v.supported).length / verdicts.length
+    : 1;
+  const drift =
+    verdicts.length >= config.driftMinChecked &&
+    supportedFrac <= config.driftMaxSupportedFrac &&
+    strong.length >= config.driftMinStrong;
 
   return {
     grounded: !drift,

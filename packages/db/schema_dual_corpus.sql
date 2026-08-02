@@ -83,6 +83,9 @@ returns table (
   limit match_count;
 $$;
 
+-- SUPERSEDED por schema_lexical_or.sql (AND -> OR en el tsquery). Esta versión
+-- se conserva como ROLLBACK: si aplicás este archivo solo, volvés al
+-- comportamiento viejo (el brazo léxico exige TODOS los lexemas en el chunk).
 drop function if exists match_chunks_lexical(text, uuid, uuid, int);
 create function match_chunks_lexical(
   query_text    text,

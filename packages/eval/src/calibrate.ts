@@ -18,6 +18,7 @@ import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getSql } from "@tutor-ia/db";
 import { retrieveRanked, rerankHealthy } from "@tutor-ia/rag";
+import { sweepThreshold } from "./lib/threshold";
 
 const DEV_USER_ID =
   process.env.DEV_USER_ID ?? "00000000-0000-0000-0000-000000000001";
@@ -89,38 +90,29 @@ async function main() {
   console.log(`   DEBE abstener (n=${abstainSet.length}): max topScore = ${maxAbstain.toFixed(4)}`);
   console.log(`   DEBE responder (n=${answerSet.length}): min topScore = ${minAnswer.toFixed(4)}`);
 
-  // 3) Barrido de umbral.
+  // 3) Barrido de umbral — misma lógica que usa rank-sweep offline (lib/threshold).
+  const sweep = sweepThreshold(rows);
   console.log("\n── Barrido de umbral ──");
   console.log("  thr   trueAbst  falseAbst   (objetivo: trueAbst≥0.95, falseAbst≤0.10)");
-  let best: { thr: number; trueA: number; falseA: number; score: number } | null = null;
-  for (let t = 0.05; t <= 0.95; t += 0.05) {
-    const trueA = abstainSet.length
-      ? abstainSet.filter((r) => r.topScore < t).length / abstainSet.length
-      : 0;
-    const falseA = answerSet.length
-      ? answerSet.filter((r) => r.topScore < t).length / answerSet.length
-      : 0;
-    const mark = trueA >= 0.95 && falseA <= 0.1 ? " ✅" : "";
+  for (const p of sweep.points) {
     console.log(
-      `  ${t.toFixed(2)}   ${(trueA * 100).toFixed(0).padStart(6)}%   ${(falseA * 100).toFixed(0).padStart(7)}%${mark}`,
+      `  ${p.thr.toFixed(2)}   ${(p.trueAbstention * 100).toFixed(0).padStart(6)}%   ` +
+        `${(p.falseAbstention * 100).toFixed(0).padStart(7)}%${p.cumpleObjetivos ? " ✅" : ""}`,
     );
-    // Objetivo: maximizar trueA - falseA (Youden J), preferir el punto medio del plateau.
-    const j = trueA - falseA;
-    if (!best || j > best.score) best = { thr: t, trueA, falseA, score: j };
   }
 
   // 4) Recomendación: si hay separación limpia, el punto medio del gap.
   console.log("\n── Recomendación ──");
-  if (minAnswer > maxAbstain) {
-    const mid = (minAnswer + maxAbstain) / 2;
+  if (sweep.separacionLimpia) {
     console.log(
-      `   ✅ Separación limpia (gap ${(minAnswer - maxAbstain).toFixed(4)}).\n` +
-        `   RERANK_MIN_SCORE=${mid.toFixed(3)}  (punto medio del gap; robusto).`,
+      `   ✅ Separación limpia (gap ${sweep.gap.toFixed(4)}).\n` +
+        `   RERANK_MIN_SCORE=${sweep.recomendado.toFixed(3)}  (punto medio del gap; robusto).`,
     );
-  } else if (best) {
+  } else {
+    const best = sweep.points.reduce((a, b) => (b.j > a.j ? b : a));
     console.log(
       `   ⚠️  Hay solapamiento. Mejor punto (Youden J): thr=${best.thr.toFixed(2)} ` +
-        `(trueAbst ${(best.trueA * 100).toFixed(0)}%, falseAbst ${(best.falseA * 100).toFixed(0)}%).\n` +
+        `(trueAbst ${(best.trueAbstention * 100).toFixed(0)}%, falseAbst ${(best.falseAbstention * 100).toFixed(0)}%).\n` +
         `   Revisá los casos solapados (¿pregunta mal etiquetada? ¿chunk faltante?).`,
     );
   }

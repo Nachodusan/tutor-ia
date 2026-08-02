@@ -60,12 +60,50 @@ interface Row {
   oa: string | null;
 }
 
+/** Default del pool por brazo. Configurable con RAG_POOL_PER_SIDE (mismo patrón
+ *  que DEFAULT_RERANK_MIN_SCORE / rerankMinScoreFromEnv en rerank.ts). */
+export const DEFAULT_POOL_PER_SIDE = 20;
+
+export function poolPerSideFromEnv(): number {
+  const n = Number(process.env.RAG_POOL_PER_SIDE ?? "");
+  return Number.isInteger(n) && n > 0 ? n : DEFAULT_POOL_PER_SIDE;
+}
+
+/**
+ * Contadores del retrieval híbrido. Viajan en el valor de retorno (packages/rag
+ * no loguea) y los emite el decision-log de core. Motivo: el brazo léxico
+ * devolvía 0 filas en el 92% de las preguntas reales (AND de plainto_tsquery,
+ * medido 2026-08-01) y NADIE lo veía — el RRF degeneraba a denso puro en
+ * silencio.
+ */
+export interface RetrievalStats {
+  nDense: number;
+  nLexical: number;
+  /** Candidatos únicos tras la fusión (antes del corte a k). */
+  nFused: number;
+  poolPerSide: number;
+  /** Redundante a propósito: `grep -c "lexEmpty=true"` responde la pregunta. */
+  lexEmpty: boolean;
+}
+
+export interface HybridResult {
+  chunks: HybridChunk[];
+  stats: RetrievalStats;
+}
+
 export async function retrieveHybrid(
   query: string,
   opts: HybridOptions,
 ): Promise<HybridChunk[]> {
+  return (await retrieveHybridWithStats(query, opts)).chunks;
+}
+
+export async function retrieveHybridWithStats(
+  query: string,
+  opts: HybridOptions,
+): Promise<HybridResult> {
   const sql = getSql();
-  const pool = opts.poolPerSide ?? 20;
+  const pool = opts.poolPerSide ?? poolPerSideFromEnv();
   const rrfK = opts.rrfK ?? 60;
   const k = opts.k ?? 8;
   const subject = opts.subjectId ?? null;
@@ -123,7 +161,16 @@ export async function retrieveHybrid(
     hc.rrf += 1 / (rrfK + i + 1);
   });
 
-  return [...merged.values()].sort((a, b) => b.rrf - a.rrf).slice(0, k);
+  return {
+    chunks: [...merged.values()].sort((a, b) => b.rrf - a.rrf).slice(0, k),
+    stats: {
+      nDense: dense.length,
+      nLexical: lexical.length,
+      nFused: merged.size,
+      poolPerSide: pool,
+      lexEmpty: lexical.length === 0,
+    },
+  };
 }
 
 /** Cita legible a partir de un chunk ("pág. 87 · Unidad 1 › Lección 1"). */

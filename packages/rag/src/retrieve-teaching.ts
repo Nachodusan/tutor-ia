@@ -13,7 +13,32 @@
  */
 import { getSql } from "@tutor-ia/db";
 import { retrieveHybrid, type HybridChunk } from "./retrieve-hybrid";
-import { retrieveRanked, rerank } from "./rerank";
+import {
+  retrieveRanked,
+  rerank,
+  rerankMinScoreFromEnv,
+  RERANK_SNIPPET_CHARS,
+  type RankedStats,
+} from "./rerank";
+
+/** Default de chunks de contenido citable. Configurable con RAG_CONTENT_K. */
+export const DEFAULT_CONTENT_K = 6;
+
+export function contentKFromEnv(): number {
+  const n = Number(process.env.RAG_CONTENT_K ?? "");
+  return Number.isInteger(n) && n > 0 ? n : DEFAULT_CONTENT_K;
+}
+
+/** Boost aditivo al orden de pedagogía cuando su OA coincide con el del contenido
+ *  top. SOLO afecta el ORDEN (rankScore), nunca el gate (rerankScore crudo):
+ *  antes se sumaba sobre la sigmoide sin clamp y un chunk con score real 0.03
+ *  cruzaba el gate de 0.18 solo por el boost. Configurable con RAG_OA_BOOST. */
+export const DEFAULT_OA_BOOST = 0.15;
+
+export function oaBoostFromEnv(): number {
+  const n = Number(process.env.RAG_OA_BOOST ?? "");
+  return Number.isFinite(n) && n >= 0 ? n : DEFAULT_OA_BOOST;
+}
 
 /** Los tipos de pedagogía que alimentan el flujo de enseñanza, en orden de uso. */
 export const TEACHING_TYPES = [
@@ -28,7 +53,10 @@ export const TEACHING_TYPES = [
 export type TeachingType = (typeof TEACHING_TYPES)[number];
 
 export interface PedagogyChunk extends HybridChunk {
+  /** Sigmoide del cross-encoder, SIN boost — la escala del gate. */
   rerankScore: number;
+  /** rerankScore + boost de OA (clampeado a 1) — SOLO para ordenar. */
+  rankScore: number;
 }
 
 /** Un fragmento citable (el "qué"), venga del TE o de la GDD. */
@@ -59,6 +87,12 @@ export interface TeachingContext {
   oas: string[];
   /** Score del gate (mejor rerank del material citable). */
   topScore: number;
+  /** El estudio dirigido sirvió material POR DEBAJO del umbral del gate: se
+   *  entrega igual (es material real de la unidad pedida) pero queda contable
+   *  en vez de camuflado como grounding normal. */
+  gateBypassed?: boolean;
+  /** Contadores del retrieval de contenido (brazos, pool, ranker) para el log. */
+  stats?: RankedStats;
 }
 
 export interface TeachingOptions {
@@ -129,9 +163,10 @@ export async function retrieveForTeaching(
   query: string,
   opts: TeachingOptions,
 ): Promise<TeachingContext> {
-  const contentK = opts.contentK ?? 6;
+  const contentK = opts.contentK ?? contentKFromEnv();
   const perType = opts.perType ?? 2;
-  const threshold = opts.minRerankScore ?? Number(process.env.RERANK_MIN_SCORE ?? "0.3");
+  const threshold = opts.minRerankScore ?? rerankMinScoreFromEnv();
+  const oaBoost = oaBoostFromEnv();
 
   // 0) ESTUDIO DIRIGIDO POR EL PLAN: unidad/lección conocida → material citable
   //    de esa unidad, rerankeado por la consulta. Grounding garantizado (el tema
@@ -144,7 +179,7 @@ export async function retrieveForTeaching(
         // Rerank sobre texto TRUNCADO (los primeros ~600 chars alcanzan como
         // señal): mantiene la relevancia y evita el timeout del reranker con
         // unidades grandes (era la causa del 500 al estudiar un tema del plan).
-        const scores = await rerank(query, lessonChunks.map((c) => c.content.slice(0, 600)), true);
+        const scores = await rerank(query, lessonChunks.map((c) => c.content.slice(0, RERANK_SNIPPET_CHARS)), true);
         directCitable = lessonChunks
           .map((c, i) => ({ c, s: scores[i] ?? 0 }))
           .sort((a, b) => b.s - a.s)
@@ -162,8 +197,14 @@ export async function retrieveForTeaching(
     }
   }
 
-  // 1) CONTENIDO por el gate del reranker (solo si no hay estudio dirigido).
-  const content = directCitable.length > 0
+  // El dirigido solo REEMPLAZA al gate cuando su material pasa el umbral. Si
+  // quedó flojo (score < threshold), el retrieval semántico corre igual y el
+  // dirigido pasa a ser último recurso — antes salteaba el gate por completo y
+  // `grounded=true` con score 0.001 se camuflaba como grounding normal.
+  const directedOk = directCitable.length > 0 && directCitable[0]!.score >= threshold;
+
+  // 1) CONTENIDO por el gate del reranker (salvo estudio dirigido sólido).
+  const content = directedOk
     ? null
     : await retrieveRanked(query, {
         userId: opts.userId,
@@ -178,20 +219,25 @@ export async function retrieveForTeaching(
     userId: opts.userId,
     subjectId: opts.subjectId,
     k: 40,
+    // Sin esto, pedir 40 sobre brazos de 20 era un número que no se cumplía.
+    poolPerSide: 40,
     corpusRole: "pedagogy",
   });
 
-  const oaSrc = directCitable.length > 0 ? directCitable : (content?.chunks ?? []);
+  const oaSrc = directedOk ? directCitable : (content?.chunks ?? directCitable);
   const oasContent = [...new Set(oaSrc.map((c) => c.oa).filter(Boolean))] as string[];
   const pedagogy = empty();
   let rankedPeda: PedagogyChunk[] = [];
   if (pedaCandidates.length > 0) {
-    const scores = await rerank(query, pedaCandidates.map((c) => c.content.slice(0, 600)), true);
+    const scores = await rerank(query, pedaCandidates.map((c) => c.content.slice(0, RERANK_SNIPPET_CHARS)), true);
     rankedPeda = pedaCandidates
-      .map((c, i) => ({ ...c, rerankScore: scores[i] ?? 0 }))
-      // Boost si el OA del bloque coincide con el del contenido top.
-      .map((c) => ({ ...c, rerankScore: c.oa && oasContent.includes(c.oa) ? c.rerankScore + 0.15 : c.rerankScore }))
-      .sort((a, b) => b.rerankScore - a.rerankScore);
+      // rerankScore queda CRUDO (gate); el boost de OA solo mueve rankScore (orden).
+      .map((c, i) => {
+        const rerankScore = scores[i] ?? 0;
+        const boosted = c.oa && oasContent.includes(c.oa) ? rerankScore + oaBoost : rerankScore;
+        return { ...c, rerankScore, rankScore: Math.min(1, boosted) };
+      })
+      .sort((a, b) => b.rankScore - a.rankScore);
     for (const c of rankedPeda) {
       const t = c.pedagogyType as TeachingType;
       if (TEACHING_TYPES.includes(t) && pedagogy[t].length < perType) pedagogy[t].push(c);
@@ -203,7 +249,8 @@ export async function retrieveForTeaching(
   let citable: CitableChunk[];
   let citableSource: "content" | "pedagogy" | "none";
   let topScore: number;
-  if (directCitable.length > 0) {
+  let gateBypassed = false;
+  if (directedOk) {
     citableSource = "content";
     topScore = directCitable[0]!.score;
     citable = directCitable;
@@ -216,17 +263,28 @@ export async function retrieveForTeaching(
       pageStart: c.pageStart, pageEnd: c.pageEnd, score: c.rerankScore,
     }));
   } else {
+    // El filtro del gate usa el rerankScore CRUDO: con el boost separado en
+    // rankScore, un chunk de pedagogía con score real 0.03 ya no cruza 0.18.
     const fallback = rankedPeda
       .filter((c) => CITABLE_PEDAGOGY.includes(c.pedagogyType as TeachingType) && c.rerankScore >= threshold)
       .slice(0, contentK);
     if (fallback.length > 0) {
       citableSource = "pedagogy";
-      topScore = fallback[0]!.rerankScore;
+      topScore = fallback.reduce((m, c) => Math.max(m, c.rerankScore), 0);
       citable = fallback.map((c) => ({
         chunkId: c.chunkId, content: c.content, source: "pedagogy" as const,
         unit: c.unit, lesson: c.lesson, oa: c.oa, headingPath: c.headingPath,
         pageStart: c.pageStart, pageEnd: c.pageEnd, score: c.rerankScore,
       }));
+    } else if (directCitable.length > 0) {
+      // ÚLTIMO RECURSO del estudio dirigido: el alumno pidió estudiar ESTA
+      // unidad del plan y el material existe, así que se entrega — pero flojo
+      // según el reranker, y eso queda CONTABLE (gateBypassed) en vez de
+      // camuflado como grounding normal. Decisión de producto, ahora visible.
+      citableSource = "content";
+      topScore = directCitable[0]!.score;
+      citable = directCitable;
+      gateBypassed = true;
     } else {
       citableSource = "none";
       topScore = Math.max(content?.topScore ?? 0, rankedPeda[0]?.rerankScore ?? 0);
@@ -235,5 +293,14 @@ export async function retrieveForTeaching(
   }
 
   const oas = [...new Set([...citable.map((c) => c.oa), ...oasContent].filter(Boolean))] as string[];
-  return { citable, grounded: citable.length > 0, citableSource, pedagogy, oas, topScore };
+  return {
+    citable,
+    grounded: citable.length > 0,
+    citableSource,
+    pedagogy,
+    oas,
+    topScore,
+    gateBypassed,
+    stats: content?.stats,
+  };
 }

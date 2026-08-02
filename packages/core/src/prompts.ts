@@ -109,7 +109,7 @@ ${params.material || "(no se recuperó material relevante)"}
 ${params.guide || "(sin guía para este tema)"}
 === FIN ===
 ${adapt}
-Enseñá en una conversación BREVE y simple: conectá con algo que ya sepa, explicá UNA idea con un ejemplo concreto, y terminá con UNA pregunta. Hablá natural, SIN páginas ni "(pág. X)" ni "según el material" en el texto (las referencias van aparte). Sin títulos, rótulos ni markdown. Si el material no cubre el tema, usá la frase de abstención.
+Enseñá en una conversación BREVE y simple: conectá con algo que ya sepa, explicá UNA idea con un ejemplo concreto, y terminá con UNA pregunta. Hablá natural, SIN páginas ni "(pág. X)" ni "según el material" en el texto (las referencias van aparte). Sin títulos, rótulos ni markdown. Si el MATERIAL de arriba no cubre el tema, decíselo con naturalidad y ofrecé un tema relacionado que sí esté; no cortes la charla con un cartel.
 
 Turno del estudiante: ${params.question}`;
 }
@@ -236,6 +236,36 @@ Examen (JSON): ${params.examJson}
 
 Respuestas del estudiante (JSON): ${params.answersJson}`;
 }
+
+/**
+ * JUEZ DE AFIRMACIONES — system prompt propio del instrumento de medición.
+ *
+ * Antes esta llamada usaba `TUTOR_SYSTEM` (el tutor ESTRICTO deprecado), y eso
+ * rompía la métrica: el juez heredaba órdenes como "prefiere 'el material no lo
+ * especifica' antes que arriesgar" y "no inventes definiciones que no aparezcan
+ * TEXTUALMENTE", así que castigaba la paráfrasis fiel como si fuera invento.
+ * Medido el 2026-07-31 sobre las MISMAS respuestas: este camino daba 38,4% de
+ * alucinación mientras `verify.ts` —el verificador que realmente ve el alumno—
+ * daba 0,0%. Una brecha de 38 puntos que medía al juez, no al tutor.
+ *
+ * Un juez no es un tutor. Su única tarea es decidir si el CONTENIDO de una
+ * afirmación se desprende del material, con independencia de las palabras que
+ * se hayan usado para decirlo.
+ */
+export const CLAIMS_JUDGE_SYSTEM = `Sos un evaluador de fidelidad. Tu tarea es descomponer una respuesta en afirmaciones y decidir, para cada una, si el MATERIAL la sostiene.
+
+QUÉ CUENTA COMO SOSTENIDA:
+- La afirmación se desprende del material, aunque esté dicha con OTRAS PALABRAS. Parafrasear bien NO es inventar.
+- Vale el sinónimo, el resumen, el reordenamiento y el cambio de registro (por ejemplo, explicarle a un chico con palabras simples algo que el material dice de manera técnica).
+- Vale la inferencia INMEDIATA de lo que el material afirma: si el material dice "A causó B", "B ocurrió por A" está sostenida.
+- Un ejemplo o una analogía que ILUSTRA una idea del material está sostenida por esa idea; no hace falta que el ejemplo aparezca en el material.
+
+QUÉ NO CUENTA COMO SOSTENIDA:
+- Datos duros que el material no trae: cifras, fechas, porcentajes, nombres propios, fórmulas.
+- Afirmaciones que el material CONTRADICE.
+- Contenido traído de conocimiento general del mundo que el material no menciona ni implica.
+
+NO exijas coincidencia literal de palabras. NO penalices por reformular. Ante la duda genuina entre "sostenida" y "no sostenida", elegí SOSTENIDA: esta medición sirve para detectar invención, no para castigar el buen decir.`;
 
 /** Verificador anti-alucinación (capa 5, opcional). */
 export function buildVerifierPrompt(params: {

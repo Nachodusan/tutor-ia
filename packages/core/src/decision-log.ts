@@ -49,6 +49,28 @@ export interface Decision {
   nPedagogy?: number | null;
   /** true si el turno vino por estudio dirigido (unit/lesson) y salteó el gate. */
   directed?: boolean;
+  /** El dirigido entregó material POR DEBAJO del umbral (último recurso visible). */
+  gateBypassed?: boolean;
+  /** Filas que devolvió cada brazo del retrieval híbrido (contenido). */
+  nDense?: number | null;
+  nLexical?: number | null;
+  /** El brazo léxico devolvió 0 filas: el RRF degeneró a denso puro.
+   *  `grep -c "lexEmpty=true"` sobre una corrida responde "¿el léxico está muerto?". */
+  lexEmpty?: boolean;
+  /** Candidatos únicos que vio el reranker y pool configurado. */
+  nCand?: number | null;
+  pool?: number | null;
+  /** Estrategia de ordenamiento activa ("ce", "rrf_then_ce:10", …). */
+  ranker?: string | null;
+  /** Rango del chunk ganador en el brazo denso ("venía del puesto N"). */
+  winnerDenseRank?: number | null;
+  /** La consulta de búsqueda fue reescrita por el puente de vocabulario. */
+  qNorm?: boolean;
+  qNormMs?: number | null;
+  /** Por qué vía pasó el gate híbrido: "abs" | "margin" | "none". */
+  gateVia?: string | null;
+  /** Margen del top-1 sobre la mediana del pool (logits). */
+  gapMed?: number | null;
   /**
    * El modelo SE ABSTUVO SOLO pese a tener material. Es la señal que separa
    * "el gate cortó" de "el prompt ahorcó al modelo": sin esto no se puede saber
@@ -109,6 +131,18 @@ export function logDecision(d: Decision): void {
     `nCitable=${fmt(d.nCitable)}`,
     `nPeda=${fmt(d.nPedagogy)}`,
     `directed=${fmt(d.directed)}`,
+    `gateBypassed=${fmt(d.gateBypassed)}`,
+    `nDense=${fmt(d.nDense)}`,
+    `nLex=${fmt(d.nLexical)}`,
+    `lexEmpty=${fmt(d.lexEmpty)}`,
+    `nCand=${fmt(d.nCand)}`,
+    `pool=${fmt(d.pool)}`,
+    `ranker=${fmt(d.ranker)}`,
+    `winD=${fmt(d.winnerDenseRank)}`,
+    `qNorm=${fmt(d.qNorm)}`,
+    `qNormMs=${fmt(d.qNormMs)}`,
+    `gateVia=${fmt(d.gateVia)}`,
+    `gapMed=${fmt(d.gapMed)}`,
     `selfAbstain=${fmt(d.selfAbstain)}`,
     `drift=${fmt(d.drift)}`,
     `nli=${d.nliUnavailable ? "unavailable" : fmt(d.nliChecked)}`,

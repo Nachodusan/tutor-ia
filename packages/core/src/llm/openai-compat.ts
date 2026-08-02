@@ -39,6 +39,39 @@ export const DEFAULT_MODEL = "Qwen/Qwen3.6-35B-A3B";
 
 const emptyUsage = (): LLMUsage => ({ inputTokens: null, outputTokens: null });
 
+/**
+ * Techo de reloj propio sobre una promesa del SDK.
+ *
+ * No confía en que nadie honre el AbortSignal: si la promesa no resuelve antes
+ * del deadline, esto rechaza igual. Medido dos veces que hacía falta — un stream
+ * de 945 s y una llamada estructurada de 33.882 s, ambas con el timeout del SDK
+ * configurado en 180 s y ambas ignorándolo.
+ *
+ * `alLimpiar` corre en cualquier caso para no dejar timers colgados.
+ */
+async function conDeadline<T>(
+  p: Promise<T>,
+  ms: number,
+  alLimpiar: () => void,
+  mensaje: string,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      p,
+      new Promise<never>((_, rej) => {
+        timer = setTimeout(
+          () => rej(new LLMError(mensaje, { provider: PROVIDER, kind: "timeout", retryable: false })),
+          ms,
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+    alLimpiar();
+  }
+}
+
 /** Host del baseURL, para el log (`api.deepinfra.com`). */
 export function hostOf(url: string): string {
   try {
@@ -253,14 +286,25 @@ export class OpenAICompatProvider implements LLMProvider {
         assertWithinBudget(PROVIDER);
         const t = withTimeout(timeoutMs, opts?.signal);
         try {
-          const res = await this.client.chat.completions.create(
-            {
-              model: this.model,
-              messages: toMessages(prompt),
-              ...(responseFormat ? { response_format: responseFormat } : {}),
-              ...toOpenAIParams(params),
-            } as never,
-            { signal: t.signal },
+          // FECHA LÍMITE DURA, igual que en el streaming y por el mismo motivo:
+          // el AbortSignal no basta. Medido el 2026-08-01, una llamada de
+          // `generateStructured` con LLM_TIMEOUT_MS=180000 corrió **33.882
+          // segundos** (9,4 horas) sin cortar. Yo había puesto el techo solo en
+          // `generateStream` y este camino quedó sin cubrir.
+          // Acá alcanza con un race: la promesa del SDK contra un reloj propio.
+          const res = await conDeadline(
+            this.client.chat.completions.create(
+              {
+                model: this.model,
+                messages: toMessages(prompt),
+                ...(responseFormat ? { response_format: responseFormat } : {}),
+                ...toOpenAIParams(params),
+              } as never,
+              { signal: t.signal },
+            ),
+            config.llmStreamDeadlineMs,
+            () => t.clear(),
+            `${hostOf(this.baseUrl)}: ${method} superó la fecha límite de ${config.llmStreamDeadlineMs}ms`,
           );
           const msg = (res as { choices?: { message?: unknown }[] }).choices?.[0]?.message;
           const raw =
@@ -333,9 +377,39 @@ export class OpenAICompatProvider implements LLMProvider {
       throw err;
     });
 
+    // ─────────────────────────────────────────────────────────────────────
+    // FECHA LÍMITE DURA, independiente del SDK.
+    //
+    // El AbortSignal de `create()` NO alcanza: medido el 2026-07-31, una
+    // llamada corrió 945 SEGUNDOS con LLM_TIMEOUT_MS=180000 y terminó sin
+    // emitir un solo chunk. El proveedor sostuvo la conexión abierta y el
+    // abort no interrumpió la lectura del stream.
+    //
+    // Acá no confiamos en que nadie honre la señal: cada `next()` del iterador
+    // compite contra un deadline absoluto. Si vence, cerramos el iterador a
+    // mano (`return()`) y tiramos LLMError. Es un techo que no se puede exceder
+    // pase lo que pase del otro lado.
+    // ─────────────────────────────────────────────────────────────────────
+    const deadlineMs = config.llmStreamDeadlineMs;
+    const finAbs = started + deadlineMs;
+    const it = (stream as unknown as AsyncIterable<Record<string, unknown>>)[Symbol.asyncIterator]();
+    let venció = false;
+    const restante = () => finAbs - Date.now();
+
     let truncated = false;
     try {
-      for await (const part of stream as unknown as AsyncIterable<Record<string, unknown>>) {
+      for (;;) {
+        if (restante() <= 0) { venció = true; break; }
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const reloj = new Promise<"deadline">((res) => {
+          timer = setTimeout(() => res("deadline"), Math.max(1, restante()));
+        });
+        const paso = await Promise.race([it.next(), reloj]);
+        clearTimeout(timer);
+        if (paso === "deadline") { venció = true; break; }
+        const { value, done } = paso as IteratorResult<Record<string, unknown>>;
+        if (done) break;
+        const part = value;
         const u = part.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined;
         if (u) {
           usage.inputTokens = u.prompt_tokens ?? null;
@@ -362,6 +436,16 @@ export class OpenAICompatProvider implements LLMProvider {
           }
         }
       }
+      // Cerrar el iterador ANTES de decidir: si venció el deadline hay que
+      // soltar la conexión, si no queda colgada consumiendo el socket.
+      if (venció) {
+        await it.return?.(undefined).catch(() => undefined);
+        throw new LLMError(
+          `${hostOf(this.baseUrl)}: el stream superó la fecha límite de ${deadlineMs}ms ` +
+            `(emitió ${emitted ? "texto parcial" : "NADA"}). Subí LLM_STREAM_DEADLINE_MS si es legítimo.`,
+          { provider: PROVIDER, kind: "timeout", retryable: false },
+        );
+      }
       const end = filter.finish();
       truncated = end.truncated;
       if (end.out) {
@@ -369,6 +453,15 @@ export class OpenAICompatProvider implements LLMProvider {
         yield end.out;
       }
       if (truncated && !emitted) throw this.overflow();
+      // Un stream que termina SIN emitir nada no es una respuesta: es un fallo.
+      // Antes se devolvía como éxito con texto vacío y el llamador lo contaba
+      // como "respondió". Medido: q100 del golden salió así tras 945s.
+      if (!emitted) {
+        throw new LLMError(
+          `${hostOf(this.baseUrl)}: el stream terminó sin emitir contenido.`,
+          { provider: PROVIDER, kind: "bad_response", retryable: false },
+        );
+      }
     } catch (err) {
       throw this.toLLMError(err, 1, timeoutMs, t);
     } finally {
