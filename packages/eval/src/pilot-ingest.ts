@@ -30,21 +30,21 @@ async function main() {
   const subjectName = "Ciencias Naturales 1º Básico";
   const [subj] = await sql<{ id: string }[]>`
     insert into subjects (user_id, name, description)
-    values (${userId}, ${subjectName}, 'Piloto doble corpus tipado')
+    values (null, ${subjectName}, 'Piloto doble corpus tipado')
     on conflict do nothing
     returning id
   `;
   const subjectId =
     subj?.id ??
-    (await sql<{ id: string }[]>`select id from subjects where user_id=${userId} and name=${subjectName} limit 1`)[0]!.id;
+    (await sql<{ id: string }[]>`select id from subjects where user_id is null and name=${subjectName} limit 1`)[0]!.id;
   console.log(`📚 Materia: ${subjectName} (${subjectId})`);
 
   for (const f of FILES) {
     // Documento (borra el previo con mismo título para re-ingestar limpio).
-    await sql`delete from documents where owner_user_id=${userId} and title=${f.title}`;
+    await sql`delete from documents where owner_user_id is null and title=${f.title}`;
     const [doc] = await sql<{ id: string }[]>`
       insert into documents (owner_user_id, subject_id, title, source_type, kind, grade, subject_area, status)
-      values (${userId}, ${subjectId}, ${f.title}, 'pdf', ${f.kind}, ${GRADE}, ${SUBJECT_AREA}, 'pending')
+      values (null, ${subjectId}, ${f.title}, 'pdf', ${f.kind}, ${GRADE}, ${SUBJECT_AREA}, 'pending')
       returning id
     `;
     process.stdout.write(`\n▶ ${f.kind.padEnd(8)} ${f.title} ... `);

@@ -43,7 +43,7 @@ async function main() {
   let subjectId: string | null = null;
   if (subjectName) {
     const [s] = await sql<{ id: string }[]>`
-      insert into subjects (user_id, name) values (${DEV_USER_ID}, ${subjectName})
+      insert into subjects (user_id, name) values (null, ${subjectName})
       returning id
     `;
     subjectId = s!.id;
@@ -52,7 +52,7 @@ async function main() {
   const title = basename(pdfPath);
   const [doc] = await sql<{ id: string }[]>`
     insert into documents (owner_user_id, subject_id, title, source_type, status)
-    values (${DEV_USER_ID}, ${subjectId}, ${title}, 'pdf', 'pending')
+    values (null, ${subjectId}, ${title}, 'pdf', 'pending')
     returning id
   `;
   const documentId = doc!.id;

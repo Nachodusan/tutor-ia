@@ -12,7 +12,9 @@ import {
   logDecision,
   looksLikeSelfAbstention,
 } from "@tutor-ia/core";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireUser, unauthorized } from "@/lib/auth";
+import { ensureSession, insertMessage } from "@/lib/conversations";
+import { randomUUID } from "node:crypto";
 
 export const runtime = "nodejs";
 // Generación del 7B (con recarga por keep_alive:0) + verificación NLI puede
@@ -20,6 +22,9 @@ export const runtime = "nodejs";
 export const maxDuration = 120;
 
 /** `ctx.pedagogy` viene AGRUPADO por tipo (proposito, evaluacion, …), no plano. */
+const RETRIEVAL_ERROR_MSG =
+  "Uf, tuve un problemita para traer tu material (a veces el buscador se satura). Probá de nuevo en un momento, o reformulá el tema. 🙏";
+
 const countPedagogy = (p: Record<string, unknown[]> | null | undefined): number =>
   p ? Object.values(p).reduce((n, arr) => n + (arr?.length ?? 0), 0) : 0;
 // STRUGGLE_RE / isStruggling viven en core: el golden set tiene que activar la
@@ -36,7 +41,9 @@ const countPedagogy = (p: Record<string, unknown[]> | null | undefined): number 
  */
 export async function POST(req: Request) {
   const t0 = Date.now();
-  const userId = await getCurrentUserId(req);
+  const auth = await requireUser(req);
+  if (!auth) return unauthorized();
+  const userId = auth.userId;
   const body = (await req.json()) as {
     question?: string;
     subjectId?: string | null;
@@ -44,10 +51,18 @@ export async function POST(req: Request) {
     history?: { role: "user" | "assistant"; content: string }[];
     unit?: number | null;
     lesson?: number | null;
+    /** Conversación a la que pertenece este turno. La primera vez no viene: la
+     *  ruta la genera y la devuelve en el frame de citas. */
+    sessionId?: string | null;
   };
   if (!body.question?.trim()) {
     return new Response("Falta 'question'.", { status: 400 });
   }
+  // El id se genera acá y NO se espera a la base: el insert corre en paralelo
+  // con el retrieval.
+  const sessionId = body.sessionId ?? randomUUID();
+  const persistUsuario = ensureSession(sessionId, userId, body.subjectId ?? null, body.question.slice(0, 80))
+    .then(() => insertMessage(sessionId, "user", body.question!));
 
   // Mensaje social (saludo, gracias, chau) o pedido VAGO sin tema ("dame un
   // ejemplo" como primer mensaje): responder conversacional, sin gate ni
@@ -73,8 +88,15 @@ export async function POST(req: Request) {
     const enc = new TextEncoder();
     const s = new ReadableStream({
       start(controller) {
-        controller.enqueue(enc.encode("\x1e" + JSON.stringify({ citations: [], grounded: true }) + "\n"));
+        controller.enqueue(enc.encode("\x1e" + JSON.stringify({ citations: [], grounded: true, sessionId }) + "\n"));
         controller.enqueue(enc.encode(conversational));
+        // Un saludo también es parte de la conversación: si no se guarda, el
+        // historial que el alumno recupere va a tener huecos.
+        void persistUsuario.then(() =>
+          insertMessage(sessionId, "assistant", conversational, {
+            grounded: true, meta: { cause: social ? "social" : "vague" },
+          }),
+        );
         controller.close();
       },
     });
@@ -107,8 +129,13 @@ export async function POST(req: Request) {
     const enc = new TextEncoder();
     const s = new ReadableStream({
       start(controller) {
-        controller.enqueue(enc.encode("\x1e" + JSON.stringify({ citations: [], grounded: true }) + "\n"));
-        controller.enqueue(enc.encode("Uf, tuve un problemita para traer tu material (a veces el buscador se satura). Probá de nuevo en un momento, o reformulá el tema. 🙏"));
+        controller.enqueue(enc.encode("\x1e" + JSON.stringify({ citations: [], grounded: true, sessionId }) + "\n"));
+        void persistUsuario.then(() =>
+          insertMessage(sessionId, "assistant", RETRIEVAL_ERROR_MSG, {
+            grounded: false, meta: { cause: "retrieval_error" },
+          }),
+        );
+        controller.enqueue(enc.encode(RETRIEVAL_ERROR_MSG));
         controller.close();
       },
     });
@@ -121,14 +148,19 @@ export async function POST(req: Request) {
       // 1) Frame de citas + si está fundamentado.
       const citations = res.grounded ? teachingCitations(res.ctx) : [];
       controller.enqueue(
-        encoder.encode("\x1e" + JSON.stringify({ citations, grounded: res.grounded }) + "\n"),
+        encoder.encode("\x1e" + JSON.stringify({ citations, grounded: res.grounded, sessionId }) + "\n"),
       );
       try {
         // Anti-alucinación (capa 1): sin material (ni TE ni GDD) → abstención,
         // sin llamar al modelo.
         if (!res.grounded) {
-          controller.enqueue(
-            encoder.encode(res.rerankerDown ? RERANKER_DOWN : teachingAbstention()),
+          const textoAbstencion = res.rerankerDown ? RERANKER_DOWN : teachingAbstention();
+          controller.enqueue(encoder.encode(textoAbstencion));
+          void persistUsuario.then(() =>
+            insertMessage(sessionId, "assistant", textoAbstencion, {
+              grounded: false,
+              meta: { cause: res.rerankerDown ? "reranker_down" : "gate", topScore: res.ctx?.topScore ?? null },
+            }),
           );
           // El gate cortó. `topScore` existe aun sin material: es el mejor
           // candidato que NO llegó al umbral — sirve para ver si quedó cerca
@@ -202,6 +234,20 @@ export async function POST(req: Request) {
             nliChecked: v?.checked ?? null,
             chars: full.length,
             ms: Date.now() - t0,
+          });
+          // Con AWAIT a propósito: acá el último token YA salió al cliente (el
+          // alumno terminó de leer), así que ~1 ms de INSERT sobre una respuesta
+          // de 10-60 s es latencia percibida CERO y a cambio la escritura queda
+          // garantizada. Fire-and-forget después de close() se arriesga a que el
+          // proceso corte la promesa.
+          await persistUsuario;
+          await insertMessage(sessionId, "assistant", full, {
+            citations, grounded: res.grounded, verification: v,
+            meta: {
+              cause: "answered", topScore: res.ctx.topScore ?? null,
+              ranker: res.ctx.stats?.ranker ?? null, qNorm: res.qNorm,
+              gateVia: res.ctx.stats?.gateVia ?? null, ms: Date.now() - t0,
+            },
           });
         }
       } catch (err) {

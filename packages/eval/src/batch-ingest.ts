@@ -131,7 +131,7 @@ async function main() {
     const enBase = await sqlRO<{ title: string; status: string; n: number }[]>`
       select d.title, d.status, count(c.id)::int as n
       from documents d left join chunks c on c.document_id = d.id
-      where d.owner_user_id = ${uid} group by d.title, d.status`;
+      where d.owner_user_id is null group by d.title, d.status`;
     const listos = new Set(enBase.filter((d) => d.status === "ready").map((d) => d.title));
     const enBaseTitulos = new Set(enBase.map((d) => d.title));
     const seSaltean = [...esperados.keys()].filter((t) => listos.has(t));
@@ -173,7 +173,7 @@ async function main() {
   const enBase = await sql<{ title: string; n: number }[]>`
     select d.title, count(c.id)::int as n
     from documents d left join chunks c on c.document_id = d.id
-    where d.owner_user_id = ${uid} group by d.title`;
+    where d.owner_user_id is null group by d.title`;
   const huerfanos = enBase.filter((d) => !esperados.has(d.title));
   if (huerfanos.length > 0 && process.env.INGEST_ALLOW_STALE !== "1") {
     const chunks = huerfanos.reduce((s, d) => s + d.n, 0);
@@ -201,13 +201,16 @@ async function main() {
     const subjectArea = first.materiaCanonica;
 
     let subjectId: string;
+    // El corpus oficial es GLOBAL (user_id null): es el mismo currículo para
+    // todos los alumnos. Keyearlo por usuario haría que ningún documento ya
+    // ingestado matcheara y la próxima corrida duplicaría los 218 en silencio.
     const found = await sql<{ id: string }[]>`
-      select id from subjects where user_id=${uid} and name=${subjectName} limit 1`;
+      select id from subjects where user_id is null and name=${subjectName} limit 1`;
     if (found[0]) subjectId = found[0].id;
     else {
       const [ins] = await sql<{ id: string }[]>`
         insert into subjects (user_id, name, description)
-        values (${uid}, ${subjectName}, 'Corpus MINEDUC — doble corpus') returning id`;
+        values (null, ${subjectName}, 'Corpus MINEDUC — doble corpus') returning id`;
       subjectId = ins!.id;
     }
 
@@ -216,15 +219,15 @@ async function main() {
       const kind = corpusKind(row);
 
       const existing = await sql<{ status: string }[]>`
-        select status from documents where owner_user_id=${uid} and title=${title} limit 1`;
+        select status from documents where owner_user_id is null and title=${title} limit 1`;
       if (existing[0]?.status === "ready") { skipped++; continue; }
 
-      await sql`delete from documents where owner_user_id=${uid} and title=${title}`;
+      await sql`delete from documents where owner_user_id is null and title=${title}`;
       // storage_path AHORA se guarda: antes quedaba NULL y no había forma de ir
       // de un chunk a su archivo fuente.
       const [doc] = await sql<{ id: string }[]>`
         insert into documents (owner_user_id, subject_id, title, source_type, storage_path, kind, grade, subject_area, status)
-        values (${uid}, ${subjectId}, ${title}, 'pdf', ${row.ruta}, ${kind}, ${grade}, ${subjectArea}, 'pending')
+        values (null, ${subjectId}, ${title}, 'pdf', ${row.ruta}, ${kind}, ${grade}, ${subjectArea}, 'pending')
         returning id`;
       const tt = Date.now();
       try {

@@ -1,7 +1,7 @@
 import { chatJSON } from "@tutor-ia/core";
 import { getSql } from "@tutor-ia/db";
 import { getPlanTopics, type PlanTopic } from "@tutor-ia/rag";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireUser, unauthorized } from "@/lib/auth";
 
 export const runtime = "nodejs";
 // Generar la prueba con el 7B (recarga por keep_alive:0) puede tardar.
@@ -17,7 +17,8 @@ export const maxDuration = 180;
  * La corrección es determinística en el cliente (índice elegido vs correcto).
  */
 export async function POST(req: Request) {
-  await getCurrentUserId(req);
+  const auth = await requireUser(req);
+  if (!auth) return unauthorized();
   const body = (await req.json()) as { subjectId?: string; subjectName?: string };
   const subjectId = body.subjectId;
   if (!subjectId) return Response.json({ error: "Falta subjectId" }, { status: 400 });
@@ -25,6 +26,15 @@ export async function POST(req: Request) {
   const sql = getSql();
   // MISMA fuente que /api/plan: el índice real del libro. Antes esta query era
   // una copia byte a byte de la de plan/route.ts, con la misma metadata rota.
+  // El material del currículo es global (user_id null), pero la guarda importa:
+  // el día que un colegio suba libros propios, esto impide que cualquier alumno
+  // autenticado lea material de otro pasando un uuid.
+  const sqlGuard = getSql();
+  const [visible] = await sqlGuard`
+    select 1 from subjects where id = ${subjectId}::uuid
+      and (user_id is null or user_id = ${auth.userId}::uuid)`;
+  if (!visible) return Response.json({ error: "Materia no disponible" }, { status: 404 });
+
   const temas: PlanTopic[] = await getPlanTopics(subjectId, { limit: 6 });
   if (temas.length < 2) return Response.json({ items: [] });
 

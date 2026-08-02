@@ -43,6 +43,9 @@ psql "$DB_URL" -f packages/db/schema_lexical_or.sql
 # Temas del plan de estudio derivados del índice de cada libro. Se llena con
 # `pnpm --filter @tutor-ia/eval build-sections` DESPUÉS de ingestar.
 psql "$DB_URL" -f packages/db/schema_book_sections.sql
+# Login del alumno (anónimo), estado persistido y conversaciones. Va ANTES del
+# seed, que ya inserta el usuario dev con su username.
+psql "$DB_URL" -f packages/db/schema_auth.sql
 psql "$DB_URL" -f packages/db/seed.sql
 
 echo "==> 4/5 Descargando modelos locales en Ollama…"

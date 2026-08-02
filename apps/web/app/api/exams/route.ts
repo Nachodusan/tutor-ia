@@ -1,6 +1,6 @@
 import { generateExam, gradeExam, type Exam, type StudentAnswer } from "@tutor-ia/core";
 import { getSql } from "@tutor-ia/db";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireUser, unauthorized } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -13,7 +13,9 @@ export const maxDuration = 120;
  *      -> corrige y guarda el intento; devuelve { grading }
  */
 export async function POST(req: Request) {
-  const userId = await getCurrentUserId(req);
+  const auth = await requireUser(req);
+  if (!auth) return unauthorized();
+  const userId = auth.userId;
   const sql = getSql();
   const body = (await req.json()) as Record<string, unknown>;
   const action = body.action;

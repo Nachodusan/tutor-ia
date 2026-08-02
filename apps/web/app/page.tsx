@@ -6,50 +6,37 @@ interface Citation { index: number; chunkId: string; page: number | null; source
 interface Verification { grounded: boolean; contradicted: string[]; unsupported: string[]; checked?: number; unavailable?: boolean }
 interface Msg { role: "user" | "assistant"; content: string; citations?: Citation[]; verification?: Verification | null; grounded?: boolean; streaming?: boolean }
 interface Subject { id: string; name: string; grade: string | null; subject_area: string | null; content_chunks: string; pedagogy_chunks: string }
-interface Profile { name: string; grade: string; priority: string[] }
-interface PlanItem { n: number; title: string; focus: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
-interface TestItem { n: number; topic: string; question: string; options: string[]; correct: number; explain: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
+/** El perfil NO tiene nombre: las cuentas son anónimas (los usuarios son
+ *  menores). El username lo devuelve /api/me y solo sirve para saludar. */
+interface Profile { username: string; grade: string; priority: string[] }
+interface PlanItem { n: number; key: string; title: string; focus: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
+interface TestItem { n: number; key?: string; topic: string; question: string; options: string[]; correct: number; explain: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
 
 // Un tema que el alumno falló en la prueba. Se guarda con unit/lesson para que
 // "Reforzar" pueda disparar ESTUDIO DIRIGIDO (sin eso el retrieval se abstiene).
-interface WeakTopic { topic: string; unit: number | null; lesson: number | null; misses: number; lastAt: number }
-interface SubjectProgress { weak: WeakTopic[]; lastScore?: { score: number; total: number; at: number } }
+interface WeakTopic { topicKey: string; topic: string; unit: number | null; lesson: number | null; misses: number }
+interface SubjectProgress { weak: WeakTopic[]; lastScore?: { score: number; total: number; at: string } | null }
 /** Lo que el panel muestra de cada materia. Se arma leyendo las dos claves. */
-interface SubjectStats { planDone: number; planTotal: number; weak: WeakTopic[]; lastScore?: { score: number; total: number; at: number } }
+interface SubjectStats { planDone: number; planTotal: number; weak: WeakTopic[]; lastScore?: { score: number; total: number; at: string } | null }
 
-const PROFILE_KEY = "tutor_profile";
-const planKey = (id: string) => `tutor_plan_${id}`;
-const progressKey = (id: string) => `tutor_progress_${id}`;
+/** Claves del esquema VIEJO. Se borran al entrar: el perfil guardaba el NOMBRE
+ *  del alumno —justo lo que se elimina por privacidad— y el plan/progreso
+ *  pertenecían a "quien haya usado este navegador", que es el bug que el login
+ *  arregla. Migrarlos le regalaría a un chico el progreso de otro. */
+const CLAVES_VIEJAS = ["tutor_profile"];
+function limpiarLocalStorageViejo() {
+  try {
+    for (const k of Object.keys(localStorage)) {
+      if (CLAVES_VIEJAS.includes(k) || k.startsWith("tutor_plan_") || k.startsWith("tutor_progress_")) {
+        localStorage.removeItem(k);
+      }
+    }
+  } catch { /* modo privado */ }
+}
 /** Tope de temas a reforzar en el panel: una lista larga desmotiva y empuja el
  *  resto del panel fuera de pantalla. Los que sobran se cuentan abajo. */
 const REVIEW_MAX = 6;
 
-function readProgress(id: string): SubjectProgress {
-  try {
-    const raw = localStorage.getItem(progressKey(id));
-    if (!raw) return { weak: [] };
-    const j = JSON.parse(raw) as SubjectProgress;
-    return { weak: Array.isArray(j.weak) ? j.weak : [], lastScore: j.lastScore };
-  } catch { return { weak: [] }; }
-}
-
-/** Progreso del plan + errores pendientes de una materia. Solo cliente. */
-function readStats(id: string): SubjectStats {
-  let planDone = 0, planTotal = 0;
-  try {
-    const raw = localStorage.getItem(planKey(id));
-    if (raw) {
-      const j = JSON.parse(raw) as { items?: PlanItem[]; done?: number[] };
-      planTotal = j.items?.length ?? 0;
-      // Se cuentan solo los "listos" que siguen existiendo en el plan: si el
-      // alumno regenera el plan, un número viejo no debe inflar el progreso.
-      const ns = new Set((j.items ?? []).map((i) => i.n));
-      planDone = (j.done ?? []).filter((n) => ns.has(n)).length;
-    }
-  } catch { /* */ }
-  const p = readProgress(id);
-  return { planDone, planTotal, weak: p.weak, lastScore: p.lastScore };
-}
 const stripOptLetter = (o: string) => o.replace(/^\s*[A-Da-d1-4]\s*[)\.\-:]\s+/, "").trim();
 
 // ── BLOQUES & AURORA · tokens (claro, 100% fuentes de sistema, offline) ──
@@ -161,7 +148,14 @@ export default function Home() {
   const [transcribing, setTranscribing] = useState(false);
   const [callState, setCallState] = useState<CallState>("idle");
   const [plan, setPlan] = useState<PlanItem[] | null>(null); // null=no generado, []=sin plan, [...]=plan
-  const [planDone, setPlanDone] = useState<number[]>([]);
+  // Claves ESTABLES de los temas hechos, no índices posicionales: al
+  // regenerar el plan un índice viejo apuntaría a otra lección.
+  const [username, setUsername] = useState("");
+  /** Conversación en curso. La ruta la crea en el primer turno y la devuelve en
+   *  el frame de citas; a partir de ahí viaja en cada POST para que los turnos
+   *  queden encadenados en la misma sesión. */
+  const sessionRef = useRef<string | null>(null);
+  const [planDone, setPlanDone] = useState<string[]>([]);
   const [planOpen, setPlanOpen] = useState(false);
   const [planLoading, setPlanLoading] = useState(false);
   const [test, setTest] = useState<TestItem[] | null>(null); // null=no generada, []=sin material
@@ -183,20 +177,36 @@ export default function Home() {
   messagesRef.current = messages;
 
   useEffect(() => { fetch("/api/subjects").then((r) => r.json()).then((j) => setSubjects(j.subjects ?? [])).catch(() => {}); }, []);
+  // Quién soy y mi perfil, desde la base. Sin sesión el middleware ya redirigió
+  // al login; el 401 acá es la red de seguridad si la sesión venció a mitad.
   useEffect(() => {
-    try { const raw = localStorage.getItem(PROFILE_KEY); if (raw) setProfile(JSON.parse(raw)); } catch { /* */ }
-    setLoaded(true);
+    limpiarLocalStorageViejo();
+    fetch("/api/me")
+      .then((r) => (r.status === 401 ? (window.location.href = "/login", null) : r.json()))
+      .then((j) => {
+        if (!j) return;
+        setUsername(j.user?.username ?? "");
+        if (j.profile?.grade) {
+          setProfile({ username: j.user?.username ?? "", grade: j.profile.grade, priority: j.profile.priority ?? [] });
+        }
+      })
+      .catch(() => { /* sin red: se queda en el onboarding */ })
+      .finally(() => setLoaded(true));
   }, []);
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
   useEffect(() => {
     setPlanOpen(false);
     setTest(null); setTestAns({}); setTestSubmitted(false); setTestOpen(false);
     if (!subjectId) { setPlan(null); setPlanDone([]); return; }
-    try {
-      const raw = localStorage.getItem(planKey(subjectId));
-      if (raw) { const j = JSON.parse(raw); setPlan(j.items ?? null); setPlanDone(j.done ?? []); }
-      else { setPlan(null); setPlanDone([]); }
-    } catch { setPlan(null); setPlanDone([]); }
+    // El plan está cacheado por materia (es el mismo libro para todo el curso);
+    // lo que es de este alumno son las claves marcadas como hechas.
+    fetch(`/api/plan?subjectId=${subjectId}`)
+      .then((r) => r.json())
+      .then((j) => {
+        setPlan(j.items?.length ? j.items : null);
+        setPlanDone(j.doneKeys ?? []);
+      })
+      .catch(() => { setPlan(null); setPlanDone([]); });
   }, [subjectId]);
 
   const subject = subjects.find((s) => s.id === subjectId);
@@ -206,9 +216,10 @@ export default function Home() {
   // el alumno pudo marcar lecciones o rendir una prueba mientras estaba adentro.
   useEffect(() => {
     if (subjectId || !subjects.length) return;
-    const next: Record<string, SubjectStats> = {};
-    for (const s of subjects) next[s.id] = readStats(s.id);
-    setStats(next);
+    fetch("/api/progress")
+      .then((r) => r.json())
+      .then((j) => setStats(j.progress ?? {}))
+      .catch(() => { /* el panel muestra ceros */ });
   }, [subjectId, subjects]);
 
   /**
@@ -220,17 +231,12 @@ export default function Home() {
   function reinforce(id: string, w: WeakTopic) {
     setSubjectId(id);
     setMessages([]);
+    sessionRef.current = null;   // repasar arranca una conversación nueva
     send(`Quiero repasar: ${w.topic}. Explicámelo simple, desde el principio y con un ejemplo.`,
       { unit: w.unit, lesson: w.lesson }, id);
   }
 
-  function savePlan(items: PlanItem[] | null, done: number[]) {
-    if (!subjectId) return;
-    try {
-      if (items && items.length) localStorage.setItem(planKey(subjectId), JSON.stringify({ items, done }));
-      else localStorage.removeItem(planKey(subjectId));
-    } catch { /* */ }
-  }
+
   async function generatePlan() {
     if (planLoading || !subjectId) return;
     setPlanLoading(true);
@@ -238,7 +244,7 @@ export default function Home() {
       const res = await fetch("/api/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subjectId, subjectName: subject ? subjectLabel(subject) : null }) });
       const j = await res.json();
       const items: PlanItem[] = j.items ?? [];
-      setPlan(items); setPlanDone([]); savePlan(items, []);
+      setPlan(items); setPlanDone(j.doneKeys ?? []);
       if (items.length) setPlanOpen(true);
     } catch { setPlan([]); }
     finally { setPlanLoading(false); }
@@ -248,8 +254,16 @@ export default function Home() {
     const focus = item.focus ? ` (${item.focus})` : "";
     send(`Quiero estudiar: ${item.title}${focus}. Enseñámelo desde el principio, paso a paso y con ejemplos.`, { unit: item.unit, lesson: item.lesson });
   }
-  function toggleDone(n: number) {
-    setPlanDone((d) => { const nd = d.includes(n) ? d.filter((x) => x !== n) : [...d, n]; savePlan(plan, nd); return nd; });
+  /** Marca/desmarca un tema. Optimista en la UI y persistido en la base: el
+   *  alumno ve el tilde al instante y no espera al round-trip. */
+  function toggleDone(key: string) {
+    if (!subjectId) return;
+    const done = !planDone.includes(key);
+    setPlanDone((d) => (done ? [...d, key] : d.filter((x) => x !== key)));
+    fetch("/api/plan/progress", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subjectId, topicKey: key, done }),
+    }).catch(() => { /* al recargar se relee de la base */ });
   }
 
   // ── Simulación de prueba ──
@@ -274,30 +288,56 @@ export default function Home() {
    * "para reforzar" del panel se vacía solo cuando el alumno lo domina, en vez
    * de acumular errores viejos para siempre.
    */
-  function submitTest() {
+  /**
+   * Corrige la prueba en el SERVIDOR y refresca el panel. Antes se calculaba en
+   * el cliente y se guardaba en localStorage; ahora los temas para reforzar
+   * viven en la base y siguen al alumno entre dispositivos.
+   */
+  async function submitTest() {
     setTestSubmitted(true);
     if (!test || !subjectId) return;
     try {
-      const prev = readProgress(subjectId);
-      const weak = [...prev.weak];
-      let score = 0;
-      for (const it of test) {
-        const ok = testAns[it.n] === it.correct;
-        if (ok) score++;
-        const i = weak.findIndex((w) => w.topic === it.topic);
-        if (ok) { if (i >= 0) weak.splice(i, 1); continue; }
-        if (i >= 0) weak[i] = { ...weak[i], misses: weak[i].misses + 1, lastAt: Date.now(), unit: it.unit, lesson: it.lesson };
-        else weak.push({ topic: it.topic, unit: it.unit, lesson: it.lesson, misses: 1, lastAt: Date.now() });
-      }
-      const next: SubjectProgress = { weak, lastScore: { score, total: test.length, at: Date.now() } };
-      localStorage.setItem(progressKey(subjectId), JSON.stringify(next));
-      setStats((s) => ({ ...s, [subjectId]: { ...readStats(subjectId) } }));
-    } catch { /* */ }
+      const r = await fetch("/api/test/submit", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subjectId,
+          items: test.map((it) => ({
+            topicKey: it.key ?? it.topic, topic: it.topic,
+            unit: it.unit, lesson: it.lesson,
+            correct: it.correct, answer: testAns[it.n] ?? null,
+          })),
+        }),
+      });
+      const j = await r.json();
+      setStats((st) => ({
+        ...st,
+        [subjectId]: {
+          ...(st[subjectId] ?? { planDone: 0, planTotal: 0, weak: [] }),
+          weak: j.weak ?? [],
+          lastScore: { score: j.score, total: j.total, at: new Date().toISOString() },
+        },
+      }));
+    } catch { /* el panel se refresca al volver */ }
   }
 
-  function saveProfile(p: Profile) { setProfile(p); try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch { /* */ } }
-  function logout() { if (callRef.current) endCall(); setSubjectId(""); setMessages([]); setProfile(null); try { localStorage.removeItem(PROFILE_KEY); } catch { /* */ } }
-  function toDashboard() { if (callRef.current) endCall(); setSubjectId(""); setMessages([]); }
+
+  function saveProfile(p: Profile) {
+    setProfile(p);   // optimista: la UI no espera al round-trip
+    fetch("/api/me/profile", {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ grade: p.grade, priority: p.priority }),
+    }).catch(() => { /* se reintenta al volver a guardar */ });
+  }
+  /** Cierra sesión DE VERDAD: revoca en la base y recarga. Antes solo borraba el
+   *  perfil local, así que el alumno siguiente heredaba el plan y los temas
+   *  fallados del anterior. */
+  async function logout() {
+    if (callRef.current) endCall();
+    limpiarLocalStorageViejo();
+    try { await fetch("/api/auth/logout", { method: "POST" }); } catch { /* igual salimos */ }
+    window.location.href = "/login";
+  }
+  function toDashboard() { if (callRef.current) endCall(); setSubjectId(""); setMessages([]); sessionRef.current = null; }
 
   function speak(text: string): Promise<void> {
     return new Promise(async (resolve) => {
@@ -354,7 +394,8 @@ export default function Home() {
     const patch = (p: Partial<Msg>) => setMessages((m) => { const c = [...m]; c[c.length - 1] = { ...c[c.length - 1], ...p } as Msg; return c; });
     let displayed = "";
     try {
-      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, subjectId: sid || null, subjectName: subj ? subjectLabel(subj) : null, history, ...(topic ? { unit: topic.unit, lesson: topic.lesson } : {}) }) });
+      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, subjectId: sid || null, subjectName: subj ? subjectLabel(subj) : null, history, ...(topic ? { unit: topic.unit, lesson: topic.lesson } : {}),
+        sessionId: sessionRef.current }) });
       if (!res.body) { patch({ content: "Error: sin respuesta.", streaming: false }); return ""; }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -366,7 +407,11 @@ export default function Home() {
         if (!citationsParsed && buffer.startsWith("\x1e")) {
           const nl = buffer.indexOf("\n");
           if (nl !== -1) {
-            try { const meta = JSON.parse(buffer.slice(1, nl)); patch({ citations: meta.citations ?? [], grounded: meta.grounded !== false }); } catch { /* */ }
+            try {
+              const meta = JSON.parse(buffer.slice(1, nl));
+              if (meta.sessionId) sessionRef.current = meta.sessionId;
+              patch({ citations: meta.citations ?? [], grounded: meta.grounded !== false });
+            } catch { /* */ }
             buffer = buffer.slice(nl + 1); citationsParsed = true;
           }
         }
@@ -622,7 +667,7 @@ function IconBtn({ children, onClick, active, title, soft }: { children: React.R
 }
 function Dots() {
   return (<span style={{ display: "inline-flex", gap: 3 }}>
-    {[0, 1, 2].map((i) => <span key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor", animation: `tdot 1s ${i * 0.15}s infinite ease-in-out` }} />)}
+    {[0, 1].map((i) => <span key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor", animation: `tdot 1s ${i * 0.15}s infinite ease-in-out` }} />)}
     <style>{`@keyframes tdot { 0%,80%,100% { opacity:.3; transform:translateY(0) } 40% { opacity:1; transform:translateY(-3px) } }`}</style>
   </span>);
 }
@@ -644,17 +689,18 @@ function Pill({ children, onClick, active }: { children: React.ReactNode; onClic
 }
 const backLink: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: C.dim, cursor: "pointer", fontFamily: FONT.round, fontWeight: 600, fontSize: 14, marginBottom: 16 };
 
-// --- Onboarding: nombre → grado → materias a priorizar (mundo Bloques) ---
+// --- Onboarding: grado → materias a priorizar (mundo Bloques) ---
+// El paso del NOMBRE se eliminó: las cuentas son anónimas y el alumno ya se
+// identificó con su usuario en el login. ---
 function Onboarding({ subjects, initial, onCancel, onDone }: { subjects: Subject[]; initial?: Profile; onCancel?: () => void; onDone: (p: Profile) => void }) {
-  const [step, setStep] = useState(initial ? 2 : 0);
-  const [name, setName] = useState(initial?.name ?? "");
+  const [step, setStep] = useState(initial ? 1 : 0);
   const [grade, setGrade] = useState(initial?.grade ?? "");
   const [priority, setPriority] = useState<string[]>(initial?.priority ?? []);
   const grades = [...new Set(subjects.map((s) => s.grade).filter(Boolean) as string[])].sort((a, b) => gradeSort(a) - gradeSort(b));
   const gradeSubjects = subjects.filter((s) => s.grade === grade).sort((a, b) => subjectLabel(a).localeCompare(subjectLabel(b)));
   const toggle = (id: string) => setPriority((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
-  const pickGrade = (g: string) => { if (g !== grade) setPriority([]); setGrade(g); setStep(2); };
-  const back = () => { if (step === 0) onCancel?.(); else setStep((s) => (s === 2 ? 1 : 0)); };
+  const pickGrade = (g: string) => { if (g !== grade) setPriority([]); setGrade(g); setStep(1); };
+  const back = () => { if (step === 0) onCancel?.(); else setStep(0); };
 
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", textAlign: "center", background: C.bg, color: C.text, fontFamily: FONT.sans }}>
@@ -664,7 +710,7 @@ function Onboarding({ subjects, initial, onCancel, onDone }: { subjects: Subject
           <div style={{ justifySelf: "start" }}>
             {(step > 0 || onCancel) && <button onClick={back} style={{ ...backLink, marginBottom: 0 }}><IconBack size={15} /> {step === 0 ? "Cancelar" : "Atrás"}</button>}
           </div>
-          <div style={{ display: "flex", gap: 6 }}>{[0, 1, 2].map((i) => <span key={i} style={{ width: 26, height: 8, borderRadius: 3, border: `1.5px solid ${C.ink}`, background: i <= step ? C.accent : C.panel }} />)}</div>
+          <div style={{ display: "flex", gap: 6 }}>{[0, 1].map((i) => <span key={i} style={{ width: 26, height: 8, borderRadius: 3, border: `1.5px solid ${C.ink}`, background: i <= step ? C.accent : C.panel }} />)}</div>
           <span />
         </div>
       </div>
@@ -675,30 +721,14 @@ function Onboarding({ subjects, initial, onCancel, onDone }: { subjects: Subject
         {step === 0 && (
           <>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}><AuroraDot size={54} /></div>
-            <h1 style={{ margin: "0 0 6px", fontFamily: FONT.round, fontWeight: 800, fontSize: 30 }}>Hola 👋</h1>
-            <p style={{ color: C.dim, margin: "0 0 24px", fontSize: 16 }}>¿Cómo te llamás?</p>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) setStep(1); }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = C.accent)}
-              onBlur={(e) => (e.currentTarget.style.borderColor = C.ink)}
-              placeholder="Tu nombre"
-              style={{ width: "100%", maxWidth: 340, textAlign: "center", background: C.panel, color: C.text, border: `2px solid ${C.ink}`, borderRadius: 14, padding: "13px 16px", fontFamily: FONT.round, fontWeight: 600, fontSize: 17, outline: "none", transition: "border-color .15s" }} />
-            <div style={{ marginTop: 24 }}>
-              <BigBtn disabled={!name.trim()} onClick={() => setStep(1)}>Continuar <IconArrow size={17} /></BigBtn>
-            </div>
-          </>
-        )}
-
-        {step === 1 && (
-          <>
-            <h1 style={{ margin: "0 0 6px", fontFamily: FONT.round, fontWeight: 800, fontSize: 26 }}>{name.trim() ? `${name.trim()}, ¿en qué curso vas?` : "¿En qué curso vas?"}</h1>
+            <h1 style={{ margin: "0 0 6px", fontFamily: FONT.round, fontWeight: 800, fontSize: 26 }}>¿En qué curso vas?</h1>
             <p style={{ color: C.dim, margin: "0 0 26px", fontSize: 15 }}>Elegí tu grado.</p>
             <Group label="Básica">{grades.filter((g) => g.endsWith("B")).map((g) => <Pill key={g} active={g === grade} onClick={() => pickGrade(g)}>{gradeLabel(g)}</Pill>)}</Group>
             {grades.some((g) => g.endsWith("M")) && <Group label="Media">{grades.filter((g) => g.endsWith("M")).map((g) => <Pill key={g} active={g === grade} onClick={() => pickGrade(g)}>{gradeLabel(g)}</Pill>)}</Group>}
           </>
         )}
 
-        {step === 2 && (
+        {step === 1 && (
           <>
             <h1 style={{ margin: "0 0 6px", fontFamily: FONT.round, fontWeight: 800, fontSize: 25 }}>¿Qué te interesa priorizar?</h1>
             <p style={{ color: C.dim, margin: "0 0 22px", fontSize: 15 }}>Elegí una o más materias de {gradeLabel(grade)}. Las tendrás a mano en tu panel.</p>
@@ -710,7 +740,7 @@ function Onboarding({ subjects, initial, onCancel, onDone }: { subjects: Subject
               {gradeSubjects.length === 0 && <span style={{ color: C.dim }}>No hay materias para este curso.</span>}
             </div>
             <div style={{ marginTop: 26 }}>
-              <BigBtn disabled={priority.length === 0} onClick={() => onDone({ name: name.trim() || "Alumno", grade, priority })}>
+              <BigBtn disabled={priority.length === 0} onClick={() => onDone({ username: initial?.username ?? "", grade, priority })}>
                 {initial ? "Guardar" : "Crear mi panel"} <IconArrow size={17} />
               </BigBtn>
               {priority.length > 0 && <p style={{ color: C.dim, fontSize: 12.5, marginTop: 10 }}>{priority.length} {priority.length === 1 ? "materia elegida" : "materias elegidas"}</p>}
@@ -743,14 +773,14 @@ function Dashboard({ profile, subjects, stats, onStudy, onReinforce, onEdit, onL
   // pudo rendir una prueba en cualquiera). Lo más fallado y reciente primero.
   const toReview = subjects
     .flatMap((s) => (stats[s.id]?.weak ?? []).map((w) => ({ s, w })))
-    .sort((a, b) => b.w.misses - a.w.misses || b.w.lastAt - a.w.lastAt);
+    .sort((a, b) => b.w.misses - a.w.misses);
   return (
     <div style={{ minHeight: "100dvh", overflowY: "auto", background: C.bg, color: C.text, fontFamily: FONT.sans }}>
       <div style={{ maxWidth: 820, margin: "0 auto", padding: "26px 18px 60px" }}>
         <header style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 30 }}>
           <AuroraDot size={52} square ink />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: FONT.round, fontSize: 24, fontWeight: 800, letterSpacing: -0.3 }}>Hola, {profile.name} 👋</div>
+            <div style={{ fontFamily: FONT.round, fontSize: 24, fontWeight: 800, letterSpacing: -0.3 }}>Hola, {profile.username || "que bueno verte"} 👋</div>
             <div style={{ color: C.dim, fontSize: 14 }}>{gradeLabel(profile.grade)} · {prio.length} {prio.length === 1 ? "materia prioritaria" : "materias prioritarias"}</div>
           </div>
           <IconBtn onClick={onEdit} title="Editar perfil"><IconSettings size={17} /></IconBtn>
@@ -1088,9 +1118,9 @@ function PlanCta({ onClick, icon, title, sub, loading }: { onClick: () => void; 
 }
 
 // Vista del plan de estudio (mundo Panel · bloques)
-function PlanView({ items, done, subject, loading, onStart, onToggle, onRegen }: { items: PlanItem[]; done: number[]; subject?: Subject; loading: boolean; onStart: (it: PlanItem) => void; onToggle: (n: number) => void; onRegen: () => void }) {
+function PlanView({ items, done, subject, loading, onStart, onToggle, onRegen }: { items: PlanItem[]; done: string[]; subject?: Subject; loading: boolean; onStart: (it: PlanItem) => void; onToggle: (key: string) => void; onRegen: () => void }) {
   const area = subject ? subjectLabel(subject) : "";
-  const nextN = items.find((it) => !done.includes(it.n))?.n ?? -1;
+  const siguiente = items.find((it) => !done.includes(it.key))?.key ?? "";
   return (
     <div style={{ padding: "4px 2px 16px" }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
@@ -1104,10 +1134,10 @@ function PlanView({ items, done, subject, loading, onStart, onToggle, onRegen }:
         </button>
       </div>
       <div style={{ display: "flex", gap: 4, marginBottom: 18 }}>
-        {items.map((it) => <span key={it.n} style={{ flex: 1, height: 6, borderRadius: 3, background: done.includes(it.n) ? C.ok : C.panel2, border: `1px solid ${done.includes(it.n) ? C.ok : C.border}` }} />)}
+        {items.map((it) => <span key={it.key} style={{ flex: 1, height: 6, borderRadius: 3, background: done.includes(it.key) ? C.ok : C.panel2, border: `1px solid ${done.includes(it.key) ? C.ok : C.border}` }} />)}
       </div>
       <div style={{ display: "grid", gap: 11 }}>
-        {items.map((it) => <PlanItemCard key={it.n} item={it} done={done.includes(it.n)} next={it.n === nextN} onStart={() => onStart(it)} onToggle={() => onToggle(it.n)} />)}
+        {items.map((it) => <PlanItemCard key={it.key} item={it} done={done.includes(it.key)} next={it.key === siguiente} onStart={() => onStart(it)} onToggle={() => onToggle(it.key)} />)}
       </div>
       <p style={{ textAlign: "center", color: C.dim, fontSize: 12, marginTop: 16 }}>Tocá un tema para que el tutor te lo explique. Se guarda tu avance.</p>
     </div>

@@ -1,10 +1,36 @@
 import { chatJSON, logDecision } from "@tutor-ia/core";
 import { getPlanTopics, type PlanTopic } from "@tutor-ia/rag";
-import { getCurrentUserId } from "@/lib/auth";
+import { getSql } from "@tutor-ia/db";
+import { requireUser, unauthorized } from "@/lib/auth";
 
 export const runtime = "nodejs";
 // Titular el plan con el 7B (con recarga por keep_alive:0) puede tardar.
 export const maxDuration = 120;
+
+
+/**
+ * GET /api/plan?subjectId=… → el plan YA generado de esa materia y qué temas
+ * marcó este alumno. Sin LLM: si no hay plan cacheado devuelve items vacío y el
+ * cliente ofrece generarlo.
+ *
+ * El plan se guarda UNA vez por materia porque sale del índice del libro y el
+ * libro es el mismo para todo el curso; lo que es de cada alumno es el avance.
+ */
+export async function GET(req: Request) {
+  const auth = await requireUser(req);
+  if (!auth) return unauthorized();
+  const subjectId = new URL(req.url).searchParams.get("subjectId");
+  if (!subjectId) return Response.json({ error: "Falta subjectId" }, { status: 400 });
+
+  const sql = getSql();
+  const [cache] = await sql<{ items: unknown[] }[]>`
+    select items from subject_plans where subject_id = ${subjectId}::uuid`;
+  const hechos = await sql<{ topic_key: string }[]>`
+    select topic_key from student_plan_progress
+    where user_id = ${auth.userId}::uuid and subject_id = ${subjectId}::uuid`;
+
+  return Response.json({ items: cache?.items ?? [], doneKeys: hechos.map((r) => r.topic_key) });
+}
 
 /**
  * POST /api/plan — arma un PLAN DE ESTUDIO fundamentado en el material.
@@ -22,12 +48,22 @@ export const maxDuration = 120;
  */
 export async function POST(req: Request) {
   const t0 = Date.now();
-  await getCurrentUserId(req);
+  const auth = await requireUser(req);
+  if (!auth) return unauthorized();
   const body = (await req.json()) as { subjectId?: string; subjectName?: string };
   const subjectId = body.subjectId;
   if (!subjectId) {
     return Response.json({ error: "Falta subjectId" }, { status: 400 });
   }
+
+  // El material del currículo es global (user_id null), pero la guarda importa:
+  // el día que un colegio suba libros propios, esto impide que cualquier alumno
+  // autenticado lea material de otro pasando un uuid.
+  const sqlGuard = getSql();
+  const [visible] = await sqlGuard`
+    select 1 from subjects where id = ${subjectId}::uuid
+      and (user_id is null or user_id = ${auth.userId}::uuid)`;
+  if (!visible) return Response.json({ error: "Materia no disponible" }, { status: 404 });
 
   const temas: PlanTopic[] = await getPlanTopics(subjectId, { limit: 14 });
   if (temas.length < 2) {
@@ -118,5 +154,16 @@ export async function POST(req: Request) {
     p1: t.pageEnd,
   }));
 
-  return Response.json({ items });
+  // Cache compartida por materia: el alumno 36 lo recibe instantáneo en vez de
+  // pagar otra generación con el LLM de lo mismo.
+  await sqlGuard`
+    insert into subject_plans (subject_id, items, generated_at)
+    values (${subjectId}::uuid, ${JSON.stringify(items)}::jsonb, now())
+    on conflict (subject_id) do update set items = excluded.items, generated_at = now()`;
+
+  const hechos = await sqlGuard`
+    select topic_key from student_plan_progress
+    where user_id = ${auth.userId}::uuid and subject_id = ${subjectId}::uuid`;
+
+  return Response.json({ items, doneKeys: hechos.map((r) => (r as { topic_key: string }).topic_key) });
 }

@@ -1,0 +1,19 @@
+{
+  "name": "@tutor-ia/admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "users": "tsx --env-file-if-exists=../../.env src/users.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tutor-ia/core": "workspace:*",
+    "@tutor-ia/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

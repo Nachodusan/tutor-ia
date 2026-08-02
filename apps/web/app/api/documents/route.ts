@@ -1,6 +1,6 @@
 import { ingestDocumentV2, type SidecarDoc } from "@tutor-ia/rag";
 import { getSql } from "@tutor-ia/db";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireUser, unauthorized, forbidden } from "@/lib/auth";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -22,7 +22,11 @@ export const maxDuration = 300;
  * en background y devolver de inmediato con status 'processing'.
  */
 export async function POST(req: Request) {
-  const userId = await getCurrentUserId(req);
+  const auth = await requireUser(req);
+  if (!auth) return unauthorized();
+  // Subir material toca el corpus COMPARTIDO: un alumno no puede contaminarlo.
+  if (auth.role !== "admin") return forbidden("Subir material es solo para administradores.");
+  const userId = auth.userId;
   const sql = getSql();
 
   const form = await req.formData();
@@ -100,7 +104,9 @@ export async function POST(req: Request) {
 
 /** GET /api/documents -> lista de documentos del usuario. */
 export async function GET(req: Request) {
-  const userId = await getCurrentUserId(req);
+  const auth = await requireUser(req);
+  if (!auth) return unauthorized();
+  const userId = auth.userId;
   const sql = getSql();
   const rows = await sql`
     select id, title, source_type, status, page_count, created_at

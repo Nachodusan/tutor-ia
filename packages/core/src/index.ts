@@ -8,6 +8,7 @@ export * from "./prompts";
 export * from "./tutor";
 export * from "./teaching";
 export * from "./query-normalize";
+export * from "./password";
 export * from "./verify";
 export * from "./decision-log";
 export * from "./exams";

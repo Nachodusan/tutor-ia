@@ -1,16 +1,36 @@
 /**
- * Autenticación — STUB para el andamiaje (Fase 0/1).
+ * Autenticación de las rutas. ESTA es la frontera de seguridad.
  *
- * En producción esto debe resolver el usuario autenticado desde Supabase Auth
- * (o Clerk) leyendo la cookie/sesión de la request. Por ahora devolvemos un
- * usuario de desarrollo para poder probar el flujo end-to-end.
+ * `middleware.ts` solo mejora la experiencia (redirige si no hay cookie): corre
+ * en el runtime Edge, donde no hay Postgres ni scrypt, así que no puede validar
+ * nada. Toda ruta que toque datos de un alumno tiene que llamar a `requireUser`.
  *
- * TODO (Fase 1): reemplazar por la verificación real de sesión y eliminar el
- * fallback DEV_USER_ID.
+ * Nota histórica, a propósito: acá vivía `getCurrentUserId`, un stub que
+ * devolvía siempre el uuid del usuario dev ignorando la request. Se ELIMINÓ en
+ * vez de dejarlo como envoltorio, porque mientras existiera, cualquier handler
+ * que se olvidara del chequeo iba a seguir "funcionando" contra el usuario dev
+ * y el fallo habría sido silencioso. Al borrarlo, el typecheck marca cada sitio
+ * que falta migrar.
  */
-const DEV_USER_ID = process.env.DEV_USER_ID ?? "00000000-0000-0000-0000-000000000001";
+import { readSessionCookie, resolveSession, type SessionInfo } from "./session";
 
-export async function getCurrentUserId(_req: Request): Promise<string> {
-  // Reemplazar: leer JWT/cookie de Supabase y devolver el user id real.
-  return DEV_USER_ID;
+export type Auth = SessionInfo;
+
+/** Devuelve la sesión válida, o null. Nunca tira. */
+export async function requireUser(req: Request): Promise<Auth | null> {
+  try {
+    return await resolveSession(readSessionCookie(req));
+  } catch {
+    return null;
+  }
+}
+
+/** 401 con cuerpo JSON estable: el cliente hace fetch, no navega. */
+export function unauthorized(): Response {
+  return Response.json({ error: "No autenticado" }, { status: 401 });
+}
+
+/** 403 para lo que exige rol de administrador (subir material, por ejemplo). */
+export function forbidden(msg = "No tenés permiso para esto"): Response {
+  return Response.json({ error: msg }, { status: 403 });
 }
