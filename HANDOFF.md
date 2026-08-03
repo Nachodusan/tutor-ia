@@ -182,19 +182,65 @@ listados en `.env.example`.
   citas `ui-monospace`. Cuerpo de lectura `#201C2B` (AAA).
 - Onboarding: barra de progreso arriba, contenido centrado (todo alineado al eje central).
 
-**Perfil del alumno (localStorage, `tutor_profile`)** — nombre → grado → materias
-prioritarias → panel personal. No toca la DB (el corpus es biblioteca compartida).
+**Cuentas, roles y sesión (en la base — ya NO localStorage)**
+- **Login anónimo**: usuario + contraseña, sin registro. Las cuentas las crea el equipo
+  con el CLI y el colegio las reparte en papel. `users.name` **no existe**: el mapeo de
+  "7b-01" a una persona vive fuera de la base.
+- Sesión con token opaco en cookie y estado en `auth_sessions` (sha256 del token, nunca
+  el token). Se puede **revocar**, que es el requisito real con credenciales en papel.
+- Tres roles: `student` · `teacher` · `admin`. `packages/admin/src/users.ts` valida el
+  `--rol` contra esa lista.
+- **La frontera de seguridad es `lib/auth.ts`, no el middleware**: el middleware corre en
+  Edge y solo puede ver si existe la cookie.
 
-**Plan de estudio** (`/api/plan`) — se arma desde la **estructura real del libro**
-(unit/lesson); el LLM solo titula. Persistido en `localStorage`.
+**Panel del docente** (`/docente` + `/api/teacher/overview`) — avance y puntos débiles
+del curso. Bloques, en orden de utilidad: qué le cuesta a la CLASE (temas agregados por
+cuántos alumnos distintos los fallaron), avance por materia, y la fila de cada alumno
+(expandible por materia).
+- **No muestra conversaciones, y eso es estructural**: ninguna ruta bajo `/api/teacher`
+  consulta `messages`. Si un chico sospecha que su profe lee lo que le pregunta al tutor,
+  deja de preguntar con honestidad.
+- El denominador del avance sale de `book_sections` (level=2, tope 14 = el mismo de
+  `getPlanTopics`), **no** de `subject_plans`: esa cache se escribe recién cuando alguien
+  aprieta "armar plan", así que arranca vacía.
+- Datos para verlo con contenido: `pnpm --filter @tutor-ia/admin seed-demo --curso 1M`
+  (solo toca cuentas `demo-…`; `--limpiar` las borra).
+
+**Perfil del alumno** (`student_profiles`) — grado → materias prioritarias → panel
+personal. El paso del NOMBRE se eliminó: las cuentas son anónimas.
+
+**Plan de estudio** — se arma desde el **ÍNDICE REAL del libro**; el LLM solo redacta.
+La lógica vive en `packages/core/src/study-plan.ts` (`buildStudyPlan`), que usan tanto
+`/api/plan` como el CLI: dos copias del prompt darían planes distintos según quién lo
+generó. Cacheado por materia en `subject_plans`; el avance por alumno en
+`student_plan_progress`, por clave estable del tema.
+- Cada lección trae **3 puntos clave** — qué tenés que poder explicar al terminar.
+  Salen de una muestra que **recorre la lección entera** (4 fragmentos repartidos);
+  con los primeros 700 chars de antes solo se podía titular.
+- Se genera **en tandas de 5 lecciones**: con 14 ítems × 5 campos un 7B acorta,
+  repite el título como punto y pierde el orden.
+- `limpiarPuntos` descarta los puntos vacíos ("comprender los conceptos principales"),
+  los que repiten el título y los de menos de 3 palabras. Un plan lleno de puntos vagos
+  se ve igual de completo que uno bueno — por eso es peligroso.
+- **Pre-generado para las 44 materias con índice legible** (493 lecciones, 1.472 puntos)
+  con `admin plans generar`. Sin eso, el primer alumno de cada materia paga la espera.
 **Estudio dirigido:** al tocar un tema viaja `unit`/`lesson` y el retrieval trae los chunks
 reales de esa lección, **saltando el gate semántico** (sin esto se abstenía porque el título
 es una paráfrasis floja).
 
-**Simulación de prueba** (`/api/test`) — ~6 preguntas de opción múltiple, una por unidad,
-**alineadas a lo que evalúa la GDD**. Corrección **determinística** en el cliente.
-Feedback: score, "📌 Para reforzar" (con botón **Estudiar** → estudio dirigido) y
-"💪 Lo que dominás".
+**Simulación de prueba** (`/api/test`, se corrige en `/api/test/submit`) — ~6 preguntas de
+opción múltiple, una por unidad, **alineadas a lo que evalúa la GDD**. Corrección
+**determinística**. Feedback: score, "📌 Para reforzar" (con botón **Estudiar** → estudio
+dirigido) y "💪 Lo que dominás". Lo fallado queda en `student_weak_topics`, que es también
+de donde sale el ranking del panel del docente.
+
+**TRAMPA de `jsonb` — leer antes de escribir en una columna json.** Usar
+`toJson(sql, x)` de `@tutor-ia/db`, **nunca** `${JSON.stringify(x)}::jsonb`: con esta
+conexión (postgres.js, `prepare: false`) lo segundo guarda el TEXTO del json entre
+comillas, `jsonb_typeof` devuelve `'string'` y todo lo que trate la columna como
+estructura falla con *"cannot get array length of a scalar"*. Así se rompía `/api/progress`
+apenas un alumno rendía su primera prueba. Reparación de lo ya escrito:
+`packages/db/repair_jsonb_double_encoded.sql` (idempotente).
 
 **Tutor flexible** (rework tras "Fuera de tu material" excesivo)
 - Gate `RERANK_MIN_SCORE` **0.3 → 0.18**.
@@ -231,6 +277,25 @@ pnpm --filter @tutor-ia/eval batch-ingest [rootDir]        # ingesta (RESUMABLE)
 pnpm --filter @tutor-ia/eval eval                          # golden set 133 (lento, background)
 pnpm --filter @tutor-ia/eval exp6                          # eval pedagógico
 pnpm --filter @tutor-ia/eval nli-validate                  # A3 relevancia vs NLI
+
+# Cuentas (anónimas: solo usuario y contraseña; sin registro en la app)
+pnpm --filter @tutor-ia/admin users crear  --usuario 7b-01 [--rol student|teacher|admin]
+pnpm --filter @tutor-ia/admin users lote   --prefijo 7b --cantidad 35
+pnpm --filter @tutor-ia/admin users listar
+pnpm --filter @tutor-ia/admin users resetear --usuario 7b-01   # + cierra sus sesiones
+pnpm --filter @tutor-ia/admin seed-demo --curso 1M             # curso de juguete (SOLO dev)
+
+# Planes de estudio cacheados por materia (resumible e idempotente)
+pnpm --filter @tutor-ia/admin plans estado
+pnpm --filter @tutor-ia/admin plans generar [--curso 1M] [--forzar]
+
+# Volver al "primer día" para probar el recorrido completo. Sin --confirmar solo
+# informa. NO toca las cuentas, los planes cacheados ni el corpus.
+pnpm --filter @tutor-ia/admin reset
+pnpm --filter @tutor-ia/admin reset --confirmar [--borrar-demo]
+
+./scripts/backup-db.sh                                     # pg_dump -Fc verificado + rotación
+psql "$DATABASE_URL" -f packages/db/repair_jsonb_double_encoded.sql
 ```
 
 El smoke imprime `REASON` (tokens de razonamiento) y `LEAK` (si hubo que filtrar) — es la
@@ -266,12 +331,23 @@ packages/rag/src/
   retrieve-teaching.ts  contenido gated + pedagogía por tipo/OA + ESTUDIO DIRIGIDO por unit/lesson
   nli.ts / rerank.ts    NLI direccional / gate del reranker
 apps/web/app/
-  page.tsx            TODA la UI: onboarding, panel, chat, plan, prueba, voz
+  ui.tsx              SISTEMA VISUAL COMPARTIDO (tokens, iconos, piezas). Las 3 pantallas
+  page.tsx            UI del alumno: onboarding, panel, chat, plan, prueba, voz
+  login/page.tsx      ingreso (sin registro)
+  docente/page.tsx    panel del curso: temas difíciles, avance por materia, alumnos
   api/chat/route.ts   teaching + social + vago-sin-tema + verificación (frames \x1e)
   api/plan/route.ts   plan de estudio desde la estructura del libro
   api/test/route.ts   simulación de prueba (alineada a la GDD)
+  api/teacher/overview  datos del panel del docente — NUNCA lee `messages`
   api/voice/{stt,tts} whisper.cpp / macOS say
   next.config.mjs     carga el .env de la raíz (loadEnvFile)
+apps/web/lib/
+  auth.ts             ⚠️ LA FRONTERA DE SEGURIDAD: requireUser / requireTeacher
+  session.ts          token opaco en cookie, estado en auth_sessions (revocable)
+  middleware.ts (app/) chequeo OPTIMISTA en Edge: solo mira si la cookie existe
+packages/admin/src/
+  users.ts            alta/baja/reset de cuentas anónimas (roles validados)
+  seed-demo.ts        curso de juguete para desarrollo (solo cuentas "demo-")
 packages/eval/src/
   llm-smoke.ts        comparación de proveedores (REASON/LEAK)
   ollama.ts           ⚠️ CLIENTE PROPIO, cableado a Ollama (exp2/exp3/exp5 NO usan el provider)

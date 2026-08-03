@@ -57,6 +57,9 @@ importers:
       '@tutor-ia/db':
         specifier: workspace:*
         version: link:../db
+      '@tutor-ia/rag':
+        specifier: workspace:*
+        version: link:../rag
     devDependencies:
       '@types/node':
         specifier: ^22.9.0

@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import {
+  C, AURORA, CTA, FONT, HARD, SOFT, backLink,
+  gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, scoreTone,
+  AuroraDot, IconBtn, Dots, Pill, BigBtn, SectionTitle,
+  IconWave, IconVolume, IconVolumeOff, IconMic, IconStop, IconSend, IconBack,
+  IconSwap, IconX, IconCheck, IconAlert, IconUser, IconUsers, IconSettings, IconBook,
+  IconStar, IconArrow, IconList, IconSpark, IconClipboard, IconChevron,
+} from "./ui";
 
 interface Citation { index: number; chunkId: string; page: number | null; source?: "content" | "pedagogy" }
 interface Verification { grounded: boolean; contradicted: string[]; unsupported: string[]; checked?: number; unavailable?: boolean }
@@ -9,7 +17,9 @@ interface Subject { id: string; name: string; grade: string | null; subject_area
 /** El perfil NO tiene nombre: las cuentas son anónimas (los usuarios son
  *  menores). El username lo devuelve /api/me y solo sirve para saludar. */
 interface Profile { username: string; grade: string; priority: string[] }
-interface PlanItem { n: number; key: string; title: string; focus: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
+/** `points` puede faltar: los planes cacheados antes de que existieran los
+ *  puntos clave siguen siendo válidos y se muestran sin ellos. */
+interface PlanItem { n: number; key: string; title: string; focus: string; points?: string[]; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
 interface TestItem { n: number; key?: string; topic: string; question: string; options: string[]; correct: number; explain: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
 
 // Un tema que el alumno falló en la prueba. Se guarda con unit/lesson para que
@@ -39,34 +49,8 @@ const REVIEW_MAX = 6;
 
 const stripOptLetter = (o: string) => o.replace(/^\s*[A-Da-d1-4]\s*[)\.\-:]\s+/, "").trim();
 
-// ── BLOQUES & AURORA · tokens (claro, 100% fuentes de sistema, offline) ──
-const C = {
-  bg: "#FFFFFF", panel: "#FFFFFF", panel2: "#F4F2EC", ink: "#191621", border: "#EAE4D8",
-  text: "#201C2B", dim: "#5E5769",
-  accent: "#2B44FF",        // COBALTO — marca / estructura (mundo Panel)
-  accentSoft: "#6C5CE7",    // LAVANDA — conversación (mundo Aurora)
-  coral: "#FF5C3A", sun: "#FFC63D", peach: "#FF9E7B",
-  ok: "#1F9D57", okBg: "#E7F6EE", okTx: "#0A6B52",
-  warn: "#B87400", warnBg: "#FBF0D3", warnTx: "#8A5A00",
-  bad: "#D42419", badBg: "#FCE6E4", badTx: "#B01A12",
-  userBubble: "#EDE9FF",
-};
-const AURORA = "radial-gradient(circle at 38% 30%, #9DA8FF, #B6A8F5 32%, #FF9E7B 82%, #FFC7A6)";
-const CTA = `linear-gradient(135deg, ${C.accentSoft}, #8A78F0)`; // lavanda (Aurora)
-const FONT = {
-  round: "'ui-rounded', 'SF Pro Rounded', -apple-system, system-ui, sans-serif",
-  sans: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif",
-  mono: "ui-monospace, 'SF Mono', Menlo, Monaco, monospace",
-};
-const HARD = (c: string) => `4px 4px 0 0 ${c}`;
-const SOFT = "0 6px 20px -8px rgba(40,30,60,.20)";
-
 const SPEECH_THRESH = 6;
 const SILENCE_MS = 1200;
-
-const gradeLabel = (g: string) => `${g.slice(0, -1)}° ${g.endsWith("M") ? "Medio" : "Básico"}`;
-const gradeSort = (g: string) => (g.endsWith("M") ? 100 : 0) + Number(g.slice(0, -1) || 0);
-const subjectLabel = (s: Subject) => s.name.replace(/\s+\d+º.*$/, "").trim();
 
 // Limpia la prosa del tutor para MOSTRARLA: saca citas de página y muletillas de
 // fuente que el 7B a veces mete en el texto. Las referencias van aparte (chips).
@@ -81,58 +65,7 @@ function cleanTutorText(t: string): string {
     .replace(/(^|[.!?¡¿]\s+)([a-záéíóúüñ])/g, (_m, p: string, c: string) => p + c.toUpperCase());
 }
 
-// Familia de materias (bloques): color estable por materia
-const SUBJECT_FAMILY = ["#FF5C3A", "#2B44FF", "#10A37F", "#7A3CF0", "#F5389B", "#FFC63D"];
-function subjectColor(s: Subject): string {
-  const n = `${s.subject_area ?? ""} ${s.name ?? ""}`.toLowerCase();
-  if (/lengua|lenguaje|comunic|literat/.test(n)) return "#FF5C3A";
-  if (/matem|c[aá]lculo/.test(n)) return "#2B44FF";
-  if (/cien|biolog|f[ií]sic|qu[ií]mic|natur/.test(n)) return "#10A37F";
-  if (/histor|geograf|social|filosof|c[ií]vic/.test(n)) return "#7A3CF0";
-  if (/ingl|idiom|extranjer/.test(n)) return "#F5389B";
-  if (/art|m[uú]sic|tecno|educaci[oó]n f/.test(n)) return "#FFC63D";
-  let h = 0; for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0;
-  return SUBJECT_FAMILY[h % SUBJECT_FAMILY.length]!;
-}
-function isLight(hex: string): boolean {
-  const c = hex.replace("#", "");
-  const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
-  return 0.299 * r + 0.587 * g + 0.114 * b > 150;
-}
-
 type CallState = "idle" | "listening" | "thinking" | "speaking";
-
-// --- Iconos (SVG inline, estilo línea; sin dependencias) ---
-type IconProps = { size?: number; color?: string; stroke?: number };
-const svg = (size = 22, color = "currentColor", stroke = 1.8) => ({
-  width: size, height: size, viewBox: "0 0 24 24", fill: "none",
-  stroke: color, strokeWidth: stroke, strokeLinecap: "round" as const, strokeLinejoin: "round" as const,
-});
-const IconWave = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M2 12h2" /><path d="M6 8v8" /><path d="M10 5v14" /><path d="M14 8v8" /><path d="M18 10v4" /><path d="M22 12h0" /></svg>);
-const IconVolume = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M11 5 6 9H2v6h4l5 4V5Z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 5.5a9 9 0 0 1 0 13" /></svg>);
-const IconVolumeOff = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M11 5 6 9H2v6h4l5 4V5Z" /><path d="m22 9-6 6" /><path d="m16 9 6 6" /></svg>);
-const IconMic = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10a7 7 0 0 0 14 0" /><path d="M12 17v5" /></svg>);
-const IconStop = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><rect x="6" y="6" width="12" height="12" rx="2.5" /></svg>);
-const IconSend = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M4 12h15" /><path d="m13 6 6 6-6 6" /></svg>);
-const IconBack = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></svg>);
-const IconSwap = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="m17 2 4 4-4 4" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><path d="m7 22-4-4 4-4" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>);
-const IconX = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>);
-const IconCheck = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M20 6 9 17l-5-5" /></svg>);
-const IconAlert = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M12 9v4" /><path d="M12 17h0" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /></svg>);
-const IconUser = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>);
-const IconSettings = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></svg>);
-const IconBook = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" /></svg>);
-const IconStar = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z" /></svg>);
-const IconArrow = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>);
-const IconList = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>);
-const IconSpark = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" /></svg>);
-const IconClipboard = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><path d="m9 14 2 2 4-4" /></svg>);
-const IconChevron = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="m9 18 6-6-6-6" /></svg>);
-
-// Orbe aurora en miniatura (marca / avatar-puente)
-function AuroraDot({ size = 22, square = false, ink = false }: { size?: number; square?: boolean; ink?: boolean }) {
-  return <span style={{ width: size, height: size, borderRadius: square ? size * 0.28 : "50%", background: AURORA, flexShrink: 0, display: "inline-block", border: ink ? `2px solid ${C.ink}` : undefined }} />;
-}
 
 export default function Home() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -151,6 +84,9 @@ export default function Home() {
   // Claves ESTABLES de los temas hechos, no índices posicionales: al
   // regenerar el plan un índice viejo apuntaría a otra lección.
   const [username, setUsername] = useState("");
+  /** Solo para decidir si se ofrece el atajo al panel del curso. El permiso REAL
+   *  lo chequea /api/teacher, que devuelve 403 sin importar lo que diga esto. */
+  const [role, setRole] = useState("student");
   /** Conversación en curso. La ruta la crea en el primer turno y la devuelve en
    *  el frame de citas; a partir de ahí viaja en cada POST para que los turnos
    *  queden encadenados en la misma sesión. */
@@ -185,6 +121,11 @@ export default function Home() {
       .then((r) => (r.status === 401 ? (window.location.href = "/login", null) : r.json()))
       .then((j) => {
         if (!j) return;
+        // Un docente que entra cae acá, y sin esto el onboarding le preguntaría
+        // "¿en qué curso vas?" — la pregunta equivocada para él. Al admin no se
+        // lo redirige: usa esta pantalla para probar la app como alumno.
+        if (j.user?.role === "teacher") { window.location.href = "/docente"; return; }
+        setRole(j.user?.role ?? "student");
         setUsername(j.user?.username ?? "");
         if (j.profile?.grade) {
           setProfile({ username: j.user?.username ?? "", grade: j.profile.grade, priority: j.profile.priority ?? [] });
@@ -528,6 +469,7 @@ export default function Home() {
         profile={profile}
         subjects={subjects}
         stats={stats}
+        teacher={role === "teacher" || role === "admin"}
         onStudy={(id) => { setSubjectId(id); setMessages([]); }}
         onReinforce={reinforce}
         onEdit={() => setEditing(true)}
@@ -649,28 +591,6 @@ function CallOverlay({ state, levelRef, subject, lastMsg, onEnd }: { state: Call
 }
 const clip = (t: string) => { const s = t.replace(/\s+/g, " ").trim(); return s.length > 130 ? s.slice(0, 130) + "…" : s; };
 
-// Botón de icono: soft (Aurora) o bloque (Panel)
-function IconBtn({ children, onClick, active, title, soft }: { children: React.ReactNode; onClick: () => void; active?: boolean; title?: string; soft?: boolean }) {
-  const bd = soft ? C.border : C.ink;
-  return (
-    <button onClick={onClick} title={title}
-      style={{
-        display: "flex", alignItems: "center", justifyContent: "center", width: soft ? 40 : 40, height: 40,
-        background: active ? (soft ? "rgba(108,92,231,.12)" : "rgba(43,68,255,.10)") : (soft ? C.panel2 : C.panel),
-        color: active ? (soft ? C.accentSoft : C.accent) : C.text,
-        border: `${soft ? 1 : 2}px solid ${active ? (soft ? C.accentSoft : C.accent) : bd}`,
-        borderRadius: soft ? 12 : 11, cursor: "pointer", flexShrink: 0,
-      }}>
-      {children}
-    </button>
-  );
-}
-function Dots() {
-  return (<span style={{ display: "inline-flex", gap: 3 }}>
-    {[0, 1].map((i) => <span key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor", animation: `tdot 1s ${i * 0.15}s infinite ease-in-out` }} />)}
-    <style>{`@keyframes tdot { 0%,80%,100% { opacity:.3; transform:translateY(0) } 40% { opacity:1; transform:translateY(-3px) } }`}</style>
-  </span>);
-}
 function Centered({ children }: { children: React.ReactNode }) {
   return <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", background: C.bg, color: C.text, fontFamily: FONT.sans, padding: 20 }}>{children}</div>;
 }
@@ -682,12 +602,6 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
-// Pill estilo bloque (borde de tinta); activo = cobalto
-function Pill({ children, onClick, active }: { children: React.ReactNode; onClick: () => void; active?: boolean }) {
-  return <button onClick={onClick} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: active ? "rgba(43,68,255,.10)" : C.panel, color: active ? C.accent : C.text, border: `1.5px solid ${active ? C.accent : C.ink}`, borderRadius: 999, padding: "9px 16px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 600, fontSize: 14.5, transition: "background .15s, box-shadow .15s" }}
-    onMouseEnter={(e) => { if (!active) e.currentTarget.style.boxShadow = HARD(C.accent); }} onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "none")}>{children}</button>;
-}
-const backLink: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: C.dim, cursor: "pointer", fontFamily: FONT.round, fontWeight: 600, fontSize: 14, marginBottom: 16 };
 
 // --- Onboarding: grado → materias a priorizar (mundo Bloques) ---
 // El paso del NOMBRE se eliminó: las cuentas son anónimas y el alumno ya se
@@ -753,20 +667,8 @@ function Onboarding({ subjects, initial, onCancel, onDone }: { subjects: Subject
   );
 }
 
-// CTA cobalto (bloque con sombra dura) — mundo Panel
-function BigBtn({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
-  return (
-    <button onClick={onClick} disabled={disabled}
-      style={{ display: "inline-flex", alignItems: "center", gap: 8, background: disabled ? C.panel2 : C.accent, color: disabled ? C.dim : "#fff", border: `2px solid ${disabled ? C.border : C.ink}`, borderRadius: 14, padding: "13px 24px", cursor: disabled ? "default" : "pointer", fontFamily: FONT.round, fontSize: 15.5, fontWeight: 700, boxShadow: disabled ? "none" : HARD(C.coral), transition: "transform .12s, box-shadow .12s" }}
-      onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.transform = "translate(-2px,-2px)"; e.currentTarget.style.boxShadow = `6px 6px 0 0 ${C.coral}`; } }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = disabled ? "none" : HARD(C.coral); }}>
-      {children}
-    </button>
-  );
-}
-
 // --- Panel del alumno (mundo Bloques) ---
-function Dashboard({ profile, subjects, stats, onStudy, onReinforce, onEdit, onLogout }: { profile: Profile; subjects: Subject[]; stats: Record<string, SubjectStats>; onStudy: (id: string) => void; onReinforce: (id: string, w: WeakTopic) => void; onEdit: () => void; onLogout: () => void }) {
+function Dashboard({ profile, subjects, stats, teacher, onStudy, onReinforce, onEdit, onLogout }: { profile: Profile; subjects: Subject[]; stats: Record<string, SubjectStats>; teacher?: boolean; onStudy: (id: string) => void; onReinforce: (id: string, w: WeakTopic) => void; onEdit: () => void; onLogout: () => void }) {
   const prio = profile.priority.map((id) => subjects.find((s) => s.id === id)).filter(Boolean) as Subject[];
   const others = subjects.filter((s) => s.grade === profile.grade && !profile.priority.includes(s.id)).sort((a, b) => subjectLabel(a).localeCompare(subjectLabel(b)));
   // Para reforzar: de TODAS las materias (no solo las prioritarias — el alumno
@@ -783,6 +685,7 @@ function Dashboard({ profile, subjects, stats, onStudy, onReinforce, onEdit, onL
             <div style={{ fontFamily: FONT.round, fontSize: 24, fontWeight: 800, letterSpacing: -0.3 }}>Hola, {profile.username || "que bueno verte"} 👋</div>
             <div style={{ color: C.dim, fontSize: 14 }}>{gradeLabel(profile.grade)} · {prio.length} {prio.length === 1 ? "materia prioritaria" : "materias prioritarias"}</div>
           </div>
+          {teacher && <IconBtn onClick={() => (window.location.href = "/docente")} title="Panel del curso"><IconUsers size={17} /></IconBtn>}
           <IconBtn onClick={onEdit} title="Editar perfil"><IconSettings size={17} /></IconBtn>
           <IconBtn onClick={onLogout} title="Cambiar de alumno"><IconSwap size={17} /></IconBtn>
         </header>
@@ -821,10 +724,6 @@ function Dashboard({ profile, subjects, stats, onStudy, onReinforce, onEdit, onL
       </div>
     </div>
   );
-}
-
-function SectionTitle({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
-  return <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.dim, fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 14 }}><span style={{ width: 18, height: 3, borderRadius: 2, background: C.coral }} />{icon} {children}</div>;
 }
 
 // Tarjeta de materia = bloque con borde de tinta + sombra dura del color de su materia
@@ -875,8 +774,7 @@ function SubjectCard({ s, st, onClick }: { s: Subject; st?: SubjectStats; onClic
           )}
           {st?.lastScore && (() => {
             // El color sigue a la nota: un 0/6 en verde leía como logro.
-            const r = st.lastScore.total > 0 ? st.lastScore.score / st.lastScore.total : 0;
-            const t = r >= 0.6 ? { bg: C.okBg, tx: C.okTx } : r >= 0.4 ? { bg: C.warnBg, tx: C.warnTx } : { bg: C.badBg, tx: C.badTx };
+            const t = scoreTone(st.lastScore.total > 0 ? st.lastScore.score / st.lastScore.total : 0);
             return (
               <span style={{ background: t.bg, color: t.tx, border: `1.5px solid ${t.tx}`, borderRadius: 999, padding: "2px 8px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
                 Prueba: {st.lastScore.score}/{st.lastScore.total}
@@ -1155,7 +1053,22 @@ function PlanItemCard({ item, done, next, onStart, onToggle }: { item: PlanItem;
         <span style={{ minWidth: 0 }}>
           <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 700, fontSize: 15.5, color: C.text }}>{item.title}</span>
           {item.focus && <span style={{ display: "block", color: C.dim, fontSize: 13, lineHeight: 1.45, marginTop: 2 }}>{item.focus}</span>}
-          <span style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+
+          {/* Los PUNTOS CLAVE de la lección: qué tenés que poder explicar cuando
+              termines. Van siempre a la vista y no detrás de un desplegable —
+              son la razón de mirar el plan, no un detalle secundario. */}
+          {item.points && item.points.length > 0 && (
+            <span style={{ display: "block", marginTop: 8 }}>
+              {item.points.map((p, i) => (
+                <span key={i} style={{ display: "flex", gap: 7, alignItems: "flex-start", marginTop: i === 0 ? 0 : 4 }}>
+                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: done ? C.ok : C.accent, flexShrink: 0, marginTop: 6.5 }} />
+                  <span style={{ fontSize: 12.5, lineHeight: 1.45, color: C.text }}>{p}</span>
+                </span>
+              ))}
+            </span>
+          )}
+
+          <span style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
             {pages && <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: C.dim }}>{pages}</span>}
             {next && <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 10.5, letterSpacing: 0.3, textTransform: "uppercase", color: "#fff", background: C.accent, borderRadius: 999, padding: "2px 8px" }}>Empezá por acá</span>}
           </span>

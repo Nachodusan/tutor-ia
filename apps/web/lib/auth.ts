@@ -34,3 +34,31 @@ export function unauthorized(): Response {
 export function forbidden(msg = "No tenés permiso para esto"): Response {
   return Response.json({ error: msg }, { status: 403 });
 }
+
+/**
+ * Sesión con permiso para ver el panel del curso, o la respuesta a devolver.
+ *
+ *     const auth = await requireTeacher(req);
+ *     if (auth instanceof Response) return auth;
+ *
+ * Devuelve la Response y no `null` porque 401 y 403 NO son lo mismo acá: un
+ * alumno logueado que pega en /api/teacher tiene sesión válida, y contestarle
+ * 401 haría que el cliente lo mandara al login en un bucle. Colapsar los dos
+ * casos en null obligaba a cada handler a rehacer la distinción.
+ *
+ * `admin` entra también: quien administra el material del colegio necesita poder
+ * comprobar que el panel muestra lo que tiene que mostrar, y negárselo lo
+ * empujaría a crearse una cuenta docente paralela.
+ *
+ * Lo que este chequeo NO da es acceso a las conversaciones: no hay ninguna ruta
+ * bajo /api/teacher que lea `messages`. La privacidad del alumno no depende del
+ * rol, depende de que ese dato no se sirva.
+ */
+export async function requireTeacher(req: Request): Promise<Auth | Response> {
+  const auth = await requireUser(req);
+  if (!auth) return unauthorized();
+  if (auth.role !== "teacher" && auth.role !== "admin") {
+    return forbidden("Esta sección es para docentes.");
+  }
+  return auth;
+}

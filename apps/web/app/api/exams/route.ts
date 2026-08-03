@@ -1,5 +1,5 @@
 import { generateExam, gradeExam, type Exam, type StudentAnswer } from "@tutor-ia/core";
-import { getSql } from "@tutor-ia/db";
+import { getSql, toJson } from "@tutor-ia/db";
 import { requireUser, unauthorized } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
           ${(body.subjectId as string) ?? null},
           ${exam.title},
           ${exam.difficulty},
-          ${JSON.stringify(exam.questions)}::jsonb
+          ${toJson(sql, exam.questions)}::jsonb
         )
         returning id
       `;
@@ -69,8 +69,8 @@ export async function POST(req: Request) {
         values (
           ${examId},
           ${userId},
-          ${JSON.stringify(answers)}::jsonb,
-          ${JSON.stringify(grading)}::jsonb,
+          ${toJson(sql, answers)}::jsonb,
+          ${toJson(sql, grading)}::jsonb,
           ${grading.totalScore}
         )
       `;

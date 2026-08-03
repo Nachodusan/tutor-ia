@@ -20,13 +20,18 @@ export function middleware(req: NextRequest) {
   if (req.nextUrl.pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
+  // Cada uno a SU puerta. Sin esto, el profe que escribe /docente sin sesión
+  // aterrizaba en la pantalla del alumno ("Entrá a estudiar", "pedile la
+  // contraseña a tu profe") y no tenía forma de saber que se había equivocado
+  // de lugar — parecía que el panel del curso no existía.
   const url = req.nextUrl.clone();
-  url.pathname = "/login";
+  url.pathname = req.nextUrl.pathname.startsWith("/docente") ? "/login/docente" : "/login";
   url.search = "";
   return NextResponse.redirect(url);
 }
 
 export const config = {
-  // Público: la página y la ruta de login, y los estáticos de Next.
+  // Público: los estáticos de Next y todo lo que empieza con `login` — que
+  // incluye `/login/docente`, la puerta del profe, sin necesidad de otra regla.
   matcher: ["/((?!_next/static|_next/image|favicon.ico|login|api/auth/login).*)"],
 };

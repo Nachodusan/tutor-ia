@@ -21,7 +21,8 @@ export interface PlanTopic {
   pageEnd: number;
   unitNo: number | null;
   lessonNo: number | null;
-  /** Muestra del contenido real del tema, para que el LLM lo titule/pregunte. */
+  /** Muestra del contenido real del tema — 4 fragmentos repartidos a lo largo de
+   *  la lección, no solo su comienzo. Ver `muestraRepresentativa`. */
   sample: string;
   source: "index" | "legacy";
 }
@@ -145,20 +146,54 @@ function tomo(docTitle: string): string {
   return m ? `Tomo ${m[1]} · ` : "";
 }
 
-/** Primeros ~700 chars del contenido de cada rango, en orden de página. */
+/** Cuántos fragmentos se toman a lo largo de la lección, y cuánto de cada uno. */
+const MUESTRAS_POR_TEMA = 4;
+const CHARS_POR_MUESTRA = 240;
+
+/**
+ * Un fragmento que RECORRE la lección, no solo su comienzo.
+ *
+ * Antes esto era `left(string_agg(...), 700)`: los primeros 700 caracteres, que
+ * en una lección de diez páginas son la portadilla y el párrafo de motivación.
+ * Alcanzaba para titular ("Analiza el registro fósil") pero no para decir QUÉ
+ * hay que estudiar adentro — el modelo nunca veía el cuerpo de la lección.
+ *
+ * Ahora se toman 4 fragmentos repartidos de punta a punta. Cuesta lo mismo en
+ * tokens y cubre la lección entera, que es lo que hace posible sacar puntos
+ * clave que no sean una paráfrasis del título.
+ *
+ * Pura a propósito: es la parte con lógica y se puede probar sin base.
+ */
+export function muestraRepresentativa(contenidos: string[]): string {
+  const limpio = contenidos.map((c) => (c ?? "").replace(/\s+/g, " ").trim()).filter(Boolean);
+  if (limpio.length === 0) return "";
+  const n = Math.min(MUESTRAS_POR_TEMA, limpio.length);
+  const paso = limpio.length / n;
+  const partes: string[] = [];
+  for (let i = 0; i < n; i++) {
+    // `floor(i * paso)` reparte los índices de punta a punta sin repetir cuando
+    // hay más chunks que muestras, y sin salirse cuando hay menos.
+    const idx = Math.min(limpio.length - 1, Math.floor(i * paso));
+    partes.push(limpio[idx]!.slice(0, CHARS_POR_MUESTRA));
+  }
+  return partes.join(" … ");
+}
+
+/** Muestra representativa del contenido de cada rango de páginas. */
 async function muestrasDeRango(
   rangos: { documentId: string; pageStart: number; pageEnd: number }[],
 ): Promise<string[]> {
   const sql = getSql();
   const out: string[] = [];
   for (const r of rangos) {
-    const [row] = await sql<{ sample: string | null }[]>`
-      select left(string_agg(content, ' ' order by page, chunk_index), 700) as sample
+    const filas = await sql<{ content: string }[]>`
+      select content
       from chunks
       where document_id = ${r.documentId} and corpus_role = 'content'
         and coalesce(page_start, page) <= ${r.pageEnd}
-        and coalesce(page_end, page)   >= ${r.pageStart}`;
-    out.push((row?.sample ?? "").replace(/\s+/g, " ").trim());
+        and coalesce(page_end, page)   >= ${r.pageStart}
+      order by page, chunk_index`;
+    out.push(muestraRepresentativa(filas.map((f) => f.content)));
   }
   return out;
 }

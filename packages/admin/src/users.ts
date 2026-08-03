@@ -7,7 +7,7 @@
  * nunca en esta base. Esa separación es lo que hace que el anonimato sea real.
  *
  * Uso:
- *   pnpm --filter @tutor-ia/admin users crear  --usuario 7b-01 [--rol admin]
+ *   pnpm --filter @tutor-ia/admin users crear  --usuario 7b-01 [--rol teacher]
  *   pnpm --filter @tutor-ia/admin users lote   --prefijo 7b --cantidad 35
  *   pnpm --filter @tutor-ia/admin users listar
  *   pnpm --filter @tutor-ia/admin users resetear  --usuario 7b-01
@@ -29,10 +29,25 @@ const sql = getSql();
 /** Normalización única, igual que en el login: el alumno puede escribir "7B-01". */
 const norm = (u: string) => u.trim().toLowerCase();
 
+/**
+ * Los tres roles que la app reconoce. La lista se valida acá porque el rol es
+ * texto libre en la base: sin este chequeo, `--rol tacher` creaba en silencio
+ * una cuenta que ningún handler reconoce — entra al login, y después no puede
+ * hacer nada, sin ningún mensaje que explique por qué.
+ *
+ *   student → su propio panel y su progreso
+ *   teacher → además, /docente: avance y temas débiles del curso (NO las charlas)
+ *   admin   → además, subir y borrar material del currículo compartido
+ */
+const ROLES = ["student", "teacher", "admin"] as const;
+
 async function crear(usuario: string, rol = "student"): Promise<{ usuario: string; password: string }> {
   const u = norm(usuario);
   if (!/^[a-z0-9][a-z0-9._-]{1,30}$/.test(u)) {
     throw new Error(`Usuario inválido: "${usuario}". Usá letras, números, punto, guion o guion bajo.`);
+  }
+  if (!(ROLES as readonly string[]).includes(rol)) {
+    throw new Error(`Rol inválido: "${rol}". Los roles son: ${ROLES.join(", ")}.`);
   }
   const password = generarPassword();
   const hash = await hashPassword(password);
@@ -153,9 +168,9 @@ async function main() {
 
     default:
       console.log(`
-  Gestión de cuentas de alumno (anónimas: solo usuario y contraseña).
+  Gestión de cuentas (anónimas: solo usuario y contraseña).
 
-    users crear      --usuario 7b-01 [--rol admin]
+    users crear      --usuario 7b-01 [--rol student|teacher|admin]
     users lote       --prefijo 7b --cantidad 35
     users listar
     users resetear   --usuario 7b-01     (nueva contraseña + cierra sus sesiones)

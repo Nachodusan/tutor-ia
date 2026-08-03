@@ -6,7 +6,7 @@
  * guardar el historial es un problema nuestro, no suyo. Por eso todo va en
  * try/catch y los errores se loguean sin propagarse.
  */
-import { getSql } from "@tutor-ia/db";
+import { getSql, toJson } from "@tutor-ia/db";
 
 /** Crea la sesión si no existe. Idempotente: el id lo genera la ruta. */
 export async function ensureSession(
@@ -41,14 +41,19 @@ export async function insertMessage(
 ): Promise<void> {
   try {
     const sql = getSql();
+    // `toJson(...)` y NO `JSON.stringify(...)::jsonb`: con esta conexión lo
+    // segundo guarda un STRING de json, así que `verification` —el dato que el
+    // esquema llama "lo más valioso del export", los veredictos del verificador
+    // por oración— quedaba escapado y no se podía consultar con operadores jsonb.
+    // El ternario se mantiene para que ausente sea NULL de SQL y no jsonb 'null'.
     await sql`
       insert into messages (session_id, role, content, citations, grounded, verification, meta)
       values (
         ${sessionId}::uuid, ${role}, ${content},
-        ${extra.citations ? JSON.stringify(extra.citations) : null}::jsonb,
+        ${extra.citations ? toJson(sql, extra.citations) : null}::jsonb,
         ${extra.grounded ?? null},
-        ${extra.verification ? JSON.stringify(extra.verification) : null}::jsonb,
-        ${extra.meta ? JSON.stringify(extra.meta) : null}::jsonb
+        ${extra.verification ? toJson(sql, extra.verification) : null}::jsonb,
+        ${extra.meta ? toJson(sql, extra.meta) : null}::jsonb
       )`;
   } catch (e) {
     console.error("[conversations] no se pudo guardar el mensaje:", e);

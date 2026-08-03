@@ -1,4 +1,4 @@
-import { getSql } from "@tutor-ia/db";
+import { getSql, toJson } from "@tutor-ia/db";
 import { requireUser, unauthorized } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -68,17 +68,22 @@ export async function POST(req: Request) {
     // El resultado va a exams/exam_attempts, que ya existían con la forma exacta
     // y estaban sin usar. Evita una tercera tabla de "pruebas" y deja un único
     // lugar canónico de qué se preguntó y qué contestó cada alumno.
+    // `tx.json(...)` y NO `JSON.stringify(...)::jsonb`: con esta conexión lo
+    // segundo guarda un STRING de json en vez de un array, y entonces el
+    // `jsonb_array_length(questions)` de acá abajo y el de /api/progress fallan
+    // con "cannot get array length of a scalar" — es decir, el panel del alumno
+    // se rompe justo después de rendir su primera prueba.
     const [ex] = await tx<{ id: string }[]>`
       insert into exams (user_id, subject_id, title, questions)
       values (${uid}::uuid, ${sid}::uuid, ${"Simulación de prueba"},
-              ${JSON.stringify(body.items)}::jsonb)
+              ${toJson(tx, body.items!)}::jsonb)
       returning id`;
     // `score` guarda la cantidad de aciertos, no un porcentaje: la UI muestra
     // "X de Y" y el total sale de jsonb_array_length(questions).
     await tx`
       insert into exam_attempts (exam_id, user_id, answers, score)
       values (${ex!.id}::uuid, ${uid}::uuid,
-              ${JSON.stringify(body.items!.map((i) => i.answer))}::jsonb, ${score})`;
+              ${toJson(tx, body.items!.map((i) => i.answer))}::jsonb, ${score})`;
   });
 
   const weak = await sql<{ topic_key: string; topic: string; unit: number | null; lesson: number | null; misses: number }[]>`

@@ -53,8 +53,8 @@ export async function POST(req: Request) {
   }
 
   const sql = getSql();
-  const [u] = await sql<{ id: string; password_hash: string | null; disabled_at: Date | null }[]>`
-    select id, password_hash, disabled_at from users where lower(username) = ${username} limit 1`;
+  const [u] = await sql<{ id: string; password_hash: string | null; disabled_at: Date | null; role: string }[]>`
+    select id, password_hash, disabled_at, role from users where lower(username) = ${username} limit 1`;
 
   // Si el usuario no existe se verifica igual contra un hash imposible: sin esto
   // el login responde más rápido ante un usuario inexistente y eso revela qué
@@ -74,8 +74,13 @@ export async function POST(req: Request) {
   const [perfil] = await sql<{ grade: string | null }[]>`
     select grade from student_profiles where user_id = ${u.id}::uuid`;
 
+  // `role` va en la respuesta para que cada pantalla de ingreso sepa a dónde
+  // mandar a quien acaba de entrar, y para que la del docente pueda avisar en el
+  // acto "esa es una cuenta de alumno" en vez de dejarlo rebotar contra un 403.
+  // No es una filtración: es el rol de la cuenta que se acaba de autenticar bien,
+  // devuelto a quien probó que es su dueño.
   return Response.json(
-    { user: { id: u.id, username }, needsSetup: !perfil?.grade },
+    { user: { id: u.id, username, role: u.role }, needsSetup: !perfil?.grade },
     { headers: { "Set-Cookie": sessionCookieHeader(token, expiresAt) } },
   );
 }
