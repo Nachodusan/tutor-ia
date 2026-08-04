@@ -1,0 +1,77 @@
+{
+  "otra_materia": [
+    {
+      "id": "q030",
+      "libro": "Ciencias Naturales 8º — texto del estudiante (8B, págs. 108-110)",
+      "evidencia": "\"A partir de lo anterior, es posible establecer las siguientes relaciones matemáticas entre la temperatura medida en Celsius con las otras escalas térmicas: ... DE CELSIUS A KELVIN T(K) = T(°C) + 273,15 DE CELSIUS A FARENHEIT T(°F) = 1,8 · T(°C) + 32\" (Ciencias Naturales 8º, pág. 109; repetido en pág. 110). Acompañado de la tabla de referencia con los puntos equivalentes en las tres escalas: \"Kelv"
+    },
+    {
+      "id": "q034",
+      "libro": "Ciencias Naturales 6º — texto del estudiante (6B, págs. 83, 85 y 87), complementado por Biología 2º Medio (2M, pág. 102)",
+      "evidencia": "CN 6º pág. 83: «los organismos autótrofos fotosintéticos requieren de agua, luz y dióxido de carbono (CO2)... consiguen como productos glucosa y oxígeno (O2)». Biología 2M pág. 102 da la definición: «Proceso anabólico... en el que la energía proveniente del Sol es utilizada para sintetizar glucosa a partir de sustancias inorgánicas»."
+    },
+    {
+      "id": "q036",
+      "libro": "Lengua Y Literatura 3º Medio — texto del estudiante · 3M · pág. 20",
+      "evidencia": "\"La luz se mueve con velocidad constante, con un valor fijo de trescientos mil kilómetros por segundo (en el vacío).\""
+    },
+    {
+      "id": "q121",
+      "libro": "Lengua Y Literatura 2º Medio — texto del estudiante (2M, pág. 28)",
+      "evidencia": "\"Poema de Pablo Neruda (chileno, 1904-1973)\" — con el texto completo: \"Oh largo Tren Nocturno, muchas veces desde el sur hacia el norte, entre ponchos mojados, cereales, botas tiesas de barro, en Tercera, fuiste desenrollando geografía. Tal vez comencé entonces la página terrestre, aprendí los kilómetros del humo, la extensión del silencio… Pasábamos Lautaro, robles, trigales…\", precedido de la re"
+    },
+    {
+      "id": "q126",
+      "libro": "Lenguaje Y Comunicación 4º — leo primero texto del estudiante- tomo 1 (4B, págs. 103 y 105)",
+      "evidencia": "\"El rey quería que Dédalo construyera un laberinto para que fuera el hogar del Minotauro, una criatura con cuerpo de hombre y cabeza de toro. Minos amaba a ese monstruoso ser que se alimentaba solo de seres humanos. […] debía ser tan complicado, que cualquiera que entrara en él tendría que perderse, sin la posibilidad de encontrar la salida. […] un hombre llamado Teseo y un grupo de jóvenes habían"
+    },
+    {
+      "id": "q128",
+      "libro": "Lengua Y Literatura 2º Medio — texto del estudiante (pág. 124)",
+      "evidencia": "\"Se compone de catorce versos distribuidos en cuatro estrofas: dos cuartetos y dos tercetos\" (2º Medio, pág. 124), y el mismo párrafo agrega el esquema de rima abrazada ABBA-ABBA en los cuartetos y CDC-DCD o CDE-CDE en los tercetos."
+    }
+  ],
+  "general": [
+    {
+      "id": "q032",
+      "razon": "Ruido on-topic clásico: los fragmentos comparten las palabras \"huevo\", \"hervido\", \"tiempo\" y hasta la combinación literal \"Huevo Duro\", pero ninguno responde cuántos minutos hay que hervirlo. El match más fuerte (8º, pág. 17) es una tabla de tiempos de digestión de un experimento histórico de fisiología, no una instrucción de cocina; un alumno que la lee se llevaría el dato errado de \"3,30\" si la ",
+      "quien": "juez"
+    },
+    {
+      "id": "q035",
+      "razon": "La pregunta es de actualidad: pide el resultado de las ÚLTIMAS elecciones presidenciales de Chile, que a la fecha (2026) son las de 2025. El corpus es material escolar cerrado en 2021 y no puede contenerlas: su dato presidencial más nuevo es la segunda vuelta de 2021 y el resto son series históricas de participación electoral (padrón, abstención, método D'Hont, plebiscito 2020). Además, el foco de",
+      "quien": "juez"
+    },
+    {
+      "id": "q120",
+      "razon": "El alumno pregunta el contenido/argumento de Cien años de soledad. El material es ruido on-topic de alta similitud léxica: coincide en autor (García Márquez), en etiqueta (realismo mágico, boom latinoamericano) e incluso en el título exacto, pero solo a nivel de mención catalográfica. Lo que el corpus efectivamente desarrolla es Noticia de un secuestro (1996): su contexto colombiano, el Cartel de ",
+      "quien": "juez"
+    },
+    {
+      "id": "q122",
+      "razon": "El material es ruido on-topic. El libro de Filosofía usa un pasaje del Quijote como disparador para discutir libertad interna vs. externa: Sancho aparece ya instalado como gobernador de la Ínsula Barataria, interrogando a un mozo, y don Quijote solo figura en el título de la obra citada al pie. Un alumno que lea ese fragmento no se entera de que Sancho Panza es un labrador que sirve como escudero ",
+      "quien": "juez"
+    },
+    {
+      "id": "q123",
+      "razon": "El material cubre en profundidad el género policial (origen en 1841, estructura crimen/investigación/resolución, tipos de narrador, léxico investigativo), pero la teoría del género está construida alrededor de Poe y Dupin, y secundariamente Chesterton y el Padre Brown. Arthur Conan Doyle no se menciona nunca, y Sherlock Holmes aparece una sola vez como referencia de parentesco dentro de la sinopsi",
+      "quien": "juez"
+    },
+    {
+      "id": "q125",
+      "razon": "Ningún fragmento narra el regreso: no aparecen ni el Cíclope, ni Circe, ni las sirenas, ni Calipso, ni los feacios, ni la balsa, ni la ayuda de Atenea — nada del nostos. Los materiales tocan el área temática (Homero, Troya, Ulises) pero cada uno lo hace para otra cosa: el de 6º usa la Odisea como ejemplo de eclipse en la cosmovisión antigua, el de 8º pág. 132 ofrece un poema del siglo XIX que pres",
+      "quien": "juez"
+    },
+    {
+      "id": "q129",
+      "razon": "La pregunta pide un procedimiento: cómo usar el teorema para *calcular* la hipotenusa (c² = a² + b², luego c = √(a²+b²), con un caso aplicado). Ningún fragmento entrega eso. El de Filosofía pág. 32 menciona el enunciado dentro de un argumento epistemológico de Hume sobre verdades demostrativas vs. cuestiones de hecho: el triángulo es un ejemplo para hablar de certeza a priori, no un contenido de g",
+      "quien": "juez"
+    }
+  ],
+  "resumen": {
+    "juzgadas": 13,
+    "cubiertasSegunElJuez": 6,
+    "confirmadasPorElEsceptico": 6,
+    "tumbadasPorElEsceptico": 0
+  }
+}

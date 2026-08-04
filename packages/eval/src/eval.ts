@@ -67,10 +67,21 @@ interface GoldenQuestion {
   q: string;
   expect_chunks?: string[];
   expect_answer?: string;
-  /** Modo esperado del tutor. Las `must_abstain` lo declaran "general": el libro
-   *  no lo cubre, así que la respuesta correcta ya NO es negarse sino responder
-   *  con conocimiento general Y AVISARLO. */
+  /** Modo esperado del tutor: "libro" | "apoyado" | "general". */
   expect_mode?: string;
+  /**
+   * Alcance esperado: "curso" | "otro_curso" | "otra_materia" | "ninguno".
+   *
+   * MODO Y ALCANCE SON DOS EJES INDEPENDIENTES, y hay que declararlos por
+   * separado o no se puede expresar la conducta correcta. "¿Qué es la
+   * fotosíntesis?" preguntada desde Lengua debe dar modo `libro` (el material
+   * existe y lo respalda) CON alcance `otra_materia` (pero no es el libro de
+   * esta materia) — el alumno lee "esto no está en Lengua, lo saqué de Ciencias
+   * Naturales 6º". Meter eso en `expect_mode` obligaría a mentir en un eje.
+   *
+   * Cuando falta, no se evalúa el alcance de esa pregunta.
+   */
+  expect_scope?: string;
   note?: string;
 }
 
@@ -476,6 +487,7 @@ async function runQuestion(
   return {
     type: gq.type,
     expectMode: gq.expect_mode,
+    expectScope: gq.expect_scope,
     mode,
     scope: ctx?.scope,
     retrievedIds,
@@ -648,7 +660,7 @@ async function main() {
         // (route.ts responde "tuve un problemita"). Antes salía del denominador
         // y las métricas quedaban optimistas.
         const t: QResult = {
-          type: gq.type, expectMode: gq.expect_mode,
+          type: gq.type, expectMode: gq.expect_mode, expectScope: gq.expect_scope,
           // Un timeout NO es un modo: no hubo respuesta que encuadrar. Se deja
           // sin `mode` para que no contamine correct_mode ni false_book_claim.
           retrievedIds: [], expectedIds: gq.expect_chunks ?? [],
