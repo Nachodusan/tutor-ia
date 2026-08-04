@@ -122,9 +122,13 @@ async function main(): Promise<void> {
           claim: c.text,
           label: c.label,
           entailment: v.entailment,
-          // El material contra el que se la juzgó, recortado: es lo que hay que
-          // leer para decidir si la afirmación está ahí o no.
-          material: candidates.map((t) => t.slice(0, 1200)),
+          // El material contra el que se la juzgó, COMPLETO y sin recortar.
+          // Recortarlo (estaba a 1200 chars) invalidaba la auditoría entera: 36
+          // de 37 fragmentos llegaban al tope, así que quien leyera esto vería
+          // material incompleto y marcaría como inventado algo que sí estaba en
+          // el libro, tres párrafos más abajo. Un archivo más grande es barato;
+          // un veredicto equivocado sobre si el tutor inventa, no.
+          material: candidates,
         });
       }
     }
