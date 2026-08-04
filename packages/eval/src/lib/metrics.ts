@@ -105,6 +105,8 @@ export interface PerQuestionResult {
   expectMode?: string;
   /** Modo que el tutor efectivamente mostró: "libro" | "apoyado" | "general". */
   mode?: string;
+  /** Hasta dónde fue a buscar: "curso" | "otro_curso" | "otra_materia". */
+  scope?: string;
   /** chunkIds recuperados por el retrieval (en orden de relevancia). */
   retrievedIds: string[];
   /** chunkIds esperados (gold). Vacío si la pregunta no los define. */
@@ -148,7 +150,13 @@ export function aggregate(results: PerQuestionResult[]): EvalMetrics {
   // Y la de seguridad: de las que el libro NO cubre, cuántas se presentaron
   // como si vinieran del libro.
   const deberianSerGeneral = results.filter((r) => r.expectMode === "general");
-  const mintieron = deberianSerGeneral.filter((r) => r.mode === "libro");
+  // Cuenta lo que el alumno VE. Si el material salió de otra materia, la UI no
+  // dice "de tu libro" sino "esto no está en el libro de esta materia, lo saqué
+  // de Ciencias Naturales 6º" — eso no es una falsa atribución, es procedencia
+  // correcta. Solo miente cuando presenta como propio del curso algo que no lo es.
+  const mintieron = deberianSerGeneral.filter(
+    (r) => r.mode === "libro" && (r.scope ?? "curso") === "curso",
+  );
 
   const withExpected = results.filter((r) => r.expectedIds.length > 0);
   const recallSum = withExpected.reduce(

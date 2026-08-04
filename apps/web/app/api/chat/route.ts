@@ -185,7 +185,8 @@ export async function POST(req: Request) {
       const citations = hayMaterial ? teachingCitations(res.ctx!) : [];
       controller.enqueue(
         encoder.encode("\x1e" + JSON.stringify({
-          citations, grounded: hayMaterial, mode: hayMaterial ? "libro" : "general", sessionId,
+          citations, grounded: hayMaterial, mode: hayMaterial ? "libro" : "general",
+          scope: res.ctx?.scope ?? "ninguno", sessionId,
         }) + "\n"),
       );
       try {
@@ -255,7 +256,7 @@ export async function POST(req: Request) {
             v?.verdicts ?? [], hayMaterial, v?.grounded === false,
           );
           controller.enqueue(
-            encoder.encode("\n\x1e" + JSON.stringify({ verification: v, mode }) + "\n"),
+            encoder.encode("\n\x1e" + JSON.stringify({ verification: v, mode, scope: res.ctx!.scope }) + "\n"),
           );
           // TUVO material y llamó al modelo. `selfAbstain` es la señal decisiva:
           // si sale true, el gate hizo bien su trabajo y el que se abstuvo fue

@@ -420,6 +420,7 @@ async function runQuestion(
     type: gq.type,
     expectMode: gq.expect_mode,
     mode,
+    scope: ctx?.scope,
     retrievedIds,
     expectedIds,
     abstained,

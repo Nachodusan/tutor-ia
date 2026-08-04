@@ -183,6 +183,12 @@ export function gradeOrdinal(g: string | null | undefined): number | null {
  * motivo: un chunk flojo no debe cruzar el umbral por un ajuste de orden, ni
  * quedar afuera por él.
  */
+/**
+ * Umbral del gate para la etapa de OTRA MATERIA. Más alto que el normal a
+ * propósito: ver el comentario en la cascada. Configurable para poder barrerlo.
+ */
+export const UMBRAL_OTRA_MATERIA = Number(process.env.RAG_UMBRAL_OTRA_MATERIA ?? "") || 0.5;
+
 export const PENAL_GRADO_ABAJO = 0.02;
 export const PENAL_GRADO_ARRIBA = 0.05;
 
@@ -364,11 +370,20 @@ export async function retrieveForTeaching(
     }
   }
   if (!dirigido && !directedOk && !content?.grounded && opts.corpusCompleto !== false) {
+    // LISTÓN MÁS ALTO para la etapa de otra materia. Un fragmento de Ciencias
+    // Naturales que responde una duda planteada en Lengua necesita MÁS evidencia
+    // que uno del propio libro: no hay contexto de materia que lo respalde, y un
+    // match flojo es simplemente ruido de 29.000 chunks.
+    //
+    // Medido sobre las 24 preguntas del golden que ningún libro cubre: con el
+    // umbral normal (0.18) pasaban 15, de las cuales 3 eran claramente basura
+    // ("¿cuánto hervir un huevo?" a 0.16, "¿cuántos huesos tiene el cuerpo?" a
+    // 0.35). Con 0.5 esas tres caen y las 12 que sí tenían material real siguen.
     const todo = await retrieveRanked(query, {
       userId: opts.userId,
       subjectIds: null,
       k: contentK,
-      minRerankScore: threshold,
+      minRerankScore: Math.max(threshold, UMBRAL_OTRA_MATERIA),
       corpusRole: "content",
     });
     if (todo.grounded) {

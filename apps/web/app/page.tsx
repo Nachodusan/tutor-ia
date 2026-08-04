@@ -19,7 +19,8 @@ interface Verification { grounded: boolean; contradicted: string[]; unsupported:
  *  hubo pero el verificador detectó deriva · "general" no había material y el
  *  tutor enseñó con conocimiento general. */
 type AnswerMode = "libro" | "apoyado" | "general";
-interface Msg { role: "user" | "assistant"; content: string; citations?: Citation[]; verification?: Verification | null; grounded?: boolean; mode?: AnswerMode; streaming?: boolean }
+type AnswerScope = "curso" | "otro_curso" | "otra_materia" | "ninguno";
+interface Msg { role: "user" | "assistant"; content: string; citations?: Citation[]; verification?: Verification | null; grounded?: boolean; mode?: AnswerMode; scope?: AnswerScope; streaming?: boolean }
 /** `disabled` = materia sacada de circulación. Se sigue mostrando (si no,
  *  no hay forma de saber que existe) pero no se puede abrir. */
 interface Subject { id: string; name: string; grade: string | null; subject_area: string | null; content_chunks: string; pedagogy_chunks: string; disabled?: boolean }
@@ -385,7 +386,7 @@ export default function Home() {
             try {
               const meta = JSON.parse(buffer.slice(1, nl));
               if (meta.sessionId) sessionRef.current = meta.sessionId;
-              patch({ citations: meta.citations ?? [], grounded: meta.grounded !== false, mode: meta.mode });
+              patch({ citations: meta.citations ?? [], grounded: meta.grounded !== false, mode: meta.mode, scope: meta.scope });
             } catch { /* */ }
             buffer = buffer.slice(nl + 1); citationsParsed = true;
           }
@@ -401,7 +402,7 @@ export default function Home() {
               const meta = JSON.parse(frame);
               // El modo DEFINITIVO llega acá: el del primer frame es provisorio
               // (ahí solo se sabe si hubo material, todavía no si hubo deriva).
-              patch({ ...(meta.verification ? { verification: meta.verification } : {}), ...(meta.mode ? { mode: meta.mode } : {}) });
+              patch({ ...(meta.verification ? { verification: meta.verification } : {}), ...(meta.mode ? { mode: meta.mode } : {}), ...(meta.scope ? { scope: meta.scope } : {}) });
             } catch { /* */ }
           }
         }
@@ -1207,7 +1208,7 @@ function Bubble({ m, onSpeak }: { m: Msg; onSpeak?: () => void }) {
             {m.content && !m.streaming && onSpeak && <button onClick={onSpeak} title="Leer en voz alta" style={{ background: "none", border: "none", color: C.accentSoft, cursor: "pointer", flexShrink: 0, padding: 2, display: "flex" }}><IconVolume size={16} /></button>}
           </div>
         )}
-      <VerificationBadge v={m.verification} mode={m.mode} />
+      <VerificationBadge v={m.verification} mode={m.mode} scope={m.scope} citations={m.citations} />
       {m.citations && m.citations.length > 0 && (() => {
         const seen = new Set<string>();
         // Dedupe por ROTULO: con material de varios cursos, dos "pág. 12" de
@@ -1245,7 +1246,21 @@ function Note({ children, tone }: { children: React.ReactNode; tone: "warn" | "b
  * responde igual, ese es justamente el caso que MÁS necesita marcador: es la
  * única señal de que lo que el chico está leyendo no salió de su libro.
  */
-function VerificationBadge({ v, mode }: { v?: Verification | null; mode?: AnswerMode }) {
+function VerificationBadge({ v, mode, scope, citations }: { v?: Verification | null; mode?: AnswerMode; scope?: AnswerScope; citations?: Citation[] }) {
+  // "De tu libro" cuando el material salió de OTRA MATERIA es engañoso, aunque
+  // la cita nombre el libro correcto: el alumno está en Lengua y el sello, ahí,
+  // se lee como "está en tu libro de Lengua". Medido sobre el golden: 12 de 24
+  // preguntas que ningún libro de Lengua cubre traían material legítimo de
+  // Ciencias Naturales o Biología y se mostraban con el sello verde.
+  if (mode === "libro" && (scope === "otra_materia" || scope === "otro_curso")) {
+    const libro = citations?.[0]?.label?.split(" · ").slice(0, 2).join(" · ");
+    return (
+      <div style={{ marginTop: 9, display: "inline-flex", gap: 7, alignItems: "flex-start", background: C.panel2, color: C.dim, border: `1px solid ${C.border}`, fontSize: 12.5, padding: "8px 12px", borderRadius: 12, lineHeight: 1.5, maxWidth: 480 }}>
+        <span style={{ display: "flex", flexShrink: 0, marginTop: 1 }}><IconBook size={14} /></span>
+        <span>Esto no está en el libro de esta materia. Lo saqué de <strong style={{ color: C.text }}>{libro || "otro libro tuyo"}</strong>.</span>
+      </div>
+    );
+  }
   // Sin material: el aviso va sí o sí, aunque no haya nada que verificar.
   if (mode === "general") {
     return (
