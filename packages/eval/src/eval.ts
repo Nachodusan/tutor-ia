@@ -38,6 +38,7 @@ import {
   streamTeaching,
   verifyClaims,
   verifyAnswerA3,
+  derivarModo,
   type DecisionCause,
   type RawClaim,
 } from "@tutor-ia/core";
@@ -66,6 +67,10 @@ interface GoldenQuestion {
   q: string;
   expect_chunks?: string[];
   expect_answer?: string;
+  /** Modo esperado del tutor. Las `must_abstain` lo declaran "general": el libro
+   *  no lo cubre, así que la respuesta correcta ya NO es negarse sino responder
+   *  con conocimiento general Y AVISARLO. */
+  expect_mode?: string;
   note?: string;
 }
 
@@ -86,7 +91,11 @@ const TARGETS: Target[] = [
   { key: "citationPrecision", label: "precision@gold", goal: 0.8, cmp: ">=" },
   { key: "hallucinationRate", label: "hallucination_rate", goal: 0.02, cmp: "<=" },
   { key: "falseAbstentionRate", label: "false_abstention", goal: 0.1, cmp: "<=" },
-  { key: "trueAbstentionRate", label: "true_abstention", goal: 0.95, cmp: ">=" },
+  // true_abstention se retira: el tutor ya no se abstiene por falta de material,
+  // así que por diseño va a ~0 y dejó de significar algo. Se sigue calculando
+  // para poder releer las corridas viejas, pero no es un objetivo.
+  { key: "falseBookClaim", label: "false_book_claim", goal: 0.02, cmp: "<=" },
+  { key: "correctModeRate", label: "correct_mode", goal: 0.9, cmp: ">=" },
 ];
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -238,7 +247,14 @@ async function runQuestion(
   //
   // ⛔ Los baselines anteriores al 2026-08-03 NO son comparables con este número.
   const retrievedIds = (ctx?.retrieved ?? []).map((c) => c.chunkId);
-  const abstained = !res.grounded;
+  // ⚠️ `abstained` YA NO ES `!res.grounded`. Producción dejó de negarse por falta
+  // de material: /api/chat genera igual y marca la respuesta como "general". Si
+  // el eval siguiera cortando acá, mediría un tutor que ya no existe — y las 24
+  // preguntas que el libro no cubre nunca llegarían a generar, así que su
+  // alucinación quedaría sin medir justo donde más importa.
+  //
+  // La única abstención que queda es la de INFRAESTRUCTURA, igual que en la ruta.
+  const abstained = !!res.rerankerDown;
   const expectedIds = gq.expect_chunks ?? [];
   const topScore = ctx?.topScore ?? 0;
   const citableSource = ctx?.citableSource ?? "none";
@@ -257,6 +273,7 @@ async function runQuestion(
   let claimsTotal = 0;
   let claimsSinRespaldo = 0;
   let prodVerdicts: QResult["prodVerdicts"] = [];
+  // Se genera SIEMPRE (salvo infra caída), como en producción.
   if (!abstained && DO_HALLUCINATION) {
     try {
       const chunks = ctx.citable;
@@ -390,8 +407,19 @@ async function runQuestion(
     ms,
   });
 
+  // El MISMO derivador que usa /api/chat: lo que se mide es lo que se sirve.
+  const { mode } = derivarModo(
+    (prodVerdicts ?? []).map((v) => ({ text: "", ...v })),
+    (ctx?.citable.length ?? 0) > 0,
+    // `hallucinatedProd` viene de `!prodV.grounded`, que es exactamente la
+    // señal de DERIVA de verify.ts. Si no se pudo verificar, no hay deriva.
+    prodKnown && hallucinatedProd,
+  );
+
   return {
     type: gq.type,
+    expectMode: gq.expect_mode,
+    mode,
     retrievedIds,
     expectedIds,
     abstained,
@@ -562,7 +590,10 @@ async function main() {
         // (route.ts responde "tuve un problemita"). Antes salía del denominador
         // y las métricas quedaban optimistas.
         const t: QResult = {
-          type: gq.type, retrievedIds: [], expectedIds: gq.expect_chunks ?? [],
+          type: gq.type, expectMode: gq.expect_mode,
+          // Un timeout NO es un modo: no hubo respuesta que encuadrar. Se deja
+          // sin `mode` para que no contamine correct_mode ni false_book_claim.
+          retrievedIds: [], expectedIds: gq.expect_chunks ?? [],
           abstained: true, hallucinated: false, hallucinationKnown: false,
           errored: false, cause: "retrieval_error", topScore: 0,
           citableSource: "none", selfAbstained: false, ms: 0, msProd: 0,
