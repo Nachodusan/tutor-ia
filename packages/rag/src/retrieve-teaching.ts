@@ -369,16 +369,45 @@ export async function retrieveForTeaching(
       scope = "otro_curso";
     }
   }
-  if (!dirigido && !directedOk && !content?.grounded && opts.corpusCompleto !== false) {
+  // LA CASCADA NO PUEDE SER "EL PRIMERO QUE PASA GANA".
+  //
+  // Las etapas tienen umbrales distintos —0.18 la propia asignatura, 0.5 el
+  // corpus entero— así que frenar en la primera que supera SU umbral hace que un
+  // 0.18 flojo le gane a un 0.99 excelente, nada más que por venir antes.
+  //
+  // Medido, y es el caso que lo destapó. "¿Qué es la fotosíntesis?" desde Lengua
+  // 8º, con la etapa de familia activa:
+  //   otro_curso   0.18  Lengua 7º pág. 134: "los restos nudosos de un
+  //                      antiquísimo tocón" — un cuento sobre un tronco.
+  // y lo que había esperando dos líneas más abajo:
+  //   otra_materia 0.99  Ciencias Naturales 6º pág. 83: "la glucosa producida
+  //                      es utilizada por el organismo fotosintetizador".
+  // El chico recibía el cuento del tocón, rotulado "está en tu libro de 7º".
+  //
+  // Así que cuando lo de la propia asignatura queda FLOJO se sigue buscando, y
+  // gana el mejor por `rerankScore` —comparable entre etapas porque es el mismo
+  // cross-encoder sobre la misma consulta, la misma disciplina que ya rige para
+  // el boost de OA y la penalización de grado. No se paga siempre: solo cuando
+  // la etapa anterior no llegó al listón alto.
+  // Solo se sigue buscando cuando lo flojo vino de OTRO CURSO. Si salió del
+  // libro del propio curso se queda, aunque puntúe bajo: es el libro que el
+  // chico tiene sobre la mesa y con el que lo van a evaluar, y esa es la promesa
+  // del producto. La etapa que hay que vigilar es la de al lado, no la de casa.
+  const flojo =
+    scope === "otro_curso" && (content?.topScore ?? 0) < UMBRAL_OTRA_MATERIA;
+  if (
+    !dirigido && !directedOk && opts.corpusCompleto !== false &&
+    (!content?.grounded || flojo)
+  ) {
     // LISTÓN MÁS ALTO para la etapa de otra materia. Un fragmento de Ciencias
     // Naturales que responde una duda planteada en Lengua necesita MÁS evidencia
     // que uno del propio libro: no hay contexto de materia que lo respalde, y un
     // match flojo es simplemente ruido de 29.000 chunks.
     //
-    // Medido sobre las 24 preguntas del golden que ningún libro cubre: con el
-    // umbral normal (0.18) pasaban 15, de las cuales 3 eran claramente basura
-    // ("¿cuánto hervir un huevo?" a 0.16, "¿cuántos huesos tiene el cuerpo?" a
-    // 0.35). Con 0.5 esas tres caen y las 12 que sí tenían material real siguen.
+    // ⚠️ El umbral solo rige la vía ABSOLUTA del gate. La vía del MARGEN
+    // (`gapMed`) no tiene equivalente elevado, y por ahí se coló "¿cuánto hervir
+    // un huevo?" con 0.16 pese al 0.5. Ver la tarea abierta sobre el
+    // discriminador de esta etapa.
     const todo = await retrieveRanked(query, {
       userId: opts.userId,
       subjectIds: null,
@@ -386,7 +415,9 @@ export async function retrieveForTeaching(
       minRerankScore: Math.max(threshold, UMBRAL_OTRA_MATERIA),
       corpusRole: "content",
     });
-    if (todo.grounded) {
+    // Solo desplaza a lo anterior si es ESTRICTAMENTE mejor. Ante empate se
+    // queda la asignatura propia: mismo valor para el alumno, y su libro.
+    if (todo.grounded && todo.topScore > (content?.grounded ? content.topScore : -1)) {
       content = { ...todo, chunks: porCercania(todo.chunks) };
       scope = "otra_materia";
     }
