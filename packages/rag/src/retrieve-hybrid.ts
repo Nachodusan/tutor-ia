@@ -27,6 +27,7 @@ export interface HybridChunk {
    *  trae material de otro curso "pág. 87" no le dice nada al alumno. */
   documentTitle: string | null;
   grade: string | null;
+  subjectId: string;
   /** Posición (1-based) en el ranking denso / léxico; null si no apareció. */
   denseRank: number | null;
   lexicalRank: number | null;
@@ -38,7 +39,13 @@ export interface HybridChunk {
 
 export interface HybridOptions {
   userId: string;
-  subjectId?: string | null;
+  /** Una materia, varias, o null = todo el corpus. Es el escalón que permite la
+   *  cascada de alcance: curso del alumno → misma asignatura en otros cursos →
+   *  todo. */
+  subjectIds?: string[] | null;
+  /** Dejar entrar material de materias EN PAUSA. Solo para la materia que el
+   *  alumno abrió explícitamente; nunca para el alcance ampliado. */
+  incluirPausadas?: boolean;
   /** Cuántos devolver tras la fusión (default 8). */
   k?: number;
   /** Candidatos por lado antes de fusionar (default 20). */
@@ -64,6 +71,7 @@ interface Row {
   oa: string | null;
   document_title: string | null;
   grade: string | null;
+  subject_id: string;
 }
 
 /** Default del pool por brazo. Configurable con RAG_POOL_PER_SIDE (mismo patrón
@@ -112,17 +120,20 @@ export async function retrieveHybridWithStats(
   const pool = opts.poolPerSide ?? poolPerSideFromEnv();
   const rrfK = opts.rrfK ?? 60;
   const k = opts.k ?? 8;
-  const subject = opts.subjectId ?? null;
+  // `null` = todo el corpus (lo entiende el SQL). Un array vacío sería "ninguna
+  // materia", que nunca es lo que se quiere: se normaliza a null.
+  const subjects = opts.subjectIds?.length ? opts.subjectIds : null;
+  const pausadas = opts.incluirPausadas ?? false;
 
   const embedding = toVectorLiteral(await embedQuery(query));
 
   const role = opts.corpusRole ?? null;
   const [dense, lexical] = await Promise.all([
     sql<Row[]>`
-      select * from match_chunks_dense(${embedding}::vector, ${opts.userId}::uuid, ${subject}, ${pool}, ${role})
+      select * from match_chunks_dense(${embedding}::vector, ${opts.userId}::uuid, ${subjects}::uuid[], ${pool}, ${role}, ${pausadas})
     `,
     sql<Row[]>`
-      select * from match_chunks_lexical(${query}, ${opts.userId}::uuid, ${subject}, ${pool}, ${role})
+      select * from match_chunks_lexical(${query}, ${opts.userId}::uuid, ${subjects}::uuid[], ${pool}, ${role}, ${pausadas})
     `,
   ]);
 
@@ -145,6 +156,7 @@ export async function retrieveHybridWithStats(
         oa: r.oa,
         documentTitle: r.document_title,
         grade: r.grade,
+        subjectId: r.subject_id,
         denseRank: null,
         lexicalRank: null,
         denseScore: null,

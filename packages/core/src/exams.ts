@@ -35,7 +35,7 @@ export async function generateExam(req: GenerateExamRequest): Promise<Exam> {
   // legacy: el examen se genera sobre material realmente fundamentado.
   const ranked = await retrieveRanked(req.topic ?? "resumen general del material", {
     userId: req.userId,
-    subjectId: req.subjectId,
+    subjectIds: req.subjectId ? [req.subjectId] : null,
     k: 16,
     candidatePool: 40,
     minRerankScore: config.rerankMinScore,

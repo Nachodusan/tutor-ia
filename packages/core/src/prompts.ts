@@ -136,6 +136,8 @@ export function buildTeachingTurn(params: {
   studentGrade?: string | null;
   /** Cursos de los que salió el material citable. */
   sourceGrades?: string[];
+  /** Hasta dónde hubo que ir a buscar el material. */
+  scope?: "curso" | "otro_curso" | "otra_materia" | "ninguno";
 }): string {
   const adapt = params.struggling
     ? `\n⚠️ El estudiante NO entendió la explicación anterior. NO la repitas: cambia de método usando OTRA estrategia de la GUÍA (otra actividad/habilidad/ejemplo) y simplifica.\n`
@@ -153,7 +155,8 @@ export function buildTeachingTurn(params: {
   // ubicar lo que lee, y "esto se ve en 2º Medio" es información útil, no una
   // disculpa.
   const otroCurso =
-    params.studentGrade && (params.sourceGrades ?? []).some((g) => g !== params.studentGrade)
+    params.scope !== "curso" && params.studentGrade &&
+    (params.sourceGrades ?? []).some((g) => g !== params.studentGrade)
       ? `\nParte del MATERIAL de arriba NO es del libro de su curso (sale de ${(params.sourceGrades ?? []).filter((g) => g !== params.studentGrade).map(gradoLegible).join(", ")}). Enseñalo igual, pero mencionalo UNA vez y natural ("esto se ve en 2º Medio, pero se entiende igual").\n`
       : "";
   return `=== MATERIAL (única fuente citable; el "qué") ===

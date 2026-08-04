@@ -121,6 +121,10 @@ export interface TeachingContext {
    * los dos se movió.
    */
   retrieved: CitableChunk[];
+  /** Hasta dónde hubo que ir a buscar: el curso del alumno, otro curso de la
+   *  misma asignatura, u otra materia. Es lo que permite decirle al alumno
+   *  "esto se ve en 2º Medio". */
+  scope: TeachingScope;
   /** Contadores del retrieval de contenido (brazos, pool, ranker) para el log. */
   stats?: RankedStats;
 }
@@ -139,6 +143,58 @@ export interface TeachingOptions {
    *  del plan aunque el título sea una paráfrasis floja. */
   unit?: number | null;
   lesson?: number | null;
+  /** Todas las materias de la MISMA asignatura (todos los cursos), incluida la
+   *  del alumno. Etapa 1 de la cascada. Sin esto la cascada saltea directo a
+   *  todo el corpus. */
+  familyIds?: string[] | null;
+  /** false → no llegar nunca a la etapa de corpus completo. */
+  corpusCompleto?: boolean;
+  /** Curso del alumno ("1M"): ordena el material por cercanía de nivel. */
+  studentGrade?: string | null;
+}
+
+/** Hasta dónde hubo que ir a buscar el material que se está citando. */
+export type TeachingScope = "curso" | "otro_curso" | "otra_materia" | "ninguno";
+
+/**
+ * "1B".."8B" → 1..8 · "1M".."4M" → 9..12. Escala CONTINUA, para poder restar
+ * dos cursos y obtener una distancia.
+ *
+ * El `gradeSort` de la UI (ui.tsx) NO sirve para esto: da 100+n a la media, así
+ * que 8º Básico → 1º Medio mide 93 en vez de 1. Sirve para ordenar una lista,
+ * no para medir cercanía.
+ */
+export function gradeOrdinal(g: string | null | undefined): number | null {
+  if (!g) return null;
+  const n = Number(g.slice(0, -1));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return g.endsWith("M") ? 8 + n : n;
+}
+
+/**
+ * Penalización por distancia de curso, en la escala del rankScore.
+ *
+ * ASIMÉTRICA a propósito: bajar de curso es más seguro que subir. Material de un
+ * curso anterior explica lo mismo más simple; material de un curso posterior
+ * puede dar por sabido lo que el alumno todavía no vio.
+ *
+ * Se aplica SOLO al orden (`rankScore`), nunca al `rerankScore` que mira el
+ * gate — la misma disciplina que ya rige para el boost de OA, y por el mismo
+ * motivo: un chunk flojo no debe cruzar el umbral por un ajuste de orden, ni
+ * quedar afuera por él.
+ */
+export const PENAL_GRADO_ABAJO = 0.02;
+export const PENAL_GRADO_ARRIBA = 0.05;
+
+export function penalizacionGrado(
+  studentGrade: string | null | undefined,
+  chunkGrade: string | null | undefined,
+): number {
+  const a = gradeOrdinal(studentGrade);
+  const b = gradeOrdinal(chunkGrade);
+  if (a == null || b == null) return 0;
+  const d = b - a;
+  return d === 0 ? 0 : d > 0 ? d * PENAL_GRADO_ARRIBA : -d * PENAL_GRADO_ABAJO;
 }
 
 interface LessonChunk {
@@ -239,21 +295,95 @@ export async function retrieveForTeaching(
   // `grounded=true` con score 0.001 se camuflaba como grounding normal.
   const directedOk = directCitable.length > 0 && directCitable[0]!.score >= threshold;
 
-  // 1) CONTENIDO por el gate del reranker (salvo estudio dirigido sólido).
-  const content = directedOk
+  // 1) CONTENIDO — CASCADA DE ALCANCE.
+  //
+  //    El gate deja de ser un cortacircuito y pasa a ser el DISPARADOR de la
+  //    etapa siguiente: si con el material del curso del alumno no alcanza, se
+  //    busca en la misma asignatura de los otros cursos, y si tampoco, en todo
+  //    el corpus. Ningún umbral cambia — cambia qué se hace cuando no se llega.
+  //
+  //    Escalonada y no una búsqueda global de entrada porque el brazo léxico une
+  //    los lexemas con OR: abrir el alcance en el 100% de los turnos pagaría ese
+  //    costo siempre, cuando solo hace falta en el ~20% que hoy se abstiene.
+  let content = directedOk
     ? null
     : await retrieveRanked(query, {
         userId: opts.userId,
-        subjectId: opts.subjectId,
+        subjectIds: opts.subjectId ? [opts.subjectId] : null,
+        // La materia que el alumno abrió explícitamente entra aunque esté en
+        // pausa: cortarle la conversación a mitad es otra decisión, y no esta.
+        incluirPausadas: true,
         k: contentK,
         minRerankScore: threshold,
         corpusRole: "content",
       });
 
+  let scope: TeachingScope = "curso";
+  // EL ESTUDIO DIRIGIDO NO SE AMPLÍA NUNCA, ni cuando su material queda flojo.
+  // El alumno pidió estudiar ESTA lección de SU plan: traerle la unidad 3 de
+  // otro curso sería responder otra cosa. Y `unit`/`lesson` son números que se
+  // repiten en los 67 libros, así que ampliar acá devuelve mezcla.
+  const dirigido = opts.unit != null;
+  // Al ampliar, el pool trae varios cursos: se reordena por cercanía de nivel
+  // para que, a igualdad de relevancia, gane el material del curso del alumno.
+  // Solo el ORDEN — el gate ya decidió con el score crudo.
+  const porCercania = <T extends { content: string; grade: string | null; rerankScore: number; rankScore: number }>(cs: T[]): T[] => {
+    const ordenados = [...cs]
+      .map((c) => ({ ...c, rankScore: c.rankScore - penalizacionGrado(opts.studentGrade, c.grade) }))
+      .sort((a, b) => b.rankScore - a.rankScore);
+    // DEDUPE, y solo acá: el corpus tiene ~19% de chunks repetidos y cruzando
+    // cursos eso se amplifica (Biología 1º y 2º Medio son literalmente el mismo
+    // libro cargado dos veces). Sin esto, el alumno recibe la misma explicación
+    // cinco veces y el pool se desperdicia.
+    //
+    // DESPUÉS del gate y no antes, a propósito: `gapMed` mide el top-1 contra la
+    // MEDIANA del pool, y esa mediana está calibrada CON los duplicados dentro.
+    // Deduplicar antes recalibraría el margen del gate en silencio.
+    const vistos = new Set<string>();
+    const out: T[] = [];
+    for (const c of ordenados) {
+      const k = c.content.replace(/\s+/g, " ").trim().slice(0, 300).toLowerCase();
+      if (vistos.has(k)) continue;
+      vistos.add(k);
+      out.push(c);
+    }
+    return out;
+  };
+
+  if (!dirigido && !directedOk && opts.subjectId && !content?.grounded && (opts.familyIds?.length ?? 0) > 1) {
+    const ampliado = await retrieveRanked(query, {
+      userId: opts.userId,
+      subjectIds: opts.familyIds,
+      k: contentK,
+      minRerankScore: threshold,
+      corpusRole: "content",
+    });
+    if (ampliado.grounded) {
+      content = { ...ampliado, chunks: porCercania(ampliado.chunks) };
+      scope = "otro_curso";
+    }
+  }
+  if (!dirigido && !directedOk && !content?.grounded && opts.corpusCompleto !== false) {
+    const todo = await retrieveRanked(query, {
+      userId: opts.userId,
+      subjectIds: null,
+      k: contentK,
+      minRerankScore: threshold,
+      corpusRole: "content",
+    });
+    if (todo.grounded) {
+      content = { ...todo, chunks: porCercania(todo.chunks) };
+      scope = "otra_materia";
+    }
+  }
+
   // 2) PEDAGOGÍA por relevancia (corpus_role='pedagogy'), rerankeada.
+  //    NO se amplía nunca: la guía docente de otro curso es pedagogía
+  //    activamente equivocada (dice cómo enseñarle a chicos de otra edad).
   const pedaCandidates = await retrieveHybrid(query, {
     userId: opts.userId,
-    subjectId: opts.subjectId,
+    subjectIds: opts.subjectId ? [opts.subjectId] : null,
+    incluirPausadas: true,
     k: 40,
     // Sin esto, pedir 40 sobre brazos de 20 era un número que no se cumplía.
     poolPerSide: 40,
@@ -270,7 +400,11 @@ export async function retrieveForTeaching(
       // rerankScore queda CRUDO (gate); el boost de OA solo mueve rankScore (orden).
       .map((c, i) => {
         const rerankScore = scores[i] ?? 0;
-        const boosted = c.oa && oasContent.includes(c.oa) ? rerankScore + oaBoost : rerankScore;
+        // El boost SOLO dentro del mismo curso: los códigos de OA son "OA6" a
+        // secas y se repiten en TODOS los grados, así que cruzando cursos el
+        // "OA6" de 1º Básico haría boost contra el de 4º Medio.
+        const mismoCurso = scope === "curso";
+        const boosted = mismoCurso && c.oa && oasContent.includes(c.oa) ? rerankScore + oaBoost : rerankScore;
         return { ...c, rerankScore, rankScore: Math.min(1, boosted) };
       })
       .sort((a, b) => b.rankScore - a.rankScore);
@@ -336,6 +470,7 @@ export async function retrieveForTeaching(
   return {
     citable,
     retrieved,
+    scope: citable.length > 0 ? scope : "ninguno",
     grounded: citable.length > 0,
     citableSource,
     pedagogy,

@@ -12,7 +12,7 @@
  * qué hacer con ellos (la ruta cachea y responde; el CLI cachea y sigue).
  */
 import { chatJSON } from "./client";
-import { getPlanTopics, type PlanTopic } from "@tutor-ia/rag";
+import { getPlanTopics, getPlanTopicsForQuery, type PlanTopic } from "@tutor-ia/rag";
 
 /** Lecciones que entran en un plan. Igual que el límite de `getPlanTopics`. */
 export const PLAN_LIMIT = 14;
@@ -42,6 +42,8 @@ export interface PlanItem {
    *  vacío si el fragmento no daba para nada concreto. */
   points: string[];
   documentId: string;
+  /** Materia de la lección. En un plan a medida puede variar tema a tema. */
+  subjectId: string;
   pageStart: number;
   pageEnd: number;
   unit: number | null;
@@ -154,7 +156,35 @@ export async function buildStudyPlan(
   subjectName?: string | null,
 ): Promise<PlanItem[]> {
   const temas: PlanTopic[] = await getPlanTopics(subjectId, { limit: PLAN_LIMIT });
+  return redactarPlan(temas, subjectName);
+}
+
+/**
+ * Plan A MEDIDA: el alumno pide los contenidos que quiere ("repasar fracciones",
+ * "prepararme la prueba de ecosistemas").
+ *
+ * Los temas NO los inventa el modelo: salen del retrieval y son lecciones reales
+ * del libro, con su título, sus páginas y su unidad. El LLM hace acá exactamente
+ * lo mismo que en el plan sugerido — redactar — y por eso reusa `redactarPlan`
+ * entero: el mismo prompt, las mismas tandas, el mismo filtro de puntos vacíos.
+ * Un segundo prompt "parecido" es la forma más rápida de que los dos planes
+ * empiecen a verse distintos sin que nadie lo haya decidido.
+ */
+export async function buildCustomPlan(
+  chunks: { documentId: string; pageStart: number | null; pageEnd: number | null }[],
+  pedido: string,
+): Promise<PlanItem[]> {
+  const temas = await getPlanTopicsForQuery(pedido, chunks, { limit: 8 });
+  return redactarPlan(temas, pedido);
+}
+
+/** El paso común: los temas ya elegidos → títulos, foco y puntos clave. */
+async function redactarPlan(
+  temas: PlanTopic[],
+  contexto?: string | null,
+): Promise<PlanItem[]> {
   if (temas.length < 2) throw new SinEstructura(temas.length);
+  const subjectName = contexto;
 
   const titled: ItemLLM[] = [];
   for (let desde = 0; desde < temas.length; desde += TANDA) {
@@ -189,6 +219,7 @@ export async function buildStudyPlan(
     points: limpiarPuntos(titled[i]?.points, titled[i]?.title ?? t.title),
     key: t.key,
     documentId: t.documentId,
+    subjectId: t.subjectId,
     pageStart: t.pageStart,
     pageEnd: t.pageEnd,
     unit: t.unitNo,

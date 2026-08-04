@@ -32,6 +32,9 @@ export interface TeachRequest {
    *  cliente: define el nivel de lenguaje con que se le habla a un menor, y eso
    *  no puede depender de lo que mande el navegador. */
   studentGrade?: string | null;
+  /** Materias de la MISMA asignatura en todos los cursos (etapa 1 de la
+   *  cascada de alcance). Las resuelve la ruta con `subjects.family`. */
+  familyIds?: string[] | null;
 }
 
 /** Etiquetas legibles de los tipos de pedagogía para el prompt. */
@@ -120,6 +123,8 @@ export async function getTeachingContext(req: TeachRequest): Promise<TeachingRes
       minRerankScore: config.rerankMinScore,
       unit: req.unit ?? null,
       lesson: req.lesson ?? null,
+      familyIds: req.familyIds ?? null,
+      studentGrade: req.studentGrade ?? null,
     };
     const ctx = await retrieveForTeaching(query, opts);
     if (ctx.grounded || vague || !config.queryNormalize) {
@@ -311,6 +316,7 @@ export async function* streamTeaching(
         // De qué cursos salió el material que va en el prompt. Si no es el del
         // alumno, el modelo tiene que saberlo para poder decirlo.
         sourceGrades: [...new Set(ctx.citable.map((c) => c.grade).filter(Boolean))] as string[],
+        scope: ctx.scope,
       }),
     },
   ];

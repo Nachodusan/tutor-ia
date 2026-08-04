@@ -75,7 +75,7 @@ export async function getTutorContext(
   try {
     res = await retrieveRanked(req.question, {
       userId: req.userId,
-      subjectId: req.subjectId,
+      subjectIds: req.subjectId ? [req.subjectId] : null,
       k: 8,
       minRerankScore: config.rerankMinScore,
     });

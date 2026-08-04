@@ -95,6 +95,13 @@ export interface Decision {
   mode?: string | null;
   /** Fracción de oraciones respaldadas por el material (0-1). */
   supportedFrac?: number | null;
+  /**
+   * Hasta dónde hubo que ir a buscar: "curso" | "otro_curso" | "otra_materia".
+   * Es la métrica de la cascada de alcance: dice qué fracción de las respuestas
+   * necesitó salir del curso del alumno, que es lo único que justifica el costo
+   * de las etapas extra.
+   */
+  scope?: string | null;
   /** Chunks que trajo el ranking, ANTES del gate. Con `nCitable` al lado, separa
    *  "el retrieval no encontró nada" de "encontró pero el gate lo cortó". */
   nRetrieved?: number | null;

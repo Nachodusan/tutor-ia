@@ -110,6 +110,22 @@ export async function POST(req: Request) {
   const perfil = getSql()<{ grade: string | null }[]>`
     select grade from student_profiles where user_id = ${userId}::uuid`;
 
+  // Las materias de la MISMA asignatura en todos los cursos (etapa 1 de la
+  // cascada de alcance). Se resuelve por `subjects.family`, que es explícito y
+  // materializado — NO por `documents.subject_area`, que tiene la misma materia
+  // escrita de dos formas ("ingles" e "inglés" conviven en Inglés 1º Medio).
+  // Las materias en pausa quedan afuera del alcance ampliado.
+  const familia = body.subjectId
+    ? getSql()<{ id: string }[]>`
+        select s2.id
+        from subjects s1
+        join subjects s2 on s2.family = s1.family
+        where s1.id = ${body.subjectId}::uuid
+          and s1.family is not null
+          and s2.disabled_at is null
+          and (s2.user_id is null or s2.user_id = ${userId}::uuid)`
+    : Promise.resolve([] as { id: string }[]);
+
   const teachReq = {
     userId,
     subjectId: body.subjectId ?? null,
@@ -119,16 +135,21 @@ export async function POST(req: Request) {
     unit: body.unit ?? null,
     lesson: body.lesson ?? null,
     studentGrade: null as string | null,
+    familyIds: null as string[] | null,
   };
 
   let res;
   try {
-    const [ctxRes, filas] = await Promise.all([
-      getTeachingContext(teachReq),
+    // El perfil y la familia se resuelven ANTES del retrieval porque los dos
+    // entran en él (nivel de lectura y etapa 1 de la cascada). Son dos lookups
+    // por índice: ~1 ms contra un retrieval de segundos.
+    const [filas, fam] = await Promise.all([
       perfil.catch(() => [] as { grade: string | null }[]),
+      familia.catch(() => [] as { id: string }[]),
     ]);
     teachReq.studentGrade = filas[0]?.grade ?? null;
-    res = ctxRes;
+    teachReq.familyIds = fam.length ? fam.map((r) => r.id) : null;
+    res = await getTeachingContext(teachReq);
   } catch {
     // Fallo de retrieval (p. ej. reranker ocupado/timeout): NO dejamos la
     // burbuja vacía; respondemos con un mensaje amable y reintentable.
@@ -266,7 +287,7 @@ export async function POST(req: Request) {
             drift: v?.grounded === false,
             nliUnavailable: v?.unavailable === true,
             nliChecked: v?.checked ?? null,
-            mode, supportedFrac,
+            mode, supportedFrac, scope: res.ctx.scope ?? null,
             nRetrieved: res.ctx.retrieved?.length ?? null,
             chars: full.length,
             ms: Date.now() - t0,
@@ -283,7 +304,7 @@ export async function POST(req: Request) {
               cause: "answered", topScore: res.ctx.topScore ?? null,
               ranker: res.ctx.stats?.ranker ?? null, qNorm: res.qNorm,
               gateVia: res.ctx.stats?.gateVia ?? null,
-              mode, supportedFrac, ms: Date.now() - t0,
+              mode, supportedFrac, scope: res.ctx.scope ?? null, ms: Date.now() - t0,
             },
           });
         }

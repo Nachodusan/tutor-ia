@@ -108,6 +108,12 @@ export default function Home() {
   const [testSubmitted, setTestSubmitted] = useState(false);
   const [testOpen, setTestOpen] = useState(false);
   const [testLoading, setTestLoading] = useState(false);
+  /** Plan A MEDIDA: lo que el alumno pide con sus palabras. Convive con el
+   *  sugerido (que sale del índice del libro del curso) sin reemplazarlo. */
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customQuery, setCustomQuery] = useState("");
+  const [customLoading, setCustomLoading] = useState(false);
+  const [customError, setCustomError] = useState("");
   const [stats, setStats] = useState<Record<string, SubjectStats>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const recRef = useRef<MediaRecorder | null>(null);
@@ -199,6 +205,25 @@ export default function Home() {
     } catch { setPlan([]); }
     finally { setPlanLoading(false); }
   }
+  async function generarCustom() {
+    if (customLoading || customQuery.trim().length < 3) return;
+    setCustomLoading(true); setCustomError("");
+    try {
+      const r = await fetch("/api/plan/custom", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: customQuery.trim(), subjectId: subjectId || null }),
+      });
+      const j = await r.json();
+      if (!r.ok) { setCustomError(j.error ?? "No pude armar el plan."); return; }
+      // El plan a medida se muestra en la MISMA vista que el sugerido: es la
+      // misma lista de lecciones con los mismos puntos clave, y aprender dos
+      // pantallas para lo mismo no le sirve a nadie.
+      setPlan(j.items ?? []); setPlanDone([]); setCustomOpen(false); setPlanOpen(true);
+      setCustomQuery("");
+    } catch { setCustomError("No hay conexión con el servidor."); }
+    finally { setCustomLoading(false); }
+  }
+
   function startTopic(item: PlanItem) {
     setPlanOpen(false);
     const focus = item.focus ? ` (${item.focus})` : "";
@@ -527,7 +552,9 @@ export default function Home() {
             : planOpen && plan && plan.length > 0
               ? <PlanView items={plan} done={planDone} subject={subject} loading={planLoading} onStart={startTopic} onToggle={toggleDone} onRegen={generatePlan} />
               : messages.length === 0
-                ? <StartScreen subject={subject} plan={plan} loading={planLoading} onPick={send} onGenerate={generatePlan} onOpenPlan={() => setPlanOpen(true)} onTest={openTest} testLoading={testLoading} />
+                ? <StartScreen subject={subject} plan={plan} loading={planLoading} onPick={send} onGenerate={generatePlan} onOpenPlan={() => setPlanOpen(true)} onTest={openTest} testLoading={testLoading}
+                    customOpen={customOpen} customQuery={customQuery} customLoading={customLoading} customError={customError}
+                    onCustomToggle={() => setCustomOpen((o) => !o)} onCustomQuery={setCustomQuery} onCustomSubmit={generarCustom} />
                 : <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>{messages.map((m, i) => <Bubble key={i} m={m} onSpeak={() => speak(m.content)} />)}</div>}
         </div>
       </div>
@@ -994,7 +1021,7 @@ function ResultBanner({ score, total, weak, strong, onStudy, onRetake }: { score
 }
 
 // Primera conversación: elegir tema puntual o que el tutor arme un plan.
-function StartScreen({ subject, plan, loading, onPick, onGenerate, onOpenPlan, onTest, testLoading }: { subject?: Subject; plan: PlanItem[] | null; loading: boolean; onPick: (t: string) => void; onGenerate: () => void; onOpenPlan: () => void; onTest: () => void; testLoading: boolean }) {
+function StartScreen({ subject, plan, loading, onPick, onGenerate, onOpenPlan, onTest, testLoading, customOpen, customQuery, customLoading, customError, onCustomToggle, onCustomQuery, onCustomSubmit }: { subject?: Subject; plan: PlanItem[] | null; loading: boolean; onPick: (t: string) => void; onGenerate: () => void; onOpenPlan: () => void; onTest: () => void; testLoading: boolean; customOpen: boolean; customQuery: string; customLoading: boolean; customError: string; onCustomToggle: () => void; onCustomQuery: (v: string) => void; onCustomSubmit: () => void }) {
   const area = subject ? subjectLabel(subject) : "tu material";
   const examples = [`Explicame un tema de ${area}`, `Dame un ejemplo de ${area}`, `¿Qué es lo más importante de ${area}?`];
   const hasPlan = !!plan && plan.length > 0;
@@ -1028,6 +1055,40 @@ function StartScreen({ subject, plan, loading, onPick, onGenerate, onOpenPlan, o
             <span style={{ display: "block", fontSize: 12.5, color: C.dim }}>Ponete a prueba y mirá qué reforzar</span>
           </span>
         </button>
+      </div>
+
+      {/* PLAN A MEDIDA. Va debajo del sugerido y no en su lugar: el sugerido
+          cubre el curso completo y es el camino por defecto; este es para
+          cuando el alumno ya sabe qué necesita ("me toma prueba de fracciones"). */}
+      <div style={{ maxWidth: 460, margin: "0 auto 24px" }}>
+        {!customOpen ? (
+          <button onClick={onCustomToggle}
+            style={{ background: "none", border: "none", padding: "4px 0", cursor: "pointer", color: C.accentSoft, fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5, textDecoration: "underline", textUnderlineOffset: 3 }}>
+            Prefiero armar mi propio plan
+          </button>
+        ) : (
+          <div style={{ textAlign: "left", background: C.panel2, border: `1px solid ${C.border}`, borderRadius: 16, padding: "14px 15px" }}>
+            <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 15, marginBottom: 3 }}>Tu propio plan</div>
+            <p style={{ margin: "0 0 10px", fontSize: 12.5, color: C.dim, lineHeight: 1.5 }}>
+              ¿Qué necesitás estudiar? Busco las lecciones de tus libros que hablen de eso.
+            </p>
+            <textarea value={customQuery} rows={2}
+              onChange={(e) => onCustomQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onCustomSubmit(); } }}
+              placeholder="Ej: repasar tesis y argumentos para la prueba"
+              style={{ width: "100%", resize: "none", background: C.panel, color: C.text, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 12px", fontSize: 14.5, fontFamily: FONT.sans, outline: "none", boxSizing: "border-box" }} />
+            {customError && <p style={{ margin: "8px 0 0", fontSize: 12.5, color: C.badTx, lineHeight: 1.5 }}>{customError}</p>}
+            <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
+              <button onClick={onCustomSubmit} disabled={customLoading || customQuery.trim().length < 3}
+                style={{ display: "inline-flex", alignItems: "center", gap: 7, background: customLoading || customQuery.trim().length < 3 ? C.border : C.accent, color: "#fff", border: "none", borderRadius: 12, padding: "9px 15px", cursor: customLoading ? "default" : "pointer", fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5 }}>
+                {customLoading ? <><Dots /> Buscando en tus libros…</> : <>Armar el plan <IconArrow size={15} /></>}
+              </button>
+              {!customLoading && (
+                <button onClick={onCustomToggle} style={{ background: "none", border: "none", cursor: "pointer", color: C.dim, fontFamily: FONT.round, fontWeight: 600, fontSize: 13 }}>Cancelar</button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <p style={{ margin: "0 0 12px", fontSize: 13, color: C.dim }}>{hasPlan ? "O preguntá algo puntual 👇" : "¿Tenés un tema en mente? Escribilo abajo 👇"}</p>

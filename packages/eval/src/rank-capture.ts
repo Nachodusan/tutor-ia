@@ -152,7 +152,10 @@ async function main() {
     // ambos brazos (hasta 2×pool si no se solapan).
     const candidates = await retrieveHybrid(gq.q, {
       userId,
-      subjectId,
+      // null = todo el corpus, que es lo que hay que capturar para poder barrer
+      // preguntas de alcance cruzado entre cursos.
+      subjectIds: subjectId ? [subjectId] : null,
+      incluirPausadas: true,
       corpusRole: "content",
       poolPerSide: CAPTURE_POOL,
       k: CAPTURE_POOL * 2,

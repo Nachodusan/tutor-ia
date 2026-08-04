@@ -7,14 +7,19 @@
  * el ÍNDICE del propio libro (`book-index.ts`), con un fallback saneado para los
  * libros cuyo índice no se puede leer.
  */
-import { getSql } from "@tutor-ia/db";
+import { getSql, toJson } from "@tutor-ia/db";
 import { buildBookIndex, type BookSection, type IndexChunk } from "./book-index";
+import { rerank } from "./rerank";
 
 export interface PlanTopic {
   /** Identidad estable: sobrevive al rebuild de las secciones. */
   key: string;
   title: string;
   documentId: string;
+  /** Materia a la que pertenece la lección. En el plan sugerido es siempre la
+   *  misma; en el plan A MEDIDA puede variar tema a tema, y el progreso la
+   *  necesita (student_plan_progress.subject_id es NOT NULL). */
+  subjectId: string;
   /** Título del libro; se usa como prefijo cuando la materia tiene varios tomos. */
   documentTitle: string;
   pageStart: number;
@@ -106,11 +111,11 @@ export async function getPlanTopics(
   const limit = opts.limit ?? 14;
 
   const secciones = await sql<{
-    document_id: string; doc_title: string; ord: number; title: string;
+    document_id: string; subject_id: string; doc_title: string; ord: number; title: string;
     unit_no: number | null; lesson_no: number | null;
     page_start: number; page_end: number;
   }[]>`
-    select bs.document_id, d.title as doc_title, bs.ord, bs.title,
+    select bs.document_id, bs.subject_id, d.title as doc_title, bs.ord, bs.title,
            bs.unit_no, bs.lesson_no, bs.page_start, bs.page_end
     from book_sections bs
     join documents d on d.id = bs.document_id
@@ -127,6 +132,7 @@ export async function getPlanTopics(
       key: claveTema(s.document_id, s.ord, s.title),
       title: variosTomos ? `${tomo(s.doc_title)}${s.title}` : s.title,
       documentId: s.document_id,
+      subjectId: s.subject_id,
       documentTitle: s.doc_title,
       pageStart: s.page_start,
       pageEnd: s.page_end,
@@ -138,6 +144,107 @@ export async function getPlanTopics(
   }
 
   return legacyTopics(subjectId, limit);
+}
+
+/**
+ * Temas para un plan A MEDIDA: las lecciones REALES que hablan de lo que el
+ * alumno pidió.
+ *
+ * `getPlanTopics` recorre el índice de una materia en orden; esto hace lo otro:
+ * busca en el corpus y devuelve las lecciones donde CAYERON los resultados.
+ *
+ * La diferencia con "generar temas con el LLM" es la que importa: acá los temas
+ * siguen siendo lecciones del libro, con su título, su rango de páginas y su
+ * unidad. Un plan inventado se ve igual de bien que uno real y manda al alumno
+ * a estudiar páginas que no existen — el mismo error que ya costó rehacer el
+ * plan sugerido una vez.
+ *
+ * Ordena por cuántos fragmentos relevantes cayeron en cada lección: la que el
+ * retrieval señaló más veces va primero.
+ */
+export async function getPlanTopicsForQuery(
+  query: string,
+  chunks: { documentId: string; pageStart: number | null; pageEnd: number | null }[],
+  opts: { limit?: number } = {},
+): Promise<PlanTopic[]> {
+  const limit = opts.limit ?? 8;
+  const conPagina = chunks.filter((c) => c.pageStart != null);
+  if (conPagina.length === 0) return [];
+
+  const sql = getSql();
+  // Una lección "contiene" un chunk si sus rangos de página se solapan. El
+  // `document_id` es imprescindible: los números de página se repiten en todos
+  // los libros.
+  const filas = await sql<{
+    document_id: string; subject_id: string; doc_title: string; ord: number; title: string;
+    unit_no: number | null; lesson_no: number | null;
+    page_start: number; page_end: number; hits: number;
+  }[]>`
+    with pedidos as (
+      select * from jsonb_to_recordset(${toJson(sql, conPagina.map((c) => ({
+        d: c.documentId, p0: c.pageStart, p1: c.pageEnd ?? c.pageStart,
+      })))}::jsonb) as t(d uuid, p0 int, p1 int)
+    )
+    select bs.document_id, bs.subject_id, d.title as doc_title, bs.ord, bs.title,
+           bs.unit_no, bs.lesson_no, bs.page_start, bs.page_end,
+           count(*)::int as hits
+    from book_sections bs
+    join documents d on d.id = bs.document_id
+    join pedidos p on p.d = bs.document_id
+                  and bs.page_start <= p.p1 and bs.page_end >= p.p0
+    where bs.level = 2
+    group by bs.document_id, bs.subject_id, d.title, bs.ord, bs.title, bs.unit_no,
+             bs.lesson_no, bs.page_start, bs.page_end
+    order by count(*) desc, bs.page_start
+    limit ${limit * 3}`;
+
+  if (filas.length === 0) return [];
+  // FILTRO DE RELEVANCIA. Sin esto, una lección con UN fragmento de 60 entra al
+  // plan igual que la que concentró quince: medido sobre "cómo se arma un
+  // argumento", de 14 temas devueltos solo uno era del pedido y el resto eran
+  // lecciones que rozaban una palabra. Un plan a medida lleno de temas que no
+  // pediste es peor que ninguno — el alumno pierde la confianza en la función.
+  //
+  // El corte es RELATIVO al mejor: un pedido amplio concentra hits en muchas
+  // lecciones y uno específico en pocas, así que un mínimo fijo o deja pasar
+  // ruido o vacía los pedidos precisos.
+  const top = filas[0]!.hits;
+  const corte = Math.max(2, Math.ceil(top * 0.3));
+  const candidatas = filas.filter((f) => f.hits >= corte);
+  if (candidatas.length === 0) return [];
+
+  // El conteo de fragmentos dice DÓNDE cayó la búsqueda, no si la lección trata
+  // del tema. Medido con "cómo se arma un argumento para convencer": de las 5
+  // lecciones mejor puntuadas por conteo, 4 eran de narrativa e identidad y solo
+  // una de argumentación. El brazo léxico une los lexemas con OR, así que
+  // "cómo", "arma" y "para" matchean en todo el libro.
+  //
+  // Se juzga con el MISMO cross-encoder que usa el chat, sobre el TÍTULO de la
+  // lección — que es corto, está escrito por el autor del libro y dice de qué
+  // trata. Es una llamada más sobre ~24 textos de una línea.
+  const puntajes = await rerank(query, candidatas.map((f) => f.title), true);
+  const relevantes = candidatas
+    .map((f, i) => ({ f, s: puntajes[i] ?? 0 }))
+    .sort((a, b) => b.s - a.s)
+    .slice(0, limit)
+    .map(({ f }) => f);
+  const variosTomos = new Set(relevantes.map((f) => f.document_id)).size > 1;
+  const muestras = await muestrasDeRango(relevantes.map((f) => ({
+    documentId: f.document_id, pageStart: f.page_start, pageEnd: f.page_end,
+  })));
+  return relevantes.map((f, i) => ({
+    key: claveTema(f.document_id, f.ord, f.title),
+    title: variosTomos ? `${tomo(f.doc_title)}${f.title}` : f.title,
+    documentId: f.document_id,
+    subjectId: f.subject_id,
+    documentTitle: f.doc_title,
+    pageStart: f.page_start,
+    pageEnd: f.page_end,
+    unitNo: f.unit_no,
+    lessonNo: f.lesson_no,
+    sample: muestras[i] ?? "",
+    source: "index" as const,
+  }));
 }
 
 /** "… — tomo 2" → "Tomo 2 · " (para que no salgan dos "Lección 1" sin contexto). */
@@ -233,6 +340,9 @@ async function legacyTopics(subjectId: string, limit: number): Promise<PlanTopic
   if (rows.length < 3) return [];
   return rows.map((r) => ({
     key: `legacy:${r.document_id}:${r.unit}-${r.lesson}`,
+    // El fallback legacy agrupa por (unit, lesson) DENTRO de una materia, así
+    // que la materia es la que se pidió.
+    subjectId,
     title: `Unidad ${r.unit} · Lección ${r.lesson}`,
     documentId: r.document_id,
     documentTitle: r.doc_title,
