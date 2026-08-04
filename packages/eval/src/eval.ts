@@ -232,6 +232,10 @@ async function runQuestion(
   gq: GoldenQuestion,
   userId: string,
   subjectId: string | null,
+  /** Materias de la MISMA asignatura en todos los cursos, y el curso del alumno.
+   *  Se resuelven una vez en main() y se pasan: son constantes de la corrida. */
+  familyIds: string[] | null,
+  studentGrade: string | null,
 ): Promise<QResult> {
   const t0 = Date.now();
   // 1) RETRIEVAL + GATE — el MISMO de producción (`getTeachingContext`, corpus
@@ -241,12 +245,29 @@ async function runQuestion(
   // exportado por core). Sin esto el eval nunca ejercía la rama adaptativa del
   // prompt —la que TEACHING_SYSTEM declara "lo más importante"— y medía un turno
   // distinto del que recibe el alumno.
+  //
+  // ⚠️ `familyIds` y `studentGrade` NO son opcionales para que esto mida a
+  // producción. Sin ellos el eval corre un motor DISTINTO del que recibe el
+  // alumno, en dos puntos que son justamente los de la cascada:
+  //
+  //   · La etapa `otro_curso` (misma asignatura, todos los cursos) está guardada
+  //     por `familyIds.length > 1`. Sin familia NUNCA CORRE: todo lo que no está
+  //     en el libro del curso salta directo a `otra_materia`, que exige 0.5 en
+  //     vez de 0.18 — un listón pensado para material de OTRA asignatura,
+  //     aplicado a los libros de la propia.
+  //   · `penalizacionGrado` devuelve 0 si no hay curso del alumno, así que el
+  //     reordenamiento por cercanía de grado tampoco se ejercía.
+  //
+  // Medido: la corrida del 2026-08-04 dio 0 respuestas con alcance `otro_curso`
+  // en 101 preguntas. No era que la etapa no sirviera — era que no existía.
   const teachReq = {
     userId,
     subjectId,
     question: gq.q,
     history: [],
     struggling: isStruggling(gq.q),
+    familyIds,
+    studentGrade,
   };
   const res = await getTeachingContext(teachReq);
   const ctx = res.ctx;
@@ -577,6 +598,33 @@ async function main() {
     );
   }
 
+  // La familia y el curso del alumno, con LA MISMA consulta que /api/chat. Son
+  // constantes de la corrida (mismo usuario, misma materia), así que se resuelven
+  // una vez y se pasan a cada pregunta. Ver el comentario en runQuestion: sin
+  // esto el eval mide un motor con una etapa menos.
+  const sqlCtx = getSql();
+  const [perfilFilas, familiaFilas] = await Promise.all([
+    sqlCtx<{ grade: string | null }[]>`
+      select grade from student_profiles where user_id = ${userId}::uuid`,
+    subjectId
+      ? sqlCtx<{ id: string }[]>`
+          select s2.id
+          from subjects s1
+          join subjects s2 on s2.family = s1.family
+          where s1.id = ${subjectId}::uuid
+            and s1.family is not null
+            and s2.disabled_at is null
+            and (s2.user_id is null or s2.user_id = ${userId}::uuid)`
+      : Promise.resolve([] as { id: string }[]),
+  ]);
+  const studentGrade = perfilFilas[0]?.grade ?? null;
+  const familyIds = familiaFilas.length ? familiaFilas.map((r) => r.id) : null;
+  console.log(
+    `🎓 curso del alumno: ${studentGrade ?? "(sin perfil)"} · ` +
+      `asignatura en ${familyIds?.length ?? 0} cursos` +
+      ((familyIds?.length ?? 0) > 1 ? "" : "  ⚠️ la etapa `otro_curso` no va a correr"),
+  );
+
   // Chequeo de vida de Ollama antes de gastar tiempo.
   const models = await listModels();
   if (models.length === 0) {
@@ -631,7 +679,7 @@ async function main() {
     process.stdout.write(`  · ${gq.id} [${gq.type}] ... `);
     let r: QResult;
     try {
-      r = await runQuestion(gq, userId, subjectId);
+      r = await runQuestion(gq, userId, subjectId, familyIds, studentGrade);
     } catch (err) {
       if (looksLikeDbFailure(err)) {
         console.log("");
