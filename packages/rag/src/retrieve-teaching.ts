@@ -59,6 +59,20 @@ export interface PedagogyChunk extends HybridChunk {
   rankScore: number;
 }
 
+/** Forma citable de un chunk de CONTENIDO ya rerankeado. Estaba repetida en dos
+ *  ramas de la cascada y ahora hace falta en una tercera (`retrieved`). */
+const aCitable = (c: {
+  chunkId: string; content: string; unit: number | null; lesson: number | null;
+  oa: string | null; headingPath: string | null;
+  pageStart: number | null; pageEnd: number | null; rerankScore: number;
+  documentTitle?: string | null; grade?: string | null;
+}): CitableChunk => ({
+  chunkId: c.chunkId, content: c.content, source: "content",
+  unit: c.unit, lesson: c.lesson, oa: c.oa, headingPath: c.headingPath,
+  pageStart: c.pageStart, pageEnd: c.pageEnd, score: c.rerankScore,
+  documentTitle: c.documentTitle ?? null, grade: c.grade ?? null,
+});
+
 /** Un fragmento citable (el "qué"), venga del TE o de la GDD. */
 export interface CitableChunk {
   chunkId: string;
@@ -71,6 +85,9 @@ export interface CitableChunk {
   pageStart: number | null;
   pageEnd: number | null;
   score: number;
+  /** De qué libro y de qué curso salió. Ver citationLabel(). */
+  documentTitle: string | null;
+  grade: string | null;
 }
 
 export interface TeachingContext {
@@ -91,6 +108,19 @@ export interface TeachingContext {
    *  entrega igual (es material real de la unidad pedida) pero queda contable
    *  en vez de camuflado como grounding normal. */
   gateBypassed?: boolean;
+  /**
+   * Lo que el retrieval ENCONTRÓ, antes de que el gate decidiera si alcanza.
+   *
+   * `citable` responde "¿qué material se le puede mostrar al alumno?" y queda
+   * VACÍO cuando el gate corta. `retrieved` responde otra pregunta —"¿el
+   * ranking trajo lo correcto?"— y se llena siempre. Son cosas distintas y
+   * confundirlas arruina la medición: `recall@5` calculado sobre `citable`
+   * cuenta 0 cada vez que el gate corta, así que AFLOJAR EL GATE SUBE EL RECALL
+   * SOLO, sin que el ranking haya mejorado en nada. Con este campo, recall mide
+   * el ranking y el gate se mide aparte, que es la única forma de saber cuál de
+   * los dos se movió.
+   */
+  retrieved: CitableChunk[];
   /** Contadores del retrieval de contenido (brazos, pool, ranker) para el log. */
   stats?: RankedStats;
 }
@@ -114,6 +144,7 @@ export interface TeachingOptions {
 interface LessonChunk {
   chunkId: string; content: string; unit: number | null; lesson: number | null;
   oa: string | null; headingPath: string | null; pageStart: number | null; pageEnd: number | null;
+  documentTitle: string | null; grade: string | null;
 }
 
 /** Trae los chunks de contenido de una unidad/lección concreta (orden de página). */
@@ -122,24 +153,28 @@ async function fetchLessonChunks(subjectId: string, unit: number, lesson: number
   const rows = (lesson == null
     ? await sql`
         select ch.id as chunk_id, ch.content, ch.unit, ch.lesson, ch.oa, ch.heading_path,
-               coalesce(ch.page_start, ch.page) as page_start, coalesce(ch.page_end, ch.page) as page_end
+               coalesce(ch.page_start, ch.page) as page_start, coalesce(ch.page_end, ch.page) as page_end,
+               d.title as document_title, d.grade
         from chunks ch join documents d on d.id = ch.document_id
         where d.subject_id = ${subjectId} and ch.corpus_role = 'content' and ch.unit = ${unit}
         order by ch.page nulls last, ch.chunk_index
         limit 28`
     : await sql`
         select ch.id as chunk_id, ch.content, ch.unit, ch.lesson, ch.oa, ch.heading_path,
-               coalesce(ch.page_start, ch.page) as page_start, coalesce(ch.page_end, ch.page) as page_end
+               coalesce(ch.page_start, ch.page) as page_start, coalesce(ch.page_end, ch.page) as page_end,
+               d.title as document_title, d.grade
         from chunks ch join documents d on d.id = ch.document_id
         where d.subject_id = ${subjectId} and ch.corpus_role = 'content' and ch.unit = ${unit} and ch.lesson = ${lesson}
         order by ch.page nulls last, ch.chunk_index
         limit 28`) as unknown as {
     chunk_id: string; content: string; unit: number | null; lesson: number | null;
     oa: string | null; heading_path: string | null; page_start: number | null; page_end: number | null;
+    document_title: string | null; grade: string | null;
   }[];
   return rows.map((r) => ({
     chunkId: r.chunk_id, content: r.content, unit: r.unit, lesson: r.lesson,
     oa: r.oa, headingPath: r.heading_path, pageStart: r.page_start, pageEnd: r.page_end,
+    documentTitle: r.document_title, grade: r.grade,
   }));
 }
 
@@ -188,6 +223,7 @@ export async function retrieveForTeaching(
             chunkId: c.chunkId, content: c.content, source: "content" as const,
             unit: c.unit, lesson: c.lesson, oa: c.oa, headingPath: c.headingPath,
             pageStart: c.pageStart, pageEnd: c.pageEnd, score: s,
+            documentTitle: c.documentTitle, grade: c.grade,
           }));
       }
     } catch {
@@ -257,11 +293,7 @@ export async function retrieveForTeaching(
   } else if (content && content.grounded && content.chunks.length > 0) {
     citableSource = "content";
     topScore = content.topScore;
-    citable = content.chunks.map((c) => ({
-      chunkId: c.chunkId, content: c.content, source: "content" as const,
-      unit: c.unit, lesson: c.lesson, oa: c.oa, headingPath: c.headingPath,
-      pageStart: c.pageStart, pageEnd: c.pageEnd, score: c.rerankScore,
-    }));
+    citable = content.chunks.map(aCitable);
   } else {
     // El filtro del gate usa el rerankScore CRUDO: con el boost separado en
     // rankScore, un chunk de pedagogía con score real 0.03 ya no cruza 0.18.
@@ -275,6 +307,7 @@ export async function retrieveForTeaching(
         chunkId: c.chunkId, content: c.content, source: "pedagogy" as const,
         unit: c.unit, lesson: c.lesson, oa: c.oa, headingPath: c.headingPath,
         pageStart: c.pageStart, pageEnd: c.pageEnd, score: c.rerankScore,
+        documentTitle: c.documentTitle, grade: c.grade,
       }));
     } else if (directCitable.length > 0) {
       // ÚLTIMO RECURSO del estudio dirigido: el alumno pidió estudiar ESTA
@@ -292,9 +325,17 @@ export async function retrieveForTeaching(
     }
   }
 
+  // Lo que el RANKING trajo, sin que el gate opine. Ver `TeachingContext.retrieved`.
+  // `content.chunks` viene poblado aunque `content.grounded` sea false (rerank.ts
+  // devuelve `ranked.slice(0, k)` en los dos casos): es la cascada de acá arriba
+  // la que los descarta, no el retrieval.
+  const retrieved: CitableChunk[] =
+    directCitable.length > 0 ? directCitable : (content?.chunks ?? []).map(aCitable);
+
   const oas = [...new Set([...citable.map((c) => c.oa), ...oasContent].filter(Boolean))] as string[];
   return {
     citable,
+    retrieved,
     grounded: citable.length > 0,
     citableSource,
     pedagogy,

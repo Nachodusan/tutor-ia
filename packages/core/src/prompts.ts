@@ -57,7 +57,7 @@ IMPORTANTE — le hablas DIRECTAMENTE al estudiante, en segunda persona ("¿te a
 
 CÓMO USAR EL MATERIAL (flexible, pero sin inventar datos):
 - Enseñá los conceptos del MATERIAL con TUS PALABRAS: explicá, compará, dá ejemplos y analogías propias, conectá ideas. NO hace falta que la explicación esté textual en el material; lo importante es que el CONCEPTO venga de ahí.
-- Lo ÚNICO que no podés inventar son DATOS DUROS que no estén en el material: cifras, fechas, porcentajes, nombres propios, fórmulas o definiciones técnicas exactas. Si un dato así no aparece, no lo afirmes: explicá en general o seguí sin ese dato ("el material no da un número exacto, pero la idea es…").
+- Lo ÚNICO que no podés afirmar son DATOS DUROS que no estén en el material NI SEPAS CON CERTEZA: cifras, fechas, porcentajes, nombres propios, fórmulas o definiciones técnicas exactas. Si dudás de un dato así, no lo afirmes: explicá en general o seguí sin ese dato ("no tengo el número exacto, pero la idea es…").
 - Sé FLEXIBLE y conversador: si la pregunta es vaga o un ejemplo suelto, retomá el tema que venían viendo o pedí que te digan de qué tema; NUNCA cortes la charla con un cartel. Si el tema no está en el material, decilo con naturalidad y ofrecé un tema relacionado.
 - NO CITES EN EL TEXTO: hablá natural, SIN números de página, sin "(pág. X)", sin "según el material" ni "el Fragmento". Las páginas se muestran APARTE (de eso se encarga la app). Vos explicás; no citás.
 - Responde SIEMPRE en el idioma de la pregunta; nunca cambies de idioma o alfabeto.
@@ -88,6 +88,36 @@ REGLAS ESTRICTAS:
 - Si no está en el material, di solo: "Eso no lo veo en tu material, no quiero inventar." y pide reformular.
 - No inventes datos que no estén en los fragmentos.`;
 
+/** "1M" → "1º Medio". */
+export const gradoLegible = (g: string): string =>
+  g.endsWith("M") ? `${g.slice(0, -1)}º Medio` : `${g.slice(0, -1)}º Básico`;
+
+/**
+ * Instrucción de nivel de lenguaje según el curso del alumno.
+ *
+ * Hasta ahora NADIE le decía al modelo con quién estaba hablando: el mismo
+ * prompt atendía a un chico de 1º Básico y a uno de 4º Medio, y el único ajuste
+ * era un genérico "si es chico, más simple". Con el tutor pudiendo traer
+ * material de cursos más avanzados, esto deja de ser un detalle: es lo que
+ * separa "te explico de 4º Medio en palabras de 3º Básico" de largarle prosa
+ * que no puede leer.
+ */
+export function nivelLectura(grade: string): string {
+  const n = Number(grade.slice(0, -1)) || 0;
+  const medio = grade.endsWith("M");
+  const curso = gradoLegible(grade);
+  if (!medio && n <= 2) {
+    return `Tu estudiante está en ${curso} (6-8 años): frases de MENOS DE 10 PALABRAS, solo palabras de todos los días, cero tecnicismos. Un ejemplo concreto que pueda tocar o ver.`;
+  }
+  if (!medio && n <= 6) {
+    return `Tu estudiante está en ${curso} (9-12 años): frases cortas, vocabulario simple. Si usás una palabra técnica, explicala en el momento con palabras suyas.`;
+  }
+  if (!medio) {
+    return `Tu estudiante está en ${curso} (13-14 años): podés usar vocabulario técnico, pero definilo la primera vez que aparezca.`;
+  }
+  return `Tu estudiante está en ${curso}: podés usar el vocabulario propio de la asignatura sin bajar el nivel, pero explicá los términos nuevos.`;
+}
+
 /**
  * Turno de enseñanza (Plan v3): arma el prompt con el MATERIAL citable (el "qué")
  * y la GUÍA didáctica (el "cómo"). `material` y `guide` ya vienen formateados por
@@ -99,16 +129,39 @@ export function buildTeachingTurn(params: {
   material: string;
   guide: string;
   struggling?: boolean;
+  /** No se recuperó material del libro. El tutor enseña igual, con su
+   *  conocimiento general, y lo reconoce en una frase. */
+  sinMaterial?: boolean;
+  /** Curso del alumno ("7B", "1M"): fija el nivel de lenguaje. */
+  studentGrade?: string | null;
+  /** Cursos de los que salió el material citable. */
+  sourceGrades?: string[];
 }): string {
   const adapt = params.struggling
     ? `\n⚠️ El estudiante NO entendió la explicación anterior. NO la repitas: cambia de método usando OTRA estrategia de la GUÍA (otra actividad/habilidad/ejemplo) y simplifica.\n`
     : "";
+  // Bloque ADITIVO: `TEACHING_SYSTEM` queda intacto para que el camino con
+  // material siga siendo comparable con las mediciones anteriores.
+  const sinMaterial = params.sinMaterial
+    ? `\n⚠️ NO se recuperó material del libro para este tema. IGUAL TENÉS QUE ENSEÑARLE: usá tu conocimiento general, con el mismo tono, la misma brevedad y la misma pregunta final. Reconocelo UNA vez, en una frase corta y natural ("esto no está en tu libro, pero te lo explico igual"). NO pidas disculpas, NO ofrezcas cambiar de tema, NO cortes la charla. Si un dato duro no lo sabés con certeza, decilo en vez de inventarlo.\n`
+    : "";
+  // NIVEL DE LECTURA. El material puede venir de un curso más avanzado —el chunk
+  // es entrada del modelo, no prosa que el chico lea— así que lo que hay que
+  // fijar es a QUIÉN le habla, no de dónde salió el texto.
+  const nivel = params.studentGrade ? `\n${nivelLectura(params.studentGrade)}\n` : "";
+  // Si el material es de otro curso, que lo diga: el alumno tiene que poder
+  // ubicar lo que lee, y "esto se ve en 2º Medio" es información útil, no una
+  // disculpa.
+  const otroCurso =
+    params.studentGrade && (params.sourceGrades ?? []).some((g) => g !== params.studentGrade)
+      ? `\nParte del MATERIAL de arriba NO es del libro de su curso (sale de ${(params.sourceGrades ?? []).filter((g) => g !== params.studentGrade).map(gradoLegible).join(", ")}). Enseñalo igual, pero mencionalo UNA vez y natural ("esto se ve en 2º Medio, pero se entiende igual").\n`
+      : "";
   return `=== MATERIAL (única fuente citable; el "qué") ===
 ${params.material || "(no se recuperó material relevante)"}
 === GUÍA DIDÁCTICA (cómo enseñar este tema; NO es contenido a afirmar) ===
 ${params.guide || "(sin guía para este tema)"}
 === FIN ===
-${adapt}
+${adapt}${sinMaterial}${nivel}${otroCurso}
 Enseñá en una conversación BREVE y simple: conectá con algo que ya sepa, explicá UNA idea con un ejemplo concreto, y terminá con UNA pregunta. Hablá natural, SIN páginas ni "(pág. X)" ni "según el material" en el texto (las referencias van aparte). Sin títulos, rótulos ni markdown. Si el MATERIAL de arriba no cubre el tema, decíselo con naturalidad y ofrecé un tema relacionado que sí esté; no cortes la charla con un cartel.
 
 Turno del estudiante: ${params.question}`;

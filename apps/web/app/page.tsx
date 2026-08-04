@@ -7,16 +7,25 @@ import {
   AuroraDot, IconBtn, Dots, Pill, BigBtn, SectionTitle,
   IconWave, IconVolume, IconVolumeOff, IconMic, IconStop, IconSend, IconBack,
   IconSwap, IconX, IconCheck, IconAlert, IconUser, IconUsers, IconSettings, IconBook,
-  IconStar, IconArrow, IconList, IconSpark, IconClipboard, IconChevron,
+  IconStar, IconArrow, IconList, IconSpark, IconClipboard, IconChevron, IconLock,
 } from "./ui";
 
-interface Citation { index: number; chunkId: string; page: number | null; source?: "content" | "pedagogy" }
+/** `label` ya viene armado del servidor con libro + curso + página. Se usa ese
+ *  y no se re-arma acá: cuando el tutor trae material de otro curso, "pág. 87"
+ *  a secas no le dice nada al alumno. */
+interface Citation { index: number; chunkId: string; page: number | null; source?: "content" | "pedagogy"; label?: string; grade?: string | null }
 interface Verification { grounded: boolean; contradicted: string[]; unsupported: string[]; checked?: number; unavailable?: boolean }
-interface Msg { role: "user" | "assistant"; content: string; citations?: Citation[]; verification?: Verification | null; grounded?: boolean; streaming?: boolean }
-interface Subject { id: string; name: string; grade: string | null; subject_area: string | null; content_chunks: string; pedagogy_chunks: string }
+/** De dónde salió la respuesta: "libro" hubo material del libro · "apoyado" lo
+ *  hubo pero el verificador detectó deriva · "general" no había material y el
+ *  tutor enseñó con conocimiento general. */
+type AnswerMode = "libro" | "apoyado" | "general";
+interface Msg { role: "user" | "assistant"; content: string; citations?: Citation[]; verification?: Verification | null; grounded?: boolean; mode?: AnswerMode; streaming?: boolean }
+/** `disabled` = materia sacada de circulación. Se sigue mostrando (si no,
+ *  no hay forma de saber que existe) pero no se puede abrir. */
+interface Subject { id: string; name: string; grade: string | null; subject_area: string | null; content_chunks: string; pedagogy_chunks: string; disabled?: boolean }
 /** El perfil NO tiene nombre: las cuentas son anónimas (los usuarios son
  *  menores). El username lo devuelve /api/me y solo sirve para saludar. */
-interface Profile { username: string; grade: string; priority: string[] }
+interface Profile { username: string; grade: string }
 /** `points` puede faltar: los planes cacheados antes de que existieran los
  *  puntos clave siguen siendo válidos y se muestran sin ellos. */
 interface PlanItem { n: number; key: string; title: string; focus: string; points?: string[]; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
@@ -128,7 +137,7 @@ export default function Home() {
         setRole(j.user?.role ?? "student");
         setUsername(j.user?.username ?? "");
         if (j.profile?.grade) {
-          setProfile({ username: j.user?.username ?? "", grade: j.profile.grade, priority: j.profile.priority ?? [] });
+          setProfile({ username: j.user?.username ?? "", grade: j.profile.grade });
         }
       })
       .catch(() => { /* sin red: se queda en el onboarding */ })
@@ -266,7 +275,7 @@ export default function Home() {
     setProfile(p);   // optimista: la UI no espera al round-trip
     fetch("/api/me/profile", {
       method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ grade: p.grade, priority: p.priority }),
+      body: JSON.stringify({ grade: p.grade }),
     }).catch(() => { /* se reintenta al volver a guardar */ });
   }
   /** Cierra sesión DE VERDAD: revoca en la base y recarga. Antes solo borraba el
@@ -351,7 +360,7 @@ export default function Home() {
             try {
               const meta = JSON.parse(buffer.slice(1, nl));
               if (meta.sessionId) sessionRef.current = meta.sessionId;
-              patch({ citations: meta.citations ?? [], grounded: meta.grounded !== false });
+              patch({ citations: meta.citations ?? [], grounded: meta.grounded !== false, mode: meta.mode });
             } catch { /* */ }
             buffer = buffer.slice(nl + 1); citationsParsed = true;
           }
@@ -363,7 +372,12 @@ export default function Home() {
             displayed = buffer.slice(0, rs).trimEnd(); patch({ content: cleanTutorText(displayed) });
             const nl = buffer.indexOf("\n", rs);
             const frame = nl === -1 ? buffer.slice(rs + 1) : buffer.slice(rs + 1, nl);
-            try { const meta = JSON.parse(frame); if (meta.verification) patch({ verification: meta.verification }); } catch { /* */ }
+            try {
+              const meta = JSON.parse(frame);
+              // El modo DEFINITIVO llega acá: el del primer frame es provisorio
+              // (ahí solo se sabe si hubo material, todavía no si hubo deriva).
+              patch({ ...(meta.verification ? { verification: meta.verification } : {}), ...(meta.mode ? { mode: meta.mode } : {}) });
+            } catch { /* */ }
           }
         }
       }
@@ -536,7 +550,7 @@ export default function Home() {
             {loading ? <Dots /> : <IconSend size={19} />}
           </button>
         </div>
-        <p style={{ textAlign: "center", color: C.dim, fontSize: 11, margin: "0 0 8px" }}>El tutor solo usa tu material · cita la fuente o se abstiene</p>
+        <p style={{ textAlign: "center", color: C.dim, fontSize: 11, margin: "0 0 8px" }}>El tutor enseña con tu material · si algo no está en tu libro, te avisa</p>
       </div>
 
       {callState !== "idle" && <CallOverlay state={callState} levelRef={levelRef} subject={subject ? subjectLabel(subject) : ""} lastMsg={messages[messages.length - 1]} onEnd={endCall} />}
@@ -603,64 +617,51 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-// --- Onboarding: grado → materias a priorizar (mundo Bloques) ---
-// El paso del NOMBRE se eliminó: las cuentas son anónimas y el alumno ya se
-// identificó con su usuario en el login. ---
+/**
+ * Onboarding: UN solo paso, el curso.
+ *
+ * Antes había un segundo paso —"¿qué te interesa priorizar?"— que partía el
+ * panel en "tus materias" y "otras materias". Se sacó porque la premisa era
+ * falsa: el alumno cursa TODAS y ninguna es opcional. Lo único que producía era
+ * que las no elegidas quedaran en una fila de pastillas chicas al pie, con su
+ * avance escondido, y que un chico que se apuraba en el onboarding terminara
+ * con una sola materia visible sin entender por qué.
+ *
+ * El paso del NOMBRE ya se había eliminado antes: las cuentas son anónimas y el
+ * alumno se identifica con su usuario en el login.
+ */
 function Onboarding({ subjects, initial, onCancel, onDone }: { subjects: Subject[]; initial?: Profile; onCancel?: () => void; onDone: (p: Profile) => void }) {
-  const [step, setStep] = useState(initial ? 1 : 0);
   const [grade, setGrade] = useState(initial?.grade ?? "");
-  const [priority, setPriority] = useState<string[]>(initial?.priority ?? []);
   const grades = [...new Set(subjects.map((s) => s.grade).filter(Boolean) as string[])].sort((a, b) => gradeSort(a) - gradeSort(b));
-  const gradeSubjects = subjects.filter((s) => s.grade === grade).sort((a, b) => subjectLabel(a).localeCompare(subjectLabel(b)));
-  const toggle = (id: string) => setPriority((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
-  const pickGrade = (g: string) => { if (g !== grade) setPriority([]); setGrade(g); setStep(1); };
-  const back = () => { if (step === 0) onCancel?.(); else setStep(0); };
+  const cuantas = grade ? subjects.filter((s) => s.grade === grade).length : 0;
 
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", textAlign: "center", background: C.bg, color: C.text, fontFamily: FONT.sans }}>
-      {/* Barra de progreso ARRIBA del todo, centrada y separada del contenido */}
       <div style={{ padding: "48px 24px 0" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", maxWidth: 760, margin: "0 auto" }}>
-          <div style={{ justifySelf: "start" }}>
-            {(step > 0 || onCancel) && <button onClick={back} style={{ ...backLink, marginBottom: 0 }}><IconBack size={15} /> {step === 0 ? "Cancelar" : "Atrás"}</button>}
-          </div>
-          <div style={{ display: "flex", gap: 6 }}>{[0, 1].map((i) => <span key={i} style={{ width: 26, height: 8, borderRadius: 3, border: `1.5px solid ${C.ink}`, background: i <= step ? C.accent : C.panel }} />)}</div>
-          <span />
+        <div style={{ maxWidth: 760, margin: "0 auto", textAlign: "left" }}>
+          {onCancel && <button onClick={onCancel} style={{ ...backLink, marginBottom: 0 }}><IconBack size={15} /> Cancelar</button>}
         </div>
       </div>
-      {/* Contenido centrado en el espacio restante */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "12px 20px 80px" }}>
         <div style={{ width: "100%", maxWidth: 600 }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}><AuroraDot size={54} /></div>
+          <h1 style={{ margin: "0 0 6px", fontFamily: FONT.round, fontWeight: 800, fontSize: 26 }}>¿En qué curso vas?</h1>
+          <p style={{ color: C.dim, margin: "0 0 26px", fontSize: 15 }}>
+            Elegí tu grado y vas a tener todas tus materias en el panel.
+          </p>
+          <Group label="Básica">{grades.filter((g) => g.endsWith("B")).map((g) => <Pill key={g} active={g === grade} onClick={() => setGrade(g)}>{gradeLabel(g)}</Pill>)}</Group>
+          {grades.some((g) => g.endsWith("M")) && <Group label="Media">{grades.filter((g) => g.endsWith("M")).map((g) => <Pill key={g} active={g === grade} onClick={() => setGrade(g)}>{gradeLabel(g)}</Pill>)}</Group>}
 
-        {step === 0 && (
-          <>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}><AuroraDot size={54} /></div>
-            <h1 style={{ margin: "0 0 6px", fontFamily: FONT.round, fontWeight: 800, fontSize: 26 }}>¿En qué curso vas?</h1>
-            <p style={{ color: C.dim, margin: "0 0 26px", fontSize: 15 }}>Elegí tu grado.</p>
-            <Group label="Básica">{grades.filter((g) => g.endsWith("B")).map((g) => <Pill key={g} active={g === grade} onClick={() => pickGrade(g)}>{gradeLabel(g)}</Pill>)}</Group>
-            {grades.some((g) => g.endsWith("M")) && <Group label="Media">{grades.filter((g) => g.endsWith("M")).map((g) => <Pill key={g} active={g === grade} onClick={() => pickGrade(g)}>{gradeLabel(g)}</Pill>)}</Group>}
-          </>
-        )}
-
-        {step === 1 && (
-          <>
-            <h1 style={{ margin: "0 0 6px", fontFamily: FONT.round, fontWeight: 800, fontSize: 25 }}>¿Qué te interesa priorizar?</h1>
-            <p style={{ color: C.dim, margin: "0 0 22px", fontSize: 15 }}>Elegí una o más materias de {gradeLabel(grade)}. Las tendrás a mano en tu panel.</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", maxWidth: 560, margin: "0 auto" }}>
-              {gradeSubjects.map((s) => {
-                const on = priority.includes(s.id);
-                return <Pill key={s.id} active={on} onClick={() => toggle(s.id)}>{on ? <IconCheck size={14} /> : <span style={{ width: 10, height: 10, borderRadius: 3, background: subjectColor(s) }} />} {subjectLabel(s)}</Pill>;
-              })}
-              {gradeSubjects.length === 0 && <span style={{ color: C.dim }}>No hay materias para este curso.</span>}
-            </div>
-            <div style={{ marginTop: 26 }}>
-              <BigBtn disabled={priority.length === 0} onClick={() => onDone({ username: initial?.username ?? "", grade, priority })}>
-                {initial ? "Guardar" : "Crear mi panel"} <IconArrow size={17} />
-              </BigBtn>
-              {priority.length > 0 && <p style={{ color: C.dim, fontSize: 12.5, marginTop: 10 }}>{priority.length} {priority.length === 1 ? "materia elegida" : "materias elegidas"}</p>}
-            </div>
-          </>
-        )}
+          <div style={{ marginTop: 26 }}>
+            <BigBtn disabled={!grade} onClick={() => onDone({ username: initial?.username ?? "", grade })}>
+              {initial ? "Guardar" : "Crear mi panel"} <IconArrow size={17} />
+            </BigBtn>
+            {grade && (
+              <p style={{ color: C.dim, fontSize: 12.5, marginTop: 10 }}>
+                {cuantas} {cuantas === 1 ? "materia" : "materias"} de {gradeLabel(grade)}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -669,11 +670,24 @@ function Onboarding({ subjects, initial, onCancel, onDone }: { subjects: Subject
 
 // --- Panel del alumno (mundo Bloques) ---
 function Dashboard({ profile, subjects, stats, teacher, onStudy, onReinforce, onEdit, onLogout }: { profile: Profile; subjects: Subject[]; stats: Record<string, SubjectStats>; teacher?: boolean; onStudy: (id: string) => void; onReinforce: (id: string, w: WeakTopic) => void; onEdit: () => void; onLogout: () => void }) {
-  const prio = profile.priority.map((id) => subjects.find((s) => s.id === id)).filter(Boolean) as Subject[];
-  const others = subjects.filter((s) => s.grade === profile.grade && !profile.priority.includes(s.id)).sort((a, b) => subjectLabel(a).localeCompare(subjectLabel(b)));
-  // Para reforzar: de TODAS las materias (no solo las prioritarias — el alumno
-  // pudo rendir una prueba en cualquiera). Lo más fallado y reciente primero.
+  // TODAS las materias del curso, con el mismo peso. Antes se partían en
+  // "prioritarias" (tarjetas grandes) y "otras" (pastillas chicas al pie, sin
+  // avance a la vista), según lo que el alumno hubiera tildado en el onboarding.
+  // La premisa era falsa: cursa todas y ninguna es opcional.
+  // Las desactivadas van al final pero SIGUEN a la vista: una materia que
+  // desaparece y una que no existe se ven igual, y así hay que acordarse de
+  // memoria de cuáles se apagaron.
+  const misSubjects = subjects
+    .filter((s) => s.grade === profile.grade)
+    .sort((a, b) =>
+      Number(!!a.disabled) - Number(!!b.disabled) ||
+      subjectLabel(a).localeCompare(subjectLabel(b)));
+  const apagadas = misSubjects.filter((s) => s.disabled).length;
+  // Para reforzar: de TODAS las materias — el alumno pudo rendir una prueba en
+  // cualquiera. Se excluyen las apagadas: mandarlo a repasar algo que no puede
+  // abrir es un callejón sin salida.
   const toReview = subjects
+    .filter((s) => !s.disabled)
     .flatMap((s) => (stats[s.id]?.weak ?? []).map((w) => ({ s, w })))
     .sort((a, b) => b.w.misses - a.w.misses);
   return (
@@ -683,7 +697,10 @@ function Dashboard({ profile, subjects, stats, teacher, onStudy, onReinforce, on
           <AuroraDot size={52} square ink />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: FONT.round, fontSize: 24, fontWeight: 800, letterSpacing: -0.3 }}>Hola, {profile.username || "que bueno verte"} 👋</div>
-            <div style={{ color: C.dim, fontSize: 14 }}>{gradeLabel(profile.grade)} · {prio.length} {prio.length === 1 ? "materia prioritaria" : "materias prioritarias"}</div>
+            <div style={{ color: C.dim, fontSize: 14 }}>
+              {gradeLabel(profile.grade)} · {misSubjects.length - apagadas} {misSubjects.length - apagadas === 1 ? "materia" : "materias"}
+              {apagadas > 0 && ` · ${apagadas} en pausa`}
+            </div>
           </div>
           {teacher && <IconBtn onClick={() => (window.location.href = "/docente")} title="Panel del curso"><IconUsers size={17} /></IconBtn>}
           <IconBtn onClick={onEdit} title="Editar perfil"><IconSettings size={17} /></IconBtn>
@@ -692,8 +709,13 @@ function Dashboard({ profile, subjects, stats, teacher, onStudy, onReinforce, on
 
         <SectionTitle icon={<IconStar size={15} />}>Tus materias</SectionTitle>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 16, marginBottom: 36 }}>
-          {prio.map((s) => <SubjectCard key={s.id} s={s} st={stats[s.id]} onClick={() => onStudy(s.id)} />)}
-          {prio.length === 0 && <p style={{ color: C.dim, fontSize: 14 }}>No elegiste materias prioritarias. Tocá el engranaje para editarlas.</p>}
+          {misSubjects.map((s) => <SubjectCard key={s.id} s={s} st={stats[s.id]} onClick={() => onStudy(s.id)} />)}
+
+          {misSubjects.length === 0 && (
+            <p style={{ color: C.dim, fontSize: 14 }}>
+              Todavía no hay material cargado para {gradeLabel(profile.grade)}. Tocá el engranaje si te equivocaste de curso.
+            </p>
+          )}
         </div>
 
         {toReview.length > 0 && (
@@ -713,40 +735,58 @@ function Dashboard({ profile, subjects, stats, teacher, onStudy, onReinforce, on
           </>
         )}
 
-        {others.length > 0 && (
-          <>
-            <SectionTitle icon={<IconBook size={15} />}>Otras materias de {gradeLabel(profile.grade)}</SectionTitle>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
-              {others.map((s) => <Pill key={s.id} onClick={() => onStudy(s.id)}><span style={{ width: 10, height: 10, borderRadius: 3, background: subjectColor(s) }} /> {subjectLabel(s)}</Pill>)}
-            </div>
-          </>
-        )}
       </div>
     </div>
   );
 }
 
-// Tarjeta de materia = bloque con borde de tinta + sombra dura del color de su materia
+/**
+ * Tarjeta de materia = bloque con borde de tinta + sombra dura de su color.
+ *
+ * Si la materia está EN PAUSA se dibuja igual pero apagada: sin sombra dura,
+ * en gris y sin reaccionar al mouse. Se muestra —en vez de esconderla— porque
+ * una materia ausente y una inexistente se ven idénticas, y el alumno (o el
+ * profe probando) no tiene forma de saber que Matemática existe y va a volver.
+ * El candado dice que es temporal; el 404 de /api/plan y /api/test es lo que
+ * realmente impide usarla.
+ */
 function SubjectCard({ s, st, onClick }: { s: Subject; st?: SubjectStats; onClick: () => void }) {
   const hasGuide = Number(s.pedagogy_chunks) > 0;
-  const col = subjectColor(s);
+  const off = !!s.disabled;
+  const col = off ? C.border : subjectColor(s);
   const onCol = isLight(col) ? C.ink : "#fff";
   const total = st?.planTotal ?? 0;
   const done = st?.planDone ?? 0;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const weak = st?.weak.length ?? 0;
   return (
-    <button onClick={onClick}
-      style={{ position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", gap: 10, textAlign: "left", background: C.panel, color: C.text, border: `2px solid ${C.ink}`, borderRadius: 16, padding: "16px", cursor: "pointer", boxShadow: HARD(col), transition: "transform .13s, box-shadow .13s" }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = "translate(-2px,-2px)"; e.currentTarget.style.boxShadow = `6px 6px 0 0 ${col}`; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = HARD(col); }}>
-      <div style={{ position: "absolute", top: -14, right: -14, width: 34, height: 34, borderRadius: "50%", background: col }} />
+    <button onClick={off ? undefined : onClick} disabled={off}
+      title={off ? "Esta materia está en pausa" : undefined}
+      style={{ position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", gap: 10, textAlign: "left", background: off ? C.panel2 : C.panel, color: off ? C.dim : C.text, border: `2px solid ${off ? C.border : C.ink}`, borderRadius: 16, padding: "16px", cursor: off ? "default" : "pointer", boxShadow: off ? "none" : HARD(col), transition: "transform .13s, box-shadow .13s" }}
+      onMouseEnter={(e) => { if (off) return; e.currentTarget.style.transform = "translate(-2px,-2px)"; e.currentTarget.style.boxShadow = `6px 6px 0 0 ${col}`; }}
+      onMouseLeave={(e) => { if (off) return; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = HARD(col); }}>
+      {!off && <div style={{ position: "absolute", top: -14, right: -14, width: 34, height: 34, borderRadius: "50%", background: col }} />}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-        <span style={{ width: 34, height: 34, borderRadius: 10, background: col, color: onCol, display: "grid", placeItems: "center" }}><IconBook size={20} /></span>
+        <span style={{ width: 34, height: 34, borderRadius: 10, background: col, color: onCol, display: "grid", placeItems: "center" }}>
+          {off ? <IconLock size={18} /> : <IconBook size={20} />}
+        </span>
       </div>
       <div style={{ fontFamily: FONT.round, fontSize: 17, fontWeight: 700, lineHeight: 1.25 }}>{subjectLabel(s)}</div>
 
-      {total > 0 ? (
+      {off && (
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 5, alignSelf: "flex-start", background: C.panel, color: C.dim, border: `1.5px solid ${C.border}`, borderRadius: 999, padding: "3px 10px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
+          <IconLock size={11} /> En pausa
+        </div>
+      )}
+      {off && (
+        <div style={{ color: C.dim, fontSize: 12.5, lineHeight: 1.45 }}>
+          Todavía no está disponible. Tu avance se guarda para cuando vuelva.
+        </div>
+      )}
+
+      {/* Nada de avance ni notas en una materia en pausa: no se puede
+          actuar sobre eso, y compite con lo que el alumno sí puede abrir. */}
+      {!off && (total > 0 ? (
         <div style={{ position: "relative" }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
             <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, color: C.text }}>
@@ -763,9 +803,9 @@ function SubjectCard({ s, st, onClick }: { s: Subject; st?: SubjectStats; onClic
         </div>
       ) : (
         <div style={{ color: C.dim, fontSize: 12.5 }}>{hasGuide ? "Con guía docente" : "Material disponible"}</div>
-      )}
+      ))}
 
-      {(weak > 0 || st?.lastScore) && (
+      {!off && (weak > 0 || st?.lastScore) && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, position: "relative" }}>
           {weak > 0 && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: C.badBg, color: C.badTx, border: `1.5px solid ${C.badTx}`, borderRadius: 999, padding: "2px 8px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
@@ -1106,10 +1146,12 @@ function Bubble({ m, onSpeak }: { m: Msg; onSpeak?: () => void }) {
             {m.content && !m.streaming && onSpeak && <button onClick={onSpeak} title="Leer en voz alta" style={{ background: "none", border: "none", color: C.accentSoft, cursor: "pointer", flexShrink: 0, padding: 2, display: "flex" }}><IconVolume size={16} /></button>}
           </div>
         )}
-      <VerificationBadge v={m.verification} grounded={m.grounded} />
+      <VerificationBadge v={m.verification} mode={m.mode} />
       {m.citations && m.citations.length > 0 && (() => {
         const seen = new Set<string>();
-        const refs = m.citations.filter((c) => { const k = `${c.page}·${c.source ?? ""}`; if (seen.has(k)) return false; seen.add(k); return true; });
+        // Dedupe por ROTULO: con material de varios cursos, dos "pág. 12" de
+        // libros distintos son fuentes distintas y no se pueden colapsar.
+        const refs = m.citations.filter((c) => { const k = c.label ?? `${c.page}·${c.source ?? ""}`; if (seen.has(k)) return false; seen.add(k); return true; });
         return (
           <div style={{ marginTop: 11 }}>
             <button onClick={() => setRefsOpen((o) => !o)} title={refsOpen ? "Ocultar fuentes" : "Ver de dónde salió esto"}
@@ -1120,7 +1162,7 @@ function Bubble({ m, onSpeak }: { m: Msg; onSpeak?: () => void }) {
             </button>
             {refsOpen && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 9 }}>
-                {refs.map((c) => <CiteChip key={c.index}>{c.page != null ? `pág. ${c.page}` : `#${c.index}`}{c.source === "pedagogy" ? " · guía" : ""}</CiteChip>)}
+                {refs.map((c) => <CiteChip key={c.index}>{c.label || (c.page != null ? `pág. ${c.page}` : `#${c.index}`)}{c.source === "pedagogy" ? " · guía" : ""}</CiteChip>)}
               </div>
             )}
           </div>
@@ -1133,18 +1175,39 @@ function Note({ children, tone }: { children: React.ReactNode; tone: "warn" | "b
   const t = tone === "bad" ? { c: C.badTx, bg: C.badBg } : { c: C.warnTx, bg: C.warnBg };
   return <div style={{ marginTop: 8, padding: "9px 12px", borderRadius: 12, background: t.bg, color: t.c, fontSize: 13, display: "flex", gap: 7, alignItems: "flex-start", lineHeight: 1.5 }}>{children}</div>;
 }
-function VerificationBadge({ v, grounded }: { v?: Verification | null; grounded?: boolean }) {
-  if (!v || grounded === false) return null;
+/**
+ * De dónde salió la respuesta. Tres estados, no uno.
+ *
+ * Antes esto arrancaba con `if (!v || grounded === false) return null` — o sea,
+ * cuando NO había material no se mostraba nada. Tenía sentido mientras esa rama
+ * devolvía una negativa fija (no había respuesta que sellar). Ahora que el tutor
+ * responde igual, ese es justamente el caso que MÁS necesita marcador: es la
+ * única señal de que lo que el chico está leyendo no salió de su libro.
+ */
+function VerificationBadge({ v, mode }: { v?: Verification | null; mode?: AnswerMode }) {
+  // Sin material: el aviso va sí o sí, aunque no haya nada que verificar.
+  if (mode === "general") {
+    return (
+      <div style={{ marginTop: 9, display: "inline-flex", gap: 7, alignItems: "flex-start", background: C.warnBg, color: C.warnTx, fontSize: 12.5, padding: "8px 12px", borderRadius: 12, lineHeight: 1.5, maxWidth: 460 }}>
+        <span style={{ display: "flex", flexShrink: 0, marginTop: 1 }}><IconAlert size={14} /></span>
+        <span>Esto <strong>no está en tu libro</strong>. Te lo expliqué con lo que sé, así que conviene que lo chequees con tu profe.</span>
+      </div>
+    );
+  }
+  if (!v) return null;
   if (v.unavailable) return <div style={{ marginTop: 8, color: C.dim, fontSize: 12.5 }}>No pude verificar esta respuesta contra tu material.</div>;
-  if (v.grounded) return (v.checked ?? 0) > 0 ? (
+  // Deriva: el material habla de otra cosa. Es la única alerta del verificador
+  // que está calibrada contra datos, y por eso es la única que se muestra.
+  if (mode === "apoyado" || v.grounded === false) {
+    return (
+      <div style={{ display: "grid", gap: 8, marginTop: 8, fontSize: 13 }}>
+        {v.contradicted?.length > 0 && <Note tone="bad"><IconAlert size={15} /><span>Tu material dice lo <strong>contrario</strong> de esto:<ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>{v.contradicted.map((s, i) => <li key={i}>{s}</li>)}</ul></span></Note>}
+      </div>
+    );
+  }
+  return (v.checked ?? 0) > 0 ? (
     <div style={{ marginTop: 9, display: "inline-flex", gap: 6, alignItems: "center", background: C.okBg, color: C.okTx, fontFamily: FONT.round, fontWeight: 700, fontSize: 12, padding: "6px 11px", borderRadius: 12 }}>
-      <IconCheck size={14} /> Verificado ({v.checked} {v.checked === 1 ? "afirmación" : "afirmaciones"})
+      <IconCheck size={14} /> De tu libro
     </div>
   ) : null;
-  return (
-    <div style={{ display: "grid", gap: 8, marginTop: 8, fontSize: 13 }}>
-      {v.contradicted?.length > 0 && <Note tone="bad"><IconAlert size={15} /><span>Tu material dice lo <strong>contrario</strong> de esto:<ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>{v.contradicted.map((s, i) => <li key={i}>{s}</li>)}</ul></span></Note>}
-      {v.unsupported?.length > 0 && <Note tone="warn"><IconAlert size={15} /><span>No encontré respaldo en tu material para:<ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>{v.unsupported.map((s, i) => <li key={i}>{s}</li>)}</ul></span></Note>}
-    </div>
-  );
 }

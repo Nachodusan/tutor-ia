@@ -61,7 +61,11 @@ export async function POST(req: Request) {
   const sqlGuard = getSql();
   const [visible] = await sqlGuard`
     select 1 from subjects where id = ${subjectId}::uuid
-      and (user_id is null or user_id = ${auth.userId}::uuid)`;
+      and (user_id is null or user_id = ${auth.userId}::uuid)
+      -- disabled_at acá y no solo en /api/subjects: esconder la materia de la
+      -- lista no alcanza, porque el cliente puede tener el id de antes (pestaña
+      -- vieja, historial). Desactivar tiene que impedir el uso, no solo la vista.
+      and disabled_at is null`;
   if (!visible) return Response.json({ error: "Materia no disponible" }, { status: 404 });
 
   let items;

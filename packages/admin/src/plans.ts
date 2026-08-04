@@ -52,6 +52,10 @@ interface Materia {
  *
  * El filtro `>= 3` es el mismo de `getPlanTopics`: con menos lecciones legibles
  * cae al fallback legacy y prefiere no dar plan antes que dar uno equivocado.
+ *
+ * NO se filtra por `disabled_at` a propósito: una materia fuera de circulación
+ * también quiere su plan listo, para que volver a encenderla sea instantáneo y
+ * no deje al primer alumno esperando la generación.
  */
 async function materias(curso?: string): Promise<Materia[]> {
   return sql<Materia[]>`

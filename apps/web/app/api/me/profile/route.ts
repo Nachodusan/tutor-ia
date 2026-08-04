@@ -4,10 +4,15 @@ import { requireUser, unauthorized } from "@/lib/auth";
 export const runtime = "nodejs";
 
 /**
- * PUT /api/me/profile — body: { grade?, priority?: string[], ttsOn? }
+ * PUT /api/me/profile — body: { grade?, ttsOn? }
  *
  * Reemplaza `saveProfile()` de localStorage. NO acepta un nombre: la columna no
  * existe y no debe volver a existir — las cuentas son anónimas por diseño.
+ *
+ * Tampoco acepta ya `priority`: el panel muestra TODAS las materias del curso
+ * con el mismo peso, así que no hay nada que priorizar. Se dejó de aceptar en
+ * vez de ignorarlo en silencio — un campo que se manda y no hace nada es peor
+ * que uno que no existe.
  */
 export async function PUT(req: Request) {
   const auth = await requireUser(req);
@@ -15,7 +20,6 @@ export async function PUT(req: Request) {
 
   const body = (await req.json().catch(() => ({}))) as {
     grade?: string | null;
-    priority?: string[];
     ttsOn?: boolean;
   };
   const sql = getSql();
@@ -34,20 +38,6 @@ export async function PUT(req: Request) {
       grade_set_at = coalesce(student_profiles.grade_set_at, excluded.grade_set_at),
       tts_on       = excluded.tts_on,
       updated_at   = now()`;
-
-  if (Array.isArray(body.priority)) {
-    // Reemplazo completo, en una transacción: si falla a mitad, el alumno no
-    // queda sin materias prioritarias.
-    await sql.begin(async (tx) => {
-      await tx`delete from student_priority_subjects where user_id = ${auth.userId}::uuid`;
-      for (const [i, sid] of body.priority!.entries()) {
-        await tx`
-          insert into student_priority_subjects (user_id, subject_id, position)
-          values (${auth.userId}::uuid, ${sid}::uuid, ${i})
-          on conflict do nothing`;
-      }
-    });
-  }
 
   return Response.json({ ok: true });
 }

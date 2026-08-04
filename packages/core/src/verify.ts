@@ -45,6 +45,63 @@ export interface AnswerVerification {
   unavailable?: boolean;
 }
 
+/**
+ * Cuánto de la respuesta salió del libro. Es lo que el alumno ve como sello.
+ *
+ *   libro   — el material respalda la respuesta
+ *   apoyado — el material respalda una parte; el resto es conocimiento general
+ *   general — no había material: se enseñó igual, con conocimiento general
+ */
+export type AnswerMode = "libro" | "apoyado" | "general";
+
+/**
+ * Deriva el modo. Lo decide EL RETRIEVAL, no el NLI por oración.
+ *
+ * ── Por qué NO se usa `supportedFrac`, aunque sea tentador ──────────────────
+ *
+ * La primera versión de esto declaraba `libro` si la fracción de oraciones
+ * respaldadas superaba un umbral. Se midió sobre 6 preguntas cuyo material
+ * estaba en el libro sin ninguna duda (topScore 0.47–0.999):
+ *
+ *     respaldo:  1.00 · 0.75 · 0.67 · 0.67 · 0.50 · 0.00
+ *
+ * Con cualquier umbral, la mitad de las respuestas legítimamente fundadas
+ * quedaba marcada como "esto no salió del todo de tu libro". Una de ellas tenía
+ * `supportedFrac = 0.00` con `topScore = 0.977`.
+ *
+ * No es un umbral mal elegido, es el instrumento: el tutor PARAFRASEA por diseño
+ * ("enseñá los conceptos del material con TUS PALABRAS"), y el NLI por oración
+ * no reconoce la paráfrasis fiel — el mismo motivo por el que este archivo ya
+ * había apagado las alertas por oración (ver el comentario de la deriva, abajo:
+ * "marca como contradicción hasta afirmaciones correctas y citadas").
+ *
+ * Usarlo para el sello sería hacer que la app se acuse a sí misma de inventar
+ * cada vez que explica bien. El producto se vería MENOS confiable que hoy.
+ *
+ * ── Lo que sí es confiable ──────────────────────────────────────────────────
+ *
+ * Si hubo material citable o no. Es un hecho del retrieval, no una estimación:
+ *   libro   — hubo material y se usó (y las citas lo prueban).
+ *   general — no hubo: se enseñó con conocimiento general, y se avisa.
+ *
+ * `apoyado` queda reservado para la DERIVA, que es la única señal del NLI que
+ * está calibrada contra datos (midió 0 falsos positivos en 77 respuestas).
+ *
+ * `supportedFrac` se sigue calculando y registrando: es observación útil para
+ * calibrar más adelante, pero no decide nada.
+ */
+export function derivarModo(
+  verdicts: SentenceVerdict[],
+  hayMaterial: boolean,
+  drift = false,
+): { mode: AnswerMode; supportedFrac: number } {
+  const supportedFrac = verdicts.length
+    ? verdicts.filter((v) => v.supported).length / verdicts.length
+    : 1;
+  if (!hayMaterial) return { mode: "general", supportedFrac: 0 };
+  return { mode: drift ? "apoyado" : "libro", supportedFrac };
+}
+
 /** Citas inline del modelo ("(Fragmento 2, pág. 14)"): fuera antes de puntuar. */
 const INLINE_CITATION_RE = /\(\s*Fragmento[^)]*\)/gi;
 

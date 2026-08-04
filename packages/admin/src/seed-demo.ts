@@ -82,6 +82,8 @@ async function sembrar(curso: string, cantidad: number): Promise<void> {
 
   const hash = await hashPassword(PASSWORD);
   const azar = rng(20260802);
+  /** En cuáles se siembra avance. No todas: un curso donde los 8 chicos
+   *  estudiaron las 7 materias no se parece a ningún curso real. */
   const prioridad = conTemas.slice(0, 3);
 
   for (let i = 1; i <= cantidad; i++) {
@@ -101,12 +103,10 @@ async function sembrar(curso: string, cantidad: number): Promise<void> {
       values (${userId}::uuid, ${curso}, now())
       on conflict (user_id) do update set grade = excluded.grade`;
 
-    await sql`delete from student_priority_subjects where user_id = ${userId}::uuid`;
-    for (const [pos, m] of prioridad.entries()) {
-      await sql`
-        insert into student_priority_subjects (user_id, subject_id, position)
-        values (${userId}::uuid, ${m.id}::uuid, ${pos})`;
-    }
+    // Ya no se escriben "materias prioritarias": ese concepto se eliminó de la
+    // app (el panel muestra todas las del curso). `prioridad` sigue existiendo
+    // acá, pero solo elige EN CUÁLES sembrar avance, para que el curso de
+    // demostración no tenga a los 8 chicos estudiando las 7 materias a la vez.
 
     // Una sesión con antigüedad variable, para que "último acceso" tenga rango.
     // token_hash es un sha256 imposible de producir: nadie puede entrar con ella.

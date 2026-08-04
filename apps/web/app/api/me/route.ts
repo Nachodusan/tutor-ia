@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export interface MeResponse {
   user: { id: string; username: string; role: string };
   /** null hasta que el alumno elige su curso la primera vez. */
-  profile: { grade: string | null; priority: string[]; ttsOn: boolean };
+  profile: { grade: string | null; ttsOn: boolean };
 }
 
 /**
@@ -22,17 +22,14 @@ export async function GET(req: Request) {
     select username, role from users where id = ${auth.userId}::uuid`;
   const [p] = await sql<{ grade: string | null; tts_on: boolean }[]>`
     select grade, tts_on from student_profiles where user_id = ${auth.userId}::uuid`;
-  const pri = await sql<{ subject_id: string }[]>`
-    select subject_id from student_priority_subjects
-    where user_id = ${auth.userId}::uuid order by position`;
 
+  // Ya no se devuelven "materias prioritarias": el panel muestra TODAS las del
+  // curso con el mismo peso. La tabla `student_priority_subjects` sigue en el
+  // esquema, vacía y sin escritores — borrarla es una migración aparte, y no
+  // urge mientras nada la lea.
   const body: MeResponse = {
     user: { id: auth.userId, username: u?.username ?? "", role: u?.role ?? "student" },
-    profile: {
-      grade: p?.grade ?? null,
-      priority: pri.map((r) => r.subject_id),
-      ttsOn: p?.tts_on ?? false,
-    },
+    profile: { grade: p?.grade ?? null, ttsOn: p?.tts_on ?? false },
   };
   return Response.json(body);
 }

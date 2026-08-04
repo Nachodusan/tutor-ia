@@ -226,7 +226,18 @@ async function runQuestion(
   };
   const res = await getTeachingContext(teachReq);
   const ctx = res.ctx;
-  const retrievedIds = res.grounded ? ctx.citable.map((c) => c.chunkId) : [];
+  // ⚠️ `retrieved`, NO `citable`. Acá había un artefacto que invalidaba toda
+  // comparación de gate: se hacía `res.grounded ? ctx.citable.map(…) : []`, o sea
+  // recall@5 contaba CERO cada vez que el gate cortaba. Consecuencia: aflojar el
+  // gate subía el recall SOLO, sin que el ranking hubiera mejorado en nada, y el
+  // número se leía como "mejoró el retrieval".
+  //
+  // `retrieved` es lo que el ranking trajo, independiente del gate. Ahora
+  // recall@5 mide el RANKING y la abstención se mide aparte (`abstained`), que
+  // es la única forma de saber cuál de los dos se movió.
+  //
+  // ⛔ Los baselines anteriores al 2026-08-03 NO son comparables con este número.
+  const retrievedIds = (ctx?.retrieved ?? []).map((c) => c.chunkId);
   const abstained = !res.grounded;
   const expectedIds = gq.expect_chunks ?? [];
   const topScore = ctx?.topScore ?? 0;

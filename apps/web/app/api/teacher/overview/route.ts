@@ -81,7 +81,10 @@ export async function GET(req: Request) {
            ), 0)::int as plan_total
     from subjects s
     join documents d on d.subject_id = s.id
-    where s.user_id is null or s.user_id = ${uid}::uuid
+    where (s.user_id is null or s.user_id = ${uid}::uuid)
+      -- Una materia sacada de circulación tampoco se le muestra al docente: si
+      -- el alumno no la puede estudiar, su avance ahí no es información útil.
+      and s.disabled_at is null
     group by s.id, s.name
     order by s.name`;
 

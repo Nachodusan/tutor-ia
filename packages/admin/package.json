@@ -8,6 +8,7 @@
     "seed-demo": "tsx --env-file-if-exists=../../.env src/seed-demo.ts",
     "plans": "tsx --env-file-if-exists=../../.env src/plans.ts",
     "reset": "tsx --env-file-if-exists=../../.env src/reset.ts",
+    "subjects": "tsx --env-file-if-exists=../../.env src/subjects.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

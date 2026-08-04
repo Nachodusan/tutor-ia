@@ -23,6 +23,10 @@ export interface HybridChunk {
   unit: number | null;
   lesson: number | null;
   oa: string | null;
+  /** PROCEDENCIA: de qué libro y de qué curso salió. Sin esto, cuando el tutor
+   *  trae material de otro curso "pág. 87" no le dice nada al alumno. */
+  documentTitle: string | null;
+  grade: string | null;
   /** Posición (1-based) en el ranking denso / léxico; null si no apareció. */
   denseRank: number | null;
   lexicalRank: number | null;
@@ -58,6 +62,8 @@ interface Row {
   unit: number | null;
   lesson: number | null;
   oa: string | null;
+  document_title: string | null;
+  grade: string | null;
 }
 
 /** Default del pool por brazo. Configurable con RAG_POOL_PER_SIDE (mismo patrón
@@ -137,6 +143,8 @@ export async function retrieveHybridWithStats(
         unit: r.unit,
         lesson: r.lesson,
         oa: r.oa,
+        documentTitle: r.document_title,
+        grade: r.grade,
         denseRank: null,
         lexicalRank: null,
         denseScore: null,
@@ -173,7 +181,32 @@ export async function retrieveHybridWithStats(
   };
 }
 
-/** Cita legible a partir de un chunk ("pág. 87 · Unidad 1 › Lección 1"). */
+/** "1M" → "1º Medio". Duplicado chico de la UI: el rótulo de la cita se arma
+ *  del lado del servidor, donde no hay componentes. */
+export function gradeLabel(g: string | null | undefined): string {
+  if (!g) return "";
+  const n = g.slice(0, -1);
+  return g.endsWith("M") ? `${n}º Medio` : `${n}º Básico`;
+}
+
+/** El nombre del libro, sin el sufijo de tomo ni el curso que ya va aparte. */
+function tituloCorto(t: string | null): string {
+  if (!t) return "";
+  return t
+    .replace(/\s*[—–-]\s*(texto del estudiante|guía didáctica del docente|gu[ií]a).*/i, "")
+    .replace(/\s*[—–-]\s*tomo\s*\d+.*/i, "")
+    .replace(/\s+\d+º.*$/, "")
+    .trim();
+}
+
+/**
+ * Cita legible ("Biología · 1º Medio · pág. 87 · Unidad 1 › Lección 1").
+ *
+ * El libro y el curso van ADELANTE y no al final: en cuanto el tutor puede
+ * traer material de otro curso, "pág. 87" a secas es ambiguo — el alumno no
+ * puede saber si eso salió de su libro o del de 4º Medio. Y esa es exactamente
+ * la información que necesita para ir a buscarlo.
+ */
 export function citationLabel(c: HybridChunk): string {
   const page =
     c.pageStart != null
@@ -181,5 +214,6 @@ export function citationLabel(c: HybridChunk): string {
         ? `pág. ${c.pageStart}`
         : `págs. ${c.pageStart}-${c.pageEnd}`
       : "";
-  return [page, c.headingPath].filter(Boolean).join(" · ") || "(sin ubicación)";
+  return [tituloCorto(c.documentTitle), gradeLabel(c.grade), page, c.headingPath]
+    .filter(Boolean).join(" · ") || "(sin ubicación)";
 }

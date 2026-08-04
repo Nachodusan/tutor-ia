@@ -83,6 +83,21 @@ export interface Decision {
   nliUnavailable?: boolean;
   /** Oraciones que el NLI llegó a chequear. */
   nliChecked?: number | null;
+  /**
+   * Cuánto de la respuesta salió del libro: "libro" | "apoyado" | "general".
+   *
+   * Se registra ANTES de que cambie el comportamiento, a propósito: da la línea
+   * base de cómo se vería el sello en el tráfico real de hoy. Sin esta medición
+   * previa, cuando el sello aparezca no habría forma de saber si "la mitad de
+   * las respuestas quedan en apoyado" es un efecto del cambio o algo que ya
+   * pasaba y nadie veía.
+   */
+  mode?: string | null;
+  /** Fracción de oraciones respaldadas por el material (0-1). */
+  supportedFrac?: number | null;
+  /** Chunks que trajo el ranking, ANTES del gate. Con `nCitable` al lado, separa
+   *  "el retrieval no encontró nada" de "encontró pero el gate lo cortó". */
+  nRetrieved?: number | null;
   chars?: number | null;
   ms?: number | null;
 }

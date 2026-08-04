@@ -28,6 +28,10 @@ export interface TeachRequest {
   /** Estudio dirigido por el plan: unidad/lección del tema elegido. */
   unit?: number | null;
   lesson?: number | null;
+  /** Curso del alumno ("7B", "1M"). Lo lee la ruta DESDE LA BASE, nunca del
+   *  cliente: define el nivel de lenguaje con que se le habla a un menor, y eso
+   *  no puede depender de lo que mande el navegador. */
+  studentGrade?: string | null;
 }
 
 /** Etiquetas legibles de los tipos de pedagogía para el prompt. */
@@ -263,14 +267,27 @@ export function teachingCitations(ctx: TeachingContext) {
     page: c.pageStart,
     source: c.source,
     oa: c.oa,
-    label: citationLabel({ pageStart: c.pageStart, pageEnd: c.pageEnd, headingPath: c.headingPath } as never),
+    grade: c.grade,
+    label: citationLabel({
+      pageStart: c.pageStart, pageEnd: c.pageEnd, headingPath: c.headingPath,
+      documentTitle: c.documentTitle, grade: c.grade,
+    } as never),
   }));
 }
 
 /**
- * Genera la respuesta del tutor facilitador en streaming. El llamador debe
- * comprobar grounded antes: si es false, devolver teachingAbstention() sin llamar
- * al modelo (anti-alucinación capa 1).
+ * Genera la respuesta del tutor facilitador en streaming.
+ *
+ * Se llama SIEMPRE, haya material o no. Antes el llamador tenía que chequear
+ * `grounded` y devolver una frase fija sin llegar al modelo; eso era la app
+ * diciéndole que no a un chico sentado a estudiar. Ahora, cuando no hay
+ * material, el turno lleva un bloque que le pide enseñar igual con conocimiento
+ * general y reconocerlo en una frase — y la UI lo marca.
+ *
+ * Las únicas negativas que quedan son de INFRAESTRUCTURA (reranker caído, error
+ * de retrieval), y las maneja la ruta: responder con conocimiento general
+ * mientras el motor está roto convertiría el producto en un chatbot genérico
+ * sin que nadie se entere.
  */
 export async function* streamTeaching(
   req: TeachRequest,
@@ -289,6 +306,11 @@ export async function* streamTeaching(
         material,
         guide,
         struggling: req.struggling,
+        sinMaterial: ctx.citable.length === 0,
+        studentGrade: req.studentGrade ?? null,
+        // De qué cursos salió el material que va en el prompt. Si no es el del
+        // alumno, el modelo tiene que saberlo para poder decirlo.
+        sourceGrades: [...new Set(ctx.citable.map((c) => c.grade).filter(Boolean))] as string[],
       }),
     },
   ];

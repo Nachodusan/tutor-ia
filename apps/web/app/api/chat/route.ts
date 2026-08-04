@@ -5,13 +5,14 @@ import {
   teachingCitations,
   socialReply,
   needsTopicReply,
-  verifyAnswerA3,
+  verifyAnswerA3, derivarModo,
   RERANKER_DOWN,
   isStruggling,
   config,
   logDecision,
   looksLikeSelfAbstention,
 } from "@tutor-ia/core";
+import { getSql } from "@tutor-ia/db";
 import { requireUser, unauthorized } from "@/lib/auth";
 import { ensureSession, insertMessage } from "@/lib/conversations";
 import { randomUUID } from "node:crypto";
@@ -103,6 +104,12 @@ export async function POST(req: Request) {
     return new Response(s, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache" } });
   }
 
+  // El curso del alumno se lee DESDE LA BASE, nunca del cliente: define el nivel
+  // de lenguaje con que se le habla a un menor, y eso no puede depender de lo
+  // que mande el navegador. Va en paralelo con el retrieval (lookup por PK).
+  const perfil = getSql()<{ grade: string | null }[]>`
+    select grade from student_profiles where user_id = ${userId}::uuid`;
+
   const teachReq = {
     userId,
     subjectId: body.subjectId ?? null,
@@ -111,11 +118,17 @@ export async function POST(req: Request) {
     struggling: isStruggling(body.question),
     unit: body.unit ?? null,
     lesson: body.lesson ?? null,
+    studentGrade: null as string | null,
   };
 
   let res;
   try {
-    res = await getTeachingContext(teachReq);
+    const [ctxRes, filas] = await Promise.all([
+      getTeachingContext(teachReq),
+      perfil.catch(() => [] as { grade: string | null }[]),
+    ]);
+    teachReq.studentGrade = filas[0]?.grade ?? null;
+    res = ctxRes;
   } catch {
     // Fallo de retrieval (p. ej. reranker ocupado/timeout): NO dejamos la
     // burbuja vacía; respondemos con un mensaje amable y reintentable.
@@ -145,15 +158,30 @@ export async function POST(req: Request) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      // 1) Frame de citas + si está fundamentado.
-      const citations = res.grounded ? teachingCitations(res.ctx) : [];
+      // 1) Frame de citas + modo. `grounded` viaja para compatibilidad del
+      //    cliente viejo; el dato que importa ahora es `mode`.
+      const hayMaterial = (res.ctx?.citable.length ?? 0) > 0;
+      const citations = hayMaterial ? teachingCitations(res.ctx!) : [];
       controller.enqueue(
-        encoder.encode("\x1e" + JSON.stringify({ citations, grounded: res.grounded, sessionId }) + "\n"),
+        encoder.encode("\x1e" + JSON.stringify({
+          citations, grounded: hayMaterial, mode: hayMaterial ? "libro" : "general", sessionId,
+        }) + "\n"),
       );
       try {
-        // Anti-alucinación (capa 1): sin material (ni TE ni GDD) → abstención,
-        // sin llamar al modelo.
-        if (!res.grounded) {
+        // LAS ÚNICAS NEGATIVAS QUE QUEDAN son de INFRAESTRUCTURA.
+        //
+        // Acá había un `if (!res.grounded)` que devolvía una frase fija sin
+        // llegar a llamar al modelo: si ningún fragmento superaba 0.18, el chico
+        // recibía "eso no lo encuentro en tu material". Eso era la app diciéndole
+        // que no a alguien sentado a estudiar, y es lo que este cambio elimina.
+        //
+        // Pero "dejar de negarse" NO es "responder aunque el sistema esté roto":
+        // con el reranker caído no sabemos si hay material o no, y contestar con
+        // conocimiento general en ese estado convierte el producto en un chatbot
+        // genérico sin que nadie se entere. Por eso estas dos sobreviven.
+        // Se puede volver al comportamiento anterior con CHAT_ALWAYS_ANSWER=0.
+        const siempreResponder = process.env.CHAT_ALWAYS_ANSWER !== "0";
+        if (res.rerankerDown || (!siempreResponder && !res.grounded)) {
           const textoAbstencion = res.rerankerDown ? RERANKER_DOWN : teachingAbstention();
           controller.enqueue(encoder.encode(textoAbstencion));
           void persistUsuario.then(() =>
@@ -162,10 +190,6 @@ export async function POST(req: Request) {
               meta: { cause: res.rerankerDown ? "reranker_down" : "gate", topScore: res.ctx?.topScore ?? null },
             }),
           );
-          // El gate cortó. `topScore` existe aun sin material: es el mejor
-          // candidato que NO llegó al umbral — sirve para ver si quedó cerca
-          // (0.16 vs 0.18 = umbral mal calibrado) o lejísimos (0.002 = la
-          // materia no tiene material, causa completamente distinta).
           logDecision({
             route: "chat",
             abstained: true,
@@ -174,6 +198,7 @@ export async function POST(req: Request) {
             threshold: config.rerankMinScore,
             citableSource: res.ctx?.citableSource ?? null,
             nCitable: res.ctx?.citable?.length ?? 0,
+            nRetrieved: res.ctx?.retrieved?.length ?? null,
             nPedagogy: countPedagogy(res.ctx?.pedagogy as never),
             directed: teachReq.unit != null,
             gateBypassed: res.ctx?.gateBypassed,
@@ -198,9 +223,18 @@ export async function POST(req: Request) {
             controller.enqueue(encoder.encode(chunk));
           }
           // 3) Verificación NLI por oración contra el material citable (capa 5).
-          const v = await verifyAnswerA3(full, res.ctx.citable.map((c) => c.content));
+          //    Sin material no hay contra qué verificar y se saltea: correrla
+          //    devolvería "todo sin respaldo", que es cierto y no dice nada.
+          const v = hayMaterial
+            ? await verifyAnswerA3(full, res.ctx!.citable.map((c) => c.content))
+            : null;
+          // `v.grounded === false` es la DERIVA (la señal calibrada), NO "sin
+          // respaldo por oración" — ver derivarModo().
+          const { mode, supportedFrac } = derivarModo(
+            v?.verdicts ?? [], hayMaterial, v?.grounded === false,
+          );
           controller.enqueue(
-            encoder.encode("\n\x1e" + JSON.stringify({ verification: v }) + "\n"),
+            encoder.encode("\n\x1e" + JSON.stringify({ verification: v, mode }) + "\n"),
           );
           // TUVO material y llamó al modelo. `selfAbstain` es la señal decisiva:
           // si sale true, el gate hizo bien su trabajo y el que se abstuvo fue
@@ -232,6 +266,8 @@ export async function POST(req: Request) {
             drift: v?.grounded === false,
             nliUnavailable: v?.unavailable === true,
             nliChecked: v?.checked ?? null,
+            mode, supportedFrac,
+            nRetrieved: res.ctx.retrieved?.length ?? null,
             chars: full.length,
             ms: Date.now() - t0,
           });
@@ -246,7 +282,8 @@ export async function POST(req: Request) {
             meta: {
               cause: "answered", topScore: res.ctx.topScore ?? null,
               ranker: res.ctx.stats?.ranker ?? null, qNorm: res.qNorm,
-              gateVia: res.ctx.stats?.gateVia ?? null, ms: Date.now() - t0,
+              gateVia: res.ctx.stats?.gateVia ?? null,
+              mode, supportedFrac, ms: Date.now() - t0,
             },
           });
         }

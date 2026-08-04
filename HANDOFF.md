@@ -294,6 +294,12 @@ pnpm --filter @tutor-ia/admin plans generar [--curso 1M] [--forzar]
 pnpm --filter @tutor-ia/admin reset
 pnpm --filter @tutor-ia/admin reset --confirmar [--borrar-demo]
 
+# Sacar materias de circulación sin borrarlas (subjects.disabled_at). El patrón
+# matchea el nombre SIN el curso, así que "Inglés" apaga las 12 de una.
+pnpm --filter @tutor-ia/admin subjects listar
+pnpm --filter @tutor-ia/admin subjects desactivar --materia "Inglés" --materia "Física"
+pnpm --filter @tutor-ia/admin subjects activar --todas
+
 ./scripts/backup-db.sh                                     # pg_dump -Fc verificado + rotación
 psql "$DATABASE_URL" -f packages/db/repair_jsonb_double_encoded.sql
 ```
