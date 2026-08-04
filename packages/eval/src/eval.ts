@@ -89,7 +89,11 @@ const TARGETS: Target[] = [
   // citation_precision "real" (¿el modelo citó la fuente correcta?) necesita las
   // citas verificadas del modelo → Fase 2 (A3 con el cross-encoder).
   { key: "citationPrecision", label: "precision@gold", goal: 0.8, cmp: ">=" },
-  { key: "hallucinationRate", label: "hallucination_rate", goal: 0.02, cmp: "<=" },
+  // Solo sobre las respuestas que se presentaron como respaldadas por el libro.
+  // El promedio global (`hallucinationRate`) dejó de ser objetivo: incluye las
+  // de modo `general`, que puntúan 100% sin respaldo por construcción y hacían
+  // que responder más se leyera como alucinar más.
+  { key: "hallucinationRateLibro", label: "alucinación (libro)", goal: 0.02, cmp: "<=" },
   { key: "falseAbstentionRate", label: "false_abstention", goal: 0.1, cmp: "<=" },
   // true_abstention se retira: el tutor ya no se abstiene por falta de material,
   // así que por diseño va a ~0 y dejó de significar algo. Se sigue calculando
@@ -259,34 +263,48 @@ async function runQuestion(
   const topScore = ctx?.topScore ?? 0;
   const citableSource = ctx?.citableSource ?? "none";
 
-  // 2) ALUCINACIÓN (opcional, con LLM): solo si respondió. Guardada por try/catch:
-  //    un timeout del 7B marca la pregunta como no-evaluable, NO tira toda la corrida.
   let hallucinated = false;
   let hallucinatedA2Only = false;
   let hallucinatedProd = false;
   let prodKnown = false;
   let hallucinationKnown = false;
   let errored = false;
+  let genErrored = false;
   let selfAbstained = false;
   let msProd = 0;
   let answer = "";
   let claimsTotal = 0;
   let claimsSinRespaldo = 0;
   let prodVerdicts: QResult["prodVerdicts"] = [];
-  // Se genera SIEMPRE (salvo infra caída), como en producción.
-  if (!abstained && DO_HALLUCINATION) {
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // TRES ETAPAS, CADA UNA CON SU PROPIO INTERRUPTOR. Antes eran una sola, toda
+  // dentro de `if (!abstained && DO_HALLUCINATION)`, y eso mezclaba tres cosas
+  // que no tienen por qué caer juntas:
+  //
+  //   (2) GENERAR          → lo que hace producción. NO es opcional.
+  //   (3) VERIFICADOR PROD → lo que decide el SELLO en producción (NLI local).
+  //   (4) JUEZ DE CLAIMS   → instrumentación del eval (LLM remoto, caro y frágil).
+  //
+  // Lo que rompía: apagar EVAL_HALLUCINATION para ahorrarse el juez apagaba
+  // también la generación. La corrida del 2026-08-03 guardó `answer: ""` en las
+  // 101 preguntas, y su `hallucination_rate: 0.0%` significaba SIN MEDIR, no
+  // "sin alucinaciones" — el peor modo de fallar de una métrica de seguridad.
+  // Y sin (3), `derivarModo` nunca veía deriva, así que el modo `apoyado` era
+  // inalcanzable: el eval no podía producir uno de los tres sellos que sirve.
+  // ───────────────────────────────────────────────────────────────────────────
+  const chunks = ctx?.citable ?? [];
+  const chunkTexts = chunks.map((c) => c.content);
+
+  // 2) GENERACIÓN — SIEMPRE, salvo infraestructura caída, igual que /api/chat.
+  //    Se consume el MISMO generador (streamTeaching), así que el system prompt
+  //    (TEACHING_SYSTEM), el armado del turno user (buildTeachingTurn con
+  //    MATERIAL + GUÍA) y los parámetros de generación salen de la función real.
+  //    OJO: ya NO se corre checkFalsePremise. /api/chat tampoco lo corre (está
+  //    solo en el camino legacy tutor.ts), así que ejecutarlo hacía que el eval
+  //    midiera un flujo que el alumno no recibe.
+  if (!abstained) {
     try {
-      const chunks = ctx.citable;
-      const context = chunks
-        .map((c, i) => `[Fragmento ${i + 1}]\n${c.content}`)
-        .join("\n\n");
-      // 2) GENERACIÓN — se consume el MISMO generador que usa /api/chat, así que
-      //    el system prompt (TEACHING_SYSTEM), el armado del turno user
-      //    (buildTeachingTurn con MATERIAL + GUÍA) y los parámetros de generación
-      //    salen de la función real. Nada duplicado acá.
-      //    OJO: ya NO se corre checkFalsePremise. /api/chat tampoco lo corre
-      //    (está solo en el camino legacy tutor.ts), así que ejecutarlo hacía que
-      //    el eval midiera un flujo que el alumno no recibe.
       for await (const chunk of streamTeaching(teachReq, ctx)) answer += chunk;
       // Corte de latencia COMPARABLE con producción: retrieval + stream. Lo que
       // sigue (claims + entailment) es instrumentación del eval que el chat no
@@ -294,6 +312,49 @@ async function runQuestion(
       msProd = Date.now() - t0;
       // ¿Tuvo material y aun así dijo "no puedo"? Eso NO es el gate: es el prompt.
       selfAbstained = looksLikeSelfAbstention(answer);
+    } catch {
+      // Si no hubo generación no hay nada que juzgar: cuenta como no-evaluable
+      // para alucinación, igual que un timeout del juez.
+      genErrored = true;
+      errored = true;
+    }
+  }
+
+  // 3) VERIFICADOR DE PRODUCCIÓN — el MISMO que corre en /api/chat (verify.ts:
+  //    oraciones + NLI local, sin claims del LLM), sobre la respuesta ya
+  //    generada. Corre SIEMPRE que haya respuesta, no bajo el flag del juez:
+  //    es lo que decide `mode` para el alumno, y un eval que no lo corre está
+  //    midiendo un sello que producción no usa.
+  if (answer && !genErrored) {
+    try {
+      const prodV = await verifyAnswerA3(answer, chunkTexts);
+      if (!prodV.unavailable) {
+        hallucinatedProd = !prodV.grounded;
+        prodKnown = true;
+        // Solo los números por oración, sin el texto: el drift-sweep necesita
+        // (entailment, contradiction, supported, contradicted) y nada más.
+        prodVerdicts = prodV.verdicts.map((v) => ({
+          entailment: v.entailment,
+          contradiction: v.contradiction,
+          supported: v.supported,
+          contradicted: v.contradicted,
+        }));
+      }
+    } catch {
+      /* NLI caído: prodKnown queda en false y el modo se deriva sin deriva. */
+    }
+  }
+
+  // 4) JUEZ DE ALUCINACIÓN (opcional, LLM remoto). Guardado por try/catch: un
+  //    timeout marca la pregunta como no-evaluable PARA ESTA MÉTRICA y nada más
+  //    — la respuesta ya está generada y verificada arriba, así que `cause`
+  //    sigue siendo "answered". Antes un timeout del juez marcaba toda la
+  //    pregunta como `model_error`, como si el tutor no hubiera contestado.
+  if (answer && !genErrored && DO_HALLUCINATION) {
+    try {
+      const context = chunks
+        .map((c, i) => `[Fragmento ${i + 1}]\n${c.content}`)
+        .join("\n\n");
       const raw = await chatJSON<{ claims: RawClaim[] }>(
         [
           // Juez con prompt PROPIO. Antes heredaba TUTOR_SYSTEM (el tutor
@@ -304,7 +365,6 @@ async function runQuestion(
         CLAIMS_SCHEMA,
         { temperature: 0 },
       );
-      const chunkTexts = chunks.map((c) => c.content);
       const report = verifyClaims(raw.claims ?? [], chunkTexts);
       hallucinatedA2Only = report.hasUnsupported; // baseline string-match (antes de A3)
       // A3 (Fase 2): verificación híbrida. Una afirmación se considera respaldada
@@ -348,34 +408,21 @@ async function runQuestion(
       claimsSinRespaldo = sinRespaldo;
       hallucinated = sinRespaldo > 0;
       hallucinationKnown = true;
-
-      // Métrica PROD: el MISMO verificador que corre en producción (verify.ts,
-      // oraciones + entailment, sin claims del LLM), aplicado a la respuesta ya
-      // generada. Mide lo que un estudiante recibiría — la brecha eval-vs-prod
-      // se mide acá en vez de asumirse cerrada.
-      const prodV = await verifyAnswerA3(answer, chunkTexts);
-      if (!prodV.unavailable) {
-        hallucinatedProd = !prodV.grounded;
-        prodKnown = true;
-        // Solo los números por oración, sin el texto: el drift-sweep necesita
-        // (entailment, contradiction, supported, contradicted) y nada más.
-        prodVerdicts = prodV.verdicts.map((v) => ({
-          entailment: v.entailment,
-          contradiction: v.contradiction,
-          supported: v.supported,
-          contradicted: v.contradicted,
-        }));
-      }
     } catch {
-      errored = true; // timeout/fallo del LLM: no contamos esta para alucinación
+      errored = true; // timeout/fallo del juez: no contamos esta para alucinación
     }
   }
 
+  // ⚠️ `model_error` es de la GENERACIÓN, no del juez. Un timeout del juez deja
+  // la pregunta sin medir para alucinación (`errored`) pero el alumno igual
+  // recibió su respuesta, así que la causa sigue siendo "answered". Antes las
+  // dos caían en `model_error` y una corrida con el juez flojo se leía como si
+  // el tutor se hubiera caído.
   const cause: DecisionCause = abstained
     ? res.rerankerDown
       ? "reranker_down"
       : "gate"
-    : errored
+    : genErrored
       ? "model_error"
       : "answered";
   const ms = Date.now() - t0;
@@ -408,13 +455,23 @@ async function runQuestion(
   });
 
   // El MISMO derivador que usa /api/chat: lo que se mide es lo que se sirve.
-  const { mode } = derivarModo(
-    (prodVerdicts ?? []).map((v) => ({ text: "", ...v })),
-    (ctx?.citable.length ?? 0) > 0,
-    // `hallucinatedProd` viene de `!prodV.grounded`, que es exactamente la
-    // señal de DERIVA de verify.ts. Si no se pudo verificar, no hay deriva.
-    prodKnown && hallucinatedProd,
-  );
+  //
+  // ⚠️ Solo si HUBO respuesta. `derivarModo` decide el sello con `hayMaterial`,
+  // así que una pregunta que se abstuvo o que falló al generar igual salía con
+  // `mode: "libro"` — un sello que el alumno nunca vio, contaminando
+  // `false_book_claim`, que es justamente la métrica de seguridad del cambio.
+  // Sin respuesta el modo queda `undefined` y las métricas de encuadre la
+  // excluyen del denominador, igual que `hallucinationKnown` hace con la
+  // alucinación. Un hueco declarado, no un cero inventado.
+  const mode = answer
+    ? derivarModo(
+        (prodVerdicts ?? []).map((v) => ({ text: "", ...v })),
+        (ctx?.citable.length ?? 0) > 0,
+        // `hallucinatedProd` viene de `!prodV.grounded`, que es exactamente la
+        // señal de DERIVA de verify.ts. Si no se pudo verificar, no hay deriva.
+        prodKnown && hallucinatedProd,
+      ).mode
+    : undefined;
 
   return {
     type: gq.type,
@@ -714,14 +771,28 @@ async function main() {
   // tabla se conserva para comparar con lo histórico, pero para SEGUIR la
   // evolución hay que mirar esta: con la entrada fija oscila 0,5 puntos contra
   // los 5,2 del booleano.
+  // ⚠️ SEPARADAS POR MODO. "Sin respaldo" mide contra el material recuperado; en
+  // modo `general` no hay material, así que esas respuestas dan ~100% sin haber
+  // inventado nada. Sumarlas producía un número que empeora cuando el tutor
+  // responde más — lo contrario de lo que la métrica tiene que vigilar.
   const conClaims = results.filter((r) => r.claimsTotal > 0);
-  const totClaims = conClaims.reduce((a, r) => a + r.claimsTotal, 0);
-  const totSin = conClaims.reduce((a, r) => a + r.claimsSinRespaldo, 0);
+  const deLibro = conClaims.filter((r) => r.mode === "libro" || r.mode === "apoyado");
+  const deGeneral = conClaims.filter((r) => r.mode === "general");
+  const suma = (rs: typeof conClaims) => ({
+    claims: rs.reduce((a, r) => a + r.claimsTotal, 0),
+    sin: rs.reduce((a, r) => a + r.claimsSinRespaldo, 0),
+  });
+  const L = suma(deLibro);
+  const G = suma(deGeneral);
   console.log(
-    `🔬 Afirmaciones (discriminador: NLI direccional, no el cross-encoder de relevancia):\n` +
-      `   ${totSin} sin respaldo de ${totClaims} en ${conClaims.length} respuestas\n` +
-      `   TASA = ${fmtPct(totClaims ? totSin / totClaims : 0)}   ← métrica estable (±0,5 pts)\n` +
-      `   booleano (≥1 sin respaldo) = ${fmtPct(metrics.hallucinationRate)}   ← histórica, ±5,2 pts\n`,
+    `🔬 Afirmaciones sin respaldo (NLI direccional, no el cross-encoder de relevancia):\n` +
+      `   modo LIBRO/APOYADO — ${L.sin} de ${L.claims} en ${deLibro.length} respuestas\n` +
+      `      TASA = ${fmtPct(L.claims ? L.sin / L.claims : 0)}   ← ESTA es la alucinación (±0,5 pts)\n` +
+      `      booleano (≥1 sin respaldo) = ${fmtPct(metrics.hallucinationRateLibro)}   ← histórica, ±5,2 pts\n` +
+      `   modo GENERAL — ${G.sin} de ${G.claims} en ${deGeneral.length} respuestas\n` +
+      `      ⚠️ ~100% ESPERADO: no hay material contra el cual respaldar. NO es alucinación.\n` +
+      `      Corrección factual del modo general: ${metrics.generalSinMedir} respuestas SIN MEDIR\n` +
+      `      (necesita un juez de conocimiento del mundo, no de groundedness).\n`,
   );
   console.log(`💰 ${formatUsageTotals()}\n`);
 
@@ -753,7 +824,12 @@ async function main() {
           ranker: describeStrategy(rankStrategyFromEnv()),
         },
         usage: getUsageTotals(),
-        claims: { total: totClaims, sinRespaldo: totSin, tasa: totClaims ? totSin / totClaims : 0 },
+        // Partidas por modo, igual que en el reporte: un solo `tasa` mezclaba
+        // groundedness del libro con modo general y no se podía deshacer después.
+        claims: {
+          libro: { total: L.claims, sinRespaldo: L.sin, tasa: L.claims ? L.sin / L.claims : 0 },
+          general: { total: G.claims, sinRespaldo: G.sin, tasa: G.claims ? G.sin / G.claims : 0 },
+        },
         userId,
         subjectId,
         metrics,
