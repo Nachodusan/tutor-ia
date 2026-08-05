@@ -14,8 +14,7 @@
         "RERANK_TIMEOUT_MS": "60000",
         "NLI_TIMEOUT_MS": "60000",
         "ENTAIL_MIN_SCORE": "0.5",
-        "WHISPER_MODEL": "/Users/dusan/Documents/ia/packages/ingest-py/whisper-models/ggml-base.bin",
-        "TTS_VOICE": "Mónica"
+        "WHISPER_MODEL": "/Users/dusan/Documents/ia/packages/ingest-py/whisper-models/ggml-base.bin"
       }
     }
   ]

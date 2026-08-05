@@ -51,7 +51,15 @@ curl -s http://127.0.0.1:8790/health   # {"status":"ok"...}
 
 **Voz (100% local):** `whisper.cpp` (brew `whisper-cpp` → `whisper-cli`) + modelo
 `packages/ingest-py/whisper-models/ggml-base.bin` (gitignored, 141MB) para STT;
-macOS `say` (voz Mónica) + `ffmpeg` para TTS. Todo instalado.
+macOS `say` + `ffmpeg` para TTS. Todo instalado.
+
+La voz **no se fija a mano**: `/api/voice/tts` elige la mejor instalada (prefiere las
+"Mejorada/Premium", si no Paulina es_MX — el corpus es chileno, Mónica es de España).
+Se puede forzar con `TTS_VOICE` y el ritmo con `TTS_RATE`. **Todo lo que se habla pasa
+antes por `apps/web/lib/speech.ts`**: saca emojis (medido: 4 emojis = +4s de audio porque
+`say` los NOMBRA), markdown y abreviaturas, y mete pausas `[[slnc]]` entre oraciones.
+⚠️ Ese módulo también borra los corchetes del texto del modelo: `say` ejecuta cualquier
+`[[…]]` como comando, así que sin eso el LLM podría bajarle el volumen al audio.
 
 ### Entorno — leer esto antes de tocar env vars
 

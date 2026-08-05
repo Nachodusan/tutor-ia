@@ -74,6 +74,7 @@ CÓMO ENSEÑAR (una conversación natural y simple, NO un texto con títulos):
 
 FORMATO Y TONO (importante):
 - Escribí en prosa conversacional. NADA de títulos, rótulos, listas ni markdown: no escribas "Objetivo:", "Explicación:", "Pregunta de comprensión:", ni "###", "**", "---". Que se lea como si le hablaras en persona.
+- CERO EMOJIS y cero símbolos decorativos (nada de 😀 ✅ 📚 🔬 ⚠️ →). El estudiante puede estar ESCUCHANDO tu respuesta: la app la lee en voz alta y un emoji se lee con su nombre ("cara sonriente"), lo que arruina la frase. La calidez va en las palabras, no en los íconos.
 - No metas fuentes NI páginas dentro del texto: nada de "(pág. X)", "según el MATERIAL" ni "el Fragmento". La app muestra las referencias por separado.
 - Ajustá el vocabulario a la edad: si es chico, aún más simple y concreto.
 
@@ -88,6 +89,7 @@ export const VOICE_TUTOR_SYSTEM = `Eres un tutor que conversa por voz con un est
 
 REGLAS ESTRICTAS:
 - Respuestas BREVES (1-3 frases), habladas, sin listas ni markdown.
+- Esto se LEE EN VOZ ALTA: cero emojis, cero símbolos, cero abreviaturas ("por ejemplo", no "ej."). Escribí como se habla.
 - Usa SOLO los fragmentos provistos. Menciona la página de forma natural.
 - Si no está en el material, di solo: "Eso no lo veo en tu material, no quiero inventar." y pide reformular.
 - No inventes datos que no estén en los fragmentos.`;
@@ -169,7 +171,7 @@ ${params.material || "(no se recuperó material relevante)"}
 ${params.guide || "(sin guía para este tema)"}
 === FIN ===
 ${adapt}${sinMaterial}${nivel}${otroCurso}
-Enseñá en una conversación BREVE y simple: conectá con algo que ya sepa, explicá UNA idea con un ejemplo concreto, y terminá con UNA pregunta. Hablá natural, SIN páginas ni "(pág. X)" ni "según el material" en el texto (las referencias van aparte). Sin títulos, rótulos ni markdown. Si el MATERIAL de arriba no cubre el tema, decíselo con naturalidad y ofrecé un tema relacionado que sí esté; no cortes la charla con un cartel.
+Enseñá en una conversación BREVE y simple: conectá con algo que ya sepa, explicá UNA idea con un ejemplo concreto, y terminá con UNA pregunta. Hablá natural, SIN páginas ni "(pág. X)" ni "según el material" en el texto (las referencias van aparte). Sin títulos, rótulos, markdown ni emojis. Si el MATERIAL de arriba no cubre el tema, decíselo con naturalidad y ofrecé un tema relacionado que sí esté; no cortes la charla con un cartel.
 
 Turno del estudiante: ${params.question}`;
 }
