@@ -1,6 +1,6 @@
 # HANDOFF — Tutor IA (para retomar en un chat nuevo)
 
-> Estado al **2026-07-30**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
+> Estado al **2026-08-05**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
 > Proyecto en `/Users/dusan/Documents/ia`. Rama `feat/bloques-aurora-plan-prueba`.
 > **Leé también la memoria del proyecto** (`tutor-ia-estado.md` y las notas por feature).
 
@@ -23,6 +23,40 @@ materia/grado: **Texto del Estudiante** (`corpus_role='content'`, el "qué" cita
 **Guía Didáctica del Docente / GDD** (`corpus_role='pedagogy'`, el "cómo": ideas_previas,
 evaluacion, errores_frecuentes, proposito, habilidad, solucionario…, anclados al OA).
 El link es por **OA + relevancia semántica**, NO por (unit,lesson) — TE y GDD numeran distinto.
+
+**El tutor YA NO SE NIEGA (2026-08-03).** Antes, cuando el gate no pasaba, el alumno
+recibía una frase fija y **el modelo ni se llamaba**. Hoy responde siempre; la única
+abstención que queda es de INFRAESTRUCTURA (reranker caído). Lo que cambia no es *si*
+responde sino **cómo lo encuadra**, y eso son DOS EJES INDEPENDIENTES:
+
+| eje | valores | qué contesta |
+|---|---|---|
+| `mode` | `libro` · `apoyado` · `general` | ¿hay material que respalde esto? |
+| `scope` | `curso` · `otro_curso` · `otra_materia` · `ninguno` | ¿de dónde salió ese material? |
+
+Meterlos en un solo campo obliga a mentir en uno: "¿qué es la fotosíntesis?" preguntada
+desde Lengua es `libro` (el material existe y la respalda) **y** `otra_materia` (pero no es
+el libro de esta materia). El chico lee *"esto no está en el libro de esta materia, lo saqué
+de Ciencias Naturales 6º"*.
+
+**CASCADA DE ALCANCE** (`packages/rag/src/retrieve-teaching.ts`) — el gate dejó de ser
+cortacircuito y pasó a ser el disparador de la etapa siguiente:
+
+| etapa | dónde busca | umbral |
+|---|---|---|
+| `curso` | el libro de la materia | 0,18 |
+| `otro_curso` | misma asignatura, TODOS los cursos (`subjects.family`) | 0,18 |
+| `otra_materia` | corpus completo | 0,50 |
+| — | sin material → modo `general` | — |
+
+⚠️ **La cascada NO es "el primero que pasa gana", y eso costó un bug en producción.** Con
+umbrales distintos por etapa, frenar en la primera que supera EL SUYO hacía que un 0,18
+flojo le ganara a un 0,99 excelente por venir antes en el código. Real: un chico en Lengua
+8º preguntaba por la fotosíntesis y recibía *"los restos nudosos de un antiquísimo tocón"*
+(Lengua 7º, 0,18) mientras Ciencias Naturales 6º pág. 83 esperaba con 0,99. Ahora, si lo de
+la asignatura propia queda por debajo del listón alto, se sigue buscando y gana el mejor por
+`rerankScore`. Si lo flojo vino del libro del PROPIO curso se queda igual: ése es el libro
+que el chico tiene sobre la mesa.
 
 > ⚠️ **Cambio de premisa, en dos pasos.**
 > **(2026-07-30)** dejó de ser necesariamente "100% local": la generación podía apuntar a
@@ -312,6 +346,39 @@ aliento y analogías; **no se surfacean alertas por oración**, solo deriva sist
 ("Fuentes en tu material"), cerrada por defecto. `cleanTutorText()` limpia en el cliente lo
 que el modelo igual meta.
 
+**Plan A MEDIDA del alumno** (`/api/plan/custom`, `student_custom_plans`) — además del plan
+sugerido (que sale del índice del libro y es igual para todo el curso), el alumno pide los
+contenidos que quiere. Los temas **no los inventa el modelo**: salen del retrieval y son
+lecciones reales, con título y páginas. Reusa `redactarPlan` entero — el mismo prompt, las
+mismas tandas, el mismo filtro de puntos vacíos que el sugerido; dos prompts "parecidos" es
+la forma más rápida de que los dos planes empiecen a diferir sin que nadie lo decida.
+⚠️ Las `topic_key` van prefijadas con el id del plan: `student_plan_progress` tiene PK
+`(user_id, topic_key)`, así que sin el prefijo marcar un tema en un plan lo marcaría en otro.
+
+**El sello `apoyado` casi no existe** — de 101 preguntas: 88 `libro`, 10 `general`, **2
+`apoyado`**. La condición de deriva (`verify.ts`) exige `supportedFrac <= 0` —ninguna
+oración respaldada— MÁS 3 contradicciones fuertes. Estuvo en 0 disparos mucho tiempo por un
+bug del eval (corría sin la etapa de familia), pero aun arreglado dispara poquísimo. Sin
+calibrar: `drift-sweep` existe para eso y hay 88 preguntas con `prodVerdicts` guardados.
+
+**La pregunta de cierre no puede venir contestada** (`prompts.ts`) — medido sobre los 25
+turnos reales que había en la base, **el 40% se contestaba solo**: el tutor decía "el tamaño
+del pico es la variable dependiente" y dos renglones después preguntaba cuál era la variable
+dependiente. El chico copiaba. Se agregó la regla explícita (releé lo que dijiste; si se
+responde copiando, cambiala) más la prohibición de las de sí/no —"¿te hace sentido?"— que
+eran 8 de las 10 rotas. Regenerando esas 10 con el prompt nuevo, **6 quedaron sanas**.
+Las 4 que siguen son dos patrones: el caso "nuevo" que es el mismo con una palabra cambiada,
+y la conclusión que el propio mensaje ya sacó. Falta medir sobre las 25 para una tasa
+comparable — con 10 casos elegidos por ser los peores no se puede afirmar una global.
+
+**El camino de voz le contestaba al silencio** — whisper NO devuelve vacío cuando no hay
+voz: devuelve `[Música]` / `[BLANK_AUDIO]` con confianza alta (0,918 sobre ruido rosa puro).
+Se filtra en `stt/route.ts`. Lo que igual pasa (transcripción inventada: son palabras) se
+ataja con una regla del prompt: si no entendés, no adivines.
+⚠️ **NO filtrar por confianza**, aunque whisper la exponga: medido sobre la misma frase
+degradada, limpio 0,924 · error plausible 0,808 · **transcripción completamente inventada
+0,829**. El caso peor puntúa más alto que uno bueno-con-un-error.
+
 **Schemas y modo estricto** — `CLAIMS_SCHEMA` y el inline de `/api/test` **corregidos**
 (pasan `strict:true`). `EXAM_SCHEMA` **sigue sin cumplir** a propósito (exams está parkeado);
 el guard `strict-schema.ts` lo señala con la violación exacta en vez de un error opaco.
@@ -326,9 +393,21 @@ pnpm --filter @tutor-ia/eval llm-smoke                     # compara endpoints r
 pnpm --filter @tutor-ia/eval llm-smoke -- --only=deepinfra
 pnpm --filter @tutor-ia/eval llm-smoke -- --base-urls=https://api.deepinfra.com/v1/openai,https://api.scaleway.ai/v1
 pnpm --filter @tutor-ia/eval batch-ingest [rootDir]        # ingesta (RESUMABLE); BATCH_DRY=1 = solo clasificar
-pnpm --filter @tutor-ia/eval eval                          # golden set 133 (lento, background)
+pnpm --filter @tutor-ia/eval eval                          # golden set 101 (~2,5 h, background)
+EVAL_HALLUCINATION=0 pnpm --filter @tutor-ia/eval eval     # sin el juez de claims (igual GENERA)
 pnpm --filter @tutor-ia/eval exp6                          # eval pedagógico
 pnpm --filter @tutor-ia/eval nli-validate                  # A3 relevancia vs NLI
+pnpm --filter @tutor-ia/eval a3-validate                   # ⚠️ hoy evalúa 0: el set está muerto
+
+# Herramientas para DECIDIR con el material a la vista, no a ojo
+pnpm --filter @tutor-ia/eval scope-audit                   # vuelca must_abstain + sus fragmentos
+pnpm --filter @tutor-ia/eval scope-audit -- --todas        # las 101 (para validar un filtro)
+pnpm --filter @tutor-ia/eval claims-audit                  # las afirmaciones sin respaldo + su material
+                                                           # (reusa las respuestas ya guardadas: NO regenera)
+pnpm --filter @tutor-ia/eval answerability                 # compara discriminadores de "¿contesta?"
+ANSW_JUEZ=1 pnpm --filter @tutor-ia/eval answerability     # + el juez LLM (1 llamada por pregunta)
+pnpm --filter @tutor-ia/eval pregunta-final preguntas.json # regenera turnos para medir el cierre
+pnpm --filter @tutor-ia/eval drift-sweep eval-results.json # calibrar la deriva (sello `apoyado`)
 
 # Cuentas (anónimas: solo usuario y contraseña; sin registro en la app)
 pnpm --filter @tutor-ia/admin users crear  --usuario 7b-01 [--rol student|teacher|admin]
@@ -408,6 +487,14 @@ packages/admin/src/
   seed-demo.ts        curso de juguete para desarrollo (solo cuentas "demo-")
 packages/eval/src/
   llm-smoke.ts        comparación de endpoints remotos (REASON/LEAK)
+  golden-scope-audit.ts  vuelca cada pregunta con sus fragmentos, libro y página →
+                      para etiquetar `expect_scope` LEYENDO, no adivinando
+  claims-audit.ts     las afirmaciones sin respaldo + el material completo contra el
+                      que se las juzgó. Reusa las respuestas guardadas: NO regenera
+  answerability-sweep.ts  compara discriminadores de "¿el fragmento CONTESTA?" con la
+                      tabla de costo en las DOS direcciones (la accuracy sola engaña)
+  pregunta-final.ts   regenera turnos por el camino real, para medir el antes/después
+                      de un cambio de prompt sobre las MISMAS preguntas
 ```
 
 Borrados con el motor local: `llm/ollama.ts`, `packages/eval/src/ollama.ts` y los
@@ -427,40 +514,82 @@ hallazgos que produjeron quedan como registro en `docs/exp2-4-hallazgos.md`.
   seguía funcionando offline con embeddings y reranker locales. Si alguna vez importa el
   modo offline (colegio con conexión mala), esto es lo primero a reponer: un embedder
   local detrás de `EMBEDDING_BASE_URL`.
-- 🟢 **PRIMER BASELINE VÁLIDO — 2026-07-31, golden re-anclado (101 preguntas).**
-  Es el primero que mide lo que el alumno recibe. Contra este SÍ se compara.
+- 🟢 **BASELINE VIGENTE — 2026-08-05, cascada arreglada (101 preguntas).**
+  Es el primero que corre el MOTOR REAL: con `familyIds` (o sea las tres etapas de la
+  cascada) y con generación de verdad. Contra este se compara.
 
   | métrica | valor | objetivo | |
   |---|---|---|---|
-  | recall@5 | 82,6% | ≥90% | ❌ |
-  | precision@gold | 68,1% | ≥80% | ❌ |
-  | hallucination_rate (claims A2+A3) | 38,4% | ≤2% | ❌ |
-  | hallucination_rate **PROD** (verify.ts) | **0,0%** (n=67) | — | — |
+  | recall@5 | 88,0% | ≥90% | ❌ |
+  | precision@gold | 71,1% | ≥80% | ❌ |
+  | alucinación (modo libro, TASA) | **15,5%** | ≤2% | ❌ |
   | false_abstention | **1,3%** | ≤10% | ✅ |
-  | true_abstention | **95,7%** | ≥95% | ✅ |
+  | false_book_claim | 4,2% | ≤2% | ❌ |
+  | correct_mode | 62,5% | ≥90% | ❌ |
 
-  **Contra qué se midió:** materia `Lengua Y Literatura 8º` = el libro oficial del
-  corpus (`texto del estudiante`, 266 chunks) + sus 2 guías docentes (129 + 124).
-  NO contra `Tomo_I_Lengua_y_Literatura8vo.pdf` (el macrotipo del Tomo I), que es
-  lo que medían todas las corridas anteriores.
-  Umbral `RERANK_MIN_SCORE=0.18`, prompt de producción (`TEACHING_SYSTEM` +
-  `streamTeaching`), `Qwen/Qwen3.6-35B-A3B` con thinking off (`reason=0` en las
-  148 llamadas), 928.135 tokens, 0 reintentos.
-  Latencia p50 10,8s · p90 35,1s · max 954s. 3 preguntas EXCLUIDAS por timeout del
-  reranker (q056, q095, q122) → el cómputo real es sobre 98, no 101.
+  Alcances servidos: 75 `curso` · 7 `otro_curso` · 6 `otra_materia` · 10 `ninguno`.
+  Modos: 88 `libro` · 10 `general` · 2 `apoyado`.
 
-  **Salvedades que hay que leer junto al número:**
-  · El 38,4% de alucinación lo produce un juez que corre bajo `TUTOR_SYSTEM`, el
-    prompt DEPRECADO. El verificador que ve el alumno (`verify.ts`) da 0,0%. Esa
-    brecha de 38 puntos mide el juez, no al tutor.
-  · `false_abstention` 1,3% = UNA pregunta (q016, adversarial por desfase de
-    vocabulario, topScore 0.0279).
-  · `true_abstention` 95,7% = 22/23. La que pasa es q123, un near-miss deliberado
-    (el libro cubre el género policial pero nunca menciona a Sherlock Holmes):
-    falla el GATE, no el etiquetado. Se deja como está a propósito.
-  · Comparado con la corrida obsoleta de abajo, `false_abstention` cae de 31,1% a
-    1,3% — pero eso NO es una mejora del sistema: es que antes se medía contra el
-    libro equivocado.
+  **Cómo leer estos números, que es más importante que los números:**
+
+  · **El 15,5% es un TECHO, no una tasa.** Se auditaron 14 afirmaciones marcadas sin
+    respaldo con 8 jueces independientes y un escéptico por cada acusación de invento:
+    5 estaban en el material (el NLI se equivocó), 3 eran inferencias razonables, 3 las
+    rescató el escéptico y **solo 3 eran inventos reales**. O sea ~79% es ruido del
+    instrumento y la alucinación real ronda **2,6%**. Un mecanismo concreto del ruido:
+    cuando el extractor declara un `chunkIndex`, el verificador mira SOLO ese chunk — 9
+    de las 14 se juzgaron contra un único fragmento.
+  · Y de los 3 reales, **uno no era alucinación sino fallo de retrieval**: el pasaje
+    estaba TEXTUAL en el corpus, en el mismo libro y lección, y no se recuperó para esa
+    pregunta. Apunta al recall, no al prompt.
+  · **`correct_mode` 62,5% son 9 fallos y UN solo bug**, no nueve problemas: las nueve
+    esperaban `general/ninguno` y las nueve respondieron con material que no contesta.
+    Ver la entrada del discriminador más abajo.
+  · `false_book_claim` 4,2% = una pregunta (q123, el near-miss de Sherlock).
+  · ⛔ **`recall@5` NO es comparable con corridas anteriores al 2026-08-03**: cambió de
+    definición. Antes se calculaba sobre las citas DESPUÉS del gate, así que relajar el
+    gate lo subía solo, sin que el ranking hubiera mejorado en nada.
+
+- 🔴 **EL INSTRUMENTO TENÍA TRES BUGS Y LOS TRES MEDÍAN UN MOTOR QUE NO EXISTÍA.**
+  Vale la pena leerlo entero porque es un patrón, no tres accidentes.
+  1. `recall@5` se calculaba sobre `citable` (post-gate) en vez de `retrieved`. Aflojar
+     el gate mejoraba la métrica sola.
+  2. `EVAL_HALLUCINATION=0` no apagaba al juez: apagaba **la generación entera**. La
+     corrida del 2026-08-03 guardó `answer: ""` en las 101 preguntas y su
+     `hallucination_rate: 0,0% ✅` significaba SIN MEDIR — el peor modo de fallar de una
+     métrica de seguridad, porque se lee como un aprobado.
+  3. El eval nunca pasaba `familyIds`, así que la etapa `otro_curso` **no corría jamás**
+     y todo saltaba directo al listón de 0,50. El síntoma estaba a la vista (0 respuestas
+     con alcance `otro_curso` en 101) y se leyó como "esta etapa no hace falta acá".
+     Ese bug ESCONDÍA el bug de producción de la cascada (§1).
+  Hoy el arranque del eval imprime curso y tamaño de familia y avisa si la etapa no va a
+  correr. **Antes de creerle a una métrica, verificá que mida el motor que sirve al
+  alumno.** Sigue pendiente lo mismo con `studentGrade`: el usuario del eval no tiene fila
+  en `student_profiles`, así que la penalización por grado y el nivel de lectura del
+  prompt **todavía no se ejercen**.
+
+- 🔴 **`golden/a3-set.jsonl` ESTÁ MUERTO.** Los 60 claims etiquetados a mano conservan
+  texto, etiqueta y fundamento, pero sus `chunk_id` no sobrevivieron a la reingesta:
+  `a3-validate` reporta "60 triples con chunk_id inexistente" y evalúa **0**. Sin eso no
+  hay forma barata de saber cuánto de cada corrida es ruido del NLI, y el objetivo ≤2% no
+  se puede interpretar. Re-anclar por contenido, como hace `reanchor-golden.ts` con las
+  preguntas. **Es lo que desbloquea creerle a los números.**
+
+- 📐 **Contra qué se mide** (vale para el baseline vigente y para cualquier corrida nueva):
+  materia `Lengua Y Literatura 8º` = el libro oficial del corpus (`texto del estudiante`,
+  266 chunks) + sus 2 guías docentes (129 + 124). NO contra
+  `Tomo_I_Lengua_y_Literatura8vo.pdf` (el macrotipo del Tomo I), que es lo que medían las
+  corridas anteriores al 2026-07-31. Umbral `RERANK_MIN_SCORE=0.18`, prompt de producción
+  (`TEACHING_SYSTEM` + `streamTeaching`), `Qwen/Qwen3.6-35B-A3B` con thinking off.
+  `EVAL_USER_ID` / `EVAL_SUBJECT_ID` en el `.env` de la raíz.
+
+  Baselines archivados en `packages/eval/baselines/`, uno por fecha. Los del 2026-08-04
+  en adelante incluyen la respuesta generada de cada pregunta (`answer`), que es lo que
+  permite RE-JUZGAR sin volver a pagar la generación — `claims-audit` vive de eso.
+
+- 🟡 **`true_abstention` se retiró como objetivo.** El tutor ya no se abstiene por falta de
+  material, así que por diseño va a ~0 y dejó de significar algo. Se sigue calculando para
+  poder releer corridas viejas. La reemplazan `false_book_claim` y `correct_mode`.
 
 - 🔴 **EL BASELINE ANTERIOR (133 preguntas) QUEDÓ OBSOLETO. NO LO COMPARES.**
   Los números `recall@5 66,3% · precision@gold 58,7% · hallucination_rate 46,2%
@@ -509,6 +638,46 @@ hallazgos que produjeron quedan como registro en `docs/exp2-4-hallazgos.md`.
   El barrido 0.18 → 0.12 → 0.09 sigue valiendo como DATO (dice cuánto ruido entra
   por cada abstención recuperada) pero **no es la solución**: el problema está en
   cómo se calcula el score, no en dónde se pone el corte.
+
+- 🔴 **LO QUE MÁS LE PEGA AL ALUMNO HOY: el score no distingue "lo cubre" de "habla del
+  tema".** Es el mismo fenómeno de arriba, ahora medido sobre las 13 preguntas que la
+  cascada respondió con material de fuera del libro del curso, con veredicto humano de si
+  el material GENUINAMENTE contesta:
+
+  ```
+  cubiertas de verdad: 0.99  0.99  0.81  0.80  0.69  0.63
+  ruido on-topic:      0.89  0.85  0.83  0.75  0.57  0.51
+  ```
+
+  Se solapan por completo: **ningún umbral las separa**. La causa es de diseño — el
+  cross-encoder mide RELEVANCIA, no si el fragmento CONTESTA. Una ficha catalográfica que
+  nombra "Cien años de soledad" es máximamente relevante a una pregunta sobre esa novela y
+  no responde nada. Explica el **100%** de la brecha de `correct_mode`.
+
+  **Candidatos medidos** (`pnpm --filter @tutor-ia/eval answerability`, 91 preguntas con
+  material volcadas por `scope-audit --todas`):
+
+  | señal | frena ruido | pierde material bueno |
+  |---|---|---|
+  | NLI con la pregunta como AFIRMACIÓN @0,91 | 7/8 | **0/6** |
+  | juez de answerability (LLM) | 7/8 | 1/6 |
+  | `rerankScore` (lo de hoy) | — | no separa |
+
+  ⚠️ **Dos trampas de medición que costaron horas y conviene no repetir:**
+  · Medir sobre las 91 daba "el NLI destroza el 52% del material bueno" — cierto e
+    IRRELEVANTE: 77 de esas 91 son del libro del propio curso y **nunca pasarían por este
+    filtro**. Un discriminador de la cascada gobierna `otro_curso` y `otra_materia`, nada
+    más. Medir sobre la población equivocada enterró la señal.
+  · La **accuracy no significa nada acá**: con 82 positivas y 9 negativas, decir que sí
+    siempre da 90%. Por eso el reporte lleva al lado la tabla de costo en las dos
+    direcciones. Sin ella el `rerankScore` "gana" con 92%.
+  · Y el error propio: el NLI dio **100% sobre 13 puntos** y se derrumbó al ampliar. Era
+    sobreajuste — se eligió el umbral sobre los mismos puntos con los que se medía.
+
+  **Estado: NO cableado.** Son 14 puntos de evidencia, el mismo tamaño de muestra que ya
+  engañó una vez. El paso siguiente es meterlo detrás de un flag (solo etapas cross-scope)
+  y dejar que la corrida de 101 lo juzgue: si daña las `answerable` se ve en
+  `false_abstention` y en `recall`.
 - 🟡 **El nombre visible de la materia está ACOPLADO al título del documento.**
   `subjectNameFor()` (corpus-manifest.ts) alimenta a la vez `subjects.name` —lo que
   ve el alumno— y el prefijo de `titleFor()`, que es la clave con la que el
@@ -545,8 +714,26 @@ hallazgos que produjeron quedan como registro en `docs/exp2-4-hallazgos.md`.
 - 🟢 **Producto**: auth stub mono-usuario; sin backup de DB; inyección de prompt vía PDF
   subido no considerada; nombres de materia con "Y" mayúscula (cosmético).
 
-**Próximo con mejor retorno:** atacar el scoring del retrieval (recall@5 82,6% y las dos
-poblaciones solapadas), o multiusuario real si se apunta a un colegio. El eje "correcto"
-NO conviene (medido en su momento con `exp5`). Historia de fases previas en `docs/` —
-ojo que varias de esas fases se midieron con el motor local, que ya no está en el
-proyecto.
+**Próximo con mejor retorno, en orden:**
+
+1. **El discriminador de answerability** (entrada 🔴 de arriba). Es lo único que le cambia
+   la experiencia al chico: hoy, preguntando algo fuera de su libro, tiene ~1 de 3 chances
+   de recibir ruido con cara de respuesta. Hay candidato medido y falta cablearlo detrás de
+   un flag y correr las 101.
+2. **Re-anclar `a3-set.jsonl`**. Es lo que permite creerle a la alucinación después.
+3. **Calibrar la deriva** con `drift-sweep` — el sello `apoyado` dispara 2 de 101 y nadie
+   sabe si son las correctas. Los datos ya están guardados.
+4. **Corrección factual del modo `general`** — 10 respuestas salen del conocimiento del
+   modelo y NO están medidas. No se puede medir con groundedness (en modo `general` no hay
+   material, así que da 100% "sin respaldo" por construcción, y se reporta como hueco
+   declarado, no como cero). Necesita un juez de conocimiento del mundo sobre un set chico.
+   Ojo con el precedente de la trutruca: "es como una trompeta larga de madera" es verdad
+   en el mundo y falsa respecto del libro — en modo `general` el criterio correcto es el
+   primero.
+5. `rank-sweep` nunca corrió y las capturas siguen siendo de una sola materia. La
+   penalización por grado (0,02/0,05), el umbral 0,50 y la regla de "seguir si quedó flojo"
+   están puestas **a criterio**, no barridas.
+
+Multiusuario real si se apunta a un colegio. El eje "correcto" NO conviene (medido en su
+momento con `exp5`). Historia de fases previas en `docs/` — ojo que varias de esas fases se
+midieron con el motor local, que ya no está en el proyecto.
