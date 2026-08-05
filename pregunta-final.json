@@ -1,0 +1,52 @@
+[
+  {
+    "id": "n1",
+    "pregunta": "¿Qué son las extinciones masivas?",
+    "texto": "Mirá, las extinciones masivas son esos momentos en la historia de la Tierra donde desaparecen muchísimas especies de golpe, no una por una, sino en grandes grupos. Imaginate que el planeta sufre un cambio tan drástico —como un enfriamiento rápido, falta de oxígeno en el mar o un impacto de meteorito— que el ambiente ya no da para que vivan los animales que había antes. Es como si de repente se apagara la luz para muchos seres vivos a la vez. ¿Te podés imaginar qué pasaría con los animales que no pudieran adaptarse a ese cambio tan brusco?"
+  },
+  {
+    "id": "n2",
+    "pregunta": "¿Qué fueron las ideas liberales del siglo XIX?",
+    "texto": "Las ideas liberales del siglo XIX nacieron de la burguesía que quería más participación política y menos poder absoluto del Estado. Básicamente, defendían que cada persona tiene derechos propios, como la libertad de pensamiento o de expresión, y que el gobierno debe estar limitado por una Constitución. Para evitar abusos, proponían separar los poderes del Estado (ejecutivo, legislativo y judicial) y que el pueblo eligiera a sus autoridades, aunque al principio el voto tenía muchas restricciones.\n\nSi tuvieras que elegir entre un rey que decide todo solo y un sistema donde las leyes las hace un parlamento elegido por la gente, ¿cuál crees que protege mejor la libertad individual?"
+  },
+  {
+    "id": "n3",
+    "pregunta": "¿Qué es una integral en cálculo?",
+    "texto": "esto no está en tu libro, pero te lo explico igual.\n\nImaginate que querés saber cuánto líquido cabe en una botella con forma rara, no recta. No podés usar una regla simple porque el ancho cambia. La integral es como cortar esa botella en rebanadas súper finas, calcular el volumen de cada una y sumarlas todas para tener el total exacto. Es la herramienta para sumar cantidades que están cambiando constantemente.\n\nSi tuvieras que calcular la distancia total que recorrió un auto que va acelerando sin parar, ¿creés que sumar distancias de segundos fijos te daría el resultado exacto o necesitarías esa \"suma infinita\" de la integral?"
+  },
+  {
+    "id": "n4",
+    "pregunta": "¿Qué es una integral en cálculo?",
+    "texto": "esto no está en tu libro, pero te lo explico igual.\n\nImaginate que querés saber cuánto líquido cabe en una botella con forma rara, no recta. No podés usar una regla simple porque el ancho cambia. La integral es como cortar esa botella en rebanadas súper finas, calcular el volumen de cada una y sumarlas todas para tener el total exacto. Es la herramienta para sumar cantidades que están cambiando constantemente.\n\nSi tuvieras que calcular la distancia total que recorrió un auto que va acelerando sin parar, ¿creés que sumar distancias de segundos fijos te daría el resultado exacto o necesitarías esa \"suma infinita\" de la integral?"
+  },
+  {
+    "id": "n5",
+    "pregunta": "¿De qué trata el cuento Casa tomada de Julio Cortázar?",
+    "texto": "Mirá, \"Casa tomada\" es la historia de dos hermanos que viven aislados en una casa enorme que heredaron, rodeados de objetos antiguos que valoran más que a nadie. Al principio todo parece tranquilo, pero empiezan a escuchar ruidos extraños en las partes prohibidas de la casa. En lugar de investigar o enfrentar lo que sea que esté ahí, ellos simplemente van cerrando puertas y, finalmente, abandonan su hogar sin saber qué los persigue.\n\nLa clave no está tanto en quiénes son los intrusos, sino en cómo reaccionan los hermanos: aceptan la invasión sin luchar, como si el miedo o el destino fueran más fuertes que ellos. Es una forma de ver cómo el ser humano a veces prefiere huir antes que enfrentar lo desconocido o lo que amenaza su seguridad.\n\nSi tuvieras que elegir, ¿creés que los hermanos se fueron por cobardía o porque sentían que ya no tenían nada que perder en esa casa?"
+  },
+  {
+    "id": "n6",
+    "pregunta": "¿Qué es el registro fósil?",
+    "texto": "El registro fósil es como una biblioteca natural donde la Tierra guarda la historia de la vida. No son solo los huesos completos que ves en las películas; incluye huellas, moldes dejados en la roca, insectos atrapados en ámbar o incluso polen antiguo. Estos restos nos ayudan a saber cómo era el clima y el paisaje en el pasado, y también nos muestran cómo se formaron cosas que usamos hoy, como el carbón o el petróleo, que vienen de plantas y animales que vivieron hace millones de años.\n\nSi encontraras un fósil de un pez en la cima de una montaña alta, ¿qué te haría pensar sobre ese lugar hace mucho tiempo?"
+  },
+  {
+    "id": "n7",
+    "pregunta": "Quiero estudiar: Variables y juicio en la ciencia (Identificar la variable dependiente y emitir juicios fundamentados.). Enseñámelo desde el principio, paso a paso y con ejemplos.",
+    "texto": "Imaginate que estás cocinando y querés saber si la sal hace que el agua hierva más rápido. La cantidad de sal que le echás es lo que vos manipulás, así que esa es la variable independiente. El tiempo que tarda en hervir es lo que medís para ver el resultado, por eso es la variable dependiente. Básicamente, la independiente es la causa y la dependiente es el efecto.\n\nAhora, cuando terminás de cocinar, mirás si el agua hirvió en menos tiempo y sacás una conclusión basada en lo que viste, no en lo que imaginaste. Eso es emitir un juicio fundamentado: usar las evidencias (tus mediciones) para tomar una decisión o sacar una conclusión lógica.\n\nSi ahora querés probar si el azúcar también acelera la ebullición, ¿cuál sería la variable independiente y cuál la dependiente en ese nuevo experimento?"
+  },
+  {
+    "id": "n8",
+    "pregunta": "no explicame de nuevo",
+    "texto": "Entendido. Vamos a cambiar el enfoque. Olvidá por un momento las definiciones largas. Imaginá que los átomos son como bloques de LEGO de colores distintos. Dalton decía que cada color (elemento) es siempre igual y que para armar algo nuevo (un compuesto), tenés que juntar cantidades fijas, como siempre usar 2 rojos y 1 azul. Si hoy usás 2 rojos y mañana usás 3, para Dalton eso no podía pasar en una reacción química simple.\n\nSi vos tenés un montón de bloques rojos y querés armar la mayor cantidad de estructuras posibles usando siempre 2 rojos por estructura, ¿qué le pasa a los bloques rojos que sobran cuando no alcanza para formar otro par completo?"
+  },
+  {
+    "id": "n9",
+    "pregunta": "¿Qué es la fotosíntesis y qué necesitan las plantas para realizarla?",
+    "texto": "Imaginate que las plantas son como pequeñas fábricas que no compran comida en el supermercado, sino que la fabrican solitas. A ese proceso lo llamamos fotosíntesis. Para que funcione esta \"fábrica\", necesitan tres ingredientes básicos: agua (que chupan de la tierra con las raíces), dióxido de carbono (un gas que toman del aire por los poros de las hojas) y, sobre todo, la luz del sol, que es la energía que activa todo el proceso. Con estos tres elementos, la planta produce su propio alimento, que es un azúcar llamado glucosa, y como \"sobrante\" o desecho, libera oxígeno al aire, el mismo que nosotros necesitamos para respirar.\n\nSi tuvieras una planta en casa y la dejaras en un closet oscuro durante una semana, ¿qué creés que le pasaría a su capacidad de fabricar ese alimento?"
+  },
+  {
+    "id": "n10",
+    "pregunta": "tamaño del pico",
+    "texto": "Mirá, cuando estudiamos cómo cambian las aves, como esos pinzones, usamos variables para entender qué pasa. La variable independiente es la que \"causa\" el cambio, en este caso, es el momento: si fue antes o después de la sequía. La variable dependiente es lo que medimos y que cambia como respuesta, que es el tamaño del pico. Es como si la sequía fuera la causa y el pico más grande o más chico fuera el efecto.\n\nSi ahora quisiéramos ver cómo afecta la cantidad de lluvia al crecimiento de una planta, ¿cuál sería la variable dependiente, es decir, qué tendríamos que medir para ver el resultado?"
+  }
+]
