@@ -31,7 +31,8 @@
     "build-sections": "tsx --env-file-if-exists=../../.env src/build-sections.ts",
     "plan-audit": "tsx --env-file-if-exists=../../.env src/plan-audit.ts",
     "claims-audit": "tsx --env-file-if-exists=../../.env src/claims-audit.ts",
-    "scope-audit": "tsx --env-file-if-exists=../../.env src/golden-scope-audit.ts"
+    "scope-audit": "tsx --env-file-if-exists=../../.env src/golden-scope-audit.ts",
+    "answerability": "tsx --env-file-if-exists=../../.env src/answerability-sweep.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",

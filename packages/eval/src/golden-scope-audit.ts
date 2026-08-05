@@ -39,8 +39,11 @@ function abs(p: string): string {
 }
 
 async function main(): Promise<void> {
-  const goldenPath = process.argv[2]
-    ? abs(process.argv[2])
+  // El primer argumento que NO sea un flag. Sin esto `--todas` se tomaba como
+  // path del golden y el script moría buscando un archivo llamado "--todas".
+  const posicional = process.argv.slice(2).find((a) => !a.startsWith("-"));
+  const goldenPath = posicional
+    ? abs(posicional)
     : resolve(HERE, "../golden/questions.jsonl");
   const raw = await readFile(goldenPath, "utf8");
   const todas: GQ[] = raw
@@ -48,18 +51,31 @@ async function main(): Promise<void> {
     .map((l) => l.trim())
     .filter(Boolean)
     .map((l) => JSON.parse(l));
-  const preguntas = todas.filter((q) => q.type === "must_abstain");
+  // Por defecto solo las `must_abstain`, que es para lo que se escribió. Con
+  // `--todas` vuelca el set entero: hace falta para validar un discriminador de
+  // answerability, porque las `answerable` son los ejemplos POSITIVOS —si un
+  // umbral las tumba, el remedio es peor que la enfermedad.
+  const todasLasCategorias = process.argv.includes("--todas");
+  const preguntas = todasLasCategorias
+    ? todas
+    : todas.filter((q) => q.type === "must_abstain");
 
   // El mismo usuario/materia que usa el eval, para que el alcance del retrieval
   // sea el mismo: desde otra materia el corpus visible cambia.
   const sql = getSql();
-  const [u] = await sql<{ id: string }[]>`
-    select id from users order by created_at asc limit 1`;
-  const [s] = await sql<{ id: string }[]>`
-    select s.id from subjects s
-    where s.disabled_at is null order by s.created_at asc limit 1`;
-  const userId = u!.id;
-  const subjectId = s?.id ?? null;
+  const userId = process.env.EVAL_USER_ID!;
+  const subjectId = process.env.EVAL_SUBJECT_ID ?? null;
+  // La familia, con la MISMA consulta que /api/chat: sin esto la etapa
+  // `otro_curso` no corre y se vuelca material de un motor que no existe.
+  const fam = subjectId
+    ? await sql<{ id: string }[]>`
+        select s2.id from subjects s1
+        join subjects s2 on s2.family = s1.family
+        where s1.id = ${subjectId}::uuid and s1.family is not null
+          and s2.disabled_at is null
+          and (s2.user_id is null or s2.user_id = ${userId}::uuid)`
+    : [];
+  const familyIds = fam.length ? fam.map((r) => r.id) : null;
 
   console.log(
     `🔭 Auditando el alcance de ${preguntas.length} preguntas must_abstain.\n` +
@@ -74,10 +90,13 @@ async function main(): Promise<void> {
       question: q.q,
       history: [],
       struggling: isStruggling(q.q),
+      familyIds,
+      studentGrade: null,
     });
     const citable = res.ctx?.citable ?? [];
     salida.push({
       id: q.id,
+      tipo: q.type,
       pregunta: q.q,
       notaDelGolden: q.note ?? null,
       expectModeActual: q.expect_mode ?? null,
