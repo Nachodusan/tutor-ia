@@ -19,7 +19,7 @@
  *
  *   pnpm --filter @tutor-ia/eval answerability
  */
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chatJSON } from "@tutor-ia/core";
@@ -75,6 +75,12 @@ function comoAfirmacion(pregunta: string): string {
 
 interface Fila {
   id: string;
+  /** Categoría del golden, para poder cortar el análisis por tipo. */
+  tipo: string;
+  /** Alcance que dio el motor. DECIDE DÓNDE APLICA UN FILTRO: uno que solo
+   *  gobierne las etapas cross-scope se mide sobre `otro_curso`/`otra_materia`,
+   *  no sobre las 77 del propio libro, que no pasarían por él. */
+  scope: string;
   cubre: boolean;
   rerank: number;
   nliCruda: number;
@@ -158,6 +164,8 @@ async function main(): Promise<void> {
 
     filas.push({
       id: c.id,
+      tipo: c.tipo ?? "",
+      scope: c.scopeQueDioElTutor ?? "curso",
       cubre,
       rerank: c.topScore,
       nliCruda: cruda.entailment,
@@ -231,6 +239,45 @@ async function main(): Promise<void> {
     "\n   ⚠️ Un umbral solo sirve si frena mucho ruido y pierde poco material.\n" +
       "      Si las dos columnas suben juntas, la señal no separa y no hay número que salve.\n",
   );
+
+  // ── DONDE EL FILTRO REALMENTE APLICARÍA ──────────────────────────────────
+  // Un discriminador para la cascada gobierna las etapas `otro_curso` y
+  // `otra_materia`, NO el libro del propio curso: ese material es el que el chico
+  // tiene sobre la mesa y no se filtra. Medirlo sobre las 91 mezcla 77 preguntas
+  // que nunca pasarían por él y diluye tanto el acierto como el daño.
+  const cross = filas.filter(
+    (f) => f.scope === "otro_curso" || f.scope === "otra_materia",
+  );
+  if (cross.length) {
+    const cpos = cross.filter((f) => f.cubre);
+    const cneg = cross.filter((f) => !f.cubre);
+    console.log(
+      `══ SOLO LAS ETAPAS CROSS-SCOPE (${cpos.length} positivas · ${cneg.length} negativas) ══`,
+    );
+    const conJ = cross.filter((f) => f.juez !== null);
+    if (conJ.length) {
+      const fn = conJ.filter((f) => f.cubre && !f.juez);
+      const fp = conJ.filter((f) => !f.cubre && f.juez);
+      console.log(
+        `   juez LLM: frena ${cneg.length - fp.length}/${cneg.length} del ruido · ` +
+          `pierde ${fn.length}/${cpos.length} del material bueno`,
+      );
+      if (fp.length) console.log(`     deja pasar: ${fp.map((f) => f.id).join(", ")}`);
+      if (fn.length) console.log(`     tira:       ${fn.map((f) => f.id).join(", ")}`);
+    }
+    for (const th of [0.5, 0.7, 0.85, 0.91]) {
+      const frena = cneg.filter((f) => f.nliDecl < th).length;
+      const tira = cpos.filter((f) => f.nliDecl < th).length;
+      console.log(
+        `   NLI ${th.toFixed(2)}: frena ${frena}/${cneg.length} del ruido · pierde ${tira}/${cpos.length} del material bueno`,
+      );
+    }
+  }
+
+  // Los números crudos, para no volver a parsear un log.
+  const outJson = resolve(HERE, "../../../answerability.json");
+  await writeFile(outJson, JSON.stringify(filas, null, 2), "utf8");
+  console.log(`\n💾 ${filas.length} filas → ${outJson}`);
 }
 
 main().catch((err) => {
