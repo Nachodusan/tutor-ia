@@ -165,7 +165,7 @@ export function isStruggling(question: string): boolean {
 }
 
 export function teachingAbstention(): string {
-  return "Mmm, eso puntual no lo encuentro en tu material y no quiero tirarte un dato inventado. ¿Lo reformulás, o querés que veamos otro tema? También podés armar un plan de estudio o hacer una simulación de prueba. 😊";
+  return "Mmm, eso puntual no lo encuentro en tu material y no quiero tirarte un dato inventado. ¿Lo reformulás, o querés que veamos otro tema? También podés armar un plan de estudio o hacer una simulación de prueba.";
 }
 
 // Mensajes SOCIALES (saludo, agradecimiento, despedida, afirmación). No son
@@ -204,8 +204,8 @@ export function socialReply(
   const q = question.trim();
   if (!q) return null;
   const tema = subjectName ? ` de ${subjectName}` : "";
-  if (GREETING_RE.test(q)) return `¡Hola! 😊 Soy tu tutor${tema}. ¿Qué tema querés que te explique?`;
-  if (BYE_RE.test(q)) return "¡Chau! Volvé cuando quieras seguir estudiando. 👋";
+  if (GREETING_RE.test(q)) return `¡Hola! Soy tu tutor${tema}. ¿Qué tema querés que te explique?`;
+  if (BYE_RE.test(q)) return "¡Chau! Volvé cuando quieras seguir estudiando.";
   if (GRACIAS_RE.test(q)) return `¡Buenísimo! ¿Seguimos con otro tema${tema}, o querés que profundice en algo?`;
   // Con conversación en curso, una afirmación es respuesta al chequeo del tutor:
   // que la vea el modelo y decida si avanza o refuerza.
@@ -261,7 +261,7 @@ export function needsTopicReply(question: string, hasContext: boolean, subjectNa
   const q = question.trim();
   if (q.length > 90 || !VAGUE_RE.test(q)) return null;
   const tema = subjectName ? ` de ${subjectName}` : "";
-  return `¡Dale! ¿Sobre qué tema${tema} querés que te ayude? Decime uno —o tocá un tema de tu plan— y te lo explico con un ejemplo. 😊`;
+  return `¡Dale! ¿Sobre qué tema${tema} querés que te ayude? Decime uno —o tocá un tema de tu plan— y te lo explico con un ejemplo.`;
 }
 
 /** Cita legible del primer fragmento citable (para la UI). */

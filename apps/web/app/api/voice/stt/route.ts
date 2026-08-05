@@ -14,6 +14,33 @@ const WHISPER_MODEL =
   process.env.WHISPER_MODEL ??
   "/Users/dusan/Documents/ia/packages/ingest-py/whisper-models/ggml-base.bin";
 
+/**
+ * Sobre AUDIO SIN VOZ, whisper no devuelve vacío: devuelve una ETIQUETA de
+ * sonido —`[Música]`, `[BLANK_AUDIO]`, `(risas)`— y encima con confianza alta
+ * (medido: 0,918 sobre 3s de ruido rosa puro). Si eso se manda al tutor, el
+ * tutor le contesta a un silencio.
+ *
+ * ⚠️ NO se filtra por confianza, aunque `-ojf` la exponga por token: no separa.
+ * Medido sobre la misma frase degradada — limpio 0,924 · ruido leve con un error
+ * plausible ("células sexuales" por "vegetales") 0,808 · ruido fuerte con la
+ * transcripción COMPLETAMENTE inventada 0,829. El caso peor puntúa más alto que
+ * uno bueno-con-un-error: un umbral ahí es una moneda al aire. La basura que
+ * igual pasa se ataja en el prompt del tutor (regla "si no entendés, no
+ * adivines"), no acá.
+ */
+const NO_VOZ_RE =
+  /^[\s]*(?:[[(][^\])]*[\])]|[*_~]+)[\s]*$/;
+
+function limpiarTranscripcion(stdout: string): string {
+  const t = stdout.replace(/\s+/g, " ").trim();
+  if (!t || NO_VOZ_RE.test(t)) return "";
+  // Quita las etiquetas que vengan PEGADAS a habla real ("[Música] hola").
+  const sinEtiquetas = t.replace(/[[(](?:música|musica|risas|aplausos|blank_audio|silence|inaudible|ruido)[^\])]*[\])]/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return /[\p{L}\p{N}]/u.test(sinEtiquetas) ? sinEtiquetas : "";
+}
+
 /** POST /api/voice/stt — body: audio (webm/wav/…) → { text }. */
 export async function POST(req: Request) {
   const buf = Buffer.from(await req.arrayBuffer());
@@ -34,7 +61,7 @@ export async function POST(req: Request) {
       ["-m", WHISPER_MODEL, "-l", "es", "-nt", "-np", wavPath],
       { timeout: 45000, maxBuffer: 8 * 1024 * 1024 },
     );
-    return Response.json({ text: stdout.replace(/\s+/g, " ").trim() });
+    return Response.json({ text: limpiarTranscripcion(stdout) });
   } catch (err) {
     return Response.json(
       { text: "", error: err instanceof Error ? err.message : String(err) },
