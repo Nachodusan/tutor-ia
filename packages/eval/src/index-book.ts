@@ -5,7 +5,8 @@
  *   pnpm --filter @tutor-ia/eval index-book <libro.pdf> [--subject "Nombre"]
  *
  * Requiere: Postgres con schema.sql + schema_student_model.sql + schema_hybrid.sql
- * aplicados, seed del usuario dev, y Ollama con bge-m3.
+ * aplicados, seed del usuario dev, y DEEPINFRA_API_KEY (los embeddings bge-m3 se
+ * piden a la API, así que indexar necesita red).
  */
 import { readFileSync } from "node:fs";
 import { isAbsolute, resolve, basename } from "node:path";

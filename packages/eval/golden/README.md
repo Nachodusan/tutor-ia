@@ -12,7 +12,8 @@ capítulo de Cálculo). Ingestalos por el pipeline real para que queden en Postg
 con embeddings:
 
 ```bash
-# desde la raíz del monorepo, con DATABASE_URL y Ollama configurados
+# desde la raíz del monorepo, con DATABASE_URL y DEEPINFRA_API_KEY configuradas
+# (los embeddings son remotos: sin API key y sin red la ingesta no arranca)
 pnpm --filter @tutor-ia/rag ingest ruta/al/calculo.pdf   # (o el script que uses)
 ```
 
@@ -109,6 +110,8 @@ EVAL_USER_ID=<uuid-del-usuario-con-los-PDFs> pnpm --filter @tutor-ia/eval eval
 EVAL_USER_ID=<uuid> pnpm --filter @tutor-ia/eval eval golden/questions.jsonl
 ```
 
-Requiere **Postgres con los PDFs ya ingestados** + **Ollama corriendo**. Nombrá tu
-set real `questions.jsonl` (git lo ignora si querés mantenerlo privado); el
-`.example` queda como plantilla versionada.
+Requiere **Postgres con los PDFs ya ingestados** + **`DEEPINFRA_API_KEY` y conexión
+a internet**: tanto la generación como los embeddings de las preguntas salen a la
+API remota, así que sin red el eval no corre ni siquiera el retrieval. Nombrá tu set
+real `questions.jsonl` (git lo ignora si querés mantenerlo privado); el `.example`
+queda como plantilla versionada.

@@ -1,18 +1,27 @@
-# Tutor IA — facilitador de aprendizaje (100% local)
+# Tutor IA — facilitador de aprendizaje
 
-Un tutor que **corre enteramente en tu máquina** (nada va a la nube) y ayuda al
-estudiante a **comprender** los temas de su material oficial. No resuelve
-ejercicios ni hace cálculos por él: **explica conceptos con ejemplos, cita la
-fuente, verifica que entienda y se adapta** si no comprende.
+Un tutor que ayuda al estudiante a **comprender** los temas de su material
+oficial. No resuelve ejercicios ni hace cálculos por él: **explica conceptos con
+ejemplos, cita la fuente, verifica que entienda y se adapta** si no comprende.
 
 - 🧠 **Facilitador conceptual** — explica el tema con analogías y ejemplos; **cita página/sección** o **se abstiene** si no está en el material.
 - 🔁 **Enseñanza adaptativa** — si el estudiante no entiende, **cambia de método** (otra explicación, otro ejemplo, otra actividad), no repite lo mismo.
 - 🛡️ **Anti-alucinación estricto** — solo afirma lo respaldado por el material; ante la duda, se abstiene. Ver [docs/anti-alucinaciones.md](docs/anti-alucinaciones.md).
 
+> ⚠️ **Esto ya NO es "100% local".** El proveedor local (Ollama) se eliminó del
+> proyecto: **la generación y los embeddings** van a una **API remota compatible
+> con OpenAI** (DeepInfra). Siguen en tu máquina el material, Postgres/pgvector y
+> el sidecar de reranker + NLI. **Consecuencia operativa: sin red no hay tutor y
+> tampoco hay búsqueda.** Antes un corte de internet tumbaba solo la generación y
+> el retrieval seguía andando con embeddings locales; hoy el alumno se queda sin
+> nada. Hace falta `DEEPINFRA_API_KEY`.
+
 > **Fuera de scope (medido):** resolver ejercicios / matemática. El de-risking
-> (`exp5`) mostró que un 7B local tiene topada esa capacidad (grading ~78%, math
-> ~75%) y el scaffolding no la rescata. El producto se enfoca en lo que hace bien:
-> **facilitar la comprensión conceptual**. SymPy queda solo como verificación opcional.
+> (`exp5`, 2026-07) mostró que un 7B local tenía topada esa capacidad (grading
+> ~78%, math ~75%) y el scaffolding no la rescata. El producto se enfoca en lo que
+> hace bien: **facilitar la comprensión conceptual**. SymPy queda solo como
+> verificación opcional. (Aquel motor local ya no está en el proyecto y el script
+> `exp5` se borró junto con él; la decisión de scope se mantiene.)
 
 ## Arquitectura: RAG de doble corpus tipado
 
@@ -35,36 +44,46 @@ Monorepo TypeScript (pnpm + Turborepo):
 ```
 apps/web/         → Next.js (UI + API: chat de estudio, subida de material)
 packages/
-  core/           → cliente Ollama, prompts del facilitador, orquestación de enseñanza
+  core/           → capa de proveedor de LLM (API remota), prompts del facilitador, orquestación de enseñanza
   rag/            → ingesta doble corpus, chunking tipado, retrieval híbrido + reranker + NLI
   db/             → esquema Postgres/pgvector
   eval/           → harness de medición (grounding, adaptatividad, calidad pedagógica)
   ingest-py/      → sidecars Python: extracción de currículum, reranker + NLI, SymPy
 ```
 
-**Modelos locales vía Ollama:** `qwen2.5:7b` (tareas), embeddings `bge-m3` (1024 dims).
-Reranker `bge-reranker-v2-m3` + NLI `mDeBERTa-v3-xnli` (verificación direccional),
-servidos por un sidecar Python en MPS. Datos + vectores en **Postgres nativo con
-pgvector** (sin Docker). **Ninguna API en la nube.**
+**Remoto (API compatible con OpenAI, un solo proveedor):** generación con el modelo
+por defecto del proveedor (`Qwen/Qwen3.6-35B-A3B` en DeepInfra) y embeddings
+`BAAI/bge-m3` (1024 dims). **Local:** reranker `bge-reranker-v2-m3` + NLI
+`mDeBERTa-v3-xnli` (verificación direccional), servidos por un sidecar Python en MPS
+(`rerank_server.py`, puerto 8790), y datos + vectores en **Postgres nativo con
+pgvector** (sin Docker).
 
-## Puesta en marcha (local)
+## Puesta en marcha
 
 Requisitos: Node ≥ 20, pnpm, [Postgres nativo](https://postgresapp.com) (o
-`brew install postgresql@17 pgvector`) y [Ollama](https://ollama.com). **Sin Docker.**
+`brew install postgresql@17 pgvector`) y una **`DEEPINFRA_API_KEY`** en el `.env`.
+**Sin Docker.**
 
 ```bash
 cp .env.example .env
-bash scripts/setup-local.sh   # Postgres nativo + esquema + modelos Ollama
+# Poné tu DEEPINFRA_API_KEY en .env: sin ella no hay generación NI embeddings,
+# o sea que tampoco hay búsqueda.
+bash scripts/setup-local.sh   # Postgres nativo + esquema + seed
 pnpm install
-# Sidecar de reranker + NLI (arrancar a mano; sirve /rerank y /nli):
+# Sidecar LOCAL de reranker + NLI (arrancar a mano; sirve /rerank y /nli en :8790):
 nohup ./packages/ingest-py/.venv/bin/python packages/ingest-py/rerank_server.py &
 pnpm dev
 ```
 
 `setup-local.sh` aplica `schema.sql`, `schema_student_model.sql`, `schema_hybrid.sql`,
-`schema_dual_corpus.sql` y `seed.sql`, y hace `ollama pull` de `qwen2.5:7b` y `bge-m3`.
+`schema_dual_corpus.sql` y `seed.sql`.
 
-> Mac Apple Silicon (16GB) corre bien el 7B. No tengas el 3B y el 7B cargados a la vez.
+> `LLM_PROVIDER` solo acepta `deepinfra` (o vacío). Si quedó un `LLM_PROVIDER=ollama`
+> de un `.env` viejo, el arranque falla con un mensaje que lo explica en vez de
+> intentar hablarle a un servicio que ya no existe.
+
+> **Modo offline: no hay.** Embeddings y generación son remotos; sin red, el alumno
+> no puede ni preguntar ni buscar en su material.
 
 ## Estado / Roadmap
 
@@ -84,6 +103,7 @@ pnpm dev
 - [ ] Wire del web route (`/api/chat`) al teaching path
 - [ ] Batch de ingesta (480 libros)
 
-**De-riskeado y descartado:** resolver ejercicios / matemática (`exp5`) — fuera de scope.
+**De-riskeado y descartado:** resolver ejercicios / matemática (`exp5`) — fuera de
+scope. El script se borró junto con el proveedor local que medía; la conclusión queda.
 
 Anti-alucinaciones: [docs/anti-alucinaciones.md](docs/anti-alucinaciones.md) · Estado detallado: `HANDOFF.md`

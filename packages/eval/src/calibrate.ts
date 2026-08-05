@@ -11,7 +11,8 @@
  *  - answerable/adversarial/multi_hop/false_premise → NO debe abstenerse
  *    (el material existe; en false_premise el modelo debe corregir, no abstenerse).
  *
- * Requiere: golden set + Postgres (libro indexado) + Ollama (bge-m3) + rerank_server.
+ * Requiere: golden set + Postgres (libro indexado) + DEEPINFRA_API_KEY (los
+ * embeddings bge-m3 se piden a la API) + rerank_server local en 8790.
  */
 import { readFile } from "node:fs/promises";
 import { dirname, isAbsolute, resolve } from "node:path";

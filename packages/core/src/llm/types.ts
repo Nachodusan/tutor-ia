@@ -1,6 +1,6 @@
 /**
  * Contrato del proveedor de LLM. Abstrae la ÚLTIMA llamada de generación para
- * poder alternar entre Ollama (local, default) y una API remota compatible con
+ * poder alternar entre APIs compatibles con
  * OpenAI (DeepInfra) con una sola variable de entorno.
  *
  * NO toca embeddings (bge-m3), reranker (bge-reranker-v2-m3) ni el sidecar NLI:
@@ -25,7 +25,7 @@ export interface GenOptions {
   temperature?: number;
   /** Tope de tokens de salida. Se omite → default canónico (ver params.ts). */
   maxTokens?: number;
-  /** Corta la llamada. Default por provider (Ollama conserva su comportamiento). */
+  /** Corta la llamada. Default por provider. */
   timeoutMs?: number;
   /** Cancelación externa (se combina con el timeout). */
   signal?: AbortSignal;
@@ -46,7 +46,8 @@ export interface LLMUsage {
   reasoningEstimated?: boolean;
 }
 
-export type LLMProviderName = "ollama" | "deepinfra";
+/** Único proveedor. Se conserva el alias por si vuelve a haber más de uno. */
+export type LLMProviderName = "deepinfra";
 
 export interface LLMProvider {
   readonly name: LLMProviderName;
@@ -57,7 +58,7 @@ export interface LLMProvider {
 
   /**
    * Salida estructurada validada contra un JSON Schema.
-   * Ollama → `format: schema`; DeepInfra → `response_format` json_schema strict.
+   * `response_format` json_schema strict.
    */
   generateStructured<T>(prompt: LLMPrompt, schema: unknown, opts?: GenOptions): Promise<T>;
 

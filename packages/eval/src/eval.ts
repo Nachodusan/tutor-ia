@@ -9,7 +9,7 @@
  *   - Postgres (DATABASE_URL) con los PDFs del golden YA INGESTADOS. El retrieval
  *     real consulta la base; sin ella, falla con mensaje claro (no se puede
  *     evaluar contra un corpus que no existe).
- *   - Ollama corriendo (OLLAMA_BASE_URL) con el modelo de tareas disponible.
+ *   - DEEPINFRA_API_KEY + red: la generación Y los embeddings salen a la API.
  *   - EVAL_USER_ID: uuid del usuario dueño de los PDFs ingestados (el retrieval
  *     filtra por usuario). EVAL_SUBJECT_ID es opcional.
  *
@@ -53,7 +53,6 @@ import {
 } from "@tutor-ia/rag";
 import { getSql } from "@tutor-ia/db";
 import { createHash } from "node:crypto";
-import { listModels } from "./ollama";
 import {
   aggregate,
   type EvalMetrics,
@@ -555,7 +554,7 @@ function passes(t: Target, value: number): boolean {
 
 async function main() {
   console.log("\n🧪 Eval harness — camino de PRODUCCIÓN (TEACHING_SYSTEM)");
-  console.log("   Requiere Postgres (golden ingestado) + Ollama (embeddings) + sidecar rerank.");
+  console.log("   Requiere Postgres (golden ingestado) + DEEPINFRA_API_KEY (embeddings y generación) + sidecar rerank.");
   console.log(`   motor:   ${describeActiveLLM()}`);
   console.log(`   umbral:  RERANK_MIN_SCORE=${config.rerankMinScore}`);
   console.log(
@@ -625,12 +624,13 @@ async function main() {
       ((familyIds?.length ?? 0) > 1 ? "" : "  ⚠️ la etapa `otro_curso` no va a correr"),
   );
 
-  // Chequeo de vida de Ollama antes de gastar tiempo.
-  const models = await listModels();
-  if (models.length === 0) {
+  // Chequeo de vida del proveedor antes de gastar tiempo. Antes esto listaba
+  // los modelos de Ollama; ahora basta con que exista la credencial, porque un
+  // fallo de red o de cuota lo reporta después cada pregunta con su causa.
+  if (!process.env.DEEPINFRA_API_KEY?.trim()) {
     console.error(
-      `❌ Ollama no responde en ${process.env.OLLAMA_BASE_URL ?? "http://localhost:11434"}.\n` +
-        "   Arrancá Ollama (ollama serve) y descargá el modelo de tareas antes de evaluar.",
+      "❌ Falta DEEPINFRA_API_KEY. Sin ella no hay generación NI embeddings,\n" +
+        "   así que la corrida mediría cero. Poné la clave en .env y reintentá.",
     );
     process.exit(1);
   }
@@ -692,7 +692,7 @@ async function main() {
         );
         process.exit(1);
       }
-      // Timeout transitorio del retrieval/gate (rerank u Ollama bajo carga): NO
+      // Timeout transitorio del retrieval/gate (rerank o embeddings bajo carga): NO
       // debe tumbar toda la corrida (mismo criterio que el bloque de alucinación).
       // Se saltea la pregunta y se excluye del cómputo; se avisa.
       const msg = err instanceof Error ? err.message : String(err);

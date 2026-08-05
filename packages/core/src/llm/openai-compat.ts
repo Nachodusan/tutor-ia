@@ -235,7 +235,7 @@ export class OpenAICompatProvider implements LLMProvider {
       throw new LLMError(
         `El JSON Schema no cumple los requisitos del modo estricto:\n` +
           `${formatViolations(violations)}\n` +
-          `Corregí el schema o usá Ollama (LLM_PROVIDER=ollama), que es permisivo.`,
+          `Corregí el schema: es el único camino. El proveedor permisivo que había (Ollama) se eliminó del proyecto.`,
         { provider: PROVIDER, kind: "bad_schema", retryable: false },
       );
     }

@@ -8,13 +8,15 @@
 
 ## 1. Qué es
 
-Tutor de estudio **local-first y privado**. **Facilitador del aprendizaje conceptual**:
-explica los temas del material oficial con sus propias palabras y ejemplos, **cita la
-fuente o lo dice**, verifica comprensión y **se adapta** si el alumno no entiende.
+Tutor de estudio para el material oficial del alumno. **Facilitador del aprendizaje
+conceptual**: explica los temas con sus propias palabras y ejemplos, **cita la fuente o
+lo dice**, verifica comprensión y **se adapta** si el alumno no entiende.
 
-**NO resuelve ejercicios ni matemática/cálculo** — FUERA DE SCOPE. Medido (`exp5`): el 7B
-lo tiene topado (grading ~78%, math ~75%) y el scaffolding no lo rescata. SymPy quedó solo
-como verificación opcional (`grading.ts`/`sympy_check.py` parkeados).
+**NO resuelve ejercicios ni matemática/cálculo** — FUERA DE SCOPE. Medido en su momento
+(`exp5`, con el 7B local): lo tenía topado (grading ~78%, math ~75%) y el scaffolding no
+lo rescata. SymPy quedó solo como verificación opcional (`grading.ts`/`sympy_check.py`
+parkeados). El script `exp5` se borró junto con el proveedor local; la decisión de scope
+sigue en pie.
 
 **Arquitectura clave — RAG de DOBLE CORPUS TIPADO:** el material viene en pares por
 materia/grado: **Texto del Estudiante** (`corpus_role='content'`, el "qué" citable) +
@@ -22,10 +24,29 @@ materia/grado: **Texto del Estudiante** (`corpus_role='content'`, el "qué" cita
 evaluacion, errores_frecuentes, proposito, habilidad, solucionario…, anclados al OA).
 El link es por **OA + relevancia semántica**, NO por (unit,lesson) — TE y GDD numeran distinto.
 
-> ⚠️ **Cambio de premisa (2026-07-30):** ya NO es necesariamente "100% local". La generación
-> puede apuntar a una **API remota compatible con OpenAI** con una env var. Embeddings,
-> reranker y NLI **siguen locales siempre**. Con `LLM_PROVIDER=ollama` (default) nada sale
-> de la máquina.
+> ⚠️ **Cambio de premisa, en dos pasos.**
+> **(2026-07-30)** dejó de ser necesariamente "100% local": la generación podía apuntar a
+> una API remota con una env var, y con `LLM_PROVIDER=ollama` (default de entonces) nada
+> salía de la máquina.
+> **Ahora el paso está completo: NO hay motor local.** Se eliminó el proveedor Ollama
+> (`packages/core/src/llm/ollama.ts` borrado); el único es `OpenAICompatProvider` y
+> `LLM_PROVIDER` solo acepta `deepinfra` — si dice `ollama` tira un error explicando que
+> se eliminó. **Los embeddings también son remotos** (`packages/rag/src/embeddings.ts` →
+> `POST {base}/embeddings`, `BAAI/bge-m3`). Siguen locales: el sidecar de reranker + NLI
+> (:8790) y Postgres/pgvector.
+>
+> 🔌 **Consecuencia que hay que tener presente al operar:** antes, sin internet, se caía la
+> generación pero **la BÚSQUEDA seguía andando** (embeddings y reranker locales). Ahora un
+> corte de red deja al alumno **sin nada**, porque los embeddings salen a la API.
+> Y la otra cara: lo que el alumno pregunta y los fragmentos de su libro **viajan al
+> proveedor**. La promesa de privacidad que queda en pie es la interna (el docente no ve
+> las conversaciones, §4), no la de "nada sale de la máquina".
+
+> **No hizo falta re-embeber los 28.986 chunks.** Se midió el mismo texto por los dos
+> caminos (Ollama local vs API): coseno **0,999993**, norma 1,0000 en ambos. Es el mismo
+> `bge-m3` servido en otro lado, así que los vectores viejos siguen siendo válidos. Ese
+> resultado vale para bge-m3 y para nadie más: cambiar `EMBEDDING_MODEL` sí obliga a
+> re-embeber todo (la dimensión coincidente NO prueba nada).
 
 ---
 
@@ -39,8 +60,10 @@ export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"   # Postgres es keg-only
 brew services start postgresql@17
 # psql "postgresql://localhost:5432/tutor" -tAc "select count(*) from chunks"  # ~30k
 
-# 2) Ollama. Tags: qwen2.5:7b (NO -instruct), bge-m3.  ollama list
-# 3) Sidecar reranker + NLI (ARRANCAR A MANO; sirve /rerank y /nli en :8790, MPS):
+# 2) DEEPINFRA_API_KEY en el .env de la raíz + conexión a internet.
+#    Es requisito DURO: sin eso no hay generación NI embeddings, y sin embeddings
+#    no hay retrieval. Ya no queda nada que funcione offline salvo la voz.
+# 3) Sidecar reranker + NLI (LOCAL, ARRANCAR A MANO; sirve /rerank y /nli en :8790, MPS):
 nohup ./packages/ingest-py/.venv/bin/python packages/ingest-py/rerank_server.py \
   > packages/ingest-py/rerank_server.log 2>&1 &
 curl -s http://127.0.0.1:8790/health   # {"status":"ok"...}
@@ -48,6 +71,9 @@ curl -s http://127.0.0.1:8790/health   # {"status":"ok"...}
 # 4) Web. Desde Claude Code: preview_start {name:"web"}.
 #    O: pnpm --filter @tutor-ia/web dev
 ```
+
+Ya **no hay que instalar ni arrancar Ollama**: se eliminó del proyecto. El sidecar de
+:8790 NO es Ollama y NO es un LLM — es el reranker/NLI en Python, y sigue siendo local.
 
 **Voz (100% local):** `whisper.cpp` (brew `whisper-cpp` → `whisper-cli`) + modelo
 `packages/ingest-py/whisper-models/ggml-base.bin` (gitignored, 141MB) para STT;
@@ -75,16 +101,21 @@ Hay **UN solo `.env` en la raíz** (gitignored). Cómo llega a cada lado:
 
 1. **`.claude/launch.json` ESTÁ TRACKEADO en git** → jamás poner secretos ahí.
 2. **`process.loadEnvFile` NO pisa variables ya seteadas.** Por eso se **sacó `LLM_MODEL`
-   de `launch.json`**: si quedaba ahí, con `LLM_PROVIDER=deepinfra` el provider remoto
-   recibía el tag de Ollama (`qwen2.5:7b`) y devolvía 404.
+   de `launch.json`**: cuando convivían los dos motores, si quedaba ahí el tag de Ollama
+   (`qwen2.5:7b`), el provider remoto lo recibía y devolvía 404. El motor local ya no
+   existe, pero la trampa del `.env` sí: `LLM_MODEL` seteado en cualquier lado gana, y
+   dejarlo **vacío** es lo que hace que el provider use su propio default.
 3. `.env.example` decía `RERANK_MIN_SCORE=0.3` mientras el código usa **0.18** — copiarlo
    revertía el gate en silencio. Ya corregido.
 
 `.gitignore` cubre `.env`, `.env.*` y exceptúa `.env.example`.
 
 Datos no obvios: el reranker usa `transformers` directo (NO FlagEmbedding); Python del venv
-es 3.14 (por eso la voz usa binarios, NO faster-whisper). `keep_alive:0` en Ollama por RAM
-→ **es la causa de la latencia de ~2 min por turno local**.
+es 3.14 (por eso la voz usa binarios, NO faster-whisper).
+
+> Histórico: la latencia de ~2 min por turno que se sufría antes venía de `keep_alive:0` en
+> Ollama (recargaba el 7B en cada llamada; era eso o quedarse sin RAM). Se fue con el motor
+> local; hoy el costo por turno es de red, no de recarga de modelo.
 
 ---
 
@@ -95,17 +126,29 @@ Toda la generación pasa por una interfaz `LLMProvider` con tres métodos
 → los **13 call sites (en 8 archivos) no se tocaron**.
 
 ```
-LLM_PROVIDER=ollama      # default, local
-LLM_PROVIDER=deepinfra   # API remota compatible con OpenAI (LLM_BASE_URL apunta a cualquiera)
+LLM_PROVIDER=deepinfra   # ÚNICO valor válido (vacío = lo mismo). API remota
+                         # compatible con OpenAI; LLM_BASE_URL apunta a cualquiera.
+LLM_PROVIDER=ollama      # ❌ error explícito: el proveedor local se eliminó
 ```
+
+Se borró `llm/ollama.ts`. El proyecto ya venía corriendo con `deepinfra`, así que la rama
+local era código muerto que igual había que mantener y explicar. `activeProviderName()`
+rechaza cualquier otro valor con un `LLMError` en vez de caer en un fallback mudo.
 
 - **`OpenAICompatProvider`** sirve a cualquier API estilo OpenAI: `LLM_BASE_URL` +
   `LLM_API_KEY` (fallback `DEEPINFRA_API_KEY`). **Sin failover automático** a propósito:
   si un proveedor tira 429 tras los reintentos, falla con `LLMError` tipado, para saber
   qué proveedor produjo cada número.
-- **Params canónicos idénticos** entre providers (`params.ts`): si se dejaran implícitos,
-  DeepInfra usaría `temperature 1.0` contra el `0.1` local y el golden set dejaría de ser
-  reproducible. `generateStructured` fuerza `temperature 0`.
+- **Params canónicos explícitos** (`params.ts`): si se dejaran implícitos, DeepInfra
+  usaría `temperature 1.0` en vez del `0.1` que fija el proyecto y el golden set dejaría
+  de ser reproducible. `generateStructured` fuerza `temperature 0`. (Nacieron para que los
+  dos motores midieran igual; siguen valiendo para comparar endpoints entre sí.)
+- **El normalizador de consultas** (`query-normalize.ts`) usaba un `qwen2.5:3b` local;
+  ahora usa el default del proveedor (`QUERY_NORMALIZER_MODEL` vacío). Es más grande de lo
+  que la tarea pide, pero solo se paga cuando la búsqueda con la formulación cruda del
+  alumno ya falló.
+- **Timeouts renombrados** en `config.ts`: `ollamaStreamTimeoutMs` → `llmStreamTimeoutMs`,
+  `ollamaJsonTimeoutMs` → `llmJsonTimeoutMs`. Se fue `ollamaBaseUrl`.
 - **Errores tipados** (`LLMError`): `timeout | rate_limit | server | client | auth |
   network | bad_response | bad_schema | budget_exceeded | reasoning_overflow`.
   Reintentos **solo en 429/5xx** (2, backoff exponencial); en streaming solo **antes del
@@ -225,8 +268,9 @@ generó. Cacheado por materia en `subject_plans`; el avance por alumno en
 - Cada lección trae **3 puntos clave** — qué tenés que poder explicar al terminar.
   Salen de una muestra que **recorre la lección entera** (4 fragmentos repartidos);
   con los primeros 700 chars de antes solo se podía titular.
-- Se genera **en tandas de 5 lecciones**: con 14 ítems × 5 campos un 7B acorta,
-  repite el título como punto y pierde el orden.
+- Se genera **en tandas de 5 lecciones**: se midió con el 7B local de entonces que con
+  14 ítems × 5 campos el modelo acorta, repite el título como punto y pierde el orden.
+  No se volvió a probar el lote grande contra el modelo remoto.
 - `limpiarPuntos` descarta los puntos vacíos ("comprender los conceptos principales"),
   los que repiten el título y los de menos de 3 palabras. Un plan lleno de puntos vagos
   se ve igual de completo que uno bueno — por eso es peligroso.
@@ -278,7 +322,7 @@ el guard `strict-schema.ts` lo señala con la violación exacta en vez de un err
 
 ```bash
 pnpm -r typecheck                                          # 5 paquetes
-pnpm --filter @tutor-ia/eval llm-smoke                     # compara providers lado a lado
+pnpm --filter @tutor-ia/eval llm-smoke                     # compara endpoints remotos lado a lado
 pnpm --filter @tutor-ia/eval llm-smoke -- --only=deepinfra
 pnpm --filter @tutor-ia/eval llm-smoke -- --base-urls=https://api.deepinfra.com/v1/openai,https://api.scaleway.ai/v1
 pnpm --filter @tutor-ia/eval batch-ingest [rootDir]        # ingesta (RESUMABLE); BATCH_DRY=1 = solo clasificar
@@ -324,12 +368,11 @@ teacher's_guide → pedagogy; cuaderno/láminas/activity → descarta.
 ## 6. Mapa de archivos
 
 ```
-packages/core/src/llm/               ← CAPA DE PROVEEDORES (nueva)
+packages/core/src/llm/               ← CAPA DE PROVEEDORES (un solo proveedor: remoto)
   types.ts            LLMProvider, LLMPrompt, LLMError, LLMUsage
-  index.ts            getLLM() (factory por LLM_PROVIDER), makeProvider()
-  ollama.ts           OllamaProvider (local, default; conserva sus timeouts)
-  openai-compat.ts    OpenAICompatProvider (DeepInfra/Scaleway/Novita/…)
-  params.ts           params canónicos idénticos entre providers + switches de reasoning
+  index.ts            getLLM() (valida LLM_PROVIDER), makeProvider()
+  openai-compat.ts    OpenAICompatProvider — EL ÚNICO (DeepInfra/Scaleway/Novita/…)
+  params.ts           params canónicos explícitos + switches de reasoning
   reasoning.ts        filtro de <think> (streaming + no streaming) y campos reasoning_*
   retry.ts            backoff, clasificación 429/5xx, timeouts
   budget.ts           contador de tokens + tope por corrida
@@ -343,7 +386,8 @@ packages/core/src/
   groundedness.ts     CLAIMS_SCHEMA (strict-compatible)
 packages/rag/src/
   retrieve-teaching.ts  contenido gated + pedagogía por tipo/OA + ESTUDIO DIRIGIDO por unit/lesson
-  nli.ts / rerank.ts    NLI direccional / gate del reranker
+  embeddings.ts         ⚠️ REMOTOS (POST {base}/embeddings, BAAI/bge-m3) — sin red no hay búsqueda
+  nli.ts / rerank.ts    NLI direccional / gate del reranker (sidecar LOCAL :8790)
 apps/web/app/
   ui.tsx              SISTEMA VISUAL COMPARTIDO (tokens, iconos, piezas). Las 3 pantallas
   page.tsx            UI del alumno: onboarding, panel, chat, plan, prueba, voz
@@ -363,17 +407,26 @@ packages/admin/src/
   users.ts            alta/baja/reset de cuentas anónimas (roles validados)
   seed-demo.ts        curso de juguete para desarrollo (solo cuentas "demo-")
 packages/eval/src/
-  llm-smoke.ts        comparación de proveedores (REASON/LEAK)
-  ollama.ts           ⚠️ CLIENTE PROPIO, cableado a Ollama (exp2/exp3/exp5 NO usan el provider)
+  llm-smoke.ts        comparación de endpoints remotos (REASON/LEAK)
 ```
+
+Borrados con el motor local: `llm/ollama.ts`, `packages/eval/src/ollama.ts` y los
+experimentos que medían SOLO ese motor — `exp2-benchmark`, `exp3-latency`, `exp4-ram`,
+`exp5-correcto` (y sus scripts `exp2`..`exp5` en `packages/eval/package.json`). Los
+hallazgos que produjeron quedan como registro en `docs/exp2-4-hallazgos.md`.
 
 ---
 
 ## 7. Deuda conocida / próximos pasos
 
-- 🔴 **Latencia local ~2 min por turno** — `keep_alive:0` recarga el 7B en cada llamada.
-  Es el peor problema de experiencia. Se resuelve con el provider remoto (medido: 1.4s vs
-  8.3s) o subiendo `keep_alive` si hay RAM.
+- 🟢 **RESUELTA — latencia local de ~2 min por turno.** Venía de `keep_alive:0`
+  recargando el 7B en cada llamada; era el peor problema de experiencia. Se fue al
+  eliminar el motor local (medido en su momento: 1,4s remoto vs 8,3s local).
+- 🔴 **Sin red no hay NADA — ni siquiera búsqueda.** Los embeddings pasaron a la API, así
+  que un corte de internet ya no degrada la experiencia: la corta. Antes el retrieval
+  seguía funcionando offline con embeddings y reranker locales. Si alguna vez importa el
+  modo offline (colegio con conexión mala), esto es lo primero a reponer: un embedder
+  local detrás de `EMBEDDING_BASE_URL`.
 - 🟢 **PRIMER BASELINE VÁLIDO — 2026-07-31, golden re-anclado (101 preguntas).**
   Es el primero que mide lo que el alumno recibe. Contra este SÍ se compara.
 
@@ -473,10 +526,11 @@ packages/eval/src/
   módulo pensado "por corrida" (scripts). En Next dev cada bundle de ruta tiene su
   instancia y el acumulado se reinicia al recompilar (observado: `acum` bajó de 5341 a
   1653). Sirve para el golden set; **no lo uses como freno de gasto del servidor**.
-- 🟡 **`packages/eval/src/ollama.ts` es un segundo cliente** cableado a Ollama: `exp2`,
-  `exp3` y `exp5` **no** cambian con `LLM_PROVIDER`. `eval.ts` (golden set) **sí** usa el
-  provider. Se dejó así a propósito: `exp3-latency` mide prefill con métricas nativas de
-  Ollama que la API remota no expone.
+- 🟢 **RESUELTA — el segundo cliente de eval.** `packages/eval/src/ollama.ts` era un
+  cliente propio cableado al motor local (`exp2`/`exp3`/`exp5` no respetaban
+  `LLM_PROVIDER`). Se borró junto con esos experimentos: medían métricas nativas de
+  Ollama (prefill, RAM) que la API remota no expone y que ya no hay cómo obtener. Todo
+  lo que queda mide por el provider.
 - 🟡 **Continuidad de tema**: `unit/lesson` solo viaja en el primer turno; un "no entendí"
   posterior vuelve al retrieval normal y puede abstenerse.
 - 🟡 **Saturación intermitente del proveedor**: `Qwen/Qwen3.6-35B-A3B` dio 429
@@ -487,11 +541,12 @@ packages/eval/src/
   calibrado con micrófono real** (el sandbox lo bloquea; STT/TTS sí validados por curl).
 - 🟢 **`EXAM_SCHEMA` no cumple strict** (2 violaciones) — intencional, exams parkeado.
 - 🟢 **Eval pedagógico (exp6)** mide bien lo determinístico; lo subjetivo es ruidoso
-  (juez = el propio 7B, n chico). No usarlo como veredicto.
+  (juez = el mismo modelo que responde, n chico). No usarlo como veredicto.
 - 🟢 **Producto**: auth stub mono-usuario; sin backup de DB; inyección de prompt vía PDF
   subido no considerada; nombres de materia con "Y" mayúscula (cosmético).
 
-**Próximo con mejor retorno:** medir el golden set contra el proveedor remoto (ya está
-todo el andamiaje: smoke, tope de gasto, params idénticos), o atacar la latencia local, o
-multiusuario real si se apunta a un colegio. El eje "correcto" NO conviene (medido en exp5).
-Historia de fases previas en `docs/`.
+**Próximo con mejor retorno:** atacar el scoring del retrieval (recall@5 82,6% y las dos
+poblaciones solapadas), o multiusuario real si se apunta a un colegio. El eje "correcto"
+NO conviene (medido en su momento con `exp5`). Historia de fases previas en `docs/` —
+ojo que varias de esas fases se midieron con el motor local, que ya no está en el
+proyecto.

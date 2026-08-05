@@ -7,8 +7,9 @@ import { fileURLToPath } from "node:url";
 //
 // Ojo: process.loadEnvFile NO pisa variables ya presentes en el entorno, así que
 // lo que venga de .claude/launch.json manda sobre el .env. Por eso LLM_MODEL se
-// sacó de launch.json: si quedara ahí, con LLM_PROVIDER=deepinfra el provider
-// remoto recibiría el tag de Ollama ("qwen2.5:7b") y respondería 404.
+// sacó de launch.json: un model ID clavado ahí gana sobre el .env para siempre y
+// nadie avisa; si no es exactamente el que sirve el proveedor, la API responde
+// 404. Vacío = el provider usa su default (Qwen/Qwen3.6-35B-A3B).
 const rootEnv = fileURLToPath(new URL("../../.env", import.meta.url));
 if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 

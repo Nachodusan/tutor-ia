@@ -6,9 +6,6 @@
   "scripts": {
     "exp1": "tsx --env-file-if-exists=../../.env src/exp1-inspect.ts",
     "exp1b": "tsx --env-file-if-exists=../../.env src/exp1b-compare.ts",
-    "exp2": "tsx --env-file-if-exists=../../.env src/exp2-benchmark.ts",
-    "exp3": "tsx --env-file-if-exists=../../.env src/exp3-latency.ts",
-    "exp4": "tsx --env-file-if-exists=../../.env src/exp4-ram.ts",
     "index-book": "tsx --env-file-if-exists=../../.env src/index-book.ts",
     "retrieve": "tsx --env-file-if-exists=../../.env src/retrieve-test.ts",
     "rerank-test": "tsx --env-file-if-exists=../../.env src/rerank-test.ts",
@@ -17,7 +14,6 @@
     "typecheck": "tsc --noEmit",
     "a3-validate": "tsx --env-file-if-exists=../../.env src/a3-validate.ts",
     "nli-validate": "tsx --env-file-if-exists=../../.env src/nli-validate.ts",
-    "exp5": "tsx --env-file-if-exists=../../.env src/exp5-correcto.ts",
     "pilot-ingest": "tsx --env-file-if-exists=../../.env src/pilot-ingest.ts",
     "pilot-session": "tsx --env-file-if-exists=../../.env src/pilot-session.ts",
     "exp6": "tsx --env-file-if-exists=../../.env src/exp6-ensenanza.ts",

@@ -1,7 +1,7 @@
 /**
  * Parámetros de generación CANÓNICOS.
  *
- * Por qué existe este archivo: si un call site no pasa `temperature`, Ollama
+ * Por qué existe este archivo: si un call site no pasa `temperature`, el proveedor
  * usaría 0.1 (nuestro default) pero DeepInfra usaría el suyo (1.0 en APIs
  * compatibles con OpenAI). Mismo prompt → respuestas distintas cada corrida, y
  * el golden set deja de ser reproducible sin que nada avise.
@@ -21,18 +21,10 @@ export interface ResolvedParams {
   reasoning: "off" | "on";
   /** Best-effort en ambos proveedores; ayuda a la reproducibilidad. */
   seed?: number;
-  /**
-   * Solo Ollama (`num_ctx`). Las APIs compatibles con OpenAI NO exponen la
-   * ventana de contexto: es fija por modelo. Se registra en el log para que la
-   * diferencia sea visible al comparar (con Ollama un prompt > num_ctx se
-   * trunca en silencio; en remoto normalmente no).
-   */
-  numCtx: number;
 }
 
 /**
- * Resuelve los parámetros efectivos. `structured: true` fuerza temperatura 0,
- * igual que hacía `chatJSON` contra Ollama.
+ * Resuelve los parámetros efectivos. `structured: true` fuerza temperatura 0.
  */
 export function resolveGenParams(
   opts: GenOptions | undefined,
@@ -50,18 +42,6 @@ export function resolveGenParams(
     // LLM_REASONING: un bloque de pensamiento antes del JSON rompe el parseo.
     reasoning: structured ? "off" : config.reasoning,
     seed: config.seed,
-    numCtx: config.numCtx,
-  };
-}
-
-/** Mapea a las `options` de Ollama (`/api/chat`). */
-export function toOllamaOptions(p: ResolvedParams): Record<string, unknown> {
-  return {
-    temperature: p.temperature,
-    top_p: p.topP,
-    num_ctx: p.numCtx,
-    num_predict: p.maxTokens,
-    ...(p.seed != null ? { seed: p.seed } : {}),
   };
 }
 

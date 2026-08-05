@@ -1,7 +1,7 @@
 /**
  * Cliente del modelo — ahora un SHIM sobre la capa de providers (`./llm`).
  *
- * La implementación real vive en `llm/ollama.ts` (local, default) y
+ * La implementación real vive en `llm/openai-compat.ts` (único proveedor) y
  * `llm/deepinfra.ts` (remoto). El motor se elige con LLM_PROVIDER, sin tocar
  * este archivo ni ninguno de los call sites.
  *
@@ -26,7 +26,7 @@ export async function* chatStream(
 
 /**
  * Salida estructurada validada contra un JSON Schema.
- * Ollama usa `format`; DeepInfra usa `response_format` json_schema strict.
+ * El proveedor usa `response_format` json_schema strict.
  * La temperatura se fuerza a 0 en ambos (igual que antes).
  */
 export async function chatJSON<T>(

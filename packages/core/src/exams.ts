@@ -1,6 +1,6 @@
 /**
  * Generación y corrección de exámenes en MODO LOCAL con salida estructurada
- * (Ollama `format` + JSON Schema). Estricto: solo desde el material.
+ * (`response_format` + JSON Schema). Estricto: solo desde el material.
  */
 import { retrieveRanked, citationLabel } from "@tutor-ia/rag";
 import { chatJSON } from "./client";

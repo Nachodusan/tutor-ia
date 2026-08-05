@@ -1,15 +1,23 @@
-# Plan anti-alucinaciones (modo estricto, 100% local)
+# Plan anti-alucinaciones (modo estricto)
 
 Objetivo: que la IA **nunca invente**. Solo puede afirmar lo que esté respaldado
 por el material del estudiante; si no lo está, se **abstiene**. Esto se logra con
 varias capas defensivas, no con una sola.
 
-## Por qué RAG local ayuda
+> **Nota (ya no corre local).** Este documento se escribió cuando todo el motor
+> vivía en la máquina (Ollama). Hoy la **generación y los embeddings** van a una
+> API remota compatible con OpenAI; siguen locales el corpus en Postgres y el
+> sidecar de reranker + NLI. Las capas de abajo no dependen de dónde corra el
+> modelo: valen igual. Lo que sí cambió es que **el material recuperado y la
+> pregunta del alumno salen de la máquina** hacia el proveedor, y que **sin red no
+> hay ni generación ni búsqueda**.
+
+## Por qué el RAG ayuda
 
 Un modelo generativo tiende a "rellenar huecos". La estrategia es **quitarle los
 huecos**: darle exactamente los fragmentos relevantes del material y prohibirle
-salir de ahí. Correr local (Ollama) no cambia esto, pero garantiza privacidad y
-control total sobre la configuración conservadora.
+salir de ahí. Eso no depende de dónde corra el modelo: lo que manda es qué
+contexto recibe y qué se le permite afirmar.
 
 ## Las capas (todas activas salvo la 5)
 
@@ -56,8 +64,10 @@ control total sobre la configuración conservadora.
 ## Límites honestos
 - Ninguna capa es 100% infalible; combinadas reducen drásticamente el riesgo.
 - La calidad del retrieval depende de buenos embeddings (bge-m3) y buen chunking.
-- Un modelo local pequeño puede citar mal ocasionalmente; por eso las citas son
+- Cualquier modelo puede citar mal ocasionalmente; por eso las citas son
   verificables y existe el verificador opcional.
+- Los embeddings son **remotos**: si no hay red, no hay retrieval, y sin retrieval
+  no hay capa 1. El sistema no responde a medias — no responde.
 
 ## Parámetros clave (en `.env`)
 ```

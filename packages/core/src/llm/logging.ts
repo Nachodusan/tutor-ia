@@ -15,7 +15,7 @@ import type { LLMProviderName, LLMUsage } from "./types";
 
 export interface CallLog {
   provider: LLMProviderName;
-  /** Host del baseURL efectivo (ej. api.deepinfra.com). Local en Ollama. */
+  /** Host del baseURL efectivo (ej. api.deepinfra.com). */
   host: string;
   model: string;
   method: "generate" | "generateStructured" | "generateStream";

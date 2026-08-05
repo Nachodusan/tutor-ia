@@ -89,7 +89,7 @@ export async function getTutorContext(
         rerankerDown: true,
       };
     }
-    throw err; // error real (DB/embeddings/Ollama): que la route lo maneje
+    throw err; // error real (DB/embeddings/LLM): que la route lo maneje
   }
 
   // Si nos abstenemos, no citamos fragmentos bajo el umbral: citas vacías.

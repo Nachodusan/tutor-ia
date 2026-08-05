@@ -1,5 +1,5 @@
 /**
- * JSON Schemas para structured outputs del LLM local (Ollama `format`).
+ * JSON Schemas para structured outputs del LLM (`response_format` json_schema).
  * Garantizan que el examen, la corrección y la extracción de presuposiciones
  * lleguen con formato parseable.
  */

@@ -1,21 +1,17 @@
 /**
- * Configuración del modo LOCAL. Todo corre en tu máquina vía Ollama; nada se
- * envía a la nube. Los valores por defecto están pensados para ser
+ * Configuración del tutor. Los valores por defecto están pensados para ser
  * CONSERVADORES (baja creatividad = menos alucinaciones).
+ *
+ * Qué corre dónde: la generación y los embeddings salen a la API remota; el
+ * corpus, Postgres/pgvector y el sidecar de reranking+NLI (:8790) son locales.
+ * Hubo un modo 100% local vía Ollama y se eliminó.
  */
 import { DEFAULT_RERANK_MIN_SCORE } from "@tutor-ia/rag";
 
 export const config = {
-  /** Endpoint del servidor Ollama local. */
-  ollamaBaseUrl: process.env.OLLAMA_BASE_URL ?? "http://localhost:11434",
-
-  /** Modelo de lenguaje local. Qwen2.5-7B sigue instrucciones muy bien.
-   *  El tag de Ollama es "qwen2.5:7b" (SIN -instruct); con -instruct una corrida
-   *  sin env override pega model-not-found. Ver HANDOFF §2. */
-  llmModel: process.env.LLM_MODEL ?? "qwen2.5:7b",
-
-  /** LLM_MODEL crudo (sin default). Cada provider aplica el SUYO: si la variable
-   *  no está, Ollama usa "qwen2.5:7b" y DeepInfra su modelo remoto. */
+  /** LLM_MODEL crudo, SIN default: el provider aplica el suyo (DEFAULT_MODEL).
+   *  Antes convivía con un `llmModel` que caía en el tag local "qwen2.5:7b";
+   *  ese default se eliminó junto con el proveedor local, y nadie lo leía. */
   llmModelEnv: process.env.LLM_MODEL?.trim() || undefined,
 
   /**
@@ -37,15 +33,18 @@ export const config = {
    */
   queryNormalize: boolEnv("QUERY_NORMALIZE", true),
   /** Modelo local chico para normalizar (1 llamada corta por turno). */
-  queryNormalizerModel: process.env.QUERY_NORMALIZER_MODEL ?? "qwen2.5:3b",
+  // Vacío = el modelo por defecto del proveedor. Antes era "qwen2.5:3b", un tag
+  // de Ollama que dejó de existir al eliminar el proveedor local.
+  queryNormalizerModel: process.env.QUERY_NORMALIZER_MODEL ?? undefined,
   /**
    * Techo de la llamada de normalización; al vencer se usa la consulta cruda.
    *
-   * 8 s y no 2,5: el modelo chico se descarga de memoria cuando Ollama lo deja
-   * inactivo, y la PRIMERA consulta tras un reinicio paga la carga (medido:
-   * 4,4 s en frío contra 340-900 ms en caliente). Con el techo en 2,5 s ese
-   * primer alumno perdía el rescate en silencio. Caliente ni se acerca a este
-   * techo, así que subirlo no cuesta latencia en el caso normal.
+   * 8 s y no 2,5: el techo se fijó cuando esto corría contra un modelo local
+   * que se descargaba de memoria al quedar inactivo, y la PRIMERA consulta tras
+   * un reinicio pagaba la carga (medido: 4,4 s en frío contra 340-900 ms en
+   * caliente); con 2,5 s ese primer alumno perdía el rescate en silencio. Hoy
+   * el modelo es remoto y no hay arranque en frío, pero el margen tampoco
+   * cuesta: el caso normal ni se acerca a este techo.
    */
   queryNormalizeTimeoutMs: intEnv("QUERY_NORMALIZE_TIMEOUT_MS", 8000),
 
@@ -94,10 +93,10 @@ export const config = {
 
   /** Streaming local: 0 = SIN timeout (comportamiento histórico de client.ts).
    *  Un turno con el 7B recargando por keep_alive:0 llega a 2-3 min. */
-  ollamaStreamTimeoutMs: intEnv("OLLAMA_STREAM_TIMEOUT_MS", 0),
+  llmStreamTimeoutMs: intEnv("LLM_STREAM_TIMEOUT_MS", 0),
 
   /** JSON local: 180s, como el LLM_JSON_TIMEOUT_MS histórico. */
-  ollamaJsonTimeoutMs: intEnv("LLM_JSON_TIMEOUT_MS", 180_000),
+  llmJsonTimeoutMs: intEnv("LLM_JSON_TIMEOUT_MS", 180_000),
 
   /** Reintentos (además del intento inicial). Solo 429/5xx; nunca otros 4xx. */
   llmMaxRetries: intEnv("LLM_MAX_RETRIES", 2),
@@ -129,7 +128,6 @@ export const config = {
   topP: numberEnv("LLM_TOP_P", 0.9),
 
   /** Ventana de contexto (tokens). Suficiente para varios fragmentos + pregunta. */
-  numCtx: intEnv("LLM_NUM_CTX", 8192),
 
   /**
    * Umbral de similitud (0..1) para considerar un fragmento como "relevante".

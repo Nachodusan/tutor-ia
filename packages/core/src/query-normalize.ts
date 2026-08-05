@@ -14,8 +14,11 @@
  *  - SOLO la consulta de búsqueda. La pregunta original sigue intacta hacia el
  *    modelo docente y hacia los regex (social/vago/struggling): ahí el registro
  *    coloquial es señal.
- *  - Modelo LOCAL chico (qwen2.5:3b vía Ollama), aunque la generación principal
- *    sea remota: gratis, privado y suficiente para corregir ortografía/registro.
+ *  - Provider aparte del de la enseñanza (ver getNormalizer), para poder
+ *    apuntarlo a un modelo más chico sin tocar el resto. Cuando esto se diseñó
+ *    el modelo era local, o sea gratis; hoy es remoto y cada rescate se paga.
+ *    Lo que lo mantiene barato es CRUDA-PRIMERO: solo corre cuando la búsqueda
+ *    con las palabras del alumno ya falló.
  *  - FAIL-OPEN estricto: timeout, error, salida vacía o desproporcionada → se
  *    usa la original. La normalización no puede romper un turno jamás.
  */
@@ -40,16 +43,27 @@ export interface NormalizedQuery {
   ms: number;
 }
 
-/** Provider propio (no toca el memo global): la generación principal puede ser
- *  remota mientras esto corre contra Ollama local. */
+/**
+ * Provider propio (no toca el memo global), para poder apuntarlo a un modelo
+ * más chico que el de la enseñanza sin tocar el resto.
+ *
+ * Antes corría contra un `qwen2.5:3b` LOCAL mientras la generación principal iba
+ * a la API. Al eliminar Ollama ese modelo dejó de existir, así que por defecto
+ * usa el modelo principal (`config.queryNormalizerModel` queda vacío → el
+ * default del proveedor). Es más grande de lo que la tarea pide, pero esto vive
+ * en la política CRUDA-PRIMERO: solo se paga cuando la búsqueda con la
+ * formulación textual del alumno ya falló, que es la minoría de los turnos.
+ * Si aparece un modelo chico conveniente en la API, se apunta con
+ * QUERY_NORMALIZER_MODEL y nada más cambia.
+ */
 let normalizer: LLMProvider | null = null;
 function getNormalizer(): LLMProvider {
-  normalizer ??= makeProvider("ollama", config.queryNormalizerModel);
+  normalizer ??= makeProvider("deepinfra", config.queryNormalizerModel);
   return normalizer;
 }
 
 /** ¿La salida es una reescritura creíble de la entrada? Guardas baratas contra
- *  un 3B que divaga: vacía, desproporcionada o multilínea → descartar. */
+ *  un modelo que divaga: vacía, desproporcionada o multilínea → descartar. */
 function plausible(original: string, rewritten: string): boolean {
   const r = rewritten.trim();
   if (!r) return false;
@@ -82,7 +96,7 @@ export async function normalizeStudentQuery(q: string): Promise<NormalizedQuery>
     }
     return { query: rewritten, changed: true, ms: Date.now() - started };
   } catch {
-    // Ollama caído, modelo no descargado, timeout: el turno sigue con la cruda.
+    // Proveedor caído, modelo inexistente, timeout: el turno sigue con la cruda.
     return { query: original, changed: false, ms: Date.now() - started };
   }
 }

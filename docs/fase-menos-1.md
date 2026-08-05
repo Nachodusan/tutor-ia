@@ -1,8 +1,20 @@
 # Fase −1 — Validar supuestos en tu Mac
 
+> ⚠️ **REGISTRO HISTÓRICO — fase cerrada, y el motor que validaba ya no existe.**
+> Esta guía se escribió para correr los 4 experimentos **contra el proveedor local
+> (Ollama)**, que después se eliminó del proyecto: hoy la generación y los embeddings
+> van a una API remota compatible con OpenAI. La fase se corrió, sus resultados están
+> en [`exp2-4-hallazgos.md`](exp2-4-hallazgos.md) y las decisiones que disparó siguen
+> vigentes. **Lo que sigue no es un procedimiento a ejecutar**: `exp2`, `exp3`, `exp4`
+> y `exp5` se borraron junto con el motor local (y con ellos el cliente
+> `packages/eval/src/ollama.ts` y sus entradas en `packages/eval/package.json`). El
+> único que todavía corre es **exp1**, que es offline y no toca ningún modelo.
+> Se conserva el documento porque explica **qué se midió y por qué**, que es lo que
+> hace falta para entender de dónde salieron las decisiones de scope.
+
 Guía operativa para correr los **4 experimentos** de la Fase −1 (§10 del plan) en
-tu máquina, con Ollama corriendo. Es la fase que arregla los riesgos **E11** ("el
-7B es el eslabón débil, sin testear") y **E16** ("Fase 0 'hecha' sin ejecutarse
+tu máquina, con el motor local corriendo. Es la fase que arregla los riesgos **E11**
+("el 7B es el eslabón débil, sin testear") y **E16** ("Fase 0 'hecha' sin ejecutarse
 nunca").
 
 > **Fase 0 está "hecha" y nunca procesó un PDF real.** `typecheck ✓` y
@@ -30,33 +42,21 @@ alcance). Mejor enterarse ahora que en la fase de voz. Los 4 experimentos tardan
    > embebido en los casos de prueba. Postgres solo hace falta para que el resto
    > del proyecto arranque y para el experimento 4 (medir RAM con todo cargado).
 
-2. **Ollama con los tres modelos descargados:**
-   ```bash
-   ollama pull qwen2.5:7b-instruct   # tareas (examen, corrección, verificación)
-   ollama pull qwen2.5:3b-instruct   # voz
-   ollama pull bge-m3                # embeddings (1024 dims, multilingüe)
-   ```
-   Comprobá que Ollama responde:
-   ```bash
-   curl -s http://localhost:11434/api/tags | grep -o '"name":"[^"]*"'
-   ```
+2. **El motor local con sus tres modelos** — `qwen2.5:7b-instruct` (tareas),
+   `qwen2.5:3b-instruct` (voz) y `bge-m3` (embeddings, 1024 dims, multilingüe),
+   servidos en `http://localhost:11434`. **Esto ya no aplica**: el proveedor local
+   se eliminó del proyecto, así que no hay nada que instalar ni descargar. Hoy el
+   requisito equivalente es una `DEEPINFRA_API_KEY` en el `.env` y conexión a
+   internet, pero los experimentos que la usaban ya no existen.
 
 3. **Dependencias instaladas:**
    ```bash
    pnpm install
    ```
 
-### Variables de entorno (opcionales, con defaults)
-
-```bash
-LLM_MODEL=qwen2.5:7b-instruct        # tareas
-LLM_VOICE_MODEL=qwen2.5:3b-instruct  # voz
-OLLAMA_BASE_URL=http://localhost:11434
-```
-
-> **exp1 corre offline** (solo lee un archivo y lo trocea). **exp2, exp3 y exp4
-> necesitan Ollama corriendo**; si no está, fallan con un mensaje claro (ver el
-> error de `ollama.ts`: `¿está corriendo en <URL>?`).
+> **exp1 corre offline** (solo lee un archivo y lo trocea) y **es el único que
+> todavía se puede correr**. exp2, exp3 y exp4 necesitaban el motor local y se
+> borraron con él.
 
 ---
 
@@ -94,7 +94,7 @@ críticas: **grounding** (respetar el material / abstenerse), **JSON de examen**
 embebido en el propio caso — no hay retrieval ni base de datos.
 
 ```bash
-pnpm --filter @tutor-ia/eval exp2
+pnpm --filter @tutor-ia/eval exp2   # ⚠️ SCRIPT BORRADO junto con el motor local
 ```
 
 - **Criterio de éxito:** **≥ 80% en cada suite** (no en promedio: en *cada una* de
@@ -117,8 +117,11 @@ tiempos reales que expone `ollama.ts` (`promptEvalMs`), no estimaciones (§8.2:
 "medilo, no lo estimes").
 
 ```bash
-pnpm --filter @tutor-ia/eval exp3
+pnpm --filter @tutor-ia/eval exp3   # ⚠️ SCRIPT BORRADO junto con el motor local
 ```
+
+> Este no se puede rehacer ni adaptando: `prompt_eval_duration` es una métrica que
+> devolvía el motor local, y la API remota no expone nada equivalente.
 
 - **Criterio de éxito:** la curva **define** tu budget de voz. No hay un número
   fijo que "pasar": el resultado es la curva misma, que condiciona cuánto contexto
@@ -127,12 +130,15 @@ pnpm --filter @tutor-ia/eval exp3
 
 ### Experimento 4 — RAM con todo cargado
 
-Mide la RAM con **todo cargado a la vez** (Postgres + Ollama con el/los
+Mide la RAM con **todo cargado a la vez** (Postgres + el motor local con el/los
 modelo/s). El objetivo es detectar si la Mac empieza a **swapear**.
 
 ```bash
-pnpm --filter @tutor-ia/eval exp4
+pnpm --filter @tutor-ia/eval exp4   # ⚠️ SCRIPT BORRADO junto con el motor local
 ```
+
+> Perdió su objeto: ya no hay ningún modelo cargado en la máquina, así que el
+> presupuesto de RAM dejó de ser una restricción del proyecto.
 
 - **Criterio de éxito:** **no swapea.**
 - **Si swapea:** `keep_alive: 0` en el modelo que no estés usando (no tengas el 3B
@@ -143,12 +149,12 @@ pnpm --filter @tutor-ia/eval exp4
 
 ## Qué hacer con los resultados
 
-| Experimento | Necesita Ollama | Resultado esperado | Acción si falla |
+| Experimento | Necesitaba el motor local | Resultado esperado | Acción si falla |
 |---|---|---|---|
-| 1 · libro real | No (offline) | chunks legibles, fórmulas enteras | tirar `pdf-parse` → Fase 0.5 |
-| 2 · benchmark 7B | **Sí** | ≥ 80% en cada suite | descomponer (§4-C3); si la rúbrica sigue mal, replantear |
-| 3 · curva prefill | **Sí** | la curva define el budget de voz | 3B en voz, recortar contexto |
-| 4 · RAM | **Sí** | no swapea | `keep_alive: 0` / 3B / sin Docker |
+| 1 · libro real | No (offline) — **sigue existiendo** | chunks legibles, fórmulas enteras | tirar `pdf-parse` → Fase 0.5 |
+| 2 · benchmark 7B | **Sí** — script borrado | ≥ 80% en cada suite | descomponer (§4-C3); si la rúbrica sigue mal, replantear |
+| 3 · curva prefill | **Sí** — script borrado | la curva define el budget de voz | 3B en voz, recortar contexto |
+| 4 · RAM | **Sí** — script borrado | no swapea | `keep_alive: 0` / 3B / sin Docker |
 
 **Recordá que esto es un GATE.** El experimento 2 es el crítico: **si el 7B no
 llega al 80% en alguna de las cuatro tareas, se replantea el enfoque antes de

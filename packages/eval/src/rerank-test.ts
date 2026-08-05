@@ -5,8 +5,9 @@
  *
  * Corre una batería etiquetada (dentro=SÍ/NO), imprime el mejor score de rerank
  * por query, y calcula si hay separación limpia + un umbral sugerido (punto medio
- * entre el mínimo "dentro" y el máximo "fuera"). Requiere: libro indexado, Ollama
- * (bge-m3) y el rerank_server corriendo.
+ * entre el mínimo "dentro" y el máximo "fuera"). Requiere: libro indexado en
+ * Postgres, DEEPINFRA_API_KEY (los embeddings bge-m3 se piden a la API) y el
+ * rerank_server local corriendo en 8790.
  */
 import { getSql } from "@tutor-ia/db";
 import { retrieveRanked, rerankHealthy } from "@tutor-ia/rag";

@@ -160,16 +160,15 @@ async function main(): Promise<void> {
   const only = arg("only");
   const baseUrls = (arg("base-urls") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 
-  // Cada target: [provider, baseURL, etiqueta]
+  // Cada target: [provider, baseURL, etiqueta]. Ya no hay proveedor local, así
+  // que `--only` solo sirve para acotar entre varios endpoints remotos.
   const targets: [LLMProviderName, string | undefined, string][] = [];
-  if (only !== "deepinfra") targets.push(["ollama", undefined, "ollama@local"]);
-  if (only !== "ollama") {
-    if (baseUrls.length > 0) {
-      for (const u of baseUrls) targets.push(["deepinfra", u, hostOf(u)]);
-    } else {
-      targets.push(["deepinfra", undefined, "remoto(default)"]);
-    }
+  if (baseUrls.length > 0) {
+    for (const u of baseUrls) targets.push(["deepinfra", u, hostOf(u)]);
+  } else {
+    targets.push(["deepinfra", undefined, "remoto(default)"]);
   }
+  void only;
 
   console.log(`\n🔬 Humo LLM — mismo prompt contra: ${targets.map((t) => t[2]).join(", ")}\n`);
   resetUsage();

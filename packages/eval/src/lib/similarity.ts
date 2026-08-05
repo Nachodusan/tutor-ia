@@ -1,11 +1,13 @@
 /**
- * Similitud coseno con bge-m3 local, para medir REPETICIÓN entre dos respuestas
- * del tutor (eval multiturno): coseno alto entre la explicación 1 y la 2 tras un
+ * Similitud coseno con bge-m3, para medir REPETICIÓN entre dos respuestas del
+ * tutor (eval multiturno): coseno alto entre la explicación 1 y la 2 tras un
  * "no entendí" = el tutor repitió reformulado = fracaso pedagógico.
  *
  * No existía coseno en el repo: pgvector lo calcula en SQL y nada lo hacía en
- * TS. Los vectores del endpoint de Ollama NO vienen normalizados, así que el
- * producto punto solo no alcanza.
+ * TS. Los vectores de bge-m3 vienen con norma 1,0000 (medido, tanto por el
+ * camino viejo como por la API actual), así que el producto punto solo ya
+ * alcanzaría; dividimos por las normas igual, por robustez, para que la función
+ * siga siendo correcta si algún proveedor devuelve vectores sin normalizar.
  */
 import { embed } from "@tutor-ia/rag";
 

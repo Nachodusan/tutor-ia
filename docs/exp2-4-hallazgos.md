@@ -1,5 +1,21 @@
 # Fase −1 — Cierre del gate (exp2, exp3, exp4)
 
+> ⚠️ **REGISTRO HISTÓRICO — el motor que se midió acá ya no está en el proyecto.**
+> Todo lo de abajo se corrió el **2026-07-14** contra el proveedor **local (Ollama)**,
+> que después se eliminó: hoy la generación y los embeddings van a una API remota
+> compatible con OpenAI. Estos números **pasaron de verdad** y se conservan porque
+> explican decisiones que siguen vigentes (rediseño de A2, corrección descompuesta,
+> SymPy obligatorio, replanteo del objetivo de voz). Pero **no son instrucciones ni
+> describen el rendimiento actual**: la latencia de prefill y el presupuesto de RAM
+> medían una máquina corriendo el modelo, cosa que ya no ocurre.
+>
+> **Los scripts que produjeron estos números se borraron** junto con el motor local
+> (`exp2-benchmark`, `exp3-latency`, `exp4-ram`, `exp5-correcto` y el cliente
+> `packages/eval/src/ollama.ts`, más sus entradas `exp2`..`exp5` en
+> `packages/eval/package.json`). **No hay forma de reproducir esta corrida**, y no
+> tendría sentido: `exp3` medía `prompt_eval_duration` y `exp4` la RAM del modelo
+> cargado, dos métricas nativas de Ollama que la API remota no expone.
+
 **Máquina:** MacBook Apple **M4, 16 GB**. **Ollama** 0.30.10.
 **Modelos:** `qwen2.5:7b` (tareas), `qwen2.5:3b` (voz). **Fecha:** 2026-07-14.
 (exp1 en `docs/exp1-hallazgos.md`.)
@@ -68,9 +84,14 @@ Prefill medido (mediana, modelo pre-cargado):
 - postergar/replantear voz. El plan ya la puso al final (Fase 5) por buenas razones.
 
 > Cautela honesta: la Mac estaba con RAM casi llena (ver exp4), lo que puede deprimir el
-> prefill. Conviene re-correr exp3 con la máquina liberada para ver el techo. Pero la
-> conclusión se sostiene: la velocidad de *generación* (independiente de la presión de RAM)
-> ya no alcanza el budget de 1ª oración.
+> prefill. En su momento se anotó "conviene re-correr exp3 con la máquina liberada para ver
+> el techo" — **eso quedó sin hacer y ya no se puede**: el script y el motor local se
+> eliminaron. Pero la conclusión se sostiene: la velocidad de *generación* (independiente
+> de la presión de RAM) ya no alcanzaba el budget de 1ª oración.
+>
+> Nota posterior: el proyecto terminó por el otro camino de la lista, "stack de inferencia
+> más rápido" llevado al extremo — se sacó la inferencia de la máquina. La voz que quedó
+> (whisper.cpp + `say`) **sí es local**; lo que viaja es el turno del tutor.
 
 ---
 

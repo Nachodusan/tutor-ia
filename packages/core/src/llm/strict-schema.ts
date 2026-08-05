@@ -1,6 +1,6 @@
 /**
  * Validador de JSON Schema para el modo ESTRICTO de Structured Outputs
- * (OpenAI-compatible). Ollama es permisivo con estas reglas; la API remota no.
+ * (OpenAI-compatible). La API remota es estricta con estas reglas.
  *
  * Existe para que un schema incompatible falle con un mensaje que dice QUÉ
  * regla se rompió y DÓNDE, en vez del error genérico del proveedor. No modifica

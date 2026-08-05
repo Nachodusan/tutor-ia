@@ -12,7 +12,9 @@
  *   - adaptó          : ¿el turno 2 usa una estrategia DISTINTA al turno 1?  [juez]
  *   - usó_pedagogía   : ¿el retrieval trajo el movimiento de la GDD para el OA?  [determinístico]
  *
- * Uso: pnpm --filter @tutor-ia/eval exp6   (requiere Ollama + reranker + piloto ingestado)
+ * Uso: pnpm --filter @tutor-ia/eval exp6
+ * Requiere: Postgres con el piloto ingestado, DEEPINFRA_API_KEY (los embeddings
+ * y la generación salen por la API) y el rerank_server local en 8790.
  */
 import { getSql } from "@tutor-ia/db";
 import {
