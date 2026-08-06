@@ -34,7 +34,8 @@
     "apoyado-sweep": "tsx --env-file-if-exists=../../.env src/apoyado-sweep.ts",
     "backfill-storage-path": "tsx --env-file-if-exists=../../.env src/backfill-storage-path.ts",
     "extract-gold-anchors": "tsx --env-file-if-exists=../../.env src/extract-gold-anchors.ts",
-    "backfill-heading-path": "tsx --env-file-if-exists=../../.env src/backfill-heading-path.ts"
+    "backfill-heading-path": "tsx --env-file-if-exists=../../.env src/backfill-heading-path.ts",
+    "generar-trafico": "tsx --env-file-if-exists=../../.env src/generar-trafico.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",
