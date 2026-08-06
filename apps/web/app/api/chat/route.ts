@@ -3,6 +3,7 @@ import {
   streamTeachingChecked,
   teachingAbstention,
   teachingCitations,
+  teachingCitationsConTexto,
   socialReply,
   needsTopicReply,
   verifyAnswerA3, derivarModo,
@@ -186,7 +187,13 @@ export async function POST(req: Request) {
       // 1) Frame de citas + modo. `grounded` viaja para compatibilidad del
       //    cliente viejo; el dato que importa ahora es `mode`.
       const hayMaterial = (res.ctx?.citable.length ?? 0) > 0;
+      // DOS formas de la misma cita, a propósito:
+      //  · `citations` → al CLIENTE: liviana, solo la etiqueta legible.
+      //  · `citasParaGuardar` → a la BASE: incluye el TEXTO del chunk, porque el
+      //    uuid no sobrevive a una re-ingesta y sin el texto la respuesta queda
+      //    citando algo que ya no se puede mostrar (pasó: 6 de 200 vínculos).
       const citations = hayMaterial ? teachingCitations(res.ctx!) : [];
+      const citasParaGuardar = hayMaterial ? teachingCitationsConTexto(res.ctx!) : [];
       controller.enqueue(
         encoder.encode("\x1e" + JSON.stringify({
           citations, grounded: hayMaterial,
@@ -327,7 +334,7 @@ export async function POST(req: Request) {
           // proceso corte la promesa.
           await persistUsuario;
           await insertMessage(sessionId, "assistant", full, {
-            citations, grounded: res.grounded, verification: v,
+            citations: citasParaGuardar, grounded: res.grounded, verification: v,
             meta: {
               cause: "answered", topScore: res.ctx.topScore ?? null,
               ranker: res.ctx.stats?.ranker ?? null, qNorm: res.qNorm,

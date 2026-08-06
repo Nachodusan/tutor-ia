@@ -303,6 +303,44 @@ export function teachingCitations(ctx: TeachingContext) {
 }
 
 /**
+ * Las mismas citas, pero CON EL TEXTO del chunk adentro — para PERSISTIR, no
+ * para mandarle al cliente.
+ *
+ * ── Por qué ────────────────────────────────────────────────────────────────
+ * `citations.chunkId` es un uuid, y cada re-ingesta recrea los chunks con uuid
+ * nuevo. Las citas viejas quedan apuntando al vacío: medido, 6 de 200 vínculos
+ * ya están rotos, y son justo los de las únicas 2 respuestas de fuera de 1º
+ * Medio. Un chunk_id roto significa "esta respuesta citó algo y ya no puedo
+ * mostrarte qué era".
+ *
+ * Con el texto adentro, la cita queda auditable para siempre sin depender de que
+ * la fila exista. Es la misma clase de problema que mató a `a3-set.jsonl` (0 de
+ * 18 chunk_id vivos) y que en el golden se resolvió anclando por contenido.
+ *
+ * Va SEPARADO de `teachingCitations` a propósito: el texto pesa ~1,6 KB por
+ * chunk y son ~6 por respuesta, así que mandárselo al navegador serían ~10 KB
+ * por turno que el alumno no usa (él ve la etiqueta legible). La base sí lo
+ * necesita, porque es la que después hay que poder auditar.
+ */
+export function teachingCitationsConTexto(ctx: TeachingContext) {
+  return ctx.citable.map((c, i) => ({
+    index: i + 1,
+    chunkId: c.chunkId,
+    page: c.pageStart,
+    source: c.source,
+    oa: c.oa,
+    grade: c.grade,
+    label: citationLabel({
+      pageStart: c.pageStart, pageEnd: c.pageEnd, headingPath: c.headingPath,
+      documentTitle: c.documentTitle, grade: c.grade,
+    } as never),
+    /** El material citado, tal como se lo pasó al modelo. Es lo que blinda la
+     *  trazabilidad contra la próxima re-ingesta. */
+    text: c.content,
+  }));
+}
+
+/**
  * Genera la respuesta del tutor facilitador en streaming.
  *
  * Se llama SIEMPRE, haya material o no. Antes el llamador tenía que chequear
