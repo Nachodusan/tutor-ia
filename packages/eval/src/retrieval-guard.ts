@@ -43,6 +43,9 @@ const flag = (n: string): string | null => {
   return i >= 0 && argv[i + 1] ? argv[i + 1]! : null;
 };
 const todas = argv.includes("--todas");
+/** Solo las que tienen ancla: es el subconjunto que mide RECALL, y correr 72 en
+ *  vez de 101 hace que barrer un parámetro cueste minutos en vez de una tarde. */
+const soloGold = argv.includes("--gold");
 
 const umbrales = (flag("min") ?? process.env.RAG_ANSWERABILITY_MIN ?? "")
   .split(",").map((s) => s.trim()).filter(Boolean);
@@ -52,7 +55,9 @@ async function main(): Promise<void> {
     new URL("../golden/questions.jsonl", import.meta.url), "utf8",
   );
   const golden: Golden[] = raw.trim().split("\n").map((l) => JSON.parse(l) as Golden);
-  const preguntas = todas ? golden : golden.filter((g) => g.expect_mode);
+  const preguntas = soloGold
+    ? golden.filter((g) => g.expect_chunks?.length)
+    : todas ? golden : golden.filter((g) => g.expect_mode);
 
   const sql = getSql();
   const userId = process.env.EVAL_USER_ID!;

@@ -60,6 +60,31 @@ const apiKey = () => process.env.DEEPINFRA_API_KEY ?? process.env.LLM_API_KEY ??
 /** input_type se mantiene por compatibilidad; bge-m3 no lo necesita. */
 export type EmbedInputType = "document" | "query";
 
+/**
+ * REINTENTOS. Los embeddings son el único paso del que depende TODO el
+ * retrieval: sin vector no hay búsqueda, y sin búsqueda el alumno recibe "tuve un
+ * problemita para traer tu material" — aunque su libro esté ahí y el problema
+ * haya sido un hipo de 10 segundos en la red.
+ *
+ * No los tenía. La capa de LLM sí (`core/llm/retry.ts`), pero esto vive en `rag`
+ * y quedó sin la misma disciplina. Observado dos veces en la misma noche durante
+ * una corrida de medición: `ConnectTimeoutError` contra api.deepinfra.com, que
+ * abortó las dos corridas enteras.
+ *
+ * Solo en fallas TRANSITORIAS: red, timeout, 429 y 5xx. Un 401 (credencial mala)
+ * o un 400 (payload inválido) no mejoran por insistir, y reintentarlos esconde el
+ * error real detrás de tres intentos y una espera.
+ */
+const EMBED_REINTENTOS = Number(process.env.EMBED_RETRIES ?? "2");
+
+function esTransitorio(e: unknown, status?: number): boolean {
+  if (status != null) return status === 429 || status >= 500;
+  const msg = e instanceof Error ? `${e.name} ${e.message}` : String(e);
+  return /fetch failed|network|timeout|abort|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket/i.test(msg);
+}
+
+const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export async function embed(
   texts: string[],
   _inputType: EmbedInputType = "document",
@@ -72,16 +97,37 @@ export async function embed(
     );
   }
 
-  const res = await fetch(`${baseUrl()}/embeddings`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({ model: model(), input: texts }),
-    // Un proveedor colgado no debe bloquear indefinidamente el pipeline.
-    signal: AbortSignal.timeout(Number(process.env.EMBED_TIMEOUT_MS ?? "60000")),
-  });
+  let res: Response | undefined;
+  let ultimo: unknown;
+  for (let intento = 0; intento <= EMBED_REINTENTOS; intento++) {
+    if (intento > 0) {
+      // Backoff exponencial con jitter: 400ms, 800ms… El jitter importa porque
+      // la ingesta embebe en lotes y sin él todos reintentarían al unísono.
+      await dormir(400 * 2 ** (intento - 1) + Math.floor(Math.random() * 200));
+    }
+    try {
+      res = await fetch(`${baseUrl()}/embeddings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({ model: model(), input: texts }),
+        // Un proveedor colgado no debe bloquear indefinidamente el pipeline.
+        signal: AbortSignal.timeout(Number(process.env.EMBED_TIMEOUT_MS ?? "60000")),
+      });
+      if (res.ok) break;
+      if (!esTransitorio(null, res.status) || intento === EMBED_REINTENTOS) break;
+      console.warn(`[embeddings] ${res.status} — reintento ${intento + 1}/${EMBED_REINTENTOS}`);
+    } catch (e) {
+      ultimo = e;
+      if (!esTransitorio(e) || intento === EMBED_REINTENTOS) throw e;
+      console.warn(
+        `[embeddings] ${e instanceof Error ? e.message : e} — reintento ${intento + 1}/${EMBED_REINTENTOS}`,
+      );
+    }
+  }
+  if (!res) throw ultimo ?? new Error("No se pudo contactar el servicio de embeddings.");
   if (!res.ok) {
     const detalle = await res.text().catch(() => "");
     throw new Error(
