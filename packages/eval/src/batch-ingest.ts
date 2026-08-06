@@ -127,16 +127,20 @@ async function main() {
   // queda huérfano) sin tener que adivinarlo por fuera.
   if (DRY) {
     const sqlRO = getSql();
-    const esperados = new Map(rows.filter((r) => r.indexado).map((r) => [titleFor(r), r]));
-    const enBase = await sqlRO<{ title: string; status: string; n: number }[]>`
-      select d.title, d.status, count(c.id)::int as n
+    // Por `storage_path` y no por título: el título es texto de presentación y
+    // ahora puede cambiar sin que el documento deje de ser el mismo. Emparejar
+    // por título haría que un retoque cosmético reportara el documento viejo
+    // como huérfano y el nuevo como faltante — que es exactamente el
+    // acoplamiento que este cambio vino a romper.
+    const esperados = new Map(rows.filter((r) => r.indexado).map((r) => [r.ruta, r]));
+    const enBase = await sqlRO<{ ruta: string | null; title: string; status: string; n: number }[]>`
+      select d.storage_path as ruta, d.title, d.status, count(c.id)::int as n
       from documents d left join chunks c on c.document_id = d.id
-      where d.owner_user_id is null group by d.title, d.status`;
-    const listos = new Set(enBase.filter((d) => d.status === "ready").map((d) => d.title));
-    const enBaseTitulos = new Set(enBase.map((d) => d.title));
+      where d.owner_user_id is null group by d.storage_path, d.title, d.status`;
+    const listos = new Set(enBase.filter((d) => d.status === "ready").map((d) => d.ruta));
     const seSaltean = [...esperados.keys()].filter((t) => listos.has(t));
     const seIngieren = [...esperados.keys()].filter((t) => !listos.has(t));
-    const huerfanos = enBase.filter((d) => !esperados.has(d.title));
+    const huerfanos = enBase.filter((d) => !d.ruta || !esperados.has(d.ruta));
 
     console.log(`${"═".repeat(60)}`);
     console.log(`DELTA contra la base (solo lectura):`);
@@ -148,7 +152,6 @@ async function main() {
       `   huérfanos en la base:  ${huerfanos.length}` +
         ` (${huerfanos.reduce((s, d) => s + d.n, 0)} chunks)`,
     );
-    void enBaseTitulos;
     console.log(`\nBATCH (dry-run) — ${aIndexar.length} filas indexables · ${materias.size} materias · base NO modificada`);
     await sqlRO.end();
     process.exit(0);
@@ -169,12 +172,14 @@ async function main() {
   //
   // No borramos por cuenta propia: eso es decisión del dueño de los datos.
   // Frenamos y lo decimos. INGEST_ALLOW_STALE=1 sigue igual, a sabiendas.
-  const esperados = new Set(rows.filter((r) => r.indexado).map(titleFor));
-  const enBase = await sql<{ title: string; n: number }[]>`
-    select d.title, count(c.id)::int as n
+  // Emparejado por `storage_path` (la ruta del PDF), no por título: ver el
+  // comentario del UPSERT más abajo. El título dejó de ser identidad.
+  const esperados = new Set(rows.filter((r) => r.indexado).map((r) => r.ruta));
+  const enBase = await sql<{ ruta: string | null; title: string; n: number }[]>`
+    select d.storage_path as ruta, d.title, count(c.id)::int as n
     from documents d left join chunks c on c.document_id = d.id
-    where d.owner_user_id is null group by d.title`;
-  const huerfanos = enBase.filter((d) => !esperados.has(d.title));
+    where d.owner_user_id is null group by d.storage_path, d.title`;
+  const huerfanos = enBase.filter((d) => !d.ruta || !esperados.has(d.ruta));
   if (huerfanos.length > 0 && process.env.INGEST_ALLOW_STALE !== "1") {
     const chunks = huerfanos.reduce((s, d) => s + d.n, 0);
     console.error(
@@ -218,17 +223,47 @@ async function main() {
       const title = titleFor(row);
       const kind = corpusKind(row);
 
-      const existing = await sql<{ status: string }[]>`
-        select status from documents where owner_user_id is null and title=${title} limit 1`;
+      // ⚠️ LA IDENTIDAD DEL DOCUMENTO ES `storage_path`, NO EL TÍTULO.
+      //
+      // Antes esto buscaba por `title` y hacía `delete` + `insert`, así que el
+      // uuid del documento cambiaba en CADA re-ingesta. Y `topic_key` —la
+      // identidad del progreso del alumno— es `hash(documentId|ord|title)`
+      // (sections.ts), sin ninguna FK que lo proteja. O sea: cada re-ingesta le
+      // vaciaba la barra de progreso y la lista de "Para reforzar" a todos los
+      // alumnos, en silencio. Con `titleFor()` derivando del nombre VISIBLE de
+      // la materia, hasta un retoque cosmético disparaba esa cascada.
+      //
+      // `storage_path` es la ruta del PDF: no cambia porque alguien edite un
+      // texto de pantalla. El UPSERT conserva el uuid y solo borra los CHUNKS,
+      // que sí son derivados y hay que rehacer.
+      const existing = await sql<{ id: string; status: string }[]>`
+        select id, status from documents
+        where owner_user_id is null and storage_path = ${row.ruta} limit 1`;
       if (existing[0]?.status === "ready") { skipped++; continue; }
 
-      await sql`delete from documents where owner_user_id is null and title=${title}`;
-      // storage_path AHORA se guarda: antes quedaba NULL y no había forma de ir
-      // de un chunk a su archivo fuente.
-      const [doc] = await sql<{ id: string }[]>`
-        insert into documents (owner_user_id, subject_id, title, source_type, storage_path, kind, grade, subject_area, status)
-        values (null, ${subjectId}, ${title}, 'pdf', ${row.ruta}, ${kind}, ${grade}, ${subjectArea}, 'pending')
-        returning id`;
+      let docId: string;
+      if (existing[0]) {
+        docId = existing[0].id;
+        // El título y la materia SÍ se refrescan (pueden haber cambiado en el
+        // manifiesto); lo que no cambia es el id.
+        await sql`
+          update documents
+             set subject_id = ${subjectId}, title = ${title}, kind = ${kind},
+                 grade = ${grade}, subject_area = ${subjectArea}, status = 'pending'
+           where id = ${docId}::uuid`;
+        // Los chunks son derivados del PDF: se rehacen. `book_sections` NO se
+        // toca acá — lo reconstruye `build-sections` y su `ord`/`title` entran
+        // en la clave del progreso, así que borrarlo de prepo sería el mismo
+        // agujero por otra puerta.
+        await sql`delete from chunks where document_id = ${docId}::uuid`;
+      } else {
+        const [doc] = await sql<{ id: string }[]>`
+          insert into documents (owner_user_id, subject_id, title, source_type, storage_path, kind, grade, subject_area, status)
+          values (null, ${subjectId}, ${title}, 'pdf', ${row.ruta}, ${kind}, ${grade}, ${subjectArea}, 'pending')
+          returning id`;
+        docId = doc!.id;
+      }
+      const doc = { id: docId };
       const tt = Date.now();
       try {
         const { chunks } = await ingestCurriculum({

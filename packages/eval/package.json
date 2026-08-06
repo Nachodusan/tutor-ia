@@ -31,7 +31,8 @@
     "scope-audit": "tsx --env-file-if-exists=../../.env src/golden-scope-audit.ts",
     "answerability": "tsx --env-file-if-exists=../../.env src/answerability-sweep.ts",
     "pregunta-final": "tsx --env-file-if-exists=../../.env src/pregunta-final.ts",
-    "apoyado-sweep": "tsx --env-file-if-exists=../../.env src/apoyado-sweep.ts"
+    "apoyado-sweep": "tsx --env-file-if-exists=../../.env src/apoyado-sweep.ts",
+    "backfill-storage-path": "tsx --env-file-if-exists=../../.env src/backfill-storage-path.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",
