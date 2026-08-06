@@ -137,11 +137,51 @@ export async function contesta(
  * lado. NO se elige a ojo: es exactamente así como se llegó al 0,91 in-sample
  * que hubo que bajar después.
  */
+/**
+ * CALIBRADO con `apoyado-sweep` (2026-08-05) sobre las 17 etapas cross-scope con
+ * material de las 101. Lo que NO contesta, con sus dos señales:
+ *
+ *   q120 Cien años de soledad   rerank 0,894   entail 0,902   → pasa el discriminador (libro)
+ *   q035 elecciones en Chile    rerank 0,833   entail 0,808   → APOYADO
+ *   q129 Pitágoras              rerank 0,847   entail 0,147   → general
+ *   q122 Sancho Panza           rerank 0,570   entail 0,254   → general
+ *   q029 huesos del cuerpo      rerank 0,152   entail 0,662   → general
+ *
+ * La relevancia SOLA no alcanza, y ese fue el hallazgo: q129 puntúa 0,847 —más
+ * alto que q035— con un entailment de 0,147. Es el mismo fenómeno que motivó todo
+ * el discriminador, un nivel más abajo: el cross-encoder ve "geometría" en un
+ * texto sobre el teorema de Euclides y lo considera del tema, pero del teorema de
+ * PITÁGORAS no dice nada. Servirlo como material parcial sería exactamente el
+ * ruido con cara de respuesta que se estaba tratando de sacar.
+ *
+ * Por eso `apoyado` pide LAS DOS: relevancia alta (es del tema) Y un piso de
+ * entailment (algo tiene que decir al respecto). La banda es
+ * `[0,5 , umbral del discriminador)` en entailment y `>= 0,8` en relevancia.
+ *
+ * ⚠️ Sobre el golden esto afecta UNA pregunta, y es la que lo motivó. No es un
+ * número que valga por sí mismo: el golden son 101 preguntas de UNA materia y
+ * sus cross-scope son 17 filas. El caso "el libro toca el tema pero no contesta"
+ * va a ser mucho más frecuente en producción con 73 materias, y ahí es donde hay
+ * que medirlo — con `content_gaps`, que ya lo registra.
+ */
 export const DEFAULT_APOYADO_MIN_RELEVANCIA = 0.8;
+export const DEFAULT_APOYADO_MIN_ENTAIL = 0.5;
 
 export function apoyadoMinRelevanciaFromEnv(): number {
   const n = Number(process.env.RAG_APOYADO_MIN_RELEVANCIA ?? "");
   return Number.isFinite(n) && n > 0 && n <= 1 ? n : DEFAULT_APOYADO_MIN_RELEVANCIA;
+}
+
+export function apoyadoMinEntailFromEnv(): number {
+  // ⚠️ La cadena VACÍA se descarta ANTES de convertir. `Number("")` es 0, y como
+  // acá 0 es un valor legítimo del rango, sin esta guarda una env var vacía
+  // —o simplemente ausente— daba piso 0, o sea NINGÚN piso: q129 entraba como
+  // material parcial con 0,147 de entailment. Es la misma trampa que ya está
+  // documentada para RERANK_MIN_SCORE en core/config.ts, y se cayó igual.
+  const v = process.env.RAG_APOYADO_MIN_ENTAIL;
+  if (v == null || v.trim() === "") return DEFAULT_APOYADO_MIN_ENTAIL;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 && n <= 1 ? n : DEFAULT_APOYADO_MIN_ENTAIL;
 }
 
 /** ¿El modo `apoyado` por material parcial está activo? Va con el discriminador:

@@ -656,6 +656,55 @@ existe y se llama modo `apoyado` — dispara 2 veces en 101 y nadie lo calibró.
   Antes se descartaba: cuando el filtro bloqueaba, no quedaba rastro del número con
   que decidió. Es la diferencia entre auditar y adivinar.
 
+### El tercer casillero: modo `apoyado` por material PARCIAL (2026-08-05)
+
+Calibrado con `pnpm --filter @tutor-ia/eval apoyado-sweep`, que vuelca el par
+(relevancia, entailment) de cada etapa cross-scope. Lo que NO contesta:
+
+```
+q120 Cien años de soledad   rerank 0,894   entail 0,902   → pasa el discriminador (libro)
+q035 elecciones en Chile    rerank 0,833   entail 0,808   → APOYADO
+q129 Pitágoras              rerank 0,847   entail 0,147   → general
+q122 Sancho Panza           rerank 0,570   entail 0,254   → general
+q029 huesos del cuerpo      rerank 0,152   entail 0,662   → general
+```
+
+**La relevancia sola NO alcanza, y ese fue el hallazgo del sweep.** q129 puntúa
+0,847 —más alto que q035— con entailment 0,147: un texto sobre el teorema de
+Euclides que del de Pitágoras no dice nada. El cross-encoder ve "geometría" y lo
+llama del tema. Servirlo como parcial sería el mismo ruido con cara de respuesta,
+un nivel más abajo. Por eso `apoyado` exige LAS DOS señales: relevancia ≥ 0,8 Y
+entailment ≥ 0,5.
+
+⚠️ **Trampa en la que se cayó igual, teniéndola documentada:** la primera versión
+de `apoyadoMinEntailFromEnv` hacía `Number(process.env.X ?? "")` y aceptaba
+`n >= 0`. `Number("")` es **0**, así que con la env var ausente el piso valía 0 —
+o sea ningún piso, y q129 entraba como parcial. Es exactamente la trampa que
+`core/config.ts` ya advierte para `RERANK_MIN_SCORE`. La cadena vacía se descarta
+ANTES de convertir, siempre.
+
+**Costo medido, y la tensión que hay que tener a la vista:**
+
+| | correct_mode |
+|---|---|
+| sin `apoyado` | 22/24 (91,7%) |
+| con `apoyado` | 21/24 (87,5%) |
+
+La diferencia es UNA pregunta —q035— y **la métrica la cuenta mal a propósito**:
+el golden solo tiene dos etiquetas (`libro` / `general`) y para q035 eligió
+`general`, pero eso es lo que produce *"la próxima elección será en 2025"* en
+agosto de 2026. Con `apoyado` el chico recibe *"el material llega hasta 2021 y no
+puedo saber quién ganó la última; es muy probable que ya haya habido otra,
+confirmalo"* — más el material electoral real de su libro de Educación Ciudadana,
+que antes se tiraba. **El golden penaliza la mejor de las dos respuestas** porque
+su vocabulario no tiene el tercer estado. Corregir la etiqueta a `apoyado` sería
+lo correcto, pero no se hace acá: cambiar el golden para que apruebe la feature
+que se acaba de escribir es cómo se fabrica un instrumento que miente.
+
+`RAG_APOYADO=0` lo apaga sin tocar el discriminador. **Nada de esto corre en
+producción hoy**: todo cuelga de `RAG_ANSWERABILITY`, que sigue apagado por
+default a la espera de la decisión.
+
 **Herramienta nueva — `pnpm --filter @tutor-ia/eval retrieval-guard`.** Mide
 `correct_mode` y todo el encuadre SIN generación (minutos, no 2,5 h: el modo lo
 decide el retrieval). Permite barrer umbrales (`--min 0.80,0.85,0.91`) y, sobre

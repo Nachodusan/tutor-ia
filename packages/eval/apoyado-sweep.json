@@ -1,0 +1,172 @@
+[
+  {
+    "id": "q029",
+    "type": "must_abstain",
+    "etapa": "otro_curso",
+    "rerank": 0.1519,
+    "entail": 0.6624,
+    "expectMode": "general",
+    "expectScope": "ninguno",
+    "deberiaServir": false
+  },
+  {
+    "id": "q030",
+    "type": "must_abstain",
+    "etapa": "otra_materia",
+    "rerank": 0.8056,
+    "entail": 0.9907,
+    "expectMode": "libro",
+    "expectScope": "otra_materia",
+    "deberiaServir": true
+  },
+  {
+    "id": "q034",
+    "type": "must_abstain",
+    "etapa": "otro_curso",
+    "rerank": 0.1827,
+    "entail": 0.981,
+    "expectMode": "libro",
+    "expectScope": "otra_materia",
+    "deberiaServir": true
+  },
+  {
+    "id": "q034",
+    "type": "must_abstain",
+    "etapa": "otra_materia",
+    "rerank": 0.989,
+    "entail": 0.9946,
+    "expectMode": "libro",
+    "expectScope": "otra_materia",
+    "deberiaServir": true
+  },
+  {
+    "id": "q035",
+    "type": "must_abstain",
+    "etapa": "otra_materia",
+    "rerank": 0.8329,
+    "entail": 0.8076,
+    "expectMode": "general",
+    "expectScope": "ninguno",
+    "deberiaServir": false
+  },
+  {
+    "id": "q036",
+    "type": "must_abstain",
+    "etapa": "otro_curso",
+    "rerank": 0.6907,
+    "entail": 0.9326,
+    "expectMode": "libro",
+    "expectScope": "otro_curso",
+    "deberiaServir": true
+  },
+  {
+    "id": "q036",
+    "type": "must_abstain",
+    "etapa": "otra_materia",
+    "rerank": 0.6907,
+    "entail": 0.9326,
+    "expectMode": "libro",
+    "expectScope": "otro_curso",
+    "deberiaServir": true
+  },
+  {
+    "id": "q120",
+    "type": "must_abstain",
+    "etapa": "otro_curso",
+    "rerank": 0.894,
+    "entail": 0.9017,
+    "expectMode": "general",
+    "expectScope": "ninguno",
+    "deberiaServir": false
+  },
+  {
+    "id": "q120",
+    "type": "must_abstain",
+    "etapa": "otra_materia",
+    "rerank": 0.894,
+    "entail": 0.9017,
+    "expectMode": "general",
+    "expectScope": "ninguno",
+    "deberiaServir": false
+  },
+  {
+    "id": "q121",
+    "type": "must_abstain",
+    "etapa": "otro_curso",
+    "rerank": 0.6292,
+    "entail": 0.9774,
+    "expectMode": "libro",
+    "expectScope": "otro_curso",
+    "deberiaServir": true
+  },
+  {
+    "id": "q121",
+    "type": "must_abstain",
+    "etapa": "otra_materia",
+    "rerank": 0.6292,
+    "entail": 0.9774,
+    "expectMode": "libro",
+    "expectScope": "otro_curso",
+    "deberiaServir": true
+  },
+  {
+    "id": "q122",
+    "type": "must_abstain",
+    "etapa": "otra_materia",
+    "rerank": 0.5702,
+    "entail": 0.2541,
+    "expectMode": "general",
+    "expectScope": "ninguno",
+    "deberiaServir": false
+  },
+  {
+    "id": "q126",
+    "type": "must_abstain",
+    "etapa": "otro_curso",
+    "rerank": 0.8001,
+    "entail": 0.9314,
+    "expectMode": "libro",
+    "expectScope": "otro_curso",
+    "deberiaServir": true
+  },
+  {
+    "id": "q126",
+    "type": "must_abstain",
+    "etapa": "otra_materia",
+    "rerank": 0.8001,
+    "entail": 0.9314,
+    "expectMode": "libro",
+    "expectScope": "otro_curso",
+    "deberiaServir": true
+  },
+  {
+    "id": "q128",
+    "type": "must_abstain",
+    "etapa": "otro_curso",
+    "rerank": 0.9924,
+    "entail": 0.9478,
+    "expectMode": "libro",
+    "expectScope": "otro_curso",
+    "deberiaServir": true
+  },
+  {
+    "id": "q128",
+    "type": "must_abstain",
+    "etapa": "otra_materia",
+    "rerank": 0.9924,
+    "entail": 0.9478,
+    "expectMode": "libro",
+    "expectScope": "otro_curso",
+    "deberiaServir": true
+  },
+  {
+    "id": "q129",
+    "type": "must_abstain",
+    "etapa": "otra_materia",
+    "rerank": 0.847,
+    "entail": 0.1475,
+    "expectMode": "general",
+    "expectScope": "ninguno",
+    "deberiaServir": false
+  }
+]

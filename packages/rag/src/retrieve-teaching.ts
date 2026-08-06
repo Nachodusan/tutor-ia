@@ -13,7 +13,8 @@
  */
 import { getSql } from "@tutor-ia/db";
 import {
-  answerabilityEnabled, apoyadoEnabled, apoyadoMinRelevanciaFromEnv, contesta,
+  answerabilityEnabled, apoyadoEnabled, apoyadoMinEntailFromEnv,
+  apoyadoMinRelevanciaFromEnv, contesta,
 } from "./answerability";
 import { retrieveHybrid, type HybridChunk } from "./retrieve-hybrid";
 import {
@@ -428,6 +429,7 @@ export async function retrieveForTeaching(
   const answerOn = answerabilityEnabled() && !opts.vagueTurn;
   const apoyadoOn = apoyadoEnabled() && !opts.vagueTurn;
   const minRelevancia = apoyadoMinRelevanciaFromEnv();
+  const minEntailParcial = apoyadoMinEntailFromEnv();
   let answerEntail: number | null = null;
   // El material NO contesta la pregunta pero es del tema: se sirve marcado como
   // PARCIAL en vez de descartarse. Ver el comentario de `contesta`/apoyado.
@@ -442,10 +444,15 @@ export async function retrieveForTeaching(
     if (v === null) return true;
     answerEntail = v.entailment;
     if (v.ok) { parcial = false; return true; }
-    // No contesta. ¿Es al menos DEL TEMA? Entonces vale como apoyo parcial: el
-    // alumno recibe el material con el límite a la vista, en vez de una respuesta
-    // de memoria sin nada que la respalde.
-    if (apoyadoOn && topScore >= minRelevancia) { parcial = true; return true; }
+    // No contesta. Para valer como apoyo PARCIAL tiene que cumplir las DOS: ser
+    // del tema (relevancia) Y decir algo al respecto (piso de entailment). Con la
+    // relevancia sola entraba material como el de q129 —0,847 de relevancia y
+    // 0,147 de entailment: un texto de geometría que del teorema de Pitágoras no
+    // dice nada—, que es el mismo ruido con cara de respuesta un nivel más abajo.
+    if (apoyadoOn && topScore >= minRelevancia && v.entailment >= minEntailParcial) {
+      parcial = true;
+      return true;
+    }
     return false;
   };
 
