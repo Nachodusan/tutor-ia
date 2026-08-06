@@ -837,6 +837,34 @@ Regenerarlas: `pnpm --filter @tutor-ia/eval extract-gold-anchors` (exige que los
 uuids actuales existan — se corre ANTES de re-chunkear, no después). El eval las
 carga solo y avisa si alguna resolvió a chunks distintos de los del jsonl.
 
+### 🎯 DÓNDE ESTÁ LA BRECHA DE RECALL (medido 2026-08-06)
+
+Con `retrieval-guard --gold` (72 preguntas, minutos, sin generación):
+
+| | valor | qué dice |
+|---|---|---|
+| recall@5 | 88,0% | lo que le llega al alumno |
+| **recall@TODO (k=25)** | **95,3%** | el material que el retrieval SÍ trae |
+| recall por cobertura | 90,5% | fracción del pasaje dentro del top-5 |
+
+**De los 12 puntos que faltan, ~7,3 son de ORDEN y ~4,7 de recuperación.** El
+material llega y el cross-encoder lo hunde por debajo del puesto 5. Eso contradice
+la narrativa con la que arrancó esta fase ("la ingesta le quitó la estructura, hay
+que re-chunkear") y es coherente con lo que §7 ya documentaba por otro lado: el
+score del CE **no ordena por relevancia** (q123 Sherlock 0,5052 contra una
+pregunta legítima en 0,007).
+
+**Descartado por medición directa:** duplicar el pool de candidatos (25 → 60, en
+los dos brazos y en el cross-encoder) da resultados IDÉNTICOS al decimal. El
+material que falta no está entre los candidatos 26 y 60.
+
+**Lo que queda por probar, en orden de promesa:**
+1. `RAG_RANKER` — hoy "ce" puro; `rrf_then_ce` está implementado y nunca se barrió.
+2. El truncado del cross-encoder a 512 tokens, que alcanza al ~18% de los chunks.
+3. Un reranker mejor o un segundo paso de reordenamiento.
+
+---
+
 **Estado del paso 4 (2026-08-06) — RECHAZADO, y es el resultado más útil de la
 fase.** La premisa era que el chunker corre ciego (`clean.ts` ve 1 párrafo por
 página cuando la página tiene 15-26 bloques visuales) y que emitir esos bloques
