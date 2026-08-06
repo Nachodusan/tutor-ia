@@ -58,6 +58,7 @@ import {
   type EvalMetrics,
   type PerQuestionResult,
 } from "./lib/metrics";
+import { resolverAnclas, type ChunkLite, type GoldAnchor } from "./lib/gold-anchors";
 
 /** Una línea del golden set (§9.1). */
 interface GoldenQuestion {
@@ -235,6 +236,9 @@ async function runQuestion(
    *  Se resuelven una vez en main() y se pasan: son constantes de la corrida. */
   familyIds: string[] | null,
   studentGrade: string | null,
+  /** Ids gold resueltos desde las ANCLAS POR TEXTO contra el corpus del momento.
+   *  `null` = todavía no hay anclas y se cae a los uuids del jsonl. */
+  goldIds: string[] | null,
 ): Promise<QResult> {
   const t0 = Date.now();
   // 1) RETRIEVAL + GATE — el MISMO de producción (`getTeachingContext`, corpus
@@ -290,7 +294,11 @@ async function runQuestion(
   //
   // La única abstención que queda es la de INFRAESTRUCTURA, igual que en la ruta.
   const abstained = !!res.rerankerDown;
-  const expectedIds = gq.expect_chunks ?? [];
+  // Los ids gold salen de las ANCLAS POR TEXTO cuando existen: un uuid identifica
+  // una FILA, no un pasaje del libro, y no sobrevive a un re-chunk. Así murió
+  // `a3-set.jsonl` (0 de 18 chunk_id vivos) y con él la única forma barata de
+  // calibrar el NLI.
+  const expectedIds = goldIds ?? gq.expect_chunks ?? [];
   const topScore = ctx?.topScore ?? 0;
   const citableSource = ctx?.citableSource ?? "none";
 
@@ -642,6 +650,42 @@ async function main() {
     process.exit(1);
   }
   const questions = parseJsonl(raw);
+
+  // ── ANCLAS POR TEXTO ────────────────────────────────────────────────────────
+  // `expect_chunks` guarda uuids, y un uuid es la identidad de una FILA, no la de
+  // un pasaje del libro: cualquier re-chunk los cambia todos. Es exactamente como
+  // murió `golden/a3-set.jsonl` — 60 claims etiquetados a mano, 0 de sus chunk_id
+  // vivos, `a3-validate` evaluando 0 desde entonces. `gold-anchors.jsonl` guarda
+  // el TEXTO del pasaje y lo resuelve contra el corpus del momento.
+  const goldPorPregunta = new Map<string, string[]>();
+  try {
+    const anclas = (await readFile(
+      new URL("../golden/gold-anchors.jsonl", import.meta.url).pathname, "utf8",
+    )).split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l) as GoldAnchor);
+    const titulos = [...new Set(anclas.map((a) => a.documentTitle))];
+    const corpus = await getSql()<ChunkLite[]>`
+      select c.id, c.content, d.title as "documentTitle"
+      from chunks c join documents d on d.id = c.document_id
+      where d.title = any(${titulos})`;
+    let movidos = 0;
+    for (const q of questions) {
+      const mias = anclas.filter((a) => a.questionId === q.id);
+      if (!mias.length) continue;
+      const { ids } = resolverAnclas(mias, corpus);
+      goldPorPregunta.set(q.id, ids);
+      const antes = new Set(q.expect_chunks ?? []);
+      if (ids.length !== antes.size || ids.some((i) => !antes.has(i))) movidos++;
+    }
+    console.log(
+      `📌 anclas por texto: ${goldPorPregunta.size} preguntas resueltas` +
+        (movidos
+          ? `  ⚠️ ${movidos} resolvieron a chunks DISTINTOS de los del jsonl (el corpus se movió)`
+          : "  (idénticas al jsonl)"),
+    );
+  } catch {
+    console.log("📌 sin gold-anchors.jsonl — se usan los uuids del golden (frágiles ante un re-chunk)");
+  }
+
   // PROCEDENCIA: sha del golden + huella del corpus en el momento de la corrida.
   // Dos corridas con goldenSha256 o corpus distintos NO son comparables; sin
   // estos campos esa comparación inválida pasaba desapercibida (y hay 5
@@ -679,7 +723,7 @@ async function main() {
     process.stdout.write(`  · ${gq.id} [${gq.type}] ... `);
     let r: QResult;
     try {
-      r = await runQuestion(gq, userId, subjectId, familyIds, studentGrade);
+      r = await runQuestion(gq, userId, subjectId, familyIds, studentGrade, goldPorPregunta.get(gq.id) ?? null);
     } catch (err) {
       if (looksLikeDbFailure(err)) {
         console.log("");
