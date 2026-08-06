@@ -409,6 +409,11 @@ ANSW_JUEZ=1 pnpm --filter @tutor-ia/eval answerability     # + el juez LLM (1 ll
 pnpm --filter @tutor-ia/eval pregunta-final preguntas.json # regenera turnos para medir el cierre
 pnpm --filter @tutor-ia/eval drift-sweep eval-results.json # calibrar la deriva (sello `apoyado`)
 
+# Huecos de material: qué preguntan los alumnos que su libro NO cubre.
+# Sale de content_gaps, que llena /api/chat cuando scope != 'curso'. Es la lista
+# de compras de material con demanda real. SOLO admin: nunca exponer en /docente.
+pnpm --filter @tutor-ia/admin gaps listar [--dias 30] [--top 40]
+
 # Cuentas (anónimas: solo usuario y contraseña; sin registro en la app)
 pnpm --filter @tutor-ia/admin users crear  --usuario 7b-01 [--rol student|teacher|admin]
 pnpm --filter @tutor-ia/admin users lote   --prefijo 7b --cantidad 35
@@ -501,6 +506,163 @@ Borrados con el motor local: `llm/ollama.ts`, `packages/eval/src/ollama.ts` y lo
 experimentos que medían SOLO ese motor — `exp2-benchmark`, `exp3-latency`, `exp4-ram`,
 `exp5-correcto` (y sus scripts `exp2`..`exp5` en `packages/eval/package.json`). Los
 hallazgos que produjeron quedan como registro en `docs/exp2-4-hallazgos.md`.
+
+---
+
+## 6.b FASE 0 de la auditoría (2026-08-05) — qué cambió
+
+Auditoría crítica del motor (6 auditores + verificación en DB). El informe completo
+está en la memoria del proyecto (`auditoria-motor-ia.md`); esto es lo que YA se hizo.
+
+**El hallazgo que reordena las prioridades:** verificado con psql, **0 de 16.548
+chunks de contenido tienen `heading_path` y 0 tienen `oa`**. `extract_curriculum.py`
+entrega texto plano (no markdown), así que el chunking estructural nunca corre y el
+"link por OA" de §1 **es imposible por construcción** — `oasContent` en
+`retrieve-teaching.ts` siempre sale vacío y el boost de OA no puede disparar jamás.
+El recall@5 de 88% y la precisión de 71% no son un misterio de ranking: los chunks
+se embeben pelados, sin saber de qué libro ni lección son. **Eso es la Fase 1
+(re-ingesta estructural), que es lo que de verdad mueve la aguja.**
+
+Lo aplicado en Fase 0 (todo con `pnpm -r typecheck` en verde):
+
+| # | Cambio | Dónde |
+|---|---|---|
+| 1 | Perfil `8B` para `EVAL_USER_ID` + `familyIds`/`studentGrade` en claims-audit | DB + `claims-audit.ts` |
+| 2 | La vía del MARGEN ya no perfora el listón 0.50 de `otra_materia` (`gateMargin: 0`) | `rerank.ts` · `retrieve-teaching.ts` |
+| 3 | Gate de score para la pedagogía (`RAG_PEDAGOGY_MIN_SCORE`, 0.05) + se conserva el rótulo `[Unidad X]` | `retrieve-teaching.ts` · `teaching.ts` |
+| 4 | El error crudo del proveedor ya no llega a la burbuja del alumno; el turno fallado se persiste | `api/chat/route.ts` |
+| 5 | Registro de HUECOS DE MATERIAL (`content_gaps` + `admin gaps listar`) | `schema_content_gaps.sql` · `admin/gaps.ts` |
+| 6 | Simulación de prueba: clave verificada, clave fuera del cliente, shuffle, todo el libro, 503 en vez de prueba vacía | `api/test/*` · `sections.ts` · `page.tsx` |
+| 7 | Validador de la PREGUNTA DE CIERRE en runtime (`CLOSING_QUESTION_CHECK`) | `closing-question.ts` · `teaching.ts` |
+| 8 | Discriminador de ANSWERABILITY cableado tras `RAG_ANSWERABILITY` (solo cross-scope) | `answerability.ts` · `retrieve-teaching.ts` |
+
+**Mediciones nuevas que valen más que el código:**
+
+- **La pedagogía entraba al prompt casi toda como ruido.** Medido sobre Lengua 8º con
+  5 consultas reales, los scores de los bloques que ENTRABAN (top-2 por tipo):
+  relevantes en **0.12–0.70**, ruido en **≤0.016**, y un **hueco vacío en el medio**.
+  Dos de las cinco consultas no tenían NI UN bloque relevante y aun así el prompt
+  recibía 8. El umbral 0.05 cae dentro del hueco: no hay nada que afinar. Efecto
+  real: `nPeda` pasa de ~7-8 por turno a 0-2, y los que quedan son los buenos.
+- **El caso "¿cuánto hervir un huevo?" ya no se cuela** (era el ejemplo de la puerta
+  trasera del margen): antes entraba con topScore 0.16 pese al listón 0.50; ahora
+  `scope=ninguno`, score 0.000.
+- **El discriminador no daña el caso bueno**: "¿qué es la fotosíntesis?" desde Lengua
+  8º da entailment **0.991** (pasa cómodo) con el material de Ciencias que sí contesta.
+- **El validador de cierre acierta 4/4** en los casos conocidos: detecta y reemplaza
+  la auto-contestada del pinzón y el "¿te hace sentido?", y deja intactas la buena y
+  la que no tiene pregunta final. Costo: ~0.4-1.7 s cuando la pregunta ya está bien.
+- ⚠️ **q123 (Sherlock) sigue pasando y es por diseño**: ahora entra como `scope=curso`
+  con 0.146 por la vía del margen. Su entailment es 0.831 (el discriminador lo
+  frenaría), pero el discriminador **no gobierna el libro del propio curso** — filtrar
+  ahí rompería la promesa del producto para arreglar el problema de al lado.
+
+**Cómo revertir para reproducir el baseline viejo:** `RAG_ANSWERABILITY=0`
+(default), `CLOSING_QUESTION_CHECK=0`, `RAG_PEDAGOGY_MIN_SCORE=0`. Los cambios 2, 4,
+5 y 6 no tienen flag: son correcciones, no experimentos.
+
+### Corrida de validación (101 preguntas, `RAG_ANSWERABILITY=1`) y su AUDITORÍA
+
+| métrica | baseline 04-08 | F0 | |
+|---|---|---|---|
+| recall@5 | 88,0% | 88,0% | = |
+| precision@gold | 71,1% | 71,1% | = |
+| alucinación (tasa, modo libro) | 15,5% | 13,3% | ⚠ ver abajo |
+| false_abstention | 1,3% | 0,0% | ⚠ ver abajo |
+| false_book_claim | 4,2% | 4,2% | = |
+| **correct_mode** | **62,5%** | **95,8%** | ⚠ ver abajo |
+
+**⚠️ NO CITES ESOS NÚMEROS SIN LEER ESTO.** Cuatro escépticos independientes
+auditaron el salto y encontraron que la lectura ingenua es falsa en tres puntos:
+
+1. **El crédito del discriminador es +20,8 pts, no +33,3.** El denominador de
+   `correct_mode` son **24 preguntas** (las únicas con `expect_mode`, todas
+   `must_abstain`), así que cada pregunta vale 4,17 puntos y el salto son 8
+   preguntas: 15/24 → 23/24. Y de esas 8, **solo 5 son del discriminador**: q032
+   la mató `gateMargin:0` (cambio 2, sin flag) y q124/q125 las volteó una
+   **deriva de retrieval** por el cambio de proveedor de embeddings (commit
+   cc0b629, Ollama local → API), que nadie había detectado. El contrafáctico
+   honesto del flag es **75,0% → 95,8%**.
+2. **La alucinación NO bajó.** Es composición: las 8 preguntas que salieron del
+   bucket `libro` llevaban 12 de 34 afirmaciones sin respaldo. Sobre la MISMA
+   población medible en ambas corridas, la tasa va de 13,28% a 13,35% — o sea
+   nada. Y `hallucinationRate` global **subió** (49,0% → 50,5%).
+   `generalSinMedir` pasó de 10 a 18: parte de la "mejora" es dejar de mirar.
+3. **`false_abstention` no puede ver el daño del discriminador, por
+   construcción.** `eval.ts:292` define `abstained = !!res.rerankerDown` — solo
+   infraestructura. Cuando el discriminador rechaza, el tutor **responde igual**
+   en modo general, así que nunca produce una abstención. El 1,3%→0% era q041
+   con `cause=reranker_down`, un hipo del sidecar. La red de seguridad que este
+   HANDOFF prometía ("si daña las answerable se ve en false_abstention y en
+   recall") **no existe**: ninguna pregunta `answerable` pasa por el filtro, y
+   por eso recall y precisión salen idénticas al bit.
+
+**El costo real, con un caso probado.** q035 ("¿resultado de las últimas
+elecciones presidenciales en Chile?"): el baseline citaba Educación Ciudadana con
+**0/4 afirmaciones sin respaldo** y reconocía su límite ("el material se centra en
+participación… sí menciona que en 2017 resultó electo Piñera"). En F0 cae a modo
+general y responde *"la última se realizó en noviembre de 2021… la próxima será en
+2025"* — **falso al 2026-08-05, dicho con confianza, con 5/5 sin respaldo**, y
+`correct_mode` lo cuenta como ACIERTO. No es culpa del discriminador (el material
+no contestaba la pregunta y la etiqueta `must_abstain` es correcta): es que **el
+modo general no sabe en qué año vive y nadie mide su corrección factual**. Con 18
+preguntas ahí en vez de 10, ese agujero creció 80%.
+
+**Umbral bajado a 0,85 (era 0,91), y esta vez BARRIDO de verdad.** Con
+`retrieval-guard` (ver abajo), sobre las 24, con los entailments de RUNTIME:
+
+| umbral | correct_mode | qué falla |
+|---|---|---|
+| 0,80 | 87,5% (21/24) | q035 · q120 · q123 |
+| **0,85** | **91,7% (22/24)** | q120 · q123 |
+| 0,91 | 95,8% (23/24) | q123 |
+
+Los entailments reales, ordenados — arriba el material que DEBE pasar, abajo el
+ruido que debe frenarse:
+
+```
+material bueno:  q034 0,9946 · q030 0,9907 · q121 0,9774 · q128 0,9478 · q036 0,9326 · q126 0,9314
+ruido on-topic:  q120 0,9017 · q035 0,8076 · q029 0,6624 · q122 0,2541 · q129 0,1475
+```
+
+Las dos poblaciones se separan por **0,0297** (q120 → q126) y ahí es donde el sweep
+puso el 0,91 — con las mismas 14 preguntas que después lo puntúan. A 0,91 el margen
+hasta el material bueno más bajo es **0,021**; a 0,85 es **0,081**. Cuatro veces más
+aire, y eso importa porque toda la deriva del uso real (registro coloquial,
+hipótesis compuesta en multiturno) empuja el entailment HACIA ABAJO, o sea contra el
+material bueno. Los 4,2 puntos que cuesta son **una sola pregunta** (q120). q123
+(Sherlock) falla en los tres umbrales: es `scope=curso` y el discriminador no
+gobierna el libro propio, por diseño.
+
+⚠️ **Y el barrido dejó ver un problema de la ETIQUETA, no del motor.** q035
+(elecciones) tiene entailment 0,8076: a 0,80 pasa y sirve el material de Educación
+Ciudadana; a 0,85 se bloquea. El golden marca el bloqueo como ACIERTO
+(`must_abstain`) — pero la respuesta bloqueada era mejor para el alumno: *"el
+material se centra en participación más que en resultados; sí menciona que en 2017
+resultó electo Piñera"*, 0/4 afirmaciones sin respaldo. Lo que la reemplaza es
+conocimiento del modelo desactualizado. **El golden premia la peor de las dos
+respuestas**, porque su vocabulario es binario (hay material / no hay) y el caso
+pide el tercero: material PARCIAL, servido con su límite a la vista. Ese tercero ya
+existe y se llama modo `apoyado` — dispara 2 veces en 101 y nadie lo calibró.
+
+**Dos defensas nuevas que la auditoría motivó:**
+- **Bypass en turnos vagos/struggling** (`vagueTurn`): con "no entendí" la query es
+  el turno previo pegado al actual, y `comoAfirmacion()` produce hipótesis
+  compuestas o degeneradas ("El texto explica no cacho, me lo explicás más fácil
+  porfa.") cuyo entailment se hunde por la FORMA, no por el material. Sin esto, un
+  "no entendí" en una charla cross-scope le arranca el material al chico a mitad de
+  la conversación. **El golden no puede verlo: corre con `history: []`.**
+- **El entailment se PERSISTE** (`answerabilityEntail` → `answEntail` en el log).
+  Antes se descartaba: cuando el filtro bloqueaba, no quedaba rastro del número con
+  que decidió. Es la diferencia entre auditar y adivinar.
+
+**Herramienta nueva — `pnpm --filter @tutor-ia/eval retrieval-guard`.** Mide
+`correct_mode` y todo el encuadre SIN generación (minutos, no 2,5 h: el modo lo
+decide el retrieval). Permite barrer umbrales (`--min 0.80,0.85,0.91`) y, sobre
+todo, **detectar deriva de infraestructura** — que es lo que dejó pasar el cambio
+de embeddings: `recall@5` y `precision@gold` se promedian sobre las 72 preguntas
+con `expect_chunks` y **ninguna es cross-scope**, así que salieron idénticas al bit
+mientras el retrieval cross-scope se movía por debajo.
 
 ---
 

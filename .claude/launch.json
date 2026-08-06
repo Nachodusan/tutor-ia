@@ -6,6 +6,7 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@tutor-ia/web", "dev"],
       "port": 3000,
+      "autoPort": true,
       "env": {
         "DATABASE_URL": "postgresql://localhost:5432/tutor",
         "EMBEDDING_MODEL": "bge-m3",

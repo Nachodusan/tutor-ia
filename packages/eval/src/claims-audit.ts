@@ -31,6 +31,7 @@ import {
   type RawClaim,
 } from "@tutor-ia/core";
 import { nliVerify } from "@tutor-ia/rag";
+import { getSql } from "@tutor-ia/db";
 
 /** Cuántas preguntas auditar por defecto. Cada una cuesta un retrieval + una
  *  llamada de extracción + un NLI por claim no citada. */
@@ -79,6 +80,27 @@ async function main(): Promise<void> {
       `   Fuente: ${inPath} (respuestas reusadas, sin regenerar)\n`,
   );
 
+  // La familia y el curso del alumno, con LA MISMA consulta que /api/chat y que
+  // eval.ts. Sin esto el retrieval de acá corría con una etapa menos que el que
+  // generó las respuestas, y las claims se juzgaban contra OTRO material.
+  const sqlCtx = getSql();
+  const [perfilFilas, familiaFilas] = await Promise.all([
+    sqlCtx<{ grade: string | null }[]>`
+      select grade from student_profiles where user_id = ${data.userId}::uuid`,
+    data.subjectId
+      ? sqlCtx<{ id: string }[]>`
+          select s2.id
+          from subjects s1
+          join subjects s2 on s2.family = s1.family
+          where s1.id = ${data.subjectId}::uuid
+            and s1.family is not null
+            and s2.disabled_at is null
+            and (s2.user_id is null or s2.user_id = ${data.userId}::uuid)`
+      : Promise.resolve([] as { id: string }[]),
+  ]);
+  const studentGrade = perfilFilas[0]?.grade ?? null;
+  const familyIds = familiaFilas.length ? familiaFilas.map((r) => r.id) : null;
+
   const salida: unknown[] = [];
   for (const r of candidatas) {
     const answer = r.result.answer!;
@@ -89,6 +111,8 @@ async function main(): Promise<void> {
       question: r.q,
       history: [],
       struggling: isStruggling(r.q),
+      familyIds,
+      studentGrade,
     });
     const chunkTexts = (res.ctx?.citable ?? []).map((c) => c.content);
     if (chunkTexts.length === 0) continue;

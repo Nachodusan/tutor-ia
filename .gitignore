@@ -35,3 +35,6 @@ eval-results.json
 packages/eval/captures/
 packages/eval/multiturn-results.json
 packages/eval/rank-sweep-*.json
+# Salida de `retrieval-guard` (se reescribe en cada barrido). Lo que se versiona
+# es el resultado interpretado, en baselines/ y en el HANDOFF.
+packages/eval/retrieval-guard.json

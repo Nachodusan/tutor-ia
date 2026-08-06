@@ -1,0 +1,128 @@
+/**
+ * GUARDA DE REGRESIÓN DE RETRIEVAL — sin generación, en minutos.
+ *
+ * `correct_mode` (y todo el encuadre modo/alcance) sale del RETRIEVAL: el modo
+ * lo decide si hubo material citable, no el texto generado. Así que se puede
+ * medir sin pagar la generación — el golden completo tarda ~2,5 h y esto ~2 min.
+ *
+ * Para qué sirve, que es lo que faltaba:
+ *  - BARRER UMBRALES sin una corrida completa por celda (`--min 0.80,0.85,0.91`).
+ *  - Detectar DERIVA DE INFRAESTRUCTURA. Entre el baseline del 2026-08-04 y el
+ *    del 2026-08-05, dos preguntas cross-scope cambiaron de alcance sin que
+ *    ningún cambio de código las tocara (el proveedor de embeddings se había
+ *    movido de Ollama local a la API). No lo vio nadie porque `recall@5` y
+ *    `precision@gold` se promedian sobre las 72 con `expect_chunks`, y NINGUNA
+ *    de esas es cross-scope: las dos métricas salieron idénticas al bit mientras
+ *    el retrieval cross-scope se movía por debajo.
+ *  - PERSISTIR el entailment del discriminador, que el camino normal descarta.
+ *
+ * Uso:
+ *   pnpm --filter @tutor-ia/eval retrieval-guard                    # umbral actual
+ *   pnpm --filter @tutor-ia/eval retrieval-guard -- --min 0.80,0.85,0.91
+ *   pnpm --filter @tutor-ia/eval retrieval-guard -- --todas         # las 101, no solo las 24
+ */
+import { readFile, writeFile } from "node:fs/promises";
+import { getTeachingContext, isStruggling } from "@tutor-ia/core";
+import { getSql } from "@tutor-ia/db";
+
+interface Golden {
+  id: string;
+  type: string;
+  question?: string;
+  q?: string;
+  expect_mode?: string;
+  expect_scope?: string;
+}
+
+const argv = process.argv.slice(2);
+const flag = (n: string): string | null => {
+  const i = argv.indexOf(`--${n}`);
+  return i >= 0 && argv[i + 1] ? argv[i + 1]! : null;
+};
+const todas = argv.includes("--todas");
+
+const umbrales = (flag("min") ?? process.env.RAG_ANSWERABILITY_MIN ?? "")
+  .split(",").map((s) => s.trim()).filter(Boolean);
+
+async function main(): Promise<void> {
+  const raw = await readFile(
+    new URL("../golden/questions.jsonl", import.meta.url), "utf8",
+  );
+  const golden: Golden[] = raw.trim().split("\n").map((l) => JSON.parse(l) as Golden);
+  const preguntas = todas ? golden : golden.filter((g) => g.expect_mode);
+
+  const sql = getSql();
+  const userId = process.env.EVAL_USER_ID!;
+  const subjectId = process.env.EVAL_SUBJECT_ID!;
+  const [perfil, familia] = await Promise.all([
+    sql<{ grade: string | null }[]>`
+      select grade from student_profiles where user_id = ${userId}::uuid`,
+    sql<{ id: string }[]>`
+      select s2.id from subjects s1 join subjects s2 on s2.family = s1.family
+      where s1.id = ${subjectId}::uuid and s1.family is not null
+        and s2.disabled_at is null and (s2.user_id is null or s2.user_id = ${userId}::uuid)`,
+  ]);
+  const studentGrade = perfil[0]?.grade ?? null;
+  const familyIds = familia.length ? familia.map((r) => r.id) : null;
+
+  console.log(
+    `🔎 Guarda de retrieval — ${preguntas.length} preguntas · SIN generación\n` +
+      `   curso ${studentGrade ?? "(sin perfil)"} · familia ${familyIds?.length ?? 0} cursos · ` +
+      `answerability=${process.env.RAG_ANSWERABILITY === "1" ? "ON" : "off"}\n` +
+      `   umbrales: ${umbrales.length ? umbrales.join(" · ") : "(el del entorno)"}\n`,
+  );
+
+  const celdas = umbrales.length ? umbrales : [null];
+  const salida: unknown[] = [];
+
+  for (const u of celdas) {
+    if (u) process.env.RAG_ANSWERABILITY_MIN = u;
+    const filas: {
+      id: string; type: string; mode: string; scope: string;
+      topScore: number; entail: number | null; ok: boolean | null;
+    }[] = [];
+    for (const g of preguntas) {
+      const q = g.question ?? g.q ?? "";
+      const res = await getTeachingContext({
+        userId, subjectId, question: q, history: [],
+        struggling: isStruggling(q), familyIds, studentGrade,
+      });
+      const ctx = res.ctx;
+      const hay = (ctx?.citable.length ?? 0) > 0;
+      const mode = hay ? "libro" : "general";
+      const scope = ctx?.scope ?? "ninguno";
+      const ok = g.expect_mode
+        ? mode === g.expect_mode && (!g.expect_scope || scope === g.expect_scope)
+        : null;
+      filas.push({
+        id: g.id, type: g.type, mode, scope,
+        topScore: Number((ctx?.topScore ?? 0).toFixed(4)),
+        entail: ctx?.answerabilityEntail ?? null,
+        ok,
+      });
+      process.stdout.write(ok === false ? "✗" : ok === true ? "·" : "-");
+    }
+    const conModo = filas.filter((f) => f.ok !== null);
+    const bien = conModo.filter((f) => f.ok).length;
+    console.log(
+      `\n   min=${u ?? "(entorno)"} → correct_mode ${bien}/${conModo.length} = ` +
+        `${((bien / Math.max(1, conModo.length)) * 100).toFixed(1)}%`,
+    );
+    const mal = conModo.filter((f) => !f.ok);
+    for (const m of mal) {
+      const g = preguntas.find((p) => p.id === m.id)!;
+      console.log(
+        `      ✗ ${m.id} ${m.type}: dio ${m.mode}/${m.scope} (score ${m.topScore}` +
+          `${m.entail != null ? `, entail ${m.entail.toFixed(3)}` : ""}) · esperaba ${g.expect_mode}/${g.expect_scope ?? "*"}`,
+      );
+    }
+    salida.push({ min: u, correctMode: bien / Math.max(1, conModo.length), filas });
+  }
+
+  const out = "retrieval-guard.json";
+  await writeFile(out, JSON.stringify(salida, null, 2));
+  console.log(`\n💾 ${out} — incluye el entailment por pregunta (el camino normal lo descarta).`);
+}
+
+await main();
+process.exit(0);
