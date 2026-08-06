@@ -9,6 +9,7 @@
     "plans": "tsx --env-file-if-exists=../../.env src/plans.ts",
     "reset": "tsx --env-file-if-exists=../../.env src/reset.ts",
     "subjects": "tsx --env-file-if-exists=../../.env src/subjects.ts",
+    "gaps": "tsx --env-file-if-exists=../../.env src/gaps.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
