@@ -12,6 +12,7 @@
  * contenido top. La metadata (unit/lesson/oa) queda como señal blanda.
  */
 import { getSql } from "@tutor-ia/db";
+import { answerabilityEnabled, contesta } from "./answerability";
 import { retrieveHybrid, type HybridChunk } from "./retrieve-hybrid";
 import {
   retrieveRanked,
@@ -38,6 +39,38 @@ export const DEFAULT_OA_BOOST = 0.15;
 export function oaBoostFromEnv(): number {
   const n = Number(process.env.RAG_OA_BOOST ?? "");
   return Number.isFinite(n) && n >= 0 ? n : DEFAULT_OA_BOOST;
+}
+
+/**
+ * Umbral mínimo de rerankScore (crudo, sin boost) para que un bloque de
+ * pedagogía entre al prompt. Antes no había NINGUNO: se tomaban los top-2 por
+ * tipo aunque puntuaran 0.001, y "ideas previas" de una lección ajena moldeaban
+ * la explicación sin que nadie lo viera (la verificación NLI solo mira el
+ * contenido citable, no la guía).
+ *
+ * MEDIDO (2026-08-05, Lengua Y Literatura 8º, 5 consultas reales — los scores de
+ * los bloques que ENTRABAN al prompt, top-2 por tipo):
+ *
+ *   "narrador"              0.697 · 0.016 0.005 0.003 0.003 0.003 0.002 0.001
+ *   "texto argumentativo"   0.179 0.121 · 0.008 0.001 0.001 0.001 0.001 0.001
+ *   "género lírico"         0.188 · 0.003 0.001 0.000 …
+ *   "quién cuenta vs vive"  TODO ruido (máx 0.007)
+ *   "metáfora"              TODO ruido (máx 0.013)
+ *
+ * Las dos poblaciones NO se solapan: lo relevante vive en 0.12-0.70 y el ruido
+ * en ≤0.016, con un HUECO VACÍO en el medio. 0.05 cae dentro de ese hueco, así
+ * que no hay nada que perder ni umbral que afinar. El efecto real es que la
+ * guía pasa de ~7-8 bloques por turno (6 de ellos basura) a 0-2 de verdad
+ * relevantes; en las consultas donde no pasa ninguno el prompt dice "(sin guía
+ * para este tema)", que es honesto — mejor sin guía que con la de otra lección.
+ */
+export const DEFAULT_PEDAGOGY_MIN_SCORE = 0.05;
+
+export function pedagogyMinScoreFromEnv(): number {
+  const v = process.env.RAG_PEDAGOGY_MIN_SCORE;
+  if (v == null || v.trim() === "") return DEFAULT_PEDAGOGY_MIN_SCORE;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : DEFAULT_PEDAGOGY_MIN_SCORE;
 }
 
 /** Los tipos de pedagogía que alimentan el flujo de enseñanza, en orden de uso. */
@@ -127,6 +160,18 @@ export interface TeachingContext {
   scope: TeachingScope;
   /** Contadores del retrieval de contenido (brazos, pool, ranker) para el log. */
   stats?: RankedStats;
+  /**
+   * Entailment del discriminador de answerability en la última etapa cross-scope
+   * que lo ejerció; null si no corrió (flag apagado, turno vago, sidecar caído o
+   * la respuesta salió del libro del propio curso).
+   *
+   * Se PERSISTE porque sin esto las decisiones del discriminador no son
+   * auditables: cuando bloquea, el material desaparece del resultado y no queda
+   * rastro de con qué número se lo bloqueó. Es la diferencia entre "medimos con
+   * un script y corremos con otro" (el patrón de los tres bugs del §7) y poder
+   * verificar que el runtime reproduce la calibración.
+   */
+  answerabilityEntail?: number | null;
 }
 
 export interface TeachingOptions {
@@ -151,6 +196,17 @@ export interface TeachingOptions {
   corpusCompleto?: boolean;
   /** Curso del alumno ("1M"): ordena el material por cercanía de nivel. */
   studentGrade?: string | null;
+  /**
+   * El turno no trae tema propio ("no entendí", "otro ejemplo") o el alumno está
+   * trabado. APAGA el discriminador de answerability: la consulta que le llega
+   * es el turno previo pegado al actual, y `comoAfirmacion()` sobre eso produce
+   * hipótesis compuestas o degeneradas ("El texto explica no cacho, me lo
+   * explicás más fácil porfa.") cuyo entailment se hunde por la FORMA de la
+   * frase, no por el material. Sin esto, un "no entendí" en una charla
+   * cross-scope le arranca el material al chico a mitad de la conversación —
+   * y las 101 del golden corren con `history: []`, así que el eval no lo ve.
+   */
+  vagueTurn?: boolean;
 }
 
 /** Hasta dónde hubo que ir a buscar el material que se está citando. */
@@ -356,6 +412,21 @@ export async function retrieveForTeaching(
     return out;
   };
 
+  // DISCRIMINADOR DE ANSWERABILITY (solo cross-scope, detrás de flag): el gate
+  // dice "esto es relevante", no "esto contesta". Ver answerability.ts — y ojo
+  // que SOLO gobierna las etapas de acá abajo: el libro del propio curso no pasa
+  // por él, a propósito.
+  const answerOn = answerabilityEnabled() && !opts.vagueTurn;
+  let answerEntail: number | null = null;
+  const pasaAnswerability = async (chunks: { content: string }[]): Promise<boolean> => {
+    if (!answerOn) return true;
+    const v = await contesta(query, chunks.map((c) => c.content));
+    // null = sidecar caído: no negarle material a un alumno por un filtro mudo.
+    if (v === null) return true;
+    answerEntail = v.entailment;
+    return v.ok;
+  };
+
   if (!dirigido && !directedOk && opts.subjectId && !content?.grounded && (opts.familyIds?.length ?? 0) > 1) {
     const ampliado = await retrieveRanked(query, {
       userId: opts.userId,
@@ -364,7 +435,7 @@ export async function retrieveForTeaching(
       minRerankScore: threshold,
       corpusRole: "content",
     });
-    if (ampliado.grounded) {
+    if (ampliado.grounded && (await pasaAnswerability(ampliado.chunks))) {
       content = { ...ampliado, chunks: porCercania(ampliado.chunks) };
       scope = "otro_curso";
     }
@@ -404,20 +475,24 @@ export async function retrieveForTeaching(
     // que uno del propio libro: no hay contexto de materia que lo respalde, y un
     // match flojo es simplemente ruido de 29.000 chunks.
     //
-    // ⚠️ El umbral solo rige la vía ABSOLUTA del gate. La vía del MARGEN
-    // (`gapMed`) no tiene equivalente elevado, y por ahí se coló "¿cuánto hervir
-    // un huevo?" con 0.16 pese al 0.5. Ver la tarea abierta sobre el
-    // discriminador de esta etapa.
+    // La vía del MARGEN va APAGADA en esta etapa (gateMargin: 0): el margen
+    // existe para rescatar registro coloquial DENTRO del material del alumno,
+    // no para perforar el listón alto — por ahí se coló "¿cuánto hervir un
+    // huevo?" con topScore 0.16 pese al 0.5.
     const todo = await retrieveRanked(query, {
       userId: opts.userId,
       subjectIds: null,
       k: contentK,
       minRerankScore: Math.max(threshold, UMBRAL_OTRA_MATERIA),
+      gateMargin: 0,
       corpusRole: "content",
     });
     // Solo desplaza a lo anterior si es ESTRICTAMENTE mejor. Ante empate se
     // queda la asignatura propia: mismo valor para el alumno, y su libro.
-    if (todo.grounded && todo.topScore > (content?.grounded ? content.topScore : -1)) {
+    if (
+      todo.grounded && todo.topScore > (content?.grounded ? content.topScore : -1) &&
+      (await pasaAnswerability(todo.chunks))
+    ) {
       content = { ...todo, chunks: porCercania(todo.chunks) };
       scope = "otra_materia";
     }
@@ -454,7 +529,11 @@ export async function retrieveForTeaching(
         return { ...c, rerankScore, rankScore: Math.min(1, boosted) };
       })
       .sort((a, b) => b.rankScore - a.rankScore);
+    const pedaMin = pedagogyMinScoreFromEnv();
     for (const c of rankedPeda) {
+      // Gate por score CRUDO (misma disciplina que el resto: el boost de OA solo
+      // mueve el orden, nunca decide si un bloque entra al prompt).
+      if (c.rerankScore < pedaMin) continue;
       const t = c.pedagogyType as TeachingType;
       if (TEACHING_TYPES.includes(t) && pedagogy[t].length < perType) pedagogy[t].push(c);
     }
@@ -524,5 +603,6 @@ export async function retrieveForTeaching(
     topScore,
     gateBypassed,
     stats: content?.stats,
+    answerabilityEntail: answerEntail,
   };
 }

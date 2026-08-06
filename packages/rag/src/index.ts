@@ -12,6 +12,7 @@ export * from "./rerank";
 export * from "./ranking";
 export * from "./retrieve-teaching";
 export * from "./nli";
+export * from "./answerability";
 export * from "./text-match";
 export * from "./book-index";
 export * from "./sections";

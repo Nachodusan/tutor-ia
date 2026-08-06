@@ -122,6 +122,12 @@ export interface RankedOptions extends HybridOptions {
   minRerankScore?: number;
   /** Estrategia de ordenamiento final (default: RAG_RANKER o "ce"). */
   rankStrategy?: RankStrategy;
+  /** Margen del gate híbrido para ESTA llamada; 0 lo apaga. Default: env/6.0.
+   *  Existe porque la etapa `otra_materia` de la cascada sube el umbral absoluto
+   *  a 0.50 y la vía del margen no tenía equivalente elevado: "¿cuánto hervir un
+   *  huevo?" entraba con topScore 0.16 por gapMed>=6, perforando el listón que
+   *  la etapa declara. En esa etapa se pasa 0. */
+  gateMargin?: number;
 }
 
 /** Default del pool de candidatos del reranker. Configurable con RAG_CANDIDATE_POOL. */
@@ -232,9 +238,10 @@ export async function retrieveRanked(
   // top-1; con otras estrategias el mejor material puede no quedar primero y
   // el gate no debe castigar eso.
   const topScore = ranked.reduce((m, c) => Math.max(m, c.rerankScore), 0);
-  // Segunda vía (gate híbrido, apagado por default): margen del mejor logit
-  // sobre la mediana del pool. Ver gateMarginFromEnv().
-  const margin = gateMarginFromEnv();
+  // Segunda vía (gate híbrido, PRENDIDO por default con margen 6.0 — se apaga
+  // con RERANK_GATE_MARGIN=0 o pasando opts.gateMargin=0): margen del mejor
+  // logit sobre la mediana del pool. Ver gateMarginFromEnv().
+  const margin = opts.gateMargin ?? gateMarginFromEnv();
   const topLogit = logits.reduce((m, x) => Math.max(m, x), -Infinity);
   const gapMed = logits.length > 1 ? topLogit - median(logits) : 0;
   const viaAbs = topScore >= threshold;
