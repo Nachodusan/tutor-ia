@@ -807,7 +807,7 @@ de 1º con Leo Primero, y prometer "cobertura estructural del corpus" sería fal
 |---|---|---|---|
 | 0 | ✅ **HECHO** — Backup | 160 MB · 28.986 chunks · verificado | — |
 | 1 | ✅ **HECHO** — Desacoplar ingesta de `title` (UPSERT por `storage_path`) | 0 huérfanos (eran 158) · 94/94 `topic_key` · 218/218 uuids | — |
-| 2 | Anclas del golden por TEXTO (no por uuid) | 68/68 anclas; guard reproduce 88,0/71,1 | el guard no reproduce el baseline |
+| 2 | ✅ **HECHO** — Anclas del golden por TEXTO (no por uuid) | 72/72 resueltas, 0% de inflación, idénticas al jsonl | — |
 | 3 | Backfill `heading_path` desde `book_sections` (solo span ≤20 págs = 43,8%) | ≤2/20 citas nombran la lección equivocada | más de 2/20 |
 | 4 | `get_text("blocks")` en UN libro (Lengua 8º TE) | pérdida de chars <3%; 68/68 re-anclan; recall@5 no baja | recall baja o pérdida >5% |
 | 5 | Rollout a los 93 documentos de contenido | recall@5 ≥91%, precision@gold ≥75% | cualquier métrica retrocede → `pg_restore` |
@@ -823,6 +823,19 @@ Efecto colateral útil: los 158 documentos con la capitalización rota tras el
 acento ("MatemáTica", "IngléS") dejaron de figurar como huérfanos, así que la
 ingesta ya no está bloqueada. Quedan 5 documentos en `status='error'` de siempre
 (4 guías docentes de inglés + 1 de Leo Primero) que ahora sí se pueden ingerir.
+
+**Estado del paso 2 (2026-08-06).** `golden/gold-anchors.jsonl` — 122 anclas de
+72 preguntas, con el TEXTO del pasaje en vez del uuid. Se resuelven por
+containment de 4-gramas con **cobertura acumulada**: se juntan chunks en orden de
+4-gramas nuevos aportados hasta cubrir el 90% del ancla. Medido: 0% de inflación
+(1,69 ids por pregunta, exactamente el gold real) y 72/72 resueltas, estable entre
+0,80 y 1,00 — el parámetro no es sensible. Un umbral fijo por chunk no servía: con
+0,25 inflaba 32% (y un gold inflado sube recall@5 solo), con 0,60 iba a
+subestimar apenas el re-chunk partiera el pasaje en pedazos.
+
+Regenerarlas: `pnpm --filter @tutor-ia/eval extract-gold-anchors` (exige que los
+uuids actuales existan — se corre ANTES de re-chunkear, no después). El eval las
+carga solo y avisa si alguna resolvió a chunks distintos de los del jsonl.
 
 ⚠️ **`buildSectionsForDocument` dice en un comentario que "las secciones son
 derivadas, no hay estado que preservar". Es FALSO** y hay que corregirlo: `ord` y
