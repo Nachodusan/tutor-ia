@@ -858,10 +858,32 @@ pregunta legítima en 0,007).
 los dos brazos y en el cross-encoder) da resultados IDÉNTICOS al decimal. El
 material que falta no está entre los candidatos 26 y 60.
 
-**Lo que queda por probar, en orden de promesa:**
-1. `RAG_RANKER` — hoy "ce" puro; `rrf_then_ce` está implementado y nunca se barrió.
-2. El truncado del cross-encoder a 512 tokens, que alcanza al ~18% de los chunks.
-3. Un reranker mejor o un segundo paso de reordenamiento.
+**BARRIDO DE ORDENAMIENTO (2026-08-06) — la estrategia actual ya es la mejor.**
+Las cinco estrategias implementadas, sobre las 72 con ancla:
+
+| estrategia | recall@5 | precision@gold | cobertura |
+|---|---|---|---|
+| **`ce` (actual)** | **88,0%** | 71,1% | **90,5%** |
+| `linear:0.3:minmax` | 87,3% | 71,8% | 90,2% |
+| `rrf_then_ce:10` | 84,5% | 70,4% | 87,9% |
+| `linear:0.5:minmax` | 84,3% | 68,5% | 87,2% |
+| `rrf` | 79,6% | 58,6% | 83,3% |
+
+Ninguna supera a `ce`. `linear:0.3` empata dentro del ruido (mejor precisión por
+0,7 pts, peor recall por 0,7). **Mezclar el RRF con el cross-encoder no ayuda: el
+CE solo ya extrae toda la señal que hay.**
+
+**Y el truncado tampoco es la causa:** solo 10 de 266 chunks del libro del golden
+superan los 512 tokens del reranker (3,8%). No puede explicar 7,3 puntos.
+
+**Conclusión: se agotó el espacio de AJUSTE.** Los tres candidatos que quedaban
+—pool más grande, otra estrategia de ordenamiento, la ventana del CE— están
+medidos y descartados. Los 7,3 puntos de brecha por orden son del cross-encoder
+mismo: `bge-reranker-v2-m3` no ordena bien las preguntas parafraseadas, que es el
+caso normal de un chico. Mejorar eso ya no es configurar lo que hay sino cambiar
+el componente: otro reranker, expansión de consulta (HyDE), o afinar el actual con
+el golden. Cualquiera de las tres es un proyecto con su propia hipótesis, no un
+barrido.
 
 ---
 
