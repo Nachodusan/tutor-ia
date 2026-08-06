@@ -715,6 +715,114 @@ mientras el retrieval cross-scope se movía por debajo.
 
 ---
 
+## 6.c FASE 1 — lo que el diseño encontró ANTES de tocar el corpus (2026-08-06)
+
+Cuatro análisis en paralelo + verificación propia. **El plan cambió por completo
+y la premisa de la Fase 1 estaba mal formulada.**
+
+### 🔴 LO PRIMERO: re-ingestar HOY le borra el progreso a los alumnos
+
+`batch-ingest.ts:225` hace `delete from documents ... where title=` + insert, así
+que **el uuid del documento cambia en cada re-ingesta**. Y la identidad del
+progreso es `topic_key = hash(documentId|ord|title)` (`sections.ts:91`). En la
+base hay **94 filas en `student_plan_progress` y 29 en `student_weak_topics`**,
+sin FK que las proteja, y `book_sections` cascadea al borrar el documento.
+
+Consecuencia: la próxima re-ingesta —por el motivo que sea, incluso cambiar el
+nombre visible de una materia (§7)— vacía la barra de progreso y la lista de
+"Para reforzar" de todos los alumnos, **en silencio y sin error**. Y
+`documents.storage_path` está vacío en **213 de 218** documentos, así que ni
+siquiera hay una llave estable a la que migrar sin backfill previo.
+
+**Desacoplar la ingesta del título (UPSERT por `storage_path`) es prerrequisito
+BLOQUEANTE de cualquier re-ingesta.** No es una mejora opcional ni algo para
+hacer "de paso". Backup hecho antes de tocar nada:
+`~/tutor-backups/tutor-2026-08-06_0104.dump` (160 MB, 28.986 chunks, verificado).
+
+### La premisa estaba mal: no es el "embedding pelado", es el CORTE
+
+La auditoría dijo "los chunks se embeben pelados, sin contexto". Es cierto
+(`ingest-curriculum.ts:167` embebe `r.content` a secas, mientras la pedagogía sí
+lleva rótulo en `:124-127`) **pero no explica el recall**: 56 de 66 materias
+tienen UN solo documento de contenido, así que para **13.414 de 16.548 chunks
+(81,1%)** el prefijo "libro · curso" es una CONSTANTE dentro de su pool y no
+reordena nada. Y las 72 preguntas con `expect_chunks` no incluyen ninguna
+cross-scope, que es donde ese prefijo sí ayudaría — o sea que recall@5 y
+precision@gold son ciegas, por construcción, a lo único que el prefijo arregla.
+
+**El problema real está en la línea 111 del extractor.** `get_text()` devuelve la
+página como un bloque plano: medido, `clean.ts` ve **1 párrafo por página**
+(mediana 1, máx 1), así que `chunkStructural` corre ciego y queda degradado a un
+cortador de 500 tokens — se ve en la distribución de longitudes, apretada contra
+el techo (p50 1.795, p75 1.927, p90 1.969 chars).
+
+La misma página con `get_text("blocks")` tiene **15-26 bloques visuales**.
+Verificado en Biología 1º Medio, página 137 — esto es UN chunk y UN vector hoy:
+
+```
+[ 20c] Neurona presináptica          [ 17c] Neurotransmisores
+[ 21c] Neurona postsináptica         [ 18c] Botón presináptico
+[ 41c] Vesícula presináptica con neurotransmisor
+[364c] La forma de las neuronas está especializada para establecer redes…
+[245c] Cuando el impulso nervioso llega al botón sináptico provoca…
+[ 10c] Reflexiona                    [ 74c] 1. Considera las propiedades…
+```
+
+Ocho etiquetas de un diagrama + dos párrafos + una consigna + una pregunta,
+promediados en un solo vector. Ésa es la forma exacta del fallo que §7 documenta
+("el pasaje estaba TEXTUAL en el corpus y no se recuperó").
+
+**Y el arreglo es gratis:** `get_text("blocks")` mide **0,65× el costo** de
+`get_text()` — más barato, no más caro. Las 17.621 páginas de contenido se
+re-extraen en ~1 minuto. La Fase 1 no es "1-2 semanas": es ~1 h de máquina y
+centavos de embeddings. **Lo caro es el riesgo de destruir datos, no el cómputo.**
+
+### Descartado con evidencia: pymupdf4llm
+
+100× más lento (0,289 s/pág con OCR, que es el default de la 1.28) y sus headings
+son **mobiliario de página** ("Exploro", "Aplica", "Modelamiento") con niveles que
+reflejan tamaño de fuente, no jerarquía: `######` para el autor de un poema, `#`
+para basura de OCR (`# OO <u><mark>OSOOY</mark></u>`). Extrae además **30% menos
+texto**. La jerarquía real ya está en `book_sections`, gratis y en la base.
+
+### Descartado con evidencia: el OA
+
+`extract_curriculum.py:106` dice `plan = parse_plan(doc) if kind == "pedagogy"
+else {}` — el contenido tiene `oa=None` por un **`else {}` hard-codeado**, no por
+un fallo de extracción. Y aunque funcionara: el boost de OA solo toca la
+pedagogía, así que **no puede mover recall@5 ni precision@gold ni en principio**,
+y `ctx.oas` no llega ni al prompt ni a la UI. El §1 de este documento describe
+como "arquitectura central" un mecanismo que nunca ejecutó y que nadie extrañó.
+
+### Fuera de alcance, dicho explícitamente
+
+Los **47 libros sin índice parseado** (19,4% del contenido: Inglés, Leo Primero,
+Sumo Primero) tienen 0,39-0,70 chunks por página contra 1,28 de los indexados:
+**el texto no está en el PDF**. Ningún paso de esta fase le cambia nada a un chico
+de 1º con Leo Primero, y prometer "cobertura estructural del corpus" sería falso.
+
+### Orden de trabajo
+
+| # | Qué | Valida | Aborta si |
+|---|---|---|---|
+| 0 | Backup + anclas del golden por TEXTO (no por uuid) | 68/68 anclas; guard reproduce 88,0/71,1 | el guard no reproduce el baseline |
+| 1 | **Desacoplar ingesta de `title`** (UPSERT por `storage_path`) | `BATCH_DRY=1` → 0 a ingerir, 0 huérfanos; 94/94 `topic_key` resuelven | el uuid del documento no sobrevive |
+| 2 | Backfill `heading_path` desde `book_sections` (solo span ≤20 págs = 43,8%) | ≤2/20 citas nombran la lección equivocada | más de 2/20 |
+| 3 | `get_text("blocks")` en UN libro (Lengua 8º TE) | pérdida de chars <3%; 68/68 re-anclan; recall@5 no baja | recall baja o pérdida >5% |
+| 4 | Rollout a los 93 documentos de contenido | recall@5 ≥91%, precision@gold ≥75% | cualquier métrica retrocede → `pg_restore` |
+
+⚠️ **Nunca dos cambios en la misma corrida.** El precedente está en §6.b: el salto
+de `correct_mode` que parecía del discriminador era en un tercio deriva de
+retrieval y `gateMargin:0`.
+
+⚠️ **El prefijo de contexto NUNCA va en `content`.** `chunks.content_tsv` es
+`GENERATED ALWAYS AS to_tsvector('spanish', content)` y `match_chunks_lexical` une
+los lexemas con OR: cualquier pregunta con "lengua", "unidad" o "lección"
+matchearía miles de chunks, y el síntoma se leería como MEJORA (`nLexical` sube,
+`lexEmpty` baja). Va en columna aparte o en tiempo de consulta.
+
+---
+
 ## 7. Deuda conocida / próximos pasos
 
 - 🟢 **RESUELTA — latencia local de ~2 min por turno.** Venía de `keep_alive:0`
