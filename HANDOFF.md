@@ -805,11 +805,31 @@ de 1º con Leo Primero, y prometer "cobertura estructural del corpus" sería fal
 
 | # | Qué | Valida | Aborta si |
 |---|---|---|---|
-| 0 | Backup + anclas del golden por TEXTO (no por uuid) | 68/68 anclas; guard reproduce 88,0/71,1 | el guard no reproduce el baseline |
-| 1 | **Desacoplar ingesta de `title`** (UPSERT por `storage_path`) | `BATCH_DRY=1` → 0 a ingerir, 0 huérfanos; 94/94 `topic_key` resuelven | el uuid del documento no sobrevive |
-| 2 | Backfill `heading_path` desde `book_sections` (solo span ≤20 págs = 43,8%) | ≤2/20 citas nombran la lección equivocada | más de 2/20 |
-| 3 | `get_text("blocks")` en UN libro (Lengua 8º TE) | pérdida de chars <3%; 68/68 re-anclan; recall@5 no baja | recall baja o pérdida >5% |
-| 4 | Rollout a los 93 documentos de contenido | recall@5 ≥91%, precision@gold ≥75% | cualquier métrica retrocede → `pg_restore` |
+| 0 | ✅ **HECHO** — Backup | 160 MB · 28.986 chunks · verificado | — |
+| 1 | ✅ **HECHO** — Desacoplar ingesta de `title` (UPSERT por `storage_path`) | 0 huérfanos (eran 158) · 94/94 `topic_key` · 218/218 uuids | — |
+| 2 | Anclas del golden por TEXTO (no por uuid) | 68/68 anclas; guard reproduce 88,0/71,1 | el guard no reproduce el baseline |
+| 3 | Backfill `heading_path` desde `book_sections` (solo span ≤20 págs = 43,8%) | ≤2/20 citas nombran la lección equivocada | más de 2/20 |
+| 4 | `get_text("blocks")` en UN libro (Lengua 8º TE) | pérdida de chars <3%; 68/68 re-anclan; recall@5 no baja | recall baja o pérdida >5% |
+| 5 | Rollout a los 93 documentos de contenido | recall@5 ≥91%, precision@gold ≥75% | cualquier métrica retrocede → `pg_restore` |
+
+**Estado del paso 1 (2026-08-06).** `documents.storage_path` está lleno en 218/218
+y tiene índice único parcial sobre el corpus global. `batch-ingest` hace UPSERT
+por ruta: conserva el uuid, refresca título/materia y borra solo los chunks.
+`book_sections` NO se toca en la ingesta — su `ord`/`title` entran en la clave del
+progreso. Probado en transacción con rollback: cambiando el título a propósito, el
+uuid y las secciones sobreviven y se borran únicamente los chunks.
+
+Efecto colateral útil: los 158 documentos con la capitalización rota tras el
+acento ("MatemáTica", "IngléS") dejaron de figurar como huérfanos, así que la
+ingesta ya no está bloqueada. Quedan 5 documentos en `status='error'` de siempre
+(4 guías docentes de inglés + 1 de Leo Primero) que ahora sí se pueden ingerir.
+
+⚠️ **`buildSectionsForDocument` dice en un comentario que "las secciones son
+derivadas, no hay estado que preservar". Es FALSO** y hay que corregirlo: `ord` y
+`title` entran en `topic_key`. Reconstruir `book_sections` sin migrar las claves
+le borra el progreso al alumno igual que lo hacía la re-ingesta. Vale también para
+el fix de `esAuxiliar` del commit anterior: su efecto se materializa recién al
+reconstruir, y eso hay que hacerlo con migración de `topic_key`, no a mano.
 
 ⚠️ **Nunca dos cambios en la misma corrida.** El precedente está en §6.b: el salto
 de `correct_mode` que parecía del discriminador era en un tercio deriva de

@@ -69,7 +69,21 @@ export async function buildSectionsForDocument(
   };
   if (opts.dryRun || r.sections.length === 0) return out;
 
-  // Reemplazo atómico: las secciones son derivadas, no hay estado que preservar.
+  // ⚠️ ESTE COMENTARIO DECÍA "las secciones son derivadas, no hay estado que
+  // preservar". ES FALSO, y es la clase de frase que hace que alguien reconstruya
+  // sin pensarlo dos veces.
+  //
+  // `topic_key = claveTema(documentId, ord, title)` (más abajo en este archivo)
+  // es la identidad del PROGRESO DEL ALUMNO: `student_plan_progress` y
+  // `student_weak_topics` la guardan como texto, sin FK. Si al reconstruir cambia
+  // el `ord` de una sección o se le corrige el `title`, esas filas quedan
+  // huérfanas y el chico ve su avance en cero y su lista de "Para reforzar"
+  // vacía, sin ningún error.
+  //
+  // Reconstruir es correcto cuando el índice del libro no cambió (mismo `ord`,
+  // mismo `title` → misma clave). Cuando SÍ cambia —por ejemplo al arreglar la
+  // clasificación de secciones auxiliares— hay que migrar `topic_key` en la misma
+  // transacción, no reconstruir y ver qué pasa.
   await sql.begin(async (tx) => {
     await tx`delete from book_sections where document_id = ${documentId}`;
     for (const s of r.sections) {
