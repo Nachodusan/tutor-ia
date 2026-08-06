@@ -104,6 +104,40 @@ export function resolverAncla(
   return { ids, cobertura: 1 - faltan.size / g.size };
 }
 
+/**
+ * RECALL POR COBERTURA — la métrica que sobrevive a un cambio de chunking.
+ *
+ * `recall@5` cuenta CHUNKS acertados, y eso deja de significar lo mismo apenas
+ * cambia el corte. Medido al re-chunkear Lengua 8º con `get_text("blocks")`: el
+ * pasaje gold pasó de vivir en 1,69 chunks a 3,69, así que acertar "todo el gold"
+ * dentro de los mismos 5 slots del top-5 se volvió mecánicamente más difícil.
+ * recall@5 se desplomó de 88,0% a 58,3% **sin que se perdiera una palabra de
+ * texto** (la cobertura media del ancla es 87,8%). Comparar esos dos números es
+ * comparar dos definiciones distintas.
+ *
+ * Esto mide otra cosa, invariante al corte: de los 4-gramas del PASAJE, ¿qué
+ * fracción quedó dentro de lo que el retrieval trajo? Si el pasaje está entero
+ * entre los top-k da 1,0, esté repartido en un chunk o en cinco.
+ */
+export function recallPorCobertura(
+  anclas: GoldAnchor[],
+  recuperados: { id: string; content: string }[],
+  k = 5,
+): number {
+  if (anclas.length === 0) return 0;
+  const texto = norm(recuperados.slice(0, k).map((c) => c.content).join(" \n "));
+  const g = ngrams(texto.split(" "));
+  let cubiertos = 0, total = 0;
+  for (const a of anclas) {
+    const ga = ngrams(norm(a.texto).split(" "));
+    for (const q of ga) {
+      total++;
+      if (g.has(q)) cubiertos++;
+    }
+  }
+  return total ? cubiertos / total : 0;
+}
+
 /** Resuelve todas las anclas de una pregunta contra el corpus actual. */
 export function resolverAnclas(
   anclas: GoldAnchor[],

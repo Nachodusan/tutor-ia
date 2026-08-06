@@ -43,6 +43,16 @@ const ROOT = process.argv[2] ?? "/Users/dusan/Documents/libros";
 const MANIFEST = process.argv[3] ?? resolve(HERE, "../corpus-manifest.csv");
 const uid = process.env.EVAL_USER_ID!;
 const DRY = process.env.BATCH_DRY === "1";
+/**
+ * Re-ingerir UN libro sin tocar los otros 217. Filtra por substring de la ruta.
+ *
+ * Hace falta para trabajar por libro con puntos de control —que es la única forma
+ * segura de cambiar la extracción— y para no arrastrar los 5 documentos en
+ * `status='error'` dentro de un experimento que mide otra cosa. El chequeo de
+ * huérfanos y la validación disco≡manifiesto siguen corriendo sobre el manifiesto
+ * COMPLETO: filtrar qué se ingiere no puede aflojar qué se valida.
+ */
+const SOLO = process.env.INGEST_SOLO?.trim() || null;
 
 /** El corpus tipado de la base solo distingue contenido de pedagogía. Los
  *  ejercicios no se indexan, así que no necesitan rol propio. */
@@ -98,7 +108,17 @@ async function main() {
   assertTitulosUnicos(rows);
 
   const pendientes = rows.filter((r) => r.verificar);
-  const aIndexar = rows.filter((r) => r.indexado);
+  // El filtro se aplica DESPUÉS de validar el manifiesto entero contra el disco:
+  // acotar qué se ingiere no puede acotar qué se verifica.
+  const aIndexar = rows.filter((r) => r.indexado && (!SOLO || r.ruta.includes(SOLO)));
+  if (SOLO) {
+    console.log(`🎯 INGEST_SOLO="${SOLO}" → ${aIndexar.length} de ${rows.filter((r) => r.indexado).length} documentos`);
+    for (const r of aIndexar) console.log(`     · ${r.ruta}`);
+    if (aIndexar.length === 0) {
+      console.error(`❌ Ninguna ruta del manifiesto contiene "${SOLO}".`);
+      process.exit(1);
+    }
+  }
   const materias = new Map<string, ManifestRow[]>();
   for (const r of aIndexar) {
     const k = subjectNameFor(r);

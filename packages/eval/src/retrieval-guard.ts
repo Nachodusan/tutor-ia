@@ -24,10 +24,13 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { getTeachingContext, isStruggling } from "@tutor-ia/core";
 import { getSql } from "@tutor-ia/db";
+import { recallPorCobertura, resolverAnclas, type ChunkLite, type GoldAnchor } from "./lib/gold-anchors";
+import { citationPrecision, recallAtK } from "./lib/metrics";
 
 interface Golden {
   id: string;
   type: string;
+  expect_chunks?: string[];
   question?: string;
   q?: string;
   expect_mode?: string;
@@ -72,6 +75,33 @@ async function main(): Promise<void> {
       `   umbrales: ${umbrales.length ? umbrales.join(" · ") : "(el del entorno)"}\n`,
   );
 
+  // Anclas por texto: recall@5 y precision@gold necesitan saber cuáles son los
+  // chunks gold, y los uuids del jsonl no sobreviven a un re-chunk. Sin esto,
+  // este guard no podría medir el paso 4 de la Fase 1 — que es justamente el que
+  // reescribe los chunks.
+  const goldPorPregunta = new Map<string, string[]>();
+  const anclasPorPregunta = new Map<string, GoldAnchor[]>();
+  try {
+    const anclas = (await readFile(
+      new URL("../golden/gold-anchors.jsonl", import.meta.url), "utf8",
+    )).split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l) as GoldAnchor);
+    const corpus = await sql<ChunkLite[]>`
+      select c.id, c.content, d.title as "documentTitle"
+      from chunks c join documents d on d.id = c.document_id
+      where d.title = any(${[...new Set(anclas.map((a) => a.documentTitle))]})`;
+    for (const g of golden) {
+      const mias = anclas.filter((a) => a.questionId === g.id);
+      if (mias.length) {
+        goldPorPregunta.set(g.id, resolverAnclas(mias, corpus).ids);
+        anclasPorPregunta.set(g.id, mias);
+      }
+    }
+    console.log(`   anclas por texto: ${goldPorPregunta.size} preguntas\n`);
+  } catch {
+    for (const g of golden) if (g.expect_chunks?.length) goldPorPregunta.set(g.id, g.expect_chunks);
+    console.log(`   sin gold-anchors.jsonl: se usan los uuids del jsonl\n`);
+  }
+
   const celdas = umbrales.length ? umbrales : [null];
   const salida: unknown[] = [];
 
@@ -80,6 +110,7 @@ async function main(): Promise<void> {
     const filas: {
       id: string; type: string; mode: string; scope: string;
       topScore: number; entail: number | null; ok: boolean | null;
+      recall: number | null; precision: number | null; cobertura: number | null;
     }[] = [];
     for (const g of preguntas) {
       const q = g.question ?? g.q ?? "";
@@ -94,20 +125,50 @@ async function main(): Promise<void> {
       const ok = g.expect_mode
         ? mode === g.expect_mode && (!g.expect_scope || scope === g.expect_scope)
         : null;
+      // recall@5 / precision@gold sobre lo que el RANKING trajo (`retrieved`),
+      // no sobre `citable`: calcularlos post-gate hace que aflojar el gate suba
+      // el recall solo, sin que el ranking haya mejorado en nada (HANDOFF §7).
+      const gold = goldPorPregunta.get(g.id) ?? [];
+      const traidos = (ctx?.retrieved ?? []).map((c) => c.chunkId);
+      const recall = gold.length ? recallAtK(traidos, gold, 5) : null;
+      // Invariante al chunking: cuánto del PASAJE quedó dentro del top-5.
+      const mias = anclasPorPregunta.get(g.id);
+      const cobertura = mias?.length
+        ? recallPorCobertura(mias, (ctx?.retrieved ?? []).map((c) => ({ id: c.chunkId, content: c.content })), 5)
+        : null;
+      const precision = gold.length
+        ? citationPrecision(traidos.slice(0, Math.max(1, gold.length)), gold)
+        : null;
       filas.push({
         id: g.id, type: g.type, mode, scope,
         topScore: Number((ctx?.topScore ?? 0).toFixed(4)),
         entail: ctx?.answerabilityEntail ?? null,
-        ok,
+        ok, recall, precision, cobertura,
       });
       process.stdout.write(ok === false ? "✗" : ok === true ? "·" : "-");
     }
     const conModo = filas.filter((f) => f.ok !== null);
     const bien = conModo.filter((f) => f.ok).length;
+    const conRecall = filas.filter((f) => f.recall != null);
+    const media = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
     console.log(
       `\n   min=${u ?? "(entorno)"} → correct_mode ${bien}/${conModo.length} = ` +
         `${((bien / Math.max(1, conModo.length)) * 100).toFixed(1)}%`,
     );
+    if (conRecall.length) {
+      console.log(
+        `      recall@5 ${(100 * media(conRecall.map((f) => f.recall!))).toFixed(1)}% · ` +
+          `precision@gold ${(100 * media(conRecall.map((f) => f.precision!))).toFixed(1)}% ` +
+          `(sobre ${conRecall.length} preguntas con gold)`,
+      );
+      const conCob = filas.filter((f) => f.cobertura != null);
+      if (conCob.length) {
+        console.log(
+          `      ⭐ recall por COBERTURA del pasaje: ${(100 * media(conCob.map((f) => f.cobertura!))).toFixed(1)}%` +
+            `   ← invariante al chunking; es el comparable entre cortes distintos`,
+        );
+      }
+    }
     const mal = conModo.filter((f) => !f.ok);
     for (const m of mal) {
       const g = preguntas.find((p) => p.id === m.id)!;

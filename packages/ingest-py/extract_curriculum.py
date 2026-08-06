@@ -20,6 +20,7 @@ Estructura detectada (validada en Ciencias Naturales 1º Básico):
     aprendizaje, Habilidades científicas, Evaluación, Solucionario, etc.)
 """
 import json
+import os
 import re
 import sys
 
@@ -64,6 +65,76 @@ _PLAN_OA = re.compile(r"\bOA\s*(\d+)\s*[.\-:]?\s*(.+)", re.I)
 _UNIT_TITLE = re.compile(r"^\s*unidad\s*(\d+)\s*:\s*(.+)", re.I)
 
 
+# ── CÓMO SE LEE UNA PÁGINA ───────────────────────────────────────────────────
+# `get_text()` devuelve la página como texto corrido con saltos simples. El
+# problema es lo que pasa río abajo: `parseMarkdownBlocks` (clean.ts) separa
+# párrafos por LÍNEA EN BLANCO, y ahí casi no hay ninguna. Medido sobre 21
+# páginas de Lengua 8º: **1,0 párrafos por página** (mediana 1, máximo 1). O sea
+# que `chunkStructural` corre ciego —queda degradado a un cortador de 500 tokens
+# que parte por oraciones— y se ve en la distribución de longitudes, apretada
+# contra el techo (p50 1.795 · p75 1.927 · p90 1.969 chars).
+#
+# La misma página con `get_text("blocks")` tiene 15-26 bloques visuales. Ejemplo
+# real, Biología 1º Medio pág. 137, que HOY es un solo chunk y un solo vector:
+#
+#   "Neurona presináptica" · "Neurotransmisores" · "Botón presináptico"
+#   "Vesícula presináptica con neurotransmisor" · [364c de prosa sobre redes
+#   neuronales] · [245c sobre el impulso nervioso] · "Reflexiona" · [pregunta]
+#
+# Ocho etiquetas de un diagrama, dos párrafos y una consigna promediados juntos.
+# Emitiéndolos separados por línea en blanco, el chunker puede cerrar en frontera
+# de bloque en vez de a mitad de la prosa.
+#
+# Y es MÁS BARATO: medido, 0,65× el costo de `get_text()`.
+#
+# ⛔ MEDIDO Y RECHAZADO (2026-08-06). La hipótesis era razonable y resultó FALSA:
+# separar en bloques visuales EMPEORA el retrieval. A/B sobre Lengua 8º TE, el
+# libro del golden, re-ingestando en los dos modos y midiendo con `retrieval-guard`:
+#
+#   |                              | plano  | bloques |
+#   | recall@5 (por chunk_id)      | 88,0%  |  58,3%  |
+#   | recall por COBERTURA         | 90,5%  |  72,4%  |  ← el comparable
+#   | correct_mode                 | 21/24  |  21/24  |
+#
+# La primera fila NO es concluyente por sí sola: al partir más fino, el pasaje
+# gold pasó de vivir en 1,69 chunks a 3,69, así que acertar "todo el gold" dentro
+# de los mismos 5 slots del top-5 se vuelve mecánicamente más difícil. Por eso se
+# construyó `recallPorCobertura` (lib/gold-anchors.ts), que mide qué fracción del
+# PASAJE quedó dentro de lo recuperado y es invariante al corte. Esa métrica
+# también cae 18 puntos: la regresión es real, no de medición.
+#
+# Y no es pérdida de texto: la extracción por bloques conserva -0,92% de
+# caracteres con **0 palabras únicas perdidas** (vocabulario idéntico).
+#
+# La explicación más probable es que el orden de lectura (y,x) y los bloques
+# cortos rompen la coherencia semántica: las etiquetas sueltas de un diagrama
+# terminan pegadas a la prosa del bloque siguiente, y en páginas a dos columnas
+# el barrido por `y` intercala columnas que el orden interno del PDF mantenía
+# separadas. El chunk resultante mezcla MÁS, no menos.
+#
+# Queda el código y el flag porque la idea de cortar por estructura sigue siendo
+# correcta — lo que falla es usar los bloques crudos de PyMuPDF como esa
+# estructura. Un intento futuro debería agrupar bloques por columna y por
+# proximidad tipográfica antes de emitirlos, y volver a correr este mismo A/B.
+USAR_BLOQUES = os.environ.get("EXTRACT_BLOCKS", "0") != "0"
+
+
+def texto_de_pagina(pagina):
+    """El texto de la página, con sus bloques visuales separados por línea en blanco."""
+    if not USAR_BLOQUES:
+        return pagina.get_text()
+    # b = (x0, y0, x1, y1, texto, n_bloque, tipo). tipo 0 = texto, 1 = imagen.
+    bloques = [b for b in pagina.get_text("blocks") if b[6] == 0 and b[4].strip()]
+    if not bloques:
+        return pagina.get_text()
+    # Orden de LECTURA (arriba→abajo, izquierda→derecha), no el de generación del
+    # PDF: en libros muy visuales el orden interno intercala barra lateral,
+    # actividad y prosa. `y` se redondea a 3 pt para que dos bloques de la misma
+    # línea no se ordenen al revés por un pixel de diferencia.
+    bloques.sort(key=lambda b: (round(b[1] / 3), b[0]))
+    return "\n\n".join(" ".join(b[4].split()) for b in bloques)
+
+
 def match_block_header(line):
     for rex, typ in _HEADER_RES:
         if rex.match(line):
@@ -76,6 +147,8 @@ def parse_plan(doc):
     plan = {}
     cur_unit = None
     for i in range(doc.page_count):
+        # OJO: la planificación se lee SIEMPRE en plano. Es una tabla, y
+        # separarla en bloques rompería el emparejamiento "Lección N (Xh)" → "OAk".
         text = doc[i].get_text()
         if "planificaci" not in text.lower():
             continue
@@ -108,7 +181,7 @@ def extract(pdf_path, kind):
     blocks = []
     unit = lesson = None  # se arrastran entre páginas si la página no los repite
     for i in range(doc.page_count):
-        text = doc[i].get_text()
+        text = texto_de_pagina(doc[i])
         flat = re.sub(r"\s+", " ", text)
         # (unit, lesson) del encabezado corriente combinado (GDD).
         m = _RUN_HEADER.search(flat)
