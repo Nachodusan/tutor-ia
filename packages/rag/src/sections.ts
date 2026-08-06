@@ -103,9 +103,24 @@ function claveTema(documentId: string, ord: number, title: string): string {
  * menos 3 temas creíbles — un plan malo es peor que ninguno: el alumno estudia
  * lo que no es.
  */
+/** Elige k elementos REPARTIDOS a lo largo de la lista, con jitter dentro de
+ *  cada ventana. Para la simulación de prueba: `slice(0, 6)` evaluaba SIEMPRE
+ *  las primeras 6 lecciones del libro (todas de la Unidad 1) y encima la misma
+ *  prueba en cada intento. Ventanas disjuntas → sin repetidos y en orden. */
+function muestreoRepartido<T>(xs: T[], k: number): T[] {
+  if (xs.length <= k) return xs;
+  const paso = xs.length / k;
+  const out: T[] = [];
+  for (let i = 0; i < k; i++) {
+    const j = Math.min(xs.length - 1, Math.floor(i * paso + Math.random() * paso));
+    out.push(xs[j]!);
+  }
+  return out;
+}
+
 export async function getPlanTopics(
   subjectId: string,
-  opts: { limit?: number } = {},
+  opts: { limit?: number; spread?: boolean } = {},
 ): Promise<PlanTopic[]> {
   const sql = getSql();
   const limit = opts.limit ?? 14;
@@ -124,7 +139,11 @@ export async function getPlanTopics(
 
   if (secciones.length >= 3) {
     const variosTomos = new Set(secciones.map((s) => s.document_id)).size > 1;
-    const elegidas = secciones.slice(0, limit);
+    // `spread` reparte por todo el libro (prueba); sin él, el ORDEN del índice
+    // manda (plan de estudio: las primeras `limit` lecciones, como siempre).
+    const elegidas = opts.spread
+      ? muestreoRepartido(secciones, limit)
+      : secciones.slice(0, limit);
     const muestras = await muestrasDeRango(elegidas.map((s) => ({
       documentId: s.document_id, pageStart: s.page_start, pageEnd: s.page_end,
     })));

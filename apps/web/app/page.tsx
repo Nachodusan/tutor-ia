@@ -30,7 +30,10 @@ interface Profile { username: string; grade: string }
 /** `points` puede faltar: los planes cacheados antes de que existieran los
  *  puntos clave siguen siendo válidos y se muestran sin ellos. */
 interface PlanItem { n: number; key: string; title: string; focus: string; points?: string[]; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
-interface TestItem { n: number; key?: string; topic: string; question: string; options: string[]; correct: number; explain: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
+/** `correct`/`explain` NO llegan con la prueba: la clave vive en el servidor y
+ *  se revela recién en la respuesta del submit (antes viajaba en el payload y
+ *  cualquiera la veía en la pestaña Red). */
+interface TestItem { n: number; key?: string; topic: string; question: string; options: string[]; correct?: number; explain?: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
 
 // Un tema que el alumno falló en la prueba. Se guarda con unit/lesson para que
 // "Reforzar" pueda disparar ESTUDIO DIRIGIDO (sin eso el retrieval se abstiene).
@@ -105,6 +108,7 @@ export default function Home() {
   const [planOpen, setPlanOpen] = useState(false);
   const [planLoading, setPlanLoading] = useState(false);
   const [test, setTest] = useState<TestItem[] | null>(null); // null=no generada, []=sin material
+  const [testId, setTestId] = useState<string | null>(null);
   const [testAns, setTestAns] = useState<Record<number, number>>({});
   const [testSubmitted, setTestSubmitted] = useState(false);
   const [testOpen, setTestOpen] = useState(false);
@@ -153,7 +157,7 @@ export default function Home() {
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
   useEffect(() => {
     setPlanOpen(false);
-    setTest(null); setTestAns({}); setTestSubmitted(false); setTestOpen(false);
+    setTest(null); setTestId(null); setTestAns({}); setTestSubmitted(false); setTestOpen(false);
     if (!subjectId) { setPlan(null); setPlanDone([]); return; }
     // El plan está cacheado por materia (es el mismo libro para todo el curso);
     // lo que es de este alumno son las claves marcadas como hechas.
@@ -245,11 +249,12 @@ export default function Home() {
   // ── Simulación de prueba ──
   async function generateTest() {
     if (testLoading || !subjectId) return;
-    setTestLoading(true); setTestOpen(true); setTest(null); setTestAns({}); setTestSubmitted(false);
+    setTestLoading(true); setTestOpen(true); setTest(null); setTestId(null); setTestAns({}); setTestSubmitted(false);
     try {
       const res = await fetch("/api/test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subjectId, subjectName: subject ? subjectLabel(subject) : null }) });
       const j = await res.json();
-      setTest(j.items ?? []);
+      setTest(res.ok ? (j.items ?? []) : []);
+      setTestId(res.ok ? (j.testId ?? null) : null);
     } catch { setTest([]); }
     finally { setTestLoading(false); }
   }
@@ -270,21 +275,24 @@ export default function Home() {
    * viven en la base y siguen al alumno entre dispositivos.
    */
   async function submitTest() {
-    setTestSubmitted(true);
-    if (!test || !subjectId) return;
+    if (!test || !testId || !subjectId) return;
     try {
+      // La clave vive en el servidor: el submit manda SOLO las respuestas y
+      // recibe `key` (correct + explain por pregunta) para pintar resultados.
       const r = await fetch("/api/test/submit", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          subjectId,
-          items: test.map((it) => ({
-            topicKey: it.key ?? it.topic, topic: it.topic,
-            unit: it.unit, lesson: it.lesson,
-            correct: it.correct, answer: testAns[it.n] ?? null,
-          })),
+          testId,
+          answers: test.map((it) => testAns[it.n] ?? null),
         }),
       });
+      if (!r.ok) return; // sin clave no hay corrección que mostrar; que reintente
       const j = await r.json();
+      const porN = new Map<number, { correct: number; explain: string }>(
+        (j.key ?? []).map((k: { n: number; correct: number; explain: string }) => [k.n, k]),
+      );
+      setTest((prev) => (prev ?? []).map((it) => ({ ...it, ...(porN.get(it.n) ?? {}) })));
+      setTestSubmitted(true);
       setStats((st) => ({
         ...st,
         [subjectId]: {
