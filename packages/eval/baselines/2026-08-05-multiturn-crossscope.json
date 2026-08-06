@@ -1,0 +1,580 @@
+{
+  "generatedAt": "2026-08-06T04:32:36.556Z",
+  "golden": "/private/tmp/claude-501/-Users-dusan-Documents-ia/edabeb2c-2327-44c0-b5e4-09420c7c07c1/scratchpad/nuevas.jsonl",
+  "engine": "deepinfra@api.deepinfra.com · Qwen/Qwen3.6-35B-A3B · temp=0.1 top_p=0.9 max_tokens=2048 reasoning=off",
+  "usage": {
+    "inputTokens": 77740,
+    "outputTokens": 2594,
+    "totalTokens": 80334,
+    "reasoningTokens": 0,
+    "calls": 42,
+    "retries": 0
+  },
+  "rows": [
+    {
+      "id": "x001",
+      "t1": {
+        "q": "¿Qué es la fotosíntesis?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9834779995755857,
+        "chunkIds": [
+          "aaf48238-516a-45a2-aa3a-86c349fa4d78",
+          "d0610981-0d4f-485b-9458-f330a381f49d",
+          "8683ecbc-652d-4168-9215-40dff16b5486",
+          "8be36aba-ad12-4dba-a83a-8584b3063b18"
+        ],
+        "answer": "La fotosíntesis es el proceso por el cual las plantas, que son autótrofas, fabrican su propio alimento usando la luz del sol. Básicamente, toman agua de la tierra por las raíces y dióxido de carbono del aire por los poros de las hojas, y con esa energía luminosa transforman todo eso en glucosa, que es un azúcar que les da energía para crecer. Como subproducto, liberan oxígeno al aire, el cual es vital para que nosotros y otros animales podamos respirar. Es como si la planta fuera una pequeña fábrica que convierte luz en comida y aire limpio.\n\nSi una planta se coloca en una habitación completamente oscura, ¿qué sucedería con su capacidad para producir glucosa y liberar oxígeno?",
+        "ms": 22102,
+        "scope": "otra_materia",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": 0.99107426404953
+      },
+      "t2": {
+        "q": "no cacho, me lo explicas mas facil porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9834779995755857,
+        "chunkIds": [
+          "aaf48238-516a-45a2-aa3a-86c349fa4d78",
+          "d0610981-0d4f-485b-9458-f330a381f49d",
+          "8683ecbc-652d-4168-9215-40dff16b5486",
+          "8be36aba-ad12-4dba-a83a-8584b3063b18"
+        ],
+        "answer": "Imaginate que la planta es como una cocina. Para cocinar, necesita ingredientes básicos: agua que toma de la tierra, aire que absorbe por sus hojas y, sobre todo, la luz del sol como si fuera el fuego de la estufa. Con eso, mezcla todo para crear su propia comida, que es un azúcar llamado glucosa. Es como si la planta tuviera una receta mágica que transforma la luz en energía para crecer.\n\nSi a esa planta le cortamos todas las hojas, ¿qué creés que pasaría con su \"cocina\" y su capacidad para fabricar su comida?",
+        "ms": 15565,
+        "scope": "otra_materia",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Qué es la fotosíntesis?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9834779995755857,
+          "chunkIds": [
+            "aaf48238-516a-45a2-aa3a-86c349fa4d78",
+            "d0610981-0d4f-485b-9458-f330a381f49d",
+            "8683ecbc-652d-4168-9215-40dff16b5486",
+            "8be36aba-ad12-4dba-a83a-8584b3063b18"
+          ],
+          "answer": "La fotosíntesis es el proceso por el cual las plantas, que son autótrofas, fabrican su propio alimento usando la luz del sol. Básicamente, toman agua de la tierra por las raíces y dióxido de carbono del aire por los poros de las hojas, y con esa energía luminosa transforman todo eso en glucosa, que es un azúcar que les da energía para crecer. Como subproducto, liberan oxígeno al aire, el cual es vital para que nosotros y otros animales podamos respirar. Es como si la planta fuera una pequeña fábrica que convierte luz en comida y aire limpio.\n\nSi una planta se coloca en una habitación completamente oscura, ¿qué sucedería con su capacidad para producir glucosa y liberar oxígeno?",
+          "ms": 22102,
+          "scope": "otra_materia",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": 0.99107426404953
+        },
+        {
+          "q": "no cacho, me lo explicas mas facil porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9834779995755857,
+          "chunkIds": [
+            "aaf48238-516a-45a2-aa3a-86c349fa4d78",
+            "d0610981-0d4f-485b-9458-f330a381f49d",
+            "8683ecbc-652d-4168-9215-40dff16b5486",
+            "8be36aba-ad12-4dba-a83a-8584b3063b18"
+          ],
+          "answer": "Imaginate que la planta es como una cocina. Para cocinar, necesita ingredientes básicos: agua que toma de la tierra, aire que absorbe por sus hojas y, sobre todo, la luz del sol como si fuera el fuego de la estufa. Con eso, mezcla todo para crear su propia comida, que es un azúcar llamado glucosa. Es como si la planta tuviera una receta mágica que transforma la luz en energía para crecer.\n\nSi a esa planta le cortamos todas las hojas, ¿qué creés que pasaría con su \"cocina\" y su capacidad para fabricar su comida?",
+          "ms": 15565,
+          "scope": "otra_materia",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "y por que las plantas necesitan la luz del sol?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.898256605886791,
+          "chunkIds": [
+            "8be36aba-ad12-4dba-a83a-8584b3063b18",
+            "aaf48238-516a-45a2-aa3a-86c349fa4d78",
+            "ff6a08a1-f5d9-4574-b830-31a8dc06d041",
+            "e68dd93c-007c-4914-bd04-ca65e76df0d2",
+            "0a7c5cb2-166e-41bb-9e3f-29e08644f909"
+          ],
+          "answer": "La luz del sol es como la energía que enciende la \"cocina\" de la planta. Sin esa energía, no puede unir el agua y el dióxido de carbono para crear glucosa. Es un proceso anabólico, lo que significa que construye moléculas complejas a partir de otras simples, pero para eso necesita un empujón de energía externa, que en este caso es la luz.\n\nSi una planta tiene toda el agua y el aire que necesita, pero la dejamos en un closet oscuro por una semana, ¿creés que podrá seguir fabricando su glucosa?",
+          "ms": 21315,
+          "scope": "otra_materia",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": 0.9609737396240234
+        }
+      ],
+      "coseno": 0.7804455218774909,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "x002",
+      "t1": {
+        "q": "¿Cómo se calcula el área de un triángulo?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": false,
+        "topScore": 0.00039426315925084054,
+        "chunkIds": [],
+        "answer": "Esto no está en tu libro, pero te lo explico igual. Para calcular el área de un triángulo, pensalo como la mitad de un rectángulo. Si tomás dos triángulos iguales y los juntás, forman un rectángulo cuya base y altura son las mismas. Por eso, la fórmula es multiplicar la base por la altura y dividir todo por dos. Es como si el triángulo ocupara solo la mitad del espacio que ocuparía ese rectángulo completo. Si tenés un triángulo con base de 10 cm y altura de 5 cm, multiplicás 10 por 5 para obtener 50 y luego dividís por 2, quedando con 25 centímetros cuadrados. ¿Podrías calcular el área de un triángulo que tenga base de 8 cm y altura de 4 cm?",
+        "ms": 23551,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "dame otro ejemplo",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": false,
+        "topScore": 0.00039426315925084054,
+        "chunkIds": [],
+        "answer": "Entiendo que prefieras otro ejemplo para afianzar la idea. Imaginá que tenés una loseta triangular para el piso. Si la base mide 6 metros y la altura es de 3 metros, primero multiplicás 6 por 3, lo que te da 18. Como el triángulo es la mitad de ese rectángulo imaginario, dividís 18 entre 2 y te quedan 9 metros cuadrados. Es como si solo ocuparas la mitad del espacio total. ¿Y si tuvieras una base de 10 metros y una altura de 2 metros, cuánto sería el área?",
+        "ms": 18853,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Cómo se calcula el área de un triángulo?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": false,
+          "topScore": 0.00039426315925084054,
+          "chunkIds": [],
+          "answer": "Esto no está en tu libro, pero te lo explico igual. Para calcular el área de un triángulo, pensalo como la mitad de un rectángulo. Si tomás dos triángulos iguales y los juntás, forman un rectángulo cuya base y altura son las mismas. Por eso, la fórmula es multiplicar la base por la altura y dividir todo por dos. Es como si el triángulo ocupara solo la mitad del espacio que ocuparía ese rectángulo completo. Si tenés un triángulo con base de 10 cm y altura de 5 cm, multiplicás 10 por 5 para obtener 50 y luego dividís por 2, quedando con 25 centímetros cuadrados. ¿Podrías calcular el área de un triángulo que tenga base de 8 cm y altura de 4 cm?",
+          "ms": 23551,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "dame otro ejemplo",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": false,
+          "topScore": 0.00039426315925084054,
+          "chunkIds": [],
+          "answer": "Entiendo que prefieras otro ejemplo para afianzar la idea. Imaginá que tenés una loseta triangular para el piso. Si la base mide 6 metros y la altura es de 3 metros, primero multiplicás 6 por 3, lo que te da 18. Como el triángulo es la mitad de ese rectángulo imaginario, dividís 18 entre 2 y te quedan 9 metros cuadrados. Es como si solo ocuparas la mitad del espacio total. ¿Y si tuvieras una base de 10 metros y una altura de 2 metros, cuánto sería el área?",
+          "ms": 18853,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": null,
+      "distintaJuez": null,
+      "jaccardChunks": null,
+      "perdioMaterial": false
+    },
+    {
+      "id": "x003",
+      "t1": {
+        "q": "¿Qué es el narrador de una historia?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9010981503683799,
+        "chunkIds": [
+          "cd902a57-d768-4591-b828-8f90326fe192",
+          "81c68156-3246-4cd8-a9c5-4b404a5eabb4",
+          "22ff3feb-119c-41a6-b25c-f08608c2d94f",
+          "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+          "717b4b67-c464-46bc-af5c-6537722b2803",
+          "91f49afb-14bc-4b12-8869-474c134bdc8b"
+        ],
+        "answer": "El narrador es simplemente la voz que nos cuenta la historia, pero ojo, no es el autor real. Es una voz ficticia que el escritor crea para elegir cómo se cuentan los hechos, qué detalles resaltar y qué tono usar. Por ejemplo, en los cuentos policiales clásicos, a veces el narrador es un testigo que solo cuenta lo que ve, como un amigo del detective, lo que mantiene el misterio porque no sabe todo lo que pasa en la mente de los personajes.\n\nSi tuvieras que contarle a un amigo cómo fue un partido de fútbol, ¿preferirías narrarlo tú mismo en primera persona (\"yo marqué el gol\") o desde afuera describiendo lo que hizo cada jugador en tercera persona?",
+        "ms": 10829,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "¿y qué es la célula?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.6933207282525169,
+        "chunkIds": [
+          "c94a00c2-91d1-40f8-adb1-bbb69f5da77b",
+          "fc5e709a-f8a6-470c-b434-de9c2e9da768",
+          "2824a9b3-45eb-4622-90c6-db72cbead8de",
+          "4db28c93-41d1-4cd1-a32b-74d50ffa5a33",
+          "ab1f5562-f3a3-4da6-bfbd-f54470da5b76",
+          "fe6a1d6a-f180-43cc-8c52-606f0b8a173d"
+        ],
+        "answer": "La pregunta que me hiciste al final es sobre biología (\"la célula\"), y el material que tengo aquí es solo de literatura y análisis de textos. No tengo la información para explicarte eso.\n\nPero si querés, podemos seguir con lo que está en el material: el narrador.\n\nSi el narrador de un cuento fuera un personaje que miente a propósito sobre sus propias acciones, ¿cómo cambiaría la forma en que el lector interpreta la verdad de la historia?",
+        "ms": 15951,
+        "scope": "otro_curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": 0.88434237241745
+      },
+      "turnos": [
+        {
+          "q": "¿Qué es el narrador de una historia?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9010981503683799,
+          "chunkIds": [
+            "cd902a57-d768-4591-b828-8f90326fe192",
+            "81c68156-3246-4cd8-a9c5-4b404a5eabb4",
+            "22ff3feb-119c-41a6-b25c-f08608c2d94f",
+            "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+            "717b4b67-c464-46bc-af5c-6537722b2803",
+            "91f49afb-14bc-4b12-8869-474c134bdc8b"
+          ],
+          "answer": "El narrador es simplemente la voz que nos cuenta la historia, pero ojo, no es el autor real. Es una voz ficticia que el escritor crea para elegir cómo se cuentan los hechos, qué detalles resaltar y qué tono usar. Por ejemplo, en los cuentos policiales clásicos, a veces el narrador es un testigo que solo cuenta lo que ve, como un amigo del detective, lo que mantiene el misterio porque no sabe todo lo que pasa en la mente de los personajes.\n\nSi tuvieras que contarle a un amigo cómo fue un partido de fútbol, ¿preferirías narrarlo tú mismo en primera persona (\"yo marqué el gol\") o desde afuera describiendo lo que hizo cada jugador en tercera persona?",
+          "ms": 10829,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "¿y qué es la célula?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.6933207282525169,
+          "chunkIds": [
+            "c94a00c2-91d1-40f8-adb1-bbb69f5da77b",
+            "fc5e709a-f8a6-470c-b434-de9c2e9da768",
+            "2824a9b3-45eb-4622-90c6-db72cbead8de",
+            "4db28c93-41d1-4cd1-a32b-74d50ffa5a33",
+            "ab1f5562-f3a3-4da6-bfbd-f54470da5b76",
+            "fe6a1d6a-f180-43cc-8c52-606f0b8a173d"
+          ],
+          "answer": "La pregunta que me hiciste al final es sobre biología (\"la célula\"), y el material que tengo aquí es solo de literatura y análisis de textos. No tengo la información para explicarte eso.\n\nPero si querés, podemos seguir con lo que está en el material: el narrador.\n\nSi el narrador de un cuento fuera un personaje que miente a propósito sobre sus propias acciones, ¿cómo cambiaría la forma en que el lector interpreta la verdad de la historia?",
+          "ms": 15951,
+          "scope": "otro_curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": 0.88434237241745
+        },
+        {
+          "q": "no entendi nada, explicamelo de otra forma",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.6933207282525169,
+          "chunkIds": [
+            "c94a00c2-91d1-40f8-adb1-bbb69f5da77b",
+            "fc5e709a-f8a6-470c-b434-de9c2e9da768",
+            "2824a9b3-45eb-4622-90c6-db72cbead8de",
+            "4db28c93-41d1-4cd1-a32b-74d50ffa5a33",
+            "ab1f5562-f3a3-4da6-bfbd-f54470da5b76",
+            "fe6a1d6a-f180-43cc-8c52-606f0b8a173d"
+          ],
+          "answer": "Entiendo que la primera vez no quedó claro. Olvidemos la definición larga y pensemos en una película. Imaginá que estás viendo una escena: si la cámara solo muestra lo que pasa afuera, como gente caminando o hablando, eso es un narrador objetivo. Pero si la cámara entra en la cabeza de un personaje y escuchás sus pensamientos secretos, eso es un narrador omnisciente. La diferencia clave es si conocemos lo que sienten o solo lo que hacemos.\n\nSi estuvieras contando cómo ganaste un partido de básquet,\n\n¿Qué detalles incluirías para que tu relato funcione como un narrador omnisciente en lugar de limitarte a describir solo los movimientos físicos del juego?",
+          "ms": 16126,
+          "scope": "otro_curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.6986850477689451,
+      "distintaJuez": true,
+      "jaccardChunks": 0,
+      "perdioMaterial": false
+    },
+    {
+      "id": "x004",
+      "t1": {
+        "q": "¿Qué es el narrador de una historia?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9010981503683799,
+        "chunkIds": [
+          "cd902a57-d768-4591-b828-8f90326fe192",
+          "81c68156-3246-4cd8-a9c5-4b404a5eabb4",
+          "22ff3feb-119c-41a6-b25c-f08608c2d94f",
+          "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+          "717b4b67-c464-46bc-af5c-6537722b2803",
+          "91f49afb-14bc-4b12-8869-474c134bdc8b"
+        ],
+        "answer": "El narrador es simplemente la voz que nos cuenta la historia, pero ojo, no es el autor real. Es una voz ficticia que el escritor crea para elegir cómo se cuentan los hechos, qué detalles resaltar y qué tono usar. Por ejemplo, en los cuentos policiales clásicos, a veces el narrador es un testigo que solo ve lo que ve el detective, lo que mantiene el misterio; otras veces es un narrador omnisciente que sabe todo, incluso lo que piensan los personajes. La clave está en que su perspectiva define qué sabemos nosotros, los lectores, y cuándo lo sabemos. Si el narrador es un testigo, nos enteramos de las pistas al mismo tiempo que él; si es omnisciente, puede contarnos secretos que los personajes no saben.\n\nImagina que estás contando un robo que viste en la calle. Si solo describes lo que viste desde la vereda, eres un narrador testigo. Si de repente sabes qué llevaba puesto el ladrón en su bolsillo interior y por qué lo hizo, ya no eres testigo, sino un narrador omnisciente. ¿Cuál de estos dos tipos de narrador crees que genera más suspenso en una historia de misterio y por qué?",
+        "ms": 13620,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "¿y cuál es la diferencia con el autor?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.7675962115286746,
+        "chunkIds": [
+          "cd902a57-d768-4591-b828-8f90326fe192",
+          "81c68156-3246-4cd8-a9c5-4b404a5eabb4",
+          "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+          "22ff3feb-119c-41a6-b25c-f08608c2d94f",
+          "7bd7bd62-9e5f-42b3-b7cb-a4a6a5d2d329",
+          "91f49afb-14bc-4b12-8869-474c134bdc8b"
+        ],
+        "answer": "Es una confusión muy común, pero son dos personas distintas. El autor es el ser humano real que escribe el libro, como Edgar Allan Poe o Agatha Christie. El narrador, en cambio, es una voz ficticia, una máscara que el autor se pone para contar la historia. Piensa en el autor como al guionista y al director de una película, y al narrador como al actor que sale en pantalla a contar lo que pasa. El autor crea al narrador, decide su tono y su perspectiva, pero no son lo mismo. Si el narrador comete un error o tiene una opinión sesgada, eso no significa que el autor esté de acuerdo, sino que es parte del personaje que inventó.\n\n¿Podrías darme un ejemplo de una película o serie donde sepas que el protagonista cuenta la historia? ¿Crees que ese protagonista es el mismo que escribió el guion?",
+        "ms": 11019,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Qué es el narrador de una historia?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9010981503683799,
+          "chunkIds": [
+            "cd902a57-d768-4591-b828-8f90326fe192",
+            "81c68156-3246-4cd8-a9c5-4b404a5eabb4",
+            "22ff3feb-119c-41a6-b25c-f08608c2d94f",
+            "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+            "717b4b67-c464-46bc-af5c-6537722b2803",
+            "91f49afb-14bc-4b12-8869-474c134bdc8b"
+          ],
+          "answer": "El narrador es simplemente la voz que nos cuenta la historia, pero ojo, no es el autor real. Es una voz ficticia que el escritor crea para elegir cómo se cuentan los hechos, qué detalles resaltar y qué tono usar. Por ejemplo, en los cuentos policiales clásicos, a veces el narrador es un testigo que solo ve lo que ve el detective, lo que mantiene el misterio; otras veces es un narrador omnisciente que sabe todo, incluso lo que piensan los personajes. La clave está en que su perspectiva define qué sabemos nosotros, los lectores, y cuándo lo sabemos. Si el narrador es un testigo, nos enteramos de las pistas al mismo tiempo que él; si es omnisciente, puede contarnos secretos que los personajes no saben.\n\nImagina que estás contando un robo que viste en la calle. Si solo describes lo que viste desde la vereda, eres un narrador testigo. Si de repente sabes qué llevaba puesto el ladrón en su bolsillo interior y por qué lo hizo, ya no eres testigo, sino un narrador omnisciente. ¿Cuál de estos dos tipos de narrador crees que genera más suspenso en una historia de misterio y por qué?",
+          "ms": 13620,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "¿y cuál es la diferencia con el autor?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.7675962115286746,
+          "chunkIds": [
+            "cd902a57-d768-4591-b828-8f90326fe192",
+            "81c68156-3246-4cd8-a9c5-4b404a5eabb4",
+            "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+            "22ff3feb-119c-41a6-b25c-f08608c2d94f",
+            "7bd7bd62-9e5f-42b3-b7cb-a4a6a5d2d329",
+            "91f49afb-14bc-4b12-8869-474c134bdc8b"
+          ],
+          "answer": "Es una confusión muy común, pero son dos personas distintas. El autor es el ser humano real que escribe el libro, como Edgar Allan Poe o Agatha Christie. El narrador, en cambio, es una voz ficticia, una máscara que el autor se pone para contar la historia. Piensa en el autor como al guionista y al director de una película, y al narrador como al actor que sale en pantalla a contar lo que pasa. El autor crea al narrador, decide su tono y su perspectiva, pero no son lo mismo. Si el narrador comete un error o tiene una opinión sesgada, eso no significa que el autor esté de acuerdo, sino que es parte del personaje que inventó.\n\n¿Podrías darme un ejemplo de una película o serie donde sepas que el protagonista cuenta la historia? ¿Crees que ese protagonista es el mismo que escribió el guion?",
+          "ms": 11019,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "dame un ejemplo concreto",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.7675962115286746,
+          "chunkIds": [
+            "cd902a57-d768-4591-b828-8f90326fe192",
+            "81c68156-3246-4cd8-a9c5-4b404a5eabb4",
+            "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+            "22ff3feb-119c-41a6-b25c-f08608c2d94f",
+            "7bd7bd62-9e5f-42b3-b7cb-a4a6a5d2d329",
+            "91f49afb-14bc-4b12-8869-474c134bdc8b"
+          ],
+          "answer": "El material explica que el narrador es la voz ficticia que crea el autor y que puede tener diferentes perspectivas. Por ejemplo, en los cuentos clásicos de Edgar Allan Poe, el narrador suele ser un testigo que acompaña al detective; esta voz cuenta lo que ve y escucha, pero no sabe lo que piensan los demás, lo que mantiene el misterio. En cambio, hay un narrador omnisciente que conoce todos los detalles, incluso los pensamientos secretos de los personajes. La diferencia clave está en cuánto sabe esa voz sobre lo que ocurre.\n\nSi estuvieras contando una historia sobre un robo que presenciaste, pero no supieras quién lo hizo ni por qué,\n\n¿Qué tipo de narrador elegirías para contar esa historia y cómo afectaría esa elección a la forma en que revelas los detalles del crimen?",
+          "ms": 12572,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no entendi, explicamelo mas facil",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.7675962115286746,
+          "chunkIds": [
+            "cd902a57-d768-4591-b828-8f90326fe192",
+            "81c68156-3246-4cd8-a9c5-4b404a5eabb4",
+            "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+            "22ff3feb-119c-41a6-b25c-f08608c2d94f",
+            "7bd7bd62-9e5f-42b3-b7cb-a4a6a5d2d329",
+            "91f49afb-14bc-4b12-8869-474c134bdc8b"
+          ],
+          "answer": "Imaginate que estás viendo una película. El director es el autor, pero la cámara es el narrador. Hay dos formas principales de usar esa cámara. La primera es una cámara invisible que flota por encima de todo; sabe lo que piensa cada personaje y ve lo que pasa en cualquier lugar. Eso es un narrador omnisciente. La segunda es una cámara que solo graba lo que ve un personaje específico, como si tú fueras el testigo y no pudieras leer la mente de nadie más. Eso es un narrador testigo o protagonista. La diferencia clave es cuánto sabe esa voz: si sabe todo, es omnisciente; si solo sabe lo que ve o vive, es testigo o protagonista.\n\nSi estuvieras leyendo un misterio y el narrador te contara exactamente lo que está pensando el sospechoso en cada momento, ¿crees que la historia sería más emocionante o perdería el misterio?",
+          "ms": 12368,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.7673839828913344,
+      "distintaJuez": true,
+      "jaccardChunks": 0.7142857142857143,
+      "perdioMaterial": false
+    },
+    {
+      "id": "x005",
+      "t1": {
+        "q": "¿Cuál fue el resultado de las últimas elecciones presidenciales en Chile?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.8329242473744807,
+        "chunkIds": [
+          "da112484-ba97-484e-95b4-40c1d7b76091",
+          "1d2b9732-4675-4b20-9f8a-d87fd1dacdf3",
+          "d905edb6-d9ba-4402-aff7-a27d6c74127d"
+        ],
+        "answer": "Lo que sí trae tu material es información sobre la segunda vuelta de 2017, donde Sebastián Piñera resultó electo con un 50% de participación, y menciona que Gabriel Boric ganó con la mayor participación registrada hasta ese momento. Sin embargo, no tengo datos de las elecciones posteriores a mi corte de información, así que no puedo decirte quién ganó las más recientes ni los resultados exactos de hoy. Te recomiendo consultar las noticias actuales para confirmar el resultado oficial. ¿Te gustaría que exploremos cómo funciona el sistema electoral que explica el texto, en lugar de buscar ese dato específico?",
+        "ms": 28662,
+        "scope": "otra_materia",
+        "mode": "apoyado",
+        "parcial": true,
+        "answEntail": 0.8075694441795349
+      },
+      "t2": {
+        "q": "y como funciona el sistema de votacion?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9435324287627541,
+        "chunkIds": [
+          "1d2b9732-4675-4b20-9f8a-d87fd1dacdf3",
+          "a4cb81dc-3a1e-40ac-a6b2-4ae45b8f896a",
+          "3dc96f0a-668d-4143-97cc-30e8018e7a84"
+        ],
+        "answer": "Tu libro explica que Chile cambió a un sistema llamado D'Hont, que busca que los cargos se repartan más o menos en proporción a los votos que gana cada lista. Básicamente, se suman los votos de cada lista y se dividen por la cantidad de cargos a elegir; los números más altos de esa división son los que ganan. Es como repartir porciones de torta: si una lista tiene el doble de votos, debería llevarse el doble de cargos. ¿Te animás a imaginar qué pasaría con la distribución de cargos si una lista obtiene muchos más votos que las otras en este sistema?",
+        "ms": 22425,
+        "scope": "otra_materia",
+        "mode": "apoyado",
+        "parcial": true,
+        "answEntail": 0.558474600315094
+      },
+      "turnos": [
+        {
+          "q": "¿Cuál fue el resultado de las últimas elecciones presidenciales en Chile?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.8329242473744807,
+          "chunkIds": [
+            "da112484-ba97-484e-95b4-40c1d7b76091",
+            "1d2b9732-4675-4b20-9f8a-d87fd1dacdf3",
+            "d905edb6-d9ba-4402-aff7-a27d6c74127d"
+          ],
+          "answer": "Lo que sí trae tu material es información sobre la segunda vuelta de 2017, donde Sebastián Piñera resultó electo con un 50% de participación, y menciona que Gabriel Boric ganó con la mayor participación registrada hasta ese momento. Sin embargo, no tengo datos de las elecciones posteriores a mi corte de información, así que no puedo decirte quién ganó las más recientes ni los resultados exactos de hoy. Te recomiendo consultar las noticias actuales para confirmar el resultado oficial. ¿Te gustaría que exploremos cómo funciona el sistema electoral que explica el texto, en lugar de buscar ese dato específico?",
+          "ms": 28662,
+          "scope": "otra_materia",
+          "mode": "apoyado",
+          "parcial": true,
+          "answEntail": 0.8075694441795349
+        },
+        {
+          "q": "y como funciona el sistema de votacion?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9435324287627541,
+          "chunkIds": [
+            "1d2b9732-4675-4b20-9f8a-d87fd1dacdf3",
+            "a4cb81dc-3a1e-40ac-a6b2-4ae45b8f896a",
+            "3dc96f0a-668d-4143-97cc-30e8018e7a84"
+          ],
+          "answer": "Tu libro explica que Chile cambió a un sistema llamado D'Hont, que busca que los cargos se repartan más o menos en proporción a los votos que gana cada lista. Básicamente, se suman los votos de cada lista y se dividen por la cantidad de cargos a elegir; los números más altos de esa división son los que ganan. Es como repartir porciones de torta: si una lista tiene el doble de votos, debería llevarse el doble de cargos. ¿Te animás a imaginar qué pasaría con la distribución de cargos si una lista obtiene muchos más votos que las otras en este sistema?",
+          "ms": 22425,
+          "scope": "otra_materia",
+          "mode": "apoyado",
+          "parcial": true,
+          "answEntail": 0.558474600315094
+        }
+      ],
+      "coseno": 0.5733974098756467,
+      "distintaJuez": true,
+      "jaccardChunks": 0.2,
+      "perdioMaterial": false
+    },
+    {
+      "id": "x006",
+      "t1": {
+        "q": "hola",
+        "routed": "social",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0,
+        "chunkIds": [],
+        "answer": "¡Hola! Soy tu tutor. ¿Qué tema querés que te explique?",
+        "ms": 0,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "hola profe, no entendí lo de ayer del narrador",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": false,
+        "topScore": 0.04145848267475533,
+        "chunkIds": [],
+        "answer": "Esto no está en tu libro, pero te lo explico igual. El narrador es como la voz que cuenta la historia. No es lo mismo un narrador que está dentro de la historia (como un personaje) que uno que está afuera y lo ve todo.\n\nSi en lugar de un narrador externo que lo ve todo eligieras un narrador interno que es un personaje de la historia, ¿cómo cambiaría la forma en que se describen los sentimientos de los demás?",
+        "ms": 45134,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "hola",
+          "routed": "social",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0,
+          "chunkIds": [],
+          "answer": "¡Hola! Soy tu tutor. ¿Qué tema querés que te explique?",
+          "ms": 0,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "hola profe, no entendí lo de ayer del narrador",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": false,
+          "topScore": 0.04145848267475533,
+          "chunkIds": [],
+          "answer": "Esto no está en tu libro, pero te lo explico igual. El narrador es como la voz que cuenta la historia. No es lo mismo un narrador que está dentro de la historia (como un personaje) que uno que está afuera y lo ve todo.\n\nSi en lugar de un narrador externo que lo ve todo eligieras un narrador interno que es un personaje de la historia, ¿cómo cambiaría la forma en que se describen los sentimientos de los demás?",
+          "ms": 45134,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": null,
+      "distintaJuez": null,
+      "jaccardChunks": null,
+      "perdioMaterial": false
+    }
+  ]
+}

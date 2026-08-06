@@ -92,11 +92,24 @@ export interface TeachingResult {
  * (donde vive el tema) a la pregunta actual.
  */
 function retrievalQuery(req: TeachRequest): { query: string; vague: boolean; prevUser: string } {
-  const prevUser = (req.history ?? [])
+  // ⚠️ Los últimos DOS turnos CON TEMA, no los últimos dos a secas.
+  //
+  // Medido en el eval multiturno (charla x004, 4 turnos sobre el narrador): el
+  // turno 4 se quedó SIN MATERIAL —topScore 0.901 → 0.051, sello `general` a
+  // mitad de una conversación que venía bien— porque los dos turnos previos del
+  // alumno eran "dame un ejemplo concreto" y "no entendí, explicámelo más
+  // fácil". La ventana de dos se había llenado de muletillas y el tema
+  // ("narrador") ya había salido de ella, así que la consulta de búsqueda no
+  // tenía ni una palabra de contenido.
+  //
+  // Es un chico pidiendo ayuda dos veces seguidas, que es exactamente cuando más
+  // la necesita. Filtrar los pedidos vagos hace que la ventana conserve el
+  // último turno que SÍ traía tema, sin importar cuántas veces haya pedido
+  // ayuda desde entonces.
+  const conTema = (req.history ?? [])
     .filter((m) => m.role === "user")
-    .slice(-2)
-    .map((m) => m.content)
-    .join(" ");
+    .filter((m) => !VAGUE_RE.test(m.content.trim()));
+  const prevUser = conTema.slice(-2).map((m) => m.content).join(" ");
   // Un pedido vago ("dame otro ejemplo", "no entendí") NO aporta tema y diluye el
   // retrieval; si ya hay tema en la charla, dejá que ése mande.
   const vague = Boolean(prevUser) && VAGUE_RE.test(req.question.trim());
