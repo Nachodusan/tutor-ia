@@ -809,8 +809,8 @@ de 1º con Leo Primero, y prometer "cobertura estructural del corpus" sería fal
 | 1 | ✅ **HECHO** — Desacoplar ingesta de `title` (UPSERT por `storage_path`) | 0 huérfanos (eran 158) · 94/94 `topic_key` · 218/218 uuids | — |
 | 2 | ✅ **HECHO** — Anclas del golden por TEXTO (no por uuid) | 72/72 resueltas, 0% de inflación, idénticas al jsonl | — |
 | 3 | ✅ **HECHO** — Backfill `heading_path` desde `book_sections` | 7.250 chunks (43,8%) · 17-18 de 18 citas correctas | — |
-| 4 | `get_text("blocks")` en UN libro (Lengua 8º TE) | pérdida de chars <3%; 68/68 re-anclan; recall@5 no baja | recall baja o pérdida >5% |
-| 5 | Rollout a los 93 documentos de contenido | recall@5 ≥91%, precision@gold ≥75% | cualquier métrica retrocede → `pg_restore` |
+| 4 | ⛔ **MEDIDO Y RECHAZADO** — `get_text("blocks")` en Lengua 8º TE | cobertura 90,5% → 72,4% | **abortado**: revertido y corpus restaurado |
+| 5 | ~~Rollout a los 93 documentos~~ | — | **cancelado**: el paso 4 no pasó su puerta |
 
 **Estado del paso 1 (2026-08-06).** `documents.storage_path` está lleno en 218/218
 y tiene índice único parcial sobre el corpus global. `batch-ingest` hace UPSERT
@@ -836,6 +836,44 @@ subestimar apenas el re-chunk partiera el pasaje en pedazos.
 Regenerarlas: `pnpm --filter @tutor-ia/eval extract-gold-anchors` (exige que los
 uuids actuales existan — se corre ANTES de re-chunkear, no después). El eval las
 carga solo y avisa si alguna resolvió a chunks distintos de los del jsonl.
+
+**Estado del paso 4 (2026-08-06) — RECHAZADO, y es el resultado más útil de la
+fase.** La premisa era que el chunker corre ciego (`clean.ts` ve 1 párrafo por
+página cuando la página tiene 15-26 bloques visuales) y que emitir esos bloques
+separados dejaría cortar en frontera semántica. Se implementó, se re-ingestó
+Lengua 8º TE en los dos modos y se midió:
+
+| | plano | bloques |
+|---|---|---|
+| recall@5 (por chunk_id) | 88,0% | 58,3% |
+| **recall por COBERTURA** | **90,5%** | **72,4%** |
+| correct_mode | 21/24 | 21/24 |
+
+⚠️ **La primera fila sola no permitía decidir**, y ese fue el aprendizaje de
+método: al partir más fino, el pasaje gold pasó de vivir en 1,69 chunks a 3,69, o
+sea que acertar "todo el gold" en los mismos 5 slots del top-5 se vuelve
+mecánicamente más difícil — `recall@5` puede caer aunque el retrieval haya
+mejorado. Es la misma trampa que §7 marca para las corridas anteriores al 03-08.
+Por eso se construyó `recallPorCobertura`: mide qué fracción de los 4-gramas del
+PASAJE quedó dentro de lo recuperado, y da lo mismo si está en un chunk o en
+cinco. Esa métrica también cae 18 puntos → la regresión es real.
+
+Tampoco fue pérdida de texto: -0,92% de caracteres con **0 palabras únicas
+perdidas**. La causa más probable es que los bloques crudos de PyMuPDF no son la
+estructura que uno supone — el orden de lectura (y,x) intercala columnas que el
+orden interno del PDF mantenía separadas, y las etiquetas de un diagrama quedan
+pegadas a la prosa siguiente. El chunk mezcla MÁS, no menos.
+
+`EXTRACT_BLOCKS` queda con default 0. El código se conserva: la idea de cortar por
+estructura sigue en pie, lo que falló es usar los bloques crudos como esa
+estructura. Un intento futuro tiene que agrupar por columna y proximidad
+tipográfica ANTES de emitir, y volver a correr este mismo A/B.
+
+**Efecto colateral que sí vale:** la ida y vuelta fueron dos re-ingestas reales, y
+el uuid del documento, sus 18 secciones y las 94 filas de progreso sobrevivieron a
+las dos. El desacople del paso 1 quedó probado en producción, no solo en una
+transacción de prueba. Y `INGEST_SOLO=<substring>` permite re-ingerir un libro sin
+tocar los otros 217.
 
 **Estado del paso 3 (2026-08-06).** 7.250 chunks de contenido con `heading_path`
 (43,8%). La cita pasó de "Biología · 1º Medio · pág. 136" a "…· ¿Qué funciones
