@@ -12,7 +12,9 @@
  * contenido top. La metadata (unit/lesson/oa) queda como señal blanda.
  */
 import { getSql } from "@tutor-ia/db";
-import { answerabilityEnabled, contesta } from "./answerability";
+import {
+  answerabilityEnabled, apoyadoEnabled, apoyadoMinRelevanciaFromEnv, contesta,
+} from "./answerability";
 import { retrieveHybrid, type HybridChunk } from "./retrieve-hybrid";
 import {
   retrieveRanked,
@@ -172,6 +174,13 @@ export interface TeachingContext {
    * verificar que el runtime reproduce la calibración.
    */
   answerabilityEntail?: number | null;
+  /**
+   * El material es DEL TEMA pero NO contesta la pregunta: se sirve igual, con el
+   * límite a la vista (sello `apoyado`). Es el tercer casillero — antes había que
+   * elegir entre presentarlo como "esto está en tu material" o tirarlo y contestar
+   * de memoria. Ver `apoyadoEnabled` en answerability.ts.
+   */
+  parcial?: boolean;
 }
 
 export interface TeachingOptions {
@@ -417,14 +426,27 @@ export async function retrieveForTeaching(
   // que SOLO gobierna las etapas de acá abajo: el libro del propio curso no pasa
   // por él, a propósito.
   const answerOn = answerabilityEnabled() && !opts.vagueTurn;
+  const apoyadoOn = apoyadoEnabled() && !opts.vagueTurn;
+  const minRelevancia = apoyadoMinRelevanciaFromEnv();
   let answerEntail: number | null = null;
-  const pasaAnswerability = async (chunks: { content: string }[]): Promise<boolean> => {
+  // El material NO contesta la pregunta pero es del tema: se sirve marcado como
+  // PARCIAL en vez de descartarse. Ver el comentario de `contesta`/apoyado.
+  let parcial = false;
+  const pasaAnswerability = async (
+    chunks: { content: string }[],
+    topScore: number,
+  ): Promise<boolean> => {
     if (!answerOn) return true;
     const v = await contesta(query, chunks.map((c) => c.content));
     // null = sidecar caído: no negarle material a un alumno por un filtro mudo.
     if (v === null) return true;
     answerEntail = v.entailment;
-    return v.ok;
+    if (v.ok) { parcial = false; return true; }
+    // No contesta. ¿Es al menos DEL TEMA? Entonces vale como apoyo parcial: el
+    // alumno recibe el material con el límite a la vista, en vez de una respuesta
+    // de memoria sin nada que la respalde.
+    if (apoyadoOn && topScore >= minRelevancia) { parcial = true; return true; }
+    return false;
   };
 
   if (!dirigido && !directedOk && opts.subjectId && !content?.grounded && (opts.familyIds?.length ?? 0) > 1) {
@@ -435,7 +457,7 @@ export async function retrieveForTeaching(
       minRerankScore: threshold,
       corpusRole: "content",
     });
-    if (ampliado.grounded && (await pasaAnswerability(ampliado.chunks))) {
+    if (ampliado.grounded && (await pasaAnswerability(ampliado.chunks, ampliado.topScore))) {
       content = { ...ampliado, chunks: porCercania(ampliado.chunks) };
       scope = "otro_curso";
     }
@@ -491,7 +513,7 @@ export async function retrieveForTeaching(
     // queda la asignatura propia: mismo valor para el alumno, y su libro.
     if (
       todo.grounded && todo.topScore > (content?.grounded ? content.topScore : -1) &&
-      (await pasaAnswerability(todo.chunks))
+      (await pasaAnswerability(todo.chunks, todo.topScore))
     ) {
       content = { ...todo, chunks: porCercania(todo.chunks) };
       scope = "otra_materia";
@@ -604,5 +626,9 @@ export async function retrieveForTeaching(
     gateBypassed,
     stats: content?.stats,
     answerabilityEntail: answerEntail,
+    // Solo tiene sentido si lo que se sirve salió de la etapa que lo evaluó: si
+    // al final ganó el libro del propio curso o la pedagogía, el material NO es
+    // parcial aunque una etapa descartada lo fuera.
+    parcial: parcial && citableSource === "content" && scope !== "curso",
   };
 }

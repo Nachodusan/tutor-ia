@@ -105,6 +105,53 @@ export const gradoLegible = (g: string): string =>
   g.endsWith("M") ? `${g.slice(0, -1)}º Medio` : `${g.slice(0, -1)}º Básico`;
 
 /**
+ * Fecha de hoy para el prompt del modo GENERAL.
+ *
+ * ── El caso que lo motivó ───────────────────────────────────────────────────
+ * A "¿cuál fue el resultado de las últimas elecciones presidenciales en Chile?"
+ * el tutor respondía, en agosto de 2026: *"La última se realizó en noviembre de
+ * 2021... La próxima será en 2025."* Falso, y dicho con total confianza. El
+ * modelo no tiene forma de saber qué día es: su conocimiento tiene un corte y
+ * nadie se lo estaba diciendo, así que trataba lo último que sabe como si fuera
+ * el presente.
+ *
+ * Esto NO le da información nueva —para eso haría falta material o búsqueda— pero
+ * sí le permite hacer lo correcto con lo que tiene: ubicar su conocimiento en el
+ * tiempo y avisar cuando algo pudo haber cambiado.
+ *
+ * ⚠️ Solo entra en el bloque de modo general (`sinMaterial`), no en el prompt del
+ * camino con material: ahí la fuente de verdad es el libro y meter la fecha
+ * cambiaría un prompt que el baseline ya midió, sin resolver ningún problema.
+ *
+ * `TUTOR_FECHA` la fija a un valor conocido — el eval necesita que dos corridas
+ * en días distintos comparen el mismo prompt.
+ */
+/**
+ * Advertencia de ACTUALIDAD. Va en los dos caminos donde el tutor completa con
+ * conocimiento propio —modo general y material parcial— porque el riesgo es el
+ * mismo en ambos: el modelo trata lo último que recuerda como si fuera el
+ * presente. Compartida y no duplicada: dos copias de esta regla derivarían, y la
+ * que se olvide de actualizar es la que le habla al chico.
+ */
+export function avisoDeActualidad(): string {
+  return `📅 HOY ES ${fechaDeHoy()}. Tu conocimiento tiene una fecha de corte anterior a hoy, así que sobre TODO LO QUE CAMBIA CON EL TIEMPO —quién gobierna, elecciones, campeonatos, precios, récords, "actualmente", "el último/la última", cuántos son hoy— vos NO SABÉS cómo está la cosa hoy. Solo sabés cómo estaba hasta tu corte.
+Decilo así, sin adornos: primero que no podés saberlo con seguridad, después el último dato que tenés CON SU AÑO, y que lo confirme. Ejemplo del tono exacto: "No puedo saber cómo está hoy, mi información llega hasta 2024. Hasta entonces el presidente era X, pero desde ahí pudo haber cambiado — confirmalo con alguien o en las noticias."
+DOS PROHIBICIONES DURAS: (1) no des un dato viejo como si fuera el actual —si te preguntan por "la última" elección y desde tu corte pasó tiempo, es muy probable que haya habido otra que no conocés—; (2) no anuncies como futuro un año que ya pasó, ni te pongas a calcular cuándo tocaría: si la cuenta te da un año anterior a hoy, es que ya ocurrió y no sabés el resultado.
+Para lo que NO cambia (cómo funciona la fotosíntesis, qué es una metáfora, el teorema de Pitágoras) explicá normal, sin ninguna advertencia.`;
+}
+
+export function fechaDeHoy(): string {
+  const fija = process.env.TUTOR_FECHA?.trim();
+  // Mediodía y no medianoche: `new Date("2026-01-15")` se parsea como UTC, y en
+  // Chile (UTC-3/-4) eso cae el DÍA ANTERIOR. Un día de corrimiento no rompe
+  // nada, pero un valor fijo que no da lo que dice es la clase de detalle que
+  // después cuesta una hora entender.
+  const d = fija ? new Date(`${fija}T12:00:00`) : new Date();
+  const valida = Number.isNaN(d.getTime()) ? new Date() : d;
+  return valida.toLocaleDateString("es-CL", { dateStyle: "long" });
+}
+
+/**
  * Instrucción de nivel de lenguaje según el curso del alumno.
  *
  * Hasta ahora NADIE le decía al modelo con quién estaba hablando: el mismo
@@ -144,6 +191,8 @@ export function buildTeachingTurn(params: {
   /** No se recuperó material del libro. El tutor enseña igual, con su
    *  conocimiento general, y lo reconoce en una frase. */
   sinMaterial?: boolean;
+  /** El MATERIAL es del tema pero NO contesta la pregunta (sello `apoyado`). */
+  parcial?: boolean;
   /** Curso del alumno ("7B", "1M"): fija el nivel de lenguaje. */
   studentGrade?: string | null;
   /** Cursos de los que salió el material citable. */
@@ -157,7 +206,17 @@ export function buildTeachingTurn(params: {
   // Bloque ADITIVO: `TEACHING_SYSTEM` queda intacto para que el camino con
   // material siga siendo comparable con las mediciones anteriores.
   const sinMaterial = params.sinMaterial
-    ? `\n⚠️ NO se recuperó material del libro para este tema. IGUAL TENÉS QUE ENSEÑARLE: usá tu conocimiento general, con el mismo tono, la misma brevedad y la misma pregunta final. Reconocelo UNA vez, en una frase corta y natural ("esto no está en tu libro, pero te lo explico igual"). NO pidas disculpas, NO ofrezcas cambiar de tema, NO cortes la charla. Si un dato duro no lo sabés con certeza, decilo en vez de inventarlo.\n`
+    ? `\n⚠️ NO se recuperó material del libro para este tema. IGUAL TENÉS QUE ENSEÑARLE: usá tu conocimiento general, con el mismo tono, la misma brevedad y la misma pregunta final. Reconocelo UNA vez, en una frase corta y natural ("esto no está en tu libro, pero te lo explico igual"). NO pidas disculpas, NO ofrezcas cambiar de tema, NO cortes la charla. Si un dato duro no lo sabés con certeza, decilo en vez de inventarlo.
+${avisoDeActualidad()}\n`
+    : "";
+  // MATERIAL PARCIAL: es del tema, no contesta la pregunta. Antes esto no
+  // existía y había que elegir entre presentarlo como respuesta (el chico lee
+  // "esto está en tu material" sobre algo que no responde) o tirarlo y contestar
+  // de memoria. El tercer camino es servirlo diciendo qué cubre y qué no.
+  const parcial = params.parcial
+    ? `\n⚠️ EL MATERIAL DE ARRIBA ES DEL TEMA PERO NO RESPONDE LA PREGUNTA que te hicieron: la roza, da contexto, habla de al lado. NO lo presentes como si la contestara.
+Hacé las dos cosas, en este orden: (1) decí en una frase QUÉ SÍ trae el material sobre el tema —eso es lo respaldado y es valioso—, y (2) para lo que la pregunta pide y el material NO cubre, avisá que ahí ya no estás leyendo su libro y respondé con tu conocimiento general, marcando la diferencia ("lo que sí dice tu material es…; lo otro no lo trae, y por lo que yo sé…"). Si de esa segunda parte no estás seguro, decilo en vez de inventar.
+${avisoDeActualidad()}\n`
     : "";
   // NIVEL DE LECTURA. El material puede venir de un curso más avanzado —el chunk
   // es entrada del modelo, no prosa que el chico lea— así que lo que hay que
@@ -176,7 +235,7 @@ ${params.material || "(no se recuperó material relevante)"}
 === GUÍA DIDÁCTICA (cómo enseñar este tema; NO es contenido a afirmar) ===
 ${params.guide || "(sin guía para este tema)"}
 === FIN ===
-${adapt}${sinMaterial}${nivel}${otroCurso}
+${adapt}${sinMaterial}${parcial}${nivel}${otroCurso}
 Enseñá en una conversación BREVE y simple: conectá con algo que ya sepa, explicá UNA idea con un ejemplo concreto, y terminá con UNA pregunta. Hablá natural, SIN páginas ni "(pág. X)" ni "según el material" en el texto (las referencias van aparte). Sin títulos, rótulos, markdown ni emojis. Si el MATERIAL de arriba no cubre el tema, decíselo con naturalidad y ofrecé un tema relacionado que sí esté; no cortes la charla con un cartel.
 
 Turno del estudiante: ${params.question}`;

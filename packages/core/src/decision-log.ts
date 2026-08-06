@@ -73,6 +73,9 @@ export interface Decision {
    *  lo ejerció (null = no corrió). Sin esto, un bloqueo no deja rastro del
    *  número con que se decidió y no se puede auditar en producción. */
   answEntail?: number | null;
+  /** El material era del tema pero no contestaba: se sirvió como `apoyado`
+   *  (material parcial) en vez de descartarse. */
+  parcial?: boolean;
   /** Margen del top-1 sobre la mediana del pool (logits). */
   gapMed?: number | null;
   /**
@@ -175,6 +178,7 @@ export function logDecision(d: Decision): void {
     `gateVia=${fmt(d.gateVia)}`,
     `gapMed=${fmt(d.gapMed)}`,
     `answEntail=${fmt(d.answEntail)}`,
+    `parcial=${fmt(d.parcial)}`,
     `selfAbstain=${fmt(d.selfAbstain)}`,
     `cierre=${d.cierreChecked ? (d.cierreReplaced ? "replaced" : "ok") : "-"}`,
     `drift=${fmt(d.drift)}`,

@@ -94,12 +94,21 @@ export function derivarModo(
   verdicts: SentenceVerdict[],
   hayMaterial: boolean,
   drift = false,
+  /**
+   * El RETRIEVAL determinó que el material es del tema pero NO contesta la
+   * pregunta. Es la SEGUNDA vía hacia `apoyado`, y la que lo vuelve un sello
+   * útil: la deriva del NLI dispara 2 veces en 101, así que hasta acá el sistema
+   * tenía dos casilleros (`libro`/`general`) para tres situaciones y había que
+   * elegir entre presentar como respuesta algo que no lo es, o tirar material
+   * genuinamente útil. Ver `apoyadoEnabled` en rag/answerability.ts.
+   */
+  parcial = false,
 ): { mode: AnswerMode; supportedFrac: number } {
   const supportedFrac = verdicts.length
     ? verdicts.filter((v) => v.supported).length / verdicts.length
     : 1;
   if (!hayMaterial) return { mode: "general", supportedFrac: 0 };
-  return { mode: drift ? "apoyado" : "libro", supportedFrac };
+  return { mode: drift || parcial ? "apoyado" : "libro", supportedFrac };
 }
 
 /** Citas inline del modelo ("(Fragmento 2, pág. 14)"): fuera antes de puntuar. */

@@ -321,6 +321,9 @@ export async function* streamTeaching(
         guide,
         struggling: req.struggling,
         sinMaterial: ctx.citable.length === 0,
+        // El material es del tema pero no contesta: se sirve con el límite a la
+        // vista (sello `apoyado`) en vez de descartarse.
+        parcial: ctx.parcial === true,
         studentGrade: req.studentGrade ?? null,
         // De qué cursos salió el material que va en el prompt. Si no es el del
         // alumno, el modelo tiene que saberlo para poder decirlo.

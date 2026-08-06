@@ -111,3 +111,41 @@ export async function contesta(
     return null;
   }
 }
+
+/**
+ * MATERIAL PARCIAL — el casillero que le faltaba al sistema.
+ *
+ * El encuadre era binario (hay material citable / no hay) y eso obliga a elegir
+ * entre dos respuestas malas cuando el material es DEL TEMA pero no contesta la
+ * pregunta. Medido, q035 ("¿resultado de las últimas elecciones presidenciales
+ * en Chile?"): el material de Educación Ciudadana habla de PARTICIPACIÓN
+ * electoral. Servirlo como `libro` le dice al chico "esto está en tu material"
+ * sobre algo que no responde; descartarlo lo manda a `general`, donde el modelo
+ * contesta de memoria y desactualizado. Las dos son peores que la tercera:
+ * servirlo DICIENDO que cubre una parte.
+ *
+ * Se decide con las dos señales que ya se calculan, que solas no alcanzan y
+ * juntas sí: `rerankScore` dice si el material es DEL TEMA, el entailment dice si
+ * CONTESTA.
+ *
+ *   contesta                          → libro
+ *   no contesta pero es del tema      → apoyado   (se sirve, con el límite a la vista)
+ *   no contesta y tampoco es del tema → general   (se descarta: es ruido)
+ *
+ * El corte de relevancia sale de `pnpm --filter @tutor-ia/eval apoyado-sweep`,
+ * que vuelca el par de cada etapa cross-scope con el veredicto del golden al
+ * lado. NO se elige a ojo: es exactamente así como se llegó al 0,91 in-sample
+ * que hubo que bajar después.
+ */
+export const DEFAULT_APOYADO_MIN_RELEVANCIA = 0.8;
+
+export function apoyadoMinRelevanciaFromEnv(): number {
+  const n = Number(process.env.RAG_APOYADO_MIN_RELEVANCIA ?? "");
+  return Number.isFinite(n) && n > 0 && n <= 1 ? n : DEFAULT_APOYADO_MIN_RELEVANCIA;
+}
+
+/** ¿El modo `apoyado` por material parcial está activo? Va con el discriminador:
+ *  sin él no hay entailment con que decidir. `RAG_APOYADO=0` lo apaga aparte. */
+export function apoyadoEnabled(): boolean {
+  return answerabilityEnabled() && process.env.RAG_APOYADO !== "0";
+}

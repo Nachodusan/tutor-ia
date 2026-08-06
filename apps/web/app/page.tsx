@@ -1278,6 +1278,18 @@ function VerificationBadge({ v, mode, scope, citations }: { v?: Verification | n
       </div>
     );
   }
+  // MATERIAL PARCIAL: el libro toca el tema pero no responde la pregunta. El
+  // sello va aunque no haya verificación que mostrar — es justamente el caso en
+  // que el chico necesita saber qué parte puede dar por respaldada. Se distingue
+  // de la DERIVA porque esa trae contradicciones; ésta no trae ninguna.
+  if (mode === "apoyado" && !(v?.contradicted?.length)) {
+    return (
+      <div style={{ marginTop: 9, display: "inline-flex", gap: 7, alignItems: "flex-start", background: C.panel2, color: C.dim, border: `1px solid ${C.border}`, fontSize: 12.5, padding: "8px 12px", borderRadius: 12, lineHeight: 1.5, maxWidth: 480 }}>
+        <span style={{ display: "flex", flexShrink: 0, marginTop: 1 }}><IconBook size={14} /></span>
+        <span>Tu material toca este tema pero <strong style={{ color: C.text }}>no responde del todo</strong> lo que preguntaste. Lo que falta lo completé con lo que sé: chequealo con tu profe.</span>
+      </div>
+    );
+  }
   if (!v) return null;
   if (v.unavailable) return <div style={{ marginTop: 8, color: C.dim, fontSize: 12.5 }}>No pude verificar esta respuesta contra tu material.</div>;
   // Deriva: el material habla de otra cosa. Es la única alerta del verificador

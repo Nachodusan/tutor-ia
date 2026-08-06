@@ -189,7 +189,8 @@ export async function POST(req: Request) {
       const citations = hayMaterial ? teachingCitations(res.ctx!) : [];
       controller.enqueue(
         encoder.encode("\x1e" + JSON.stringify({
-          citations, grounded: hayMaterial, mode: hayMaterial ? "libro" : "general",
+          citations, grounded: hayMaterial,
+          mode: !hayMaterial ? "general" : res.ctx?.parcial ? "apoyado" : "libro",
           scope: res.ctx?.scope ?? "ninguno", sessionId,
         }) + "\n"),
       );
@@ -262,6 +263,7 @@ export async function POST(req: Request) {
           // respaldo por oración" — ver derivarModo().
           const { mode, supportedFrac } = derivarModo(
             v?.verdicts ?? [], hayMaterial, v?.grounded === false,
+            res.ctx.parcial === true,
           );
           controller.enqueue(
             encoder.encode("\n\x1e" + JSON.stringify({ verification: v, mode, scope: res.ctx!.scope }) + "\n"),
@@ -293,6 +295,7 @@ export async function POST(req: Request) {
             gateVia: res.ctx.stats?.gateVia ?? null,
             gapMed: res.ctx.stats?.gapMed ?? null,
             answEntail: res.ctx.answerabilityEntail ?? null,
+            parcial: res.ctx.parcial === true,
             selfAbstain: looksLikeSelfAbstention(full),
             // Cuánto dispara el validador de la pregunta de cierre en producción.
             cierreChecked: (cierre as { checked: boolean } | null)?.checked ?? false,
