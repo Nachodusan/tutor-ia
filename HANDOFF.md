@@ -808,7 +808,7 @@ de 1º con Leo Primero, y prometer "cobertura estructural del corpus" sería fal
 | 0 | ✅ **HECHO** — Backup | 160 MB · 28.986 chunks · verificado | — |
 | 1 | ✅ **HECHO** — Desacoplar ingesta de `title` (UPSERT por `storage_path`) | 0 huérfanos (eran 158) · 94/94 `topic_key` · 218/218 uuids | — |
 | 2 | ✅ **HECHO** — Anclas del golden por TEXTO (no por uuid) | 72/72 resueltas, 0% de inflación, idénticas al jsonl | — |
-| 3 | Backfill `heading_path` desde `book_sections` (solo span ≤20 págs = 43,8%) | ≤2/20 citas nombran la lección equivocada | más de 2/20 |
+| 3 | ✅ **HECHO** — Backfill `heading_path` desde `book_sections` | 7.250 chunks (43,8%) · 17-18 de 18 citas correctas | — |
 | 4 | `get_text("blocks")` en UN libro (Lengua 8º TE) | pérdida de chars <3%; 68/68 re-anclan; recall@5 no baja | recall baja o pérdida >5% |
 | 5 | Rollout a los 93 documentos de contenido | recall@5 ≥91%, precision@gold ≥75% | cualquier métrica retrocede → `pg_restore` |
 
@@ -836,6 +836,18 @@ subestimar apenas el re-chunk partiera el pasaje en pedazos.
 Regenerarlas: `pnpm --filter @tutor-ia/eval extract-gold-anchors` (exige que los
 uuids actuales existan — se corre ANTES de re-chunkear, no después). El eval las
 carga solo y avisa si alguna resolvió a chunks distintos de los del jsonl.
+
+**Estado del paso 3 (2026-08-06).** 7.250 chunks de contenido con `heading_path`
+(43,8%). La cita pasó de "Biología · 1º Medio · pág. 136" a "…· ¿Qué funciones
+cumple el sistema nervioso y cómo las realiza?". Solo se etiqueta con secciones de
+nivel 2 y span ≤20 páginas: los 2.899 que caen en secciones gigantes quedan en
+NULL a propósito —una "lección" de 60 páginas es el parser fallando, y un
+breadcrumb equivocado convierte un fallo de retrieval en una cita con cara de
+correcta—, y 3.215 son de los 47 libros sin índice. El texto del chunk no se tocó,
+así que ni los embeddings ni `content_tsv` cambian.
+
+Regenerable e idempotente: `pnpm --filter @tutor-ia/eval backfill-heading-path`
+(el `--aplicar` solo escribe donde hoy hay NULL).
 
 ⚠️ **`buildSectionsForDocument` dice en un comentario que "las secciones son
 derivadas, no hay estado que preservar". Es FALSO** y hay que corregirlo: `ord` y
