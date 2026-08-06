@@ -115,7 +115,7 @@ async function main(): Promise<void> {
     const filas: {
       id: string; type: string; mode: string; scope: string;
       topScore: number; entail: number | null; ok: boolean | null;
-      recall: number | null; precision: number | null; cobertura: number | null;
+      recall: number | null; recallTodo: number | null; precision: number | null; cobertura: number | null;
     }[] = [];
     for (const g of preguntas) {
       const q = g.question ?? g.q ?? "";
@@ -136,6 +136,12 @@ async function main(): Promise<void> {
       const gold = goldPorPregunta.get(g.id) ?? [];
       const traidos = (ctx?.retrieved ?? []).map((c) => c.chunkId);
       const recall = gold.length ? recallAtK(traidos, gold, 5) : null;
+      // recall@K con K = todo lo que trajo el ranking. Separa las dos causas
+      // posibles de un recall@5 bajo: si recall@todo es ~100%, el material SÍ
+      // llegó y el problema es el ORDEN (el cross-encoder lo hunde); si también
+      // es bajo, el material nunca entró al pool y el problema es el retrieval
+      // híbrido (denso + léxico), que es otro arreglo completamente distinto.
+      const recallTodo = gold.length ? recallAtK(traidos, gold, traidos.length || 1) : null;
       // Invariante al chunking: cuánto del PASAJE quedó dentro del top-5.
       const mias = anclasPorPregunta.get(g.id);
       const cobertura = mias?.length
@@ -148,7 +154,7 @@ async function main(): Promise<void> {
         id: g.id, type: g.type, mode, scope,
         topScore: Number((ctx?.topScore ?? 0).toFixed(4)),
         entail: ctx?.answerabilityEntail ?? null,
-        ok, recall, precision, cobertura,
+        ok, recall, recallTodo, precision, cobertura,
       });
       process.stdout.write(ok === false ? "✗" : ok === true ? "·" : "-");
     }
@@ -165,6 +171,11 @@ async function main(): Promise<void> {
         `      recall@5 ${(100 * media(conRecall.map((f) => f.recall!))).toFixed(1)}% · ` +
           `precision@gold ${(100 * media(conRecall.map((f) => f.precision!))).toFixed(1)}% ` +
           `(sobre ${conRecall.length} preguntas con gold)`,
+      );
+      console.log(
+        `      recall@TODO (${filas[0]?.id ? "sobre todo lo recuperado" : ""}): ` +
+          `${(100 * media(conRecall.map((f) => f.recallTodo ?? 0))).toFixed(1)}%` +
+          `   ← si es ~100%, el material llega y falla el ORDEN; si no, falla el retrieval`,
       );
       const conCob = filas.filter((f) => f.cobertura != null);
       if (conCob.length) {
