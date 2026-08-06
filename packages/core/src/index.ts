@@ -7,6 +7,7 @@ export * from "./groundedness";
 export * from "./prompts";
 export * from "./tutor";
 export * from "./teaching";
+export * from "./closing-question";
 export * from "./query-normalize";
 export * from "./password";
 export * from "./verify";

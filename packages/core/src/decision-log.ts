@@ -69,6 +69,10 @@ export interface Decision {
   qNormMs?: number | null;
   /** Por qué vía pasó el gate híbrido: "abs" | "margin" | "none". */
   gateVia?: string | null;
+  /** Entailment del discriminador de answerability en la etapa cross-scope que
+   *  lo ejerció (null = no corrió). Sin esto, un bloqueo no deja rastro del
+   *  número con que se decidió y no se puede auditar en producción. */
+  answEntail?: number | null;
   /** Margen del top-1 sobre la mediana del pool (logits). */
   gapMed?: number | null;
   /**
@@ -77,6 +81,11 @@ export interface Decision {
    * si la culpa es del umbral o de las instrucciones.
    */
   selfAbstain?: boolean;
+  /** El validador de la pregunta de cierre llegó a opinar (closing-question.ts). */
+  cierreChecked?: boolean;
+  /** La pregunta de cierre venía auto-contestada y se reemplazó. Es la tasa que
+   *  dice si el problema del 40% sigue vivo con el prompt actual. */
+  cierreReplaced?: boolean;
   /** Deriva sistemática detectada por el NLI (verify.ts). */
   drift?: boolean;
   /** El sidecar de NLI no pudo verificar. */
@@ -165,7 +174,9 @@ export function logDecision(d: Decision): void {
     `qNormMs=${fmt(d.qNormMs)}`,
     `gateVia=${fmt(d.gateVia)}`,
     `gapMed=${fmt(d.gapMed)}`,
+    `answEntail=${fmt(d.answEntail)}`,
     `selfAbstain=${fmt(d.selfAbstain)}`,
+    `cierre=${d.cierreChecked ? (d.cierreReplaced ? "replaced" : "ok") : "-"}`,
     `drift=${fmt(d.drift)}`,
     `nli=${d.nliUnavailable ? "unavailable" : fmt(d.nliChecked)}`,
     `chars=${fmt(d.chars)}`,

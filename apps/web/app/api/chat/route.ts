@@ -1,6 +1,6 @@
 import {
   getTeachingContext,
-  streamTeaching,
+  streamTeachingChecked,
   teachingAbstention,
   teachingCitations,
   socialReply,
@@ -25,6 +25,10 @@ export const maxDuration = 120;
 /** `ctx.pedagogy` viene AGRUPADO por tipo (proposito, evaluacion, …), no plano. */
 const RETRIEVAL_ERROR_MSG =
   "Uf, tuve un problemita para traer tu material (a veces el buscador se satura). Probá de nuevo en un momento, o reformulá el tema. 🙏";
+
+/** Fallo del modelo a mitad de respuesta. El error real va al log del server. */
+const MODEL_ERROR_MSG =
+  "\nUf, se me trabó la respuesta a mitad de camino. No es culpa tuya: probá mandar el mensaje de nuevo en un momento.";
 
 const countPedagogy = (p: Record<string, unknown[]> | null | undefined): number =>
   p ? Object.values(p).reduce((n, arr) => n + (arr?.length ?? 0), 0) : 0;
@@ -235,12 +239,16 @@ export async function POST(req: Request) {
             qNormMs: res.qNormMs ?? null,
             gateVia: res.ctx?.stats?.gateVia ?? null,
             gapMed: res.ctx?.stats?.gapMed ?? null,
+            answEntail: res.ctx?.answerabilityEntail ?? null,
             ms: Date.now() - t0,
           });
         } else {
           // 2) Explicación del facilitador (el prompt lleva el flujo + adaptatividad).
+          //    La PREGUNTA DE CIERRE se valida antes de que salga: si se responde
+          //    copiando el propio mensaje, se reemplaza (ver closing-question.ts).
           let full = "";
-          for await (const chunk of streamTeaching(teachReq, res.ctx)) {
+          let cierre: { checked: boolean; replaced: boolean } | null = null;
+          for await (const chunk of streamTeachingChecked(teachReq, res.ctx, (c) => { cierre = c; })) {
             full += chunk;
             controller.enqueue(encoder.encode(chunk));
           }
@@ -284,7 +292,11 @@ export async function POST(req: Request) {
             qNormMs: res.qNormMs ?? null,
             gateVia: res.ctx.stats?.gateVia ?? null,
             gapMed: res.ctx.stats?.gapMed ?? null,
+            answEntail: res.ctx.answerabilityEntail ?? null,
             selfAbstain: looksLikeSelfAbstention(full),
+            // Cuánto dispara el validador de la pregunta de cierre en producción.
+            cierreChecked: (cierre as { checked: boolean } | null)?.checked ?? false,
+            cierreReplaced: (cierre as { replaced: boolean } | null)?.replaced ?? false,
             drift: v?.grounded === false,
             nliUnavailable: v?.unavailable === true,
             nliChecked: v?.checked ?? null,
@@ -293,6 +305,18 @@ export async function POST(req: Request) {
             chars: full.length,
             ms: Date.now() - t0,
           });
+          // REGISTRO DE HUECOS DE MATERIAL: si la respuesta no salió del libro
+          // del curso del alumno, queda anotado para decidir con demanda real
+          // qué material conseguir. Sin user_id (el hueco es del corpus, no del
+          // alumno); ver packages/db/schema_content_gaps.sql.
+          if ((res.ctx?.scope ?? "curso") !== "curso") {
+            void getSql()`
+              insert into content_gaps (subject_id, grade, question, scope, mode, top_score)
+              values (${body.subjectId ?? null}::uuid, ${teachReq.studentGrade},
+                      ${body.question!.slice(0, 200)}, ${res.ctx?.scope ?? "ninguno"},
+                      ${mode}, ${res.ctx?.topScore ?? null})
+            `.catch((e) => console.error(`[chat] content_gaps: ${e}`));
+          }
           // Con AWAIT a propósito: acá el último token YA salió al cliente (el
           // alumno terminó de leer), así que ~1 ms de INSERT sobre una respuesta
           // de 10-60 s es latencia percibida CERO y a cambio la escritura queda
@@ -310,8 +334,19 @@ export async function POST(req: Request) {
           });
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Error del modelo";
-        controller.enqueue(encoder.encode(`\n[error] ${msg}`));
+        // El error crudo del proveedor ("Request was aborted.", un 429 con JSON
+        // adentro) NO va a la burbuja de un chico: se loguea en el server y el
+        // alumno recibe una frase amable y reintentable.
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[chat] model_error: ${msg}`);
+        controller.enqueue(encoder.encode(MODEL_ERROR_MSG));
+        // El turno fallado también se guarda: sin esto, el historial que el
+        // alumno recupere tendría su pregunta sin ninguna respuesta.
+        void persistUsuario.then(() =>
+          insertMessage(sessionId, "assistant", MODEL_ERROR_MSG.trim(), {
+            grounded: false, meta: { cause: "model_error" },
+          }),
+        );
         logDecision({
           route: "chat",
           abstained: true,

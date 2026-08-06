@@ -16,6 +16,7 @@ import { chatStream, type ChatMsg } from "./client";
 import { config } from "./config";
 import { normalizeStudentQuery } from "./query-normalize";
 import { TEACHING_SYSTEM, buildTeachingTurn } from "./prompts";
+import { splitClosingQuestion, validarPreguntaFinal } from "./closing-question";
 import type { ChatMessage } from "./types";
 
 export interface TeachRequest {
@@ -59,13 +60,16 @@ export function formatMaterial(citable: CitableChunk[]): string {
     .join("\n\n");
 }
 
-/** Formatea la guía didáctica (el "cómo") agrupada por tipo, en orden de flujo. */
+/** Formatea la guía didáctica (el "cómo") agrupada por tipo, en orden de flujo.
+ *  El rótulo `[Sección · Unidad X Lección Y]` del chunk se CONSERVA: es la única
+ *  ancla que le dice al modelo de qué lección viene cada bloque — sin ella, una
+ *  "idea previa" de otra unidad se lee igual que una de la lección correcta. */
 export function formatGuide(pedagogy: Record<string, PedagogyChunk[]>): string {
   const parts: string[] = [];
   for (const t of TEACHING_TYPES) {
     const chunks = pedagogy[t] ?? [];
     if (chunks.length === 0) continue;
-    const body = chunks.map((c) => c.content.replace(/^\[[^\]]*\]\s*/, "").trim()).join("\n");
+    const body = chunks.map((c) => c.content.trim()).join("\n");
     parts.push(`### ${TYPE_LABEL[t] ?? t}\n${body}`);
   }
   return parts.join("\n\n");
@@ -125,6 +129,11 @@ export async function getTeachingContext(req: TeachRequest): Promise<TeachingRes
       lesson: req.lesson ?? null,
       familyIds: req.familyIds ?? null,
       studentGrade: req.studentGrade ?? null,
+      // Turno sin tema propio ("no entendí") o alumno trabado: el discriminador
+      // de answerability se apaga. La consulta es el turno previo pegado al
+      // actual y su entailment se hunde por la FORMA de la frase, no por el
+      // material — ver `vagueTurn` en TeachingOptions.
+      vagueTurn: vague || Boolean(req.struggling),
     };
     const ctx = await retrieveForTeaching(query, opts);
     if (ctx.grounded || vague || !config.queryNormalize) {
@@ -321,4 +330,68 @@ export async function* streamTeaching(
     },
   ];
   yield* chatStream(messages);
+}
+
+/** Resultado de un turno con la pregunta de cierre validada. */
+export interface ClosingCheck {
+  /** El juez llegó a opinar (false = apagado, sin pregunta final, o juez caído). */
+  checked: boolean;
+  /** La pregunta original se responde copiando y se cambió por otra. */
+  replaced: boolean;
+}
+
+/**
+ * `streamTeaching` + validación de la PREGUNTA DE CIERRE.
+ *
+ * Emite el cuerpo token a token como siempre y RETIENE la última oración; al
+ * cerrar el stream la valida y emite la original o su reemplazo. El alumno no ve
+ * dos preguntas ni una corrección a mitad de lectura: solo espera lo que tarda
+ * juzgar una oración (~1 llamada corta), y únicamente cuando el turno cierra
+ * con pregunta.
+ *
+ * `onCheck` reporta el veredicto para el log de decisiones — sin él no habría
+ * forma de saber cuánto dispara en producción.
+ */
+export async function* streamTeachingChecked(
+  req: TeachRequest,
+  ctx: TeachingContext,
+  onCheck?: (c: ClosingCheck) => void,
+): AsyncGenerator<string> {
+  if (!config.closingQuestionCheck) {
+    yield* streamTeaching(req, ctx);
+    return;
+  }
+  // Buffer de cola: se emite todo menos lo que podría ser la última oración.
+  // 260 chars cubre con holgura una pregunta de cierre (las medidas rondan 60-120)
+  // sin retener explicación.
+  const COLA = 260;
+  let full = "";
+  let emitido = 0;
+  for await (const chunk of streamTeaching(req, ctx)) {
+    full += chunk;
+    const hasta = full.length - COLA;
+    if (hasta > emitido) {
+      yield full.slice(emitido, hasta);
+      emitido = hasta;
+    }
+  }
+  const { text, replaced, checked } = await validarPreguntaFinal(full);
+  onCheck?.({ checked, replaced });
+  if (!replaced) {
+    // Nada que cambiar: sale la cola tal cual (lo ya emitido es prefijo de `full`).
+    if (full.length > emitido) yield full.slice(emitido);
+    return;
+  }
+  // Reemplazada. `text` comparte el cuerpo con `full` salvo por el `trim()` que
+  // aplica el split, así que NO se asume: se verifica que lo ya emitido sea
+  // prefijo de `text` antes de continuar desde el cursor. Si no lo fuera (no
+  // debería), se cierra el cuerpo y se emite la pregunta nueva sola: peor es
+  // duplicar medio renglón en la pantalla de un chico.
+  const yaEmitido = full.slice(0, emitido);
+  if (text.startsWith(yaEmitido)) {
+    yield text.slice(emitido);
+  } else {
+    const corte = text.lastIndexOf("\n\n");
+    yield `${full.slice(emitido, splitClosingQuestion(full)?.body.length ?? full.length)}\n\n${text.slice(corte + 2)}`;
+  }
 }

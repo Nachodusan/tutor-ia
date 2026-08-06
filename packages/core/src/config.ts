@@ -183,6 +183,16 @@ export const config = {
   enableFalsePremiseCheck: boolEnv("RAG_FALSE_PREMISE_CHECK", true),
 
   /**
+   * Validar la PREGUNTA DE CIERRE después de generar (closing-question.ts): si
+   * se responde copiando una frase del propio mensaje, se pide una de reemplazo.
+   * Medido: el 40% de los turnos reales venía auto-contestado, y la regla del
+   * prompt sola rescató 6 de 10. Cuesta 1 llamada corta por turno (2 cuando hay
+   * que reemplazar). CLOSING_QUESTION_CHECK=0 lo apaga — el baseline vigente se
+   * midió SIN esto, así que apagarlo es lo que permite reproducirlo.
+   */
+  closingQuestionCheck: boolEnv("CLOSING_QUESTION_CHECK", true),
+
+  /**
    * Umbral del reranker cross-encoder (0-1) para el gate de abstención (capa A1).
    * CALIBRADO sobre el golden set (§9.3): material relevante ≥0.092, irrelevante
    * ≤0.0024 → plateau seguro 0.05-0.50. Bajado a 0.18 (de 0.3) para un tutor
