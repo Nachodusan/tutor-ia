@@ -78,9 +78,28 @@ const AUXILIAR = [
   "presentación", "presentacion", "anexo",
 ];
 
+/**
+ * ⚠️ Por PALABRA COMPLETA, no por substring.
+ *
+ * `n.includes("síntesis")` matchea "fotoSÍNTESIS", así que
+ * **"¿Cómo se relacionan fotosíntesis y respiración celular?"** —una lección
+ * real de Biología 1º y 2º Medio, y justo el tema que motivó el arreglo de la
+ * cascada en §1— quedaba clasificada como material auxiliar y degradada a
+ * nivel 3. Verificado en la base: aparecía en `book_sections` con `level=3`
+ * junto a "Síntesis de unidad", que sí es auxiliar.
+ *
+ * El delimitador es explícito y no `\b` por el mismo motivo que documenta
+ * `pareceIndice` unas líneas más abajo: `norm()` conserva acentos y en
+ * JavaScript `\b` se define sobre `\w` = [A-Za-z0-9_], así que no hay frontera
+ * de palabra antes de una "í". `\bsíntesis` no matchearía NADA.
+ */
+const DELIM = "[\\s.,;:¿?¡!()\\-–—/]";
 const esAuxiliar = (t: string): boolean => {
   const n = norm(t);
-  return AUXILIAR.some((a) => n.includes(norm(a)));
+  return AUXILIAR.some((a) => {
+    const pat = norm(a).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|${DELIM})${pat}(${DELIM}|$)`).test(n);
+  });
 };
 
 /**
