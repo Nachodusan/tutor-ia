@@ -121,29 +121,32 @@ export function CaminoView({
           // Con 158 px de paso quedan ~94 px libres entre bordes y entran los
           // catorce — que es lo que hace navegable el camino: sin nombres hay
           // que tocar nodo por nodo para saber qué es cada uno.
-          // ⚠️ EL TÍTULO SE CORRE AL LADO CONTRARIO AL QUE VA LA CURVA, y bien
-          // afuera. Centrado bajo el nodo quedaba sobre el trazo —el sendero
-          // sale del nodo hacia el siguiente y lo cruza en diagonal— y el texto
-          // se leía tachado. Se tapó un rato con un fondo blanco detrás de cada
-          // título: eso arreglaba la legibilidad y ensuciaba el dibujo, porque
-          // se veían cajas blancas apoyadas sobre el camino. La solución es
-          // correrlo, no taparlo.
+          // ⚠️ NINGÚN TEXTO SOBRE EL CAMINO. La etiqueta va AL COSTADO del
+          // nodo, a la altura de su centro, y del lado que da al ancho libre:
+          // si el nodo está corrido a la derecha, el texto va a su izquierda, y
+          // al revés. Debajo del nodo el sendero lo cruzaba en diagonal —se leía
+          // tachado— y taparlo con un fondo blanco dejaba cajas apoyadas sobre
+          // el camino.
           //
-          // Con la amplitud grande el corrimiento a veces se saldría de la
-          // pantalla, así que se acota: la etiqueta nunca cruza el borde.
-          const siguienteX = posX(k + 1);
-          const bruto = siguienteX > x ? -(NODO / 2 + 52) : (NODO / 2 + 52);
-          const tope = AMP + NODO / 2;   // medio ancho útil del contenedor
-          const corrimiento = Math.max(
-            -(tope - ETIQUETA / 2) - x,
-            Math.min(bruto, (tope - ETIQUETA / 2) - x),
-          );
-          const etiquetaPos: React.CSSProperties = {
-            position: "absolute", top: y + NODO / 2 + 12, left: "50%",
-            transform: `translateX(calc(-50% + ${x + corrimiento}px))`,
-            width: ETIQUETA, textAlign: "center",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-          };
+          // El lado se elige por la posición del nodo y no por el rumbo de la
+          // curva porque es lo que garantiza ESPACIO: con el nodo en un extremo,
+          // el lado de afuera tiene 40 px y el de adentro casi 300.
+          const aLaIzquierda = x > 0 || (x === 0 && posX(k + 1) >= 0);
+          const etiquetaPos: React.CSSProperties = aLaIzquierda
+            ? {
+                position: "absolute", top: y, transform: "translateY(-50%)",
+                right: `calc(50% - ${x - NODO / 2 - 14}px)`,
+                width: `calc(50% + ${x - NODO / 2 - 18}px)`,
+                textAlign: "right",
+                display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5,
+              }
+            : {
+                position: "absolute", top: y, transform: "translateY(-50%)",
+                left: `calc(50% + ${x + NODO / 2 + 14}px)`,
+                width: `calc(50% - ${x + NODO / 2 + 18}px)`,
+                textAlign: "left",
+                display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 5,
+              };
           if (p.tipo === "examen") {
             return (
               <div key={`ex-${k}`}>
@@ -178,20 +181,17 @@ export function CaminoView({
           const tinta = hecho || esActual ? "#fff" : C.dim;
           return (
             <div key={p.item.key}>
-              {/* La chapa va ARRIBA del nodo y el título abajo. Las dos abajo
-                  no entran en el paso vertical de la curva: la chapa terminaba
-                  metida debajo del nodo siguiente. */}
-              {esActual && !hecho && (
-                <span style={{ position: "absolute", top: y - NODO / 2 - 20, left: "50%", transform: `translateX(calc(-50% + ${x}px))`, fontFamily: FONT.round, fontWeight: 700, fontSize: 10, letterSpacing: .4, textTransform: "uppercase", color: "#fff", background: C.accent, borderRadius: 999, padding: "2px 9px", whiteSpace: "nowrap" }}>
-                  Estás acá
-                </span>
-              )}
               <div style={etiquetaPos}>
                 <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, lineHeight: 1.25, color: hecho && !esActual && !seleccionado ? C.dim : C.text }}>
                   {p.item.title}
                 </span>
-                {/* La nota va con el título y no colgando del nodo: ahí se
-                    cruzaba con el trazo del sendero. */}
+                {/* Chapa y nota van con el título, no sueltas junto al nodo:
+                    ahí también las cruzaba el trazo. */}
+                {esActual && !hecho && (
+                  <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 10, letterSpacing: .4, textTransform: "uppercase", color: "#fff", background: C.accent, borderRadius: 999, padding: "2px 9px", whiteSpace: "nowrap" }}>
+                    Estás acá
+                  </span>
+                )}
                 {sc && (
                   <span style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 10.5, color: bien ? C.okTx : C.warnTx, background: bien ? C.okBg : C.warnBg, border: `1.5px solid ${bien ? C.ok : C.warn}`, borderRadius: 999, padding: "1px 7px" }}>
                     {sc.score}/{sc.total}
