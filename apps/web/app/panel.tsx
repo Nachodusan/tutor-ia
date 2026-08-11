@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, scoreTone } from "./ui";
+import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, scoreTone, IconList, IconChat, IconClipboard } from "./ui";
 import { REVIEW_MAX } from "./tipos";
 import type { Profile, Subject, SubjectStats, WeakTopic } from "./tipos";
 
@@ -70,7 +70,7 @@ export function Onboarding({ subjects, initial, onCancel, onDone }: { subjects: 
 
 // --- Panel del alumno (mundo Bloques) ---
 
-export function Dashboard({ profile, subjects, stats, teacher, onStudy, onReinforce, onEdit, onLogout }: { profile: Profile; subjects: Subject[]; stats: Record<string, SubjectStats>; teacher?: boolean; onStudy: (id: string) => void; onReinforce: (id: string, w: WeakTopic) => void; onEdit: () => void; onLogout: () => void }) {
+export function Dashboard({ profile, subjects, stats, teacher, onAbrir, onReinforce, onEdit, onLogout }: { profile: Profile; subjects: Subject[]; stats: Record<string, SubjectStats>; teacher?: boolean; onAbrir: (id: string, a: Actividad) => void; onReinforce: (id: string, w: WeakTopic) => void; onEdit: () => void; onLogout: () => void }) {
   // TODAS las materias del curso, con el mismo peso. Antes se partían en
   // "prioritarias" (tarjetas grandes) y "otras" (pastillas chicas al pie, sin
   // avance a la vista), según lo que el alumno hubiera tildado en el onboarding.
@@ -110,7 +110,7 @@ export function Dashboard({ profile, subjects, stats, teacher, onStudy, onReinfo
 
         <SectionTitle icon={<IconStar size={15} />}>Tus materias</SectionTitle>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 16, marginBottom: 36 }}>
-          {misSubjects.map((s) => <SubjectCard key={s.id} s={s} st={stats[s.id]} onClick={() => onStudy(s.id)} />)}
+          {misSubjects.map((s) => <SubjectCard key={s.id} s={s} st={stats[s.id]} onAbrir={(a) => onAbrir(s.id, a)} />)}
 
           {misSubjects.length === 0 && (
             <p style={{ color: C.dim, fontSize: 14 }}>
@@ -151,7 +151,29 @@ export function Dashboard({ profile, subjects, stats, teacher, onStudy, onReinfo
  * El candado dice que es temporal; el 404 de /api/plan y /api/test es lo que
  * realmente impide usarla.
  */
-export function SubjectCard({ s, st, onClick }: { s: Subject; st?: SubjectStats; onClick: () => void }) {
+/** Las tres actividades de una materia, tal como se ofrecen desde el panel. */
+const ACTIVIDADES = [
+  { clave: "camino", label: "Camino", icono: (n: number) => <IconList size={n} /> },
+  { clave: "chat", label: "Preguntar", icono: (n: number) => <IconChat size={n} /> },
+  { clave: "prueba", label: "Prueba", icono: (n: number) => <IconClipboard size={n} /> },
+] as const;
+export type Actividad = (typeof ACTIVIDADES)[number]["clave"];
+
+/**
+ * La tarjeta de una materia, con SUS TRES ACCIONES abajo.
+ *
+ * Antes la tarjeta entera era un botón que llevaba a una pantalla intermedia
+ * ("¿qué querés hacer?"). Esa pantalla no aportaba: el alumno ya sabía a qué
+ * venía cuando tocó la materia, y le cobraba un toque y un cambio de página
+ * para volver a preguntárselo. Ahora las tres opciones están acá y se va
+ * directo.
+ *
+ * ⚠️ Por eso la tarjeta es un `div` y no un `button`: un botón adentro de otro
+ * botón es HTML inválido, y el navegador lo "arregla" sacando el de adentro —
+ * las acciones dejarían de existir sin que nada avise. El cuerpo (nombre y
+ * avance) es su propio botón e igual lleva al camino, que es lo más probable.
+ */
+export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats; onAbrir: (a: Actividad) => void }) {
   const hasGuide = Number(s.pedagogy_chunks) > 0;
   const off = !!s.disabled;
   const col = off ? C.border : subjectColor(s);
@@ -160,75 +182,103 @@ export function SubjectCard({ s, st, onClick }: { s: Subject; st?: SubjectStats;
   const done = st?.planDone ?? 0;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const weak = st?.weak.length ?? 0;
+  // Sin lecciones no hay camino que recorrer: el libro de esa materia no dio un
+  // índice legible. Se apaga la acción en vez de llevar a una pantalla vacía.
+  const sinCamino = total === 0;
+
   return (
-    <button onClick={off ? undefined : onClick} disabled={off}
-      title={off ? "Esta materia está en pausa" : undefined}
-      style={{ position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", gap: 10, textAlign: "left", background: off ? C.panel2 : C.panel, color: off ? C.dim : C.text, border: `2px solid ${off ? C.border : C.ink}`, borderRadius: 16, padding: "16px", cursor: off ? "default" : "pointer", boxShadow: off ? "none" : HARD(col), transition: "transform .13s, box-shadow .13s" }}
+    <div
+      style={{ position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", background: off ? C.panel2 : C.panel, color: off ? C.dim : C.text, border: `2px solid ${off ? C.border : C.ink}`, borderRadius: 16, boxShadow: off ? "none" : HARD(col), transition: "transform .13s, box-shadow .13s" }}
       onMouseEnter={(e) => { if (off) return; e.currentTarget.style.transform = "translate(-2px,-2px)"; e.currentTarget.style.boxShadow = `6px 6px 0 0 ${col}`; }}
       onMouseLeave={(e) => { if (off) return; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = HARD(col); }}>
       {!off && <div style={{ position: "absolute", top: -14, right: -14, width: 34, height: 34, borderRadius: "50%", background: col }} />}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-        <span style={{ width: 34, height: 34, borderRadius: 10, background: col, color: onCol, display: "grid", placeItems: "center" }}>
+
+      <button onClick={off ? undefined : () => onAbrir(sinCamino ? "chat" : "camino")} disabled={off}
+        title={off ? "Esta materia está en pausa" : undefined}
+        style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "left", background: "none", border: "none", color: "inherit", padding: "16px 16px 12px", cursor: off ? "default" : "pointer", font: "inherit" }}>
+        <span style={{ width: 34, height: 34, borderRadius: 10, background: col, color: onCol, display: "grid", placeItems: "center", position: "relative" }}>
           {off ? <IconLock size={18} /> : <IconBook size={20} />}
         </span>
-      </div>
-      <div style={{ fontFamily: FONT.round, fontSize: 17, fontWeight: 700, lineHeight: 1.25 }}>{subjectLabel(s)}</div>
+        <span style={{ fontFamily: FONT.round, fontSize: 17, fontWeight: 700, lineHeight: 1.25 }}>{subjectLabel(s)}</span>
 
-      {off && (
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 5, alignSelf: "flex-start", background: C.panel, color: C.dim, border: `1.5px solid ${C.border}`, borderRadius: 999, padding: "3px 10px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
-          <IconLock size={11} /> En pausa
-        </div>
-      )}
-      {off && (
-        <div style={{ color: C.dim, fontSize: 12.5, lineHeight: 1.45 }}>
-          Todavía no está disponible. Tu avance se guarda para cuando vuelva.
-        </div>
-      )}
+        {off && (
+          <>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, alignSelf: "flex-start", background: C.panel, color: C.dim, border: `1.5px solid ${C.border}`, borderRadius: 999, padding: "3px 10px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
+              <IconLock size={11} /> En pausa
+            </span>
+            <span style={{ color: C.dim, fontSize: 12.5, lineHeight: 1.45 }}>
+              Todavía no está disponible. Tu avance se guarda para cuando vuelva.
+            </span>
+          </>
+        )}
 
-      {/* Nada de avance ni notas en una materia en pausa: no se puede
-          actuar sobre eso, y compite con lo que el alumno sí puede abrir. */}
-      {!off && (total > 0 ? (
-        <div style={{ position: "relative" }}>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-            <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, color: C.text }}>
-              {done} de {total} {total === 1 ? "lección" : "lecciones"}
-            </span>
-            <span style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 12.5, color: done === total ? C.okTx : C.dim }}>
-              {done === total ? "¡Completo!" : `${pct}%`}
-            </span>
-          </div>
-          {/* Barra: riel con borde de tinta (Bloques), relleno del color de la materia. */}
-          <div style={{ height: 9, borderRadius: 999, background: C.panel2, border: `1.5px solid ${C.ink}`, overflow: "hidden" }}>
-            <div style={{ width: `${pct}%`, height: "100%", background: done === total ? C.ok : col, transition: "width .25s" }} />
-          </div>
-        </div>
-      ) : (
-        <div style={{ color: C.dim, fontSize: 12.5 }}>{hasGuide ? "Con guía docente" : "Material disponible"}</div>
-      ))}
-
-      {!off && (weak > 0 || st?.lastScore) && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, position: "relative" }}>
-          {weak > 0 && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: C.badBg, color: C.badTx, border: `1.5px solid ${C.badTx}`, borderRadius: 999, padding: "2px 8px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
-              <IconAlert size={11} /> {weak} para reforzar
-            </span>
-          )}
-          {st?.lastScore && (() => {
-            // El color sigue a la nota: un 0/6 en verde leía como logro.
-            const t = scoreTone(st.lastScore.total > 0 ? st.lastScore.score / st.lastScore.total : 0);
-            return (
-              <span style={{ background: t.bg, color: t.tx, border: `1.5px solid ${t.tx}`, borderRadius: 999, padding: "2px 8px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
-                Prueba: {st.lastScore.score}/{st.lastScore.total}
+        {/* Nada de avance ni notas en una materia en pausa: no se puede actuar
+            sobre eso, y compite con lo que el alumno sí puede abrir. */}
+        {!off && (total > 0 ? (
+          <span style={{ display: "block", position: "relative" }}>
+            <span style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, color: C.text }}>
+                {done} de {total} {total === 1 ? "lección" : "lecciones"}
               </span>
+              <span style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 12.5, color: done === total ? C.okTx : C.dim }}>
+                {done === total ? "¡Completo!" : `${pct}%`}
+              </span>
+            </span>
+            <span style={{ display: "block", height: 9, borderRadius: 999, background: C.panel2, border: `1.5px solid ${C.ink}`, overflow: "hidden" }}>
+              <span style={{ display: "block", width: `${pct}%`, height: "100%", background: done === total ? C.ok : col, transition: "width .25s" }} />
+            </span>
+          </span>
+        ) : (
+          <span style={{ color: C.dim, fontSize: 12.5 }}>{hasGuide ? "Con guía docente" : "Material disponible"}</span>
+        ))}
+
+        {!off && (weak > 0 || st?.lastScore) && (
+          <span style={{ display: "flex", flexWrap: "wrap", gap: 6, position: "relative" }}>
+            {weak > 0 && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: C.badBg, color: C.badTx, border: `1.5px solid ${C.badTx}`, borderRadius: 999, padding: "2px 8px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
+                <IconAlert size={11} /> {weak} para reforzar
+              </span>
+            )}
+            {st?.lastScore && (() => {
+              // El color sigue a la nota: un 0/6 en verde leía como logro.
+              const t = scoreTone(st.lastScore.total > 0 ? st.lastScore.score / st.lastScore.total : 0);
+              return (
+                <span style={{ background: t.bg, color: t.tx, border: `1.5px solid ${t.tx}`, borderRadius: 999, padding: "2px 8px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
+                  Prueba: {st.lastScore.score}/{st.lastScore.total}
+                </span>
+              );
+            })()}
+          </span>
+        )}
+      </button>
+
+      {/* LAS TRES ACCIONES. Con etiqueta y no solo el ícono: un chico de 13 no
+          tiene por qué saber que un portapapeles significa "prueba". */}
+      {!off && (
+        <div style={{ display: "flex", borderTop: `1.5px solid ${C.border}`, position: "relative" }}>
+          {ACTIVIDADES.map((a, i) => {
+            const apagada = a.clave === "camino" && sinCamino;
+            return (
+              <button key={a.clave} onClick={() => !apagada && onAbrir(a.clave)} disabled={apagada}
+                title={apagada ? "Esta materia todavía no tiene camino" : a.label}
+                style={{
+                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                  padding: "9px 4px 10px", background: "none", border: "none",
+                  borderLeft: i === 0 ? "none" : `1.5px solid ${C.border}`,
+                  color: apagada ? C.border : C.dim, cursor: apagada ? "default" : "pointer",
+                }}
+                onMouseEnter={(e) => { if (!apagada) e.currentTarget.style.color = col; }}
+                onMouseLeave={(e) => { if (!apagada) e.currentTarget.style.color = C.dim; }}>
+                {a.icono(18)}
+                <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 11 }}>{a.label}</span>
+              </button>
             );
-          })()}
+          })}
         </div>
       )}
-    </button>
+    </div>
   );
 }
-
-// Tema fallado en una prueba → toca y arranca ESTUDIO DIRIGIDO de esa lección.
 
 export function WeakCard({ s, w, onClick }: { s: Subject; w: WeakTopic; onClick: () => void }) {
   const col = subjectColor(s);

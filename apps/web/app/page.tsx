@@ -9,7 +9,7 @@
  */
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Dashboard, Onboarding, Centered } from "./panel";
+import { Dashboard, Onboarding, Centered, type Actividad } from "./panel";
 import { C, Dots } from "./ui";
 import type { Profile, Subject, SubjectStats, WeakTopic } from "./tipos";
 
@@ -99,7 +99,9 @@ export default function Home() {
       subjects={subjects}
       stats={stats}
       teacher={role === "teacher" || role === "admin"}
-      onStudy={(id) => router.push(`/materia/${id}`)}
+      // Directo a la actividad: la pantalla intermedia le preguntaba al alumno
+      // algo que ya había contestado al elegir el ícono.
+      onAbrir={(id, a: Actividad) => router.push(`/materia/${id}/${a}`)}
       onReinforce={reinforce}
       onEdit={() => setEditing(true)}
       onLogout={logout}
