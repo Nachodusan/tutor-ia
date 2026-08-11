@@ -109,6 +109,10 @@ export const IconArrow = ({ size, color, stroke }: IconProps) => (<svg {...svg(s
 export const IconList = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>);
 export const IconSpark = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" /></svg>);
 export const IconClipboard = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><path d="m9 14 2 2 4-4" /></svg>);
+/** Globo de diálogo — la actividad "Preguntar". IconWave ya significa VOZ
+ *  (la llamada manos libres), y usar el mismo para el chat escrito hacía que
+ *  dos cosas distintas se vieran iguales. */
+export const IconChat = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>);
 export const IconChevron = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="m9 18 6-6-6-6" /></svg>);
 export const IconLock = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>);
 export const IconClock = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>);

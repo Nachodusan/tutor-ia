@@ -14,7 +14,7 @@
  */
 import { useRouter, usePathname, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { C, FONT, AuroraDot, IconBack, gradeLabel, subjectLabel } from "../../ui";
+import { C, FONT, AuroraDot, IconBack, IconList, IconChat, IconClipboard, gradeLabel, subjectLabel } from "../../ui";
 import type { Subject } from "../../tipos";
 
 export default function MateriaLayout({ children }: { children: React.ReactNode }) {
@@ -34,16 +34,26 @@ export default function MateriaLayout({ children }: { children: React.ReactNode 
   }, [id]);
 
   const base = `/materia/${id}`;
-  const tabs = [
-    { href: base, label: "Camino" },
-    { href: `${base}/chat`, label: "Preguntar" },
-    { href: `${base}/prueba`, label: "Prueba" },
+  /**
+   * Las tres actividades. En la esquina se muestran SOLO LAS OTRAS DOS: la que
+   * estás usando no necesita un botón para ir a sí misma, y ponerlo obliga al
+   * alumno a leer cuál está activa antes de tocar. Menos que decidir.
+   *
+   * En la pantalla de elección (`base`) no se muestra ninguna: ahí están las
+   * tres, grandes, que es toda la pantalla.
+   */
+  const ACTIVIDADES = [
+    { href: `${base}/camino`, label: "Tu camino", icono: <IconList size={17} /> },
+    { href: `${base}/chat`, label: "Preguntar", icono: <IconChat size={17} /> },
+    { href: `${base}/prueba`, label: "Prueba", icono: <IconClipboard size={17} /> },
   ];
+  const enElegir = pathname === base;
+  const otras = ACTIVIDADES.filter((a) => !pathname.startsWith(a.href));
 
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: C.bg, color: C.text, fontFamily: FONT.sans }}>
       <header style={{ borderBottom: `1px solid ${C.border}`, background: C.bg, flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 14px 8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px" }}>
           <button onClick={() => router.push("/")} title="Volver al panel"
             style={{ display: "flex", alignItems: "center", gap: 9, background: "none", border: "none", color: C.text, cursor: "pointer", padding: "5px 7px", borderRadius: 12, minWidth: 0, flex: 1 }}>
             <span style={{ color: C.dim, display: "flex", flexShrink: 0 }}><IconBack size={20} /></span>
@@ -57,27 +67,21 @@ export default function MateriaLayout({ children }: { children: React.ReactNode 
               </span>
             </span>
           </button>
-        </div>
 
-        {/* Las tres actividades, al mismo nivel. Ninguna es "la principal con
-            las otras encima": el camino es la que abre por defecto y ya. */}
-        <nav style={{ display: "flex", gap: 4, padding: "0 12px 8px" }}>
-          {tabs.map((t) => {
-            const activo = t.href === base ? pathname === base : pathname.startsWith(t.href);
-            return (
-              <button key={t.href} onClick={() => router.push(t.href)}
-                style={{
-                  flex: 1, padding: "8px 10px", borderRadius: 10, cursor: "pointer",
-                  fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5,
-                  background: activo ? C.ink : "transparent",
-                  color: activo ? "#fff" : C.dim,
-                  border: `1.5px solid ${activo ? C.ink : C.border}`,
-                }}>
-                {t.label}
-              </button>
-            );
-          })}
-        </nav>
+          {/* LA ESQUINA: las otras dos actividades, al lado del curso.
+              Solo las OTRAS: la que estás usando no necesita un botón para ir a
+              sí misma, y ponerlo obliga a leer cuál está activa antes de tocar. */}
+          {!enElegir && (
+            <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+              {otras.map((a) => (
+                <button key={a.href} onClick={() => router.push(a.href)} title={a.label} aria-label={a.label}
+                  style={{ width: 38, height: 38, display: "grid", placeItems: "center", borderRadius: 11, background: C.panel, color: C.text, border: `1.5px solid ${C.border}`, cursor: "pointer" }}>
+                  {a.icono}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </header>
       <main style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>{children}</main>
     </div>

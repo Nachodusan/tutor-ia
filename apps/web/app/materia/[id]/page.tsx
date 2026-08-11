@@ -1,33 +1,26 @@
 "use client";
 /**
- * EL CAMINO — la página que abre la materia.
+ * ENTRAR A LA MATERIA — la pregunta antes de la pantalla.
  *
- * Es dueña de su propio estado: plan, avance y las preguntas de la lección
- * abierta. Antes todo esto vivía en el componente único junto con el chat y la
- * prueba; ahora entrar acá no carga nada del chat.
+ * Antes se caía directo al camino. Eso decide por el alumno: el que viene a
+ * repasar para la prueba del viernes tenía que darse cuenta solo de que arriba
+ * había una pestaña. Acá se le muestran las tres cosas que puede hacer, con lo
+ * que hay adentro de cada una, y elige.
+ *
+ * Es la única pantalla de la materia sin los accesos en la esquina: acá no hay
+ * "las otras dos", están las tres.
  */
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { CaminoView } from "../../camino";
-import { C, Dots, subjectLabel } from "../../ui";
-import type { PlanItem, QuizQ, QuizResult, Subject } from "../../tipos";
+import { C, FONT, HARD, Dots, IconList, IconChat, IconClipboard, IconChevron, subjectLabel } from "../../ui";
+import type { Subject } from "../../tipos";
 
-export default function CaminoPage() {
+export default function ElegirPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [subject, setSubject] = useState<Subject | undefined>();
-  const [plan, setPlan] = useState<PlanItem[] | null>(null);
-  const [done, setDone] = useState<string[]>([]);
-  const [scores, setScores] = useState<Record<string, { score: number; total: number }>>({});
+  const [plan, setPlan] = useState<{ total: number; hechas: number } | null>(null);
   const [cargando, setCargando] = useState(true);
-  const [planLoading, setPlanLoading] = useState(false);
-
-  const [quizKey, setQuizKey] = useState("");
-  const [quiz, setQuiz] = useState<QuizQ[] | null>(null);
-  const [quizAns, setQuizAns] = useState<Record<number, number>>({});
-  const [quizRes, setQuizRes] = useState<QuizResult | null>(null);
-  const [quizLoading, setQuizLoading] = useState(false);
-  const [quizErr, setQuizErr] = useState("");
 
   useEffect(() => {
     fetch("/api/subjects").then((r) => r.json())
@@ -36,104 +29,82 @@ export default function CaminoPage() {
   }, [id]);
 
   useEffect(() => {
-    setCargando(true);
     fetch(`/api/plan?subjectId=${id}`).then((r) => r.json())
       .then((j) => {
-        setPlan(j.items?.length ? j.items : null);
-        setDone(j.doneKeys ?? []);
-        setScores(j.scores ?? {});
+        const total = j.items?.length ?? 0;
+        setPlan(total ? { total, hechas: (j.doneKeys ?? []).length } : null);
       })
       .catch(() => setPlan(null))
       .finally(() => setCargando(false));
   }, [id]);
 
-  async function abrirQuiz(item: PlanItem) {
-    if (quizKey === item.key) { setQuizKey(""); return; }
-    setQuizKey(item.key); setQuiz(null); setQuizAns({}); setQuizRes(null); setQuizErr("");
-    setQuizLoading(true);
-    try {
-      const r = await fetch("/api/lesson/quiz", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId: id, topicKey: item.key, title: item.title, unit: item.unit, lesson: item.lesson, p0: item.p0, p1: item.p1 }),
-      });
-      const j = await r.json();
-      if (!r.ok) { setQuizErr(j.error ?? "No pude armar las preguntas."); return; }
-      setQuiz(j.items ?? []);
-    } catch { setQuizErr("No hay conexión con el servidor."); }
-    finally { setQuizLoading(false); }
-  }
+  const nombre = subject ? subjectLabel(subject) : "esta materia";
 
-  async function enviarQuiz(item: PlanItem) {
-    if (!quiz || quizRes) return;
-    setQuizLoading(true);
-    try {
-      const r = await fetch("/api/lesson/quiz/submit", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId: id, topicKey: item.key, answers: quizAns }),
-      });
-      const j = await r.json();
-      if (!r.ok) { setQuizErr(j.error ?? "No pude corregir."); return; }
-      setQuizRes(j);
-      setDone((d) => (d.includes(item.key) ? d : [...d, item.key]));
-      setScores((s) => ({ ...s, [item.key]: { score: j.score, total: j.total } }));
-    } catch { setQuizErr("No hay conexión con el servidor."); }
-    finally { setQuizLoading(false); }
-  }
-
-  async function generarPlan() {
-    setPlanLoading(true);
-    try {
-      const r = await fetch("/api/plan", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId: id, subjectName: subject ? subjectLabel(subject) : null }),
-      });
-      const j = await r.json();
-      setPlan(j.items?.length ? j.items : null);
-      setDone(j.doneKeys ?? []);
-    } catch { /* se queda con el plan que había */ }
-    finally { setPlanLoading(false); }
-  }
-
-  /** "No entiendo esto" — la ÚNICA puerta al chat desde el camino, y llega con
-   *  contexto: la pregunta viaja en la URL y el chat la manda sola al abrir. */
-  function noEntiendo(item: PlanItem) {
-    const q = `Quiero estudiar: ${item.title}${item.focus ? ` (${item.focus})` : ""}. Enseñámelo desde el principio, paso a paso y con ejemplos.`;
-    const p = new URLSearchParams({ q, unit: String(item.unit ?? ""), lesson: String(item.lesson ?? "") });
-    router.push(`/materia/${id}/chat?${p}`);
-  }
-
-  if (cargando) {
-    return <div style={{ display: "grid", placeItems: "center", padding: 48, color: C.dim }}><Dots /></div>;
-  }
-  if (!plan) {
-    return (
-      <div style={{ padding: "28px 20px", textAlign: "center", color: C.dim, maxWidth: 420, margin: "0 auto" }}>
-        <p style={{ fontSize: 15, lineHeight: 1.6 }}>
-          Esta materia todavía no tiene un camino armado: su libro no trae un índice
-          que se pueda leer.
-        </p>
-        <p style={{ fontSize: 14, lineHeight: 1.6 }}>
-          Igual podés preguntarle lo que quieras al tutor desde <b>Preguntar</b>.
-        </p>
-      </div>
-    );
-  }
+  const opciones = [
+    {
+      href: `/materia/${id}/camino`,
+      icono: <IconList size={22} />,
+      color: C.accent,
+      titulo: "Tu camino",
+      // El subtítulo dice el ESTADO, no una promesa: "seguí por la 3" ubica más
+      // que "estudiá el material del libro".
+      sub: cargando
+        ? "…"
+        : plan
+          ? plan.hechas === 0
+            ? `${plan.total} lecciones del libro, en orden`
+            : `Vas ${plan.hechas} de ${plan.total} · seguí por la ${plan.hechas + 1}`
+          : "Esta materia todavía no tiene camino",
+      apagado: !cargando && !plan,
+    },
+    {
+      href: `/materia/${id}/chat`,
+      icono: <IconChat size={22} />,
+      color: C.accentSoft,
+      titulo: "Preguntar",
+      sub: "Una duda puntual, con tus palabras",
+      apagado: false,
+    },
+    {
+      href: `/materia/${id}/prueba`,
+      icono: <IconClipboard size={22} />,
+      color: C.coral,
+      titulo: "Simulación de prueba",
+      sub: "Ponete a prueba y mirá qué reforzar",
+      apagado: false,
+    },
+  ];
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 16px 28px" }}>
-      <CaminoView
-        items={plan} done={done} scores={scores} subject={subject} loading={planLoading}
-        quizKey={quizKey} quiz={quiz} quizAns={quizAns} quizRes={quizRes}
-        quizLoading={quizLoading} quizErr={quizErr}
-        onAbrir={abrirQuiz}
-        onResponder={(n, i) => setQuizAns((a) => ({ ...a, [n]: i }))}
-        onEnviar={enviarQuiz}
-        onReintentar={() => { setQuizAns({}); setQuizRes(null); setQuizErr(""); }}
-        onNoEntiendo={noEntiendo}
-        onExamen={() => router.push(`/materia/${id}/prueba`)}
-        testLoading={false}
-        onRegen={generarPlan}
-      />
+    <div style={{ maxWidth: 560, margin: "0 auto", padding: "26px 18px 40px" }}>
+      <h1 style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 23, margin: "0 0 4px", lineHeight: 1.2 }}>
+        ¿Qué querés hacer?
+      </h1>
+      <p style={{ color: C.dim, fontSize: 14.5, margin: "0 0 22px" }}>{nombre}</p>
+
+      <div style={{ display: "grid", gap: 12 }}>
+        {opciones.map((o) => (
+          <button key={o.href} onClick={() => !o.apagado && router.push(o.href)} disabled={o.apagado}
+            style={{
+              display: "flex", alignItems: "center", gap: 14, textAlign: "left", width: "100%",
+              background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 16,
+              boxShadow: o.apagado ? "none" : HARD(o.color),
+              padding: "16px 15px", cursor: o.apagado ? "default" : "pointer",
+              opacity: o.apagado ? 0.5 : 1,
+            }}>
+            <span style={{ width: 46, height: 46, flexShrink: 0, borderRadius: 13, display: "grid", placeItems: "center", background: o.color, color: "#fff", border: `2px solid ${C.ink}` }}>
+              {o.icono}
+            </span>
+            <span style={{ minWidth: 0, flex: 1 }}>
+              <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 17 }}>{o.titulo}</span>
+              <span style={{ display: "block", color: C.dim, fontSize: 13.5, lineHeight: 1.4, marginTop: 2 }}>
+                {o.sub === "…" ? <Dots /> : o.sub}
+              </span>
+            </span>
+            {!o.apagado && <span style={{ color: C.dim, flexShrink: 0 }}><IconChevron size={20} /></span>}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

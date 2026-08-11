@@ -81,7 +81,7 @@ export default function PruebaPage() {
         onSubmit={corregir}
         onRetake={generar}
         onStudy={estudiar}
-        onClose={() => router.push(`/materia/${id}`)}
+        onClose={() => router.push(`/materia/${id}/camino`)}
       />
     </div>
   );
