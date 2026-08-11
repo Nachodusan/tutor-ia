@@ -14,7 +14,7 @@
  */
 import { useRouter, usePathname, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { C, FONT, AuroraDot, IconBack, IconList, IconChat, IconClipboard, gradeLabel, subjectLabel } from "../../ui";
+import { C, FONT, AuroraDot, IconBack, IconList, IconClipboard, gradeLabel, subjectLabel } from "../../ui";
 import { traerMateria } from "../../datos";
 import type { Subject } from "../../tipos";
 
@@ -43,7 +43,7 @@ export default function MateriaLayout({ children }: { children: React.ReactNode 
    */
   const ACTIVIDADES = [
     { href: `${base}/camino`, label: "Tu camino", icono: <IconList size={17} /> },
-    { href: `${base}/chat`, label: "Preguntar", icono: <IconChat size={17} /> },
+    { href: `${base}/chat`, label: "Preguntar", icono: <AuroraDot size={18} /> },
     { href: `${base}/prueba`, label: "Prueba", icono: <IconClipboard size={17} /> },
   ];
   const enElegir = pathname === base;

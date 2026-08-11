@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, scoreTone, IconList, IconChat, IconClipboard } from "./ui";
+import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, scoreTone, IconList, IconClipboard } from "./ui";
 import { REVIEW_MAX } from "./tipos";
 import type { Profile, Subject, SubjectStats, WeakTopic } from "./tipos";
 
@@ -154,7 +154,11 @@ export function Dashboard({ profile, subjects, stats, teacher, onAbrir, onReinfo
 /** Las tres actividades de una materia, tal como se ofrecen desde el panel. */
 const ACTIVIDADES = [
   { clave: "camino", label: "Camino", icono: (n: number) => <IconList size={n} /> },
-  { clave: "chat", label: "Preguntar", icono: (n: number) => <IconChat size={n} /> },
+  // El orbe de Aurora y no un globo de diálogo: es la identidad de la IA en el
+  // resto de la app (el encabezado, la llamada de voz), así que acá dice "acá
+  // hablás con el tutor" sin necesidad de leer la etiqueta. Un globo genérico
+  // podía ser cualquier chat.
+  { clave: "chat", label: "Preguntar", icono: (n: number) => <AuroraDot size={n + 2} /> },
   { clave: "prueba", label: "Prueba", icono: (n: number) => <IconClipboard size={n} /> },
 ] as const;
 export type Actividad = (typeof ACTIVIDADES)[number]["clave"];
