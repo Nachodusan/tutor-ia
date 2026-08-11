@@ -195,7 +195,13 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
 
       <button onClick={off ? undefined : () => onAbrir(sinCamino ? "chat" : "camino")} disabled={off}
         title={off ? "Esta materia está en pausa" : undefined}
-        style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "left", background: "none", border: "none", color: "inherit", padding: "16px 16px 12px", cursor: off ? "default" : "pointer", font: "inherit" }}>
+        // `flex: 1` para que el cuerpo se coma el alto sobrante y EMPUJE las
+        // acciones al fondo. Las tarjetas se estiran a la altura de la más alta
+        // (grid), pero sin esto el bloque de acciones queda pegado al contenido:
+        // "Lengua Y Literatura" —título de una línea y sin chapa de refuerzo—
+        // dejaba un hueco de ~100 px debajo de sus botones, y las tres filas de
+        // acciones quedaban a alturas distintas.
+        style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10, textAlign: "left", background: "none", border: "none", color: "inherit", padding: "16px 16px 12px", cursor: off ? "default" : "pointer", font: "inherit" }}>
         <span style={{ width: 34, height: 34, borderRadius: 10, background: col, color: onCol, display: "grid", placeItems: "center", position: "relative" }}>
           {off ? <IconLock size={18} /> : <IconBook size={20} />}
         </span>
@@ -255,7 +261,7 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
       {/* LAS TRES ACCIONES. Con etiqueta y no solo el ícono: un chico de 13 no
           tiene por qué saber que un portapapeles significa "prueba". */}
       {!off && (
-        <div style={{ display: "flex", borderTop: `1.5px solid ${C.border}`, position: "relative" }}>
+        <div style={{ display: "flex", flexShrink: 0, borderTop: `1.5px solid ${C.border}`, position: "relative" }}>
           {ACTIVIDADES.map((a, i) => {
             const apagada = a.clave === "camino" && sinCamino;
             return (
