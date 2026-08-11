@@ -153,15 +153,15 @@ export function Dashboard({ profile, subjects, stats, teacher, onAbrir, onReinfo
  */
 /** Las tres actividades de una materia, tal como se ofrecen desde el panel. */
 const ACTIVIDADES = [
-  { clave: "camino", label: "Camino", icono: (n: number) => <IconList size={n} />, sinTexto: false },
-  // El orbe de Aurora, SIN etiqueta. Es la identidad de la IA en el resto de la
-  // app —el encabezado, la llamada de voz, el avatar del alumno—, así que ya
-  // dice "con esto hablás con el tutor"; el texto abajo repetía lo que el
-  // símbolo comunica solo. `label` se conserva para el `title` y el aria-label,
-  // que es lo que necesita quien navega con teclado o lector de pantalla: lo que
-  // se saca es el texto VISIBLE, no el nombre accesible.
-  { clave: "chat", label: "Preguntar", icono: (n: number) => <AuroraDot size={n + 4} />, sinTexto: true },
-  { clave: "prueba", label: "Prueba", icono: (n: number) => <IconClipboard size={n} />, sinTexto: false },
+  { clave: "camino", label: "Camino", icono: (n: number) => <IconList size={n} /> },
+  // El orbe de Aurora en vez de un globo genérico: es la identidad de la IA en
+  // el resto de la app (el encabezado, la llamada de voz, el avatar). PERO CON
+  // SU ETIQUETA, igual que las otras dos: se probó dejarlo solo y la fila queda
+  // con dos botones nombrados y uno mudo, que se lee como si al del medio le
+  // faltara algo. Que el símbolo se entienda no vuelve al texto redundante
+  // cuando sus vecinos lo llevan.
+  { clave: "chat", label: "Preguntar", icono: (n: number) => <AuroraDot size={n + 2} /> },
+  { clave: "prueba", label: "Prueba", icono: (n: number) => <IconClipboard size={n} /> },
 ] as const;
 export type Actividad = (typeof ACTIVIDADES)[number]["clave"];
 
@@ -283,9 +283,7 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
                 onMouseEnter={(e) => { if (!apagada) e.currentTarget.style.color = col; }}
                 onMouseLeave={(e) => { if (!apagada) e.currentTarget.style.color = C.dim; }}>
                 {a.icono(18)}
-                {!a.sinTexto && (
-                  <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 11 }}>{a.label}</span>
-                )}
+                <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 11 }}>{a.label}</span>
               </button>
             );
           })}
