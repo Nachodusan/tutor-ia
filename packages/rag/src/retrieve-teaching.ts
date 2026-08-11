@@ -306,6 +306,43 @@ async function fetchLessonChunks(subjectId: string, unit: number, lesson: number
   }));
 }
 
+/**
+ * El material de UNA lección del plan, para poder armarle preguntas.
+ *
+ * ⚠️ NO usa `unit`/`lesson` como el estudio dirigido, y es a propósito: en varios
+ * libros el plan sale con `unit: null` (el índice no trae la unidad), y ahí
+ * `fetchLessonChunks` no devuelve nada. En cambio TODO ítem del plan trae rango
+ * de páginas, porque sale del índice del libro. Filtrar por páginas funciona
+ * para las 29 materias con plan, no solo para las que tienen unidad.
+ *
+ * Sin gate: el que pide esto ya sabe qué lección quiere: no hay nada que decidir
+ * sobre relevancia.
+ */
+export async function fetchLessonMaterial(opts: {
+  subjectId: string;
+  pageStart: number;
+  pageEnd: number;
+  /** Techo de fragmentos. 40 y no 28 (el del estudio dirigido) porque acá la
+   *  muestra se reparte a lo largo de la lección y conviene tenerla entera. */
+  limite?: number;
+}): Promise<{ chunkId: string; content: string; page: number | null }[]> {
+  const sql = getSql();
+  const desde = Math.min(opts.pageStart, opts.pageEnd);
+  const hasta = Math.max(opts.pageStart, opts.pageEnd);
+  const rows = (await sql`
+    select ch.id as chunk_id, ch.content,
+           coalesce(ch.page_start, ch.page) as page
+    from chunks ch join documents d on d.id = ch.document_id
+    where d.subject_id = ${opts.subjectId}
+      and ch.corpus_role = 'content'
+      and coalesce(ch.page_start, ch.page) between ${desde} and ${hasta}
+    order by ch.page nulls last, ch.chunk_index
+    limit ${opts.limite ?? 40}`) as unknown as {
+    chunk_id: string; content: string; page: number | null;
+  }[];
+  return rows.map((r) => ({ chunkId: r.chunk_id, content: r.content, page: r.page }));
+}
+
 const empty = (): Record<TeachingType, PedagogyChunk[]> => {
   const o = {} as Record<TeachingType, PedagogyChunk[]>;
   for (const t of TEACHING_TYPES) o[t] = [];

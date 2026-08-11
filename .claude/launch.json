@@ -4,19 +4,36 @@
     {
       "name": "web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@tutor-ia/web", "dev"],
-      "port": 3000,
-      "autoPort": true,
-      "env": {
-        "DATABASE_URL": "postgresql://localhost:5432/tutor",
-        "EMBEDDING_MODEL": "bge-m3",
-        "RERANK_BASE_URL": "http://127.0.0.1:8790",
-        "RERANK_MIN_SCORE": "0.18",
-        "RERANK_TIMEOUT_MS": "60000",
-        "NLI_TIMEOUT_MS": "60000",
-        "ENTAIL_MIN_SCORE": "0.5",
-        "WHISPER_MODEL": "/Users/dusan/Documents/ia/packages/ingest-py/whisper-models/ggml-base.bin"
-      }
+      "runtimeArgs": [
+        "--filter",
+        "@tutor-ia/web",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "web-3002",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@tutor-ia/web",
+        "dev",
+        "--port",
+        "3002"
+      ],
+      "port": 3002
+    },
+    {
+      "name": "auditoria-web",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4173",
+        "--directory",
+        "packages/eval/golden/auditoria/web"
+      ],
+      "port": 4173
     }
   ]
 }

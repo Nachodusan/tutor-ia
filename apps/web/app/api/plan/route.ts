@@ -27,8 +27,19 @@ export async function GET(req: Request) {
   const hechos = await sql<{ topic_key: string }[]>`
     select topic_key from student_plan_progress
     where user_id = ${auth.userId}::uuid and subject_id = ${subjectId}::uuid`;
+  // El ÚLTIMO intento de las preguntas de cada lección. Es lo que decide el
+  // color del nodo en el camino: verde si le fue bien, ámbar si respondió pero
+  // le fue peor. Sin esto "hecho" volvería a ser un tilde que el chico se pone
+  // solo, que es lo que este cambio vino a resolver.
+  const intentos = await sql<{ topic_key: string; score: number; total: number }[]>`
+    select topic_key, score, total from lesson_quiz_attempts
+    where user_id = ${auth.userId}::uuid and subject_id = ${subjectId}::uuid`;
 
-  return Response.json({ items: cache?.items ?? [], doneKeys: hechos.map((r) => r.topic_key) });
+  return Response.json({
+    items: cache?.items ?? [],
+    doneKeys: hechos.map((r) => r.topic_key),
+    scores: Object.fromEntries(intentos.map((i) => [i.topic_key, { score: i.score, total: i.total }])),
+  });
 }
 
 /**

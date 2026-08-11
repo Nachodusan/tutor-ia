@@ -15,3 +15,4 @@ export * from "./decision-log";
 export * from "./exams";
 export * from "./grading";
 export * from "./study-plan";
+export * from "./quiz";
