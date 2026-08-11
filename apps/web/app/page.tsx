@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Dashboard, Onboarding, Centered, type Actividad } from "./panel";
 import { C, Dots } from "./ui";
+import { traerMaterias } from "./datos";
 import type { Profile, Subject, SubjectStats, WeakTopic } from "./tipos";
 
 /** Claves del esquema VIEJO. Se borran al entrar: el perfil guardaba el NOMBRE
@@ -39,7 +40,7 @@ export default function Home() {
 
   useEffect(() => {
     limpiarLocalStorageViejo();
-    fetch("/api/subjects").then((r) => r.json()).then((j) => setSubjects(j.subjects ?? j)).catch(() => {});
+    void traerMaterias().then(setSubjects);
     fetch("/api/me")
       .then((r) => { if (r.status === 401) { router.replace("/login"); return null; } return r.json(); })
       .then((j) => {

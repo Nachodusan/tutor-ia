@@ -15,6 +15,7 @@
 import { useRouter, usePathname, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { C, FONT, AuroraDot, IconBack, IconList, IconChat, IconClipboard, gradeLabel, subjectLabel } from "../../ui";
+import { traerMateria } from "../../datos";
 import type { Subject } from "../../tipos";
 
 export default function MateriaLayout({ children }: { children: React.ReactNode }) {
@@ -25,9 +26,7 @@ export default function MateriaLayout({ children }: { children: React.ReactNode 
   const [grade, setGrade] = useState("");
 
   useEffect(() => {
-    fetch("/api/subjects").then((r) => r.json())
-      .then((j) => setSubject((j.subjects ?? j).find((s: Subject) => s.id === id) ?? null))
-      .catch(() => setSubject(null));
+    void traerMateria(id).then((s) => setSubject(s ?? null));
     fetch("/api/me").then((r) => r.json())
       .then((j) => setGrade(j.profile?.grade ?? ""))
       .catch(() => { /* el encabezado se muestra sin curso */ });

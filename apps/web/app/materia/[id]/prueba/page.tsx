@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { TestView } from "../../../prueba";
 import { subjectLabel } from "../../../ui";
+import { traerMateria } from "../../../datos";
 import type { Subject, TestItem } from "../../../tipos";
 
 export default function PruebaPage() {
@@ -24,9 +25,7 @@ export default function PruebaPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/subjects").then((r) => r.json())
-      .then((j) => setSubject((j.subjects ?? j).find((s: Subject) => s.id === id)))
-      .catch(() => { /* el título lo pone el layout */ });
+    void traerMateria(id).then(setSubject);
   }, [id]);
 
   // La prueba se arma al ENTRAR: llegar a esta página ya es pedirla, y un botón

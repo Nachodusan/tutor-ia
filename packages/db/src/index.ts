@@ -6,21 +6,39 @@ import postgres from "postgres";
  * pgvector como texto en el lado del cliente: los embeddings se envían como
  * literal `'[0.1,0.2,...]'` y se castean a vector en SQL.
  */
-let _sql: postgres.Sql | null = null;
+/**
+ * ⚠️ EL POOL VIVE EN `globalThis`, NO EN UNA VARIABLE DE MÓDULO.
+ *
+ * Un `let _sql` de módulo parece un singleton y no lo es: en Next dev cada
+ * bundle de ruta recibe SU copia del módulo, y cada hot reload crea otra. Con
+ * `max: 10` por pool y ~10 rutas de API, eso son 100 conexiones — exactamente el
+ * `max_connections` por defecto de Postgres. Medido: el dev server sostenía 97
+ * de 103 backends él solo, y el login empezó a responder 500 con "sorry, too
+ * many clients already". No es un problema de carga: es un pool por copia.
+ *
+ * Es el mismo fenómeno que ya está documentado para el contador de gasto
+ * (`budget.ts`), donde el acumulado se reiniciaba al recompilar.
+ */
+const CLAVE = Symbol.for("tutor-ia.sql");
+type Global = typeof globalThis & { [CLAVE]?: postgres.Sql };
 
 export function getSql(): postgres.Sql {
-  if (_sql) return _sql;
+  const g = globalThis as Global;
+  if (g[CLAVE]) return g[CLAVE]!;
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error("Falta DATABASE_URL en el entorno.");
   }
-  _sql = postgres(url, {
+  g[CLAVE] = postgres(url, {
     // Supabase requiere SSL; en local puede no. `prepare: false` funciona mejor
     // con el pooler de Supabase (pgbouncer en modo transaction).
     prepare: false,
     max: 10,
+    // Una conexión ociosa se devuelve al sistema en vez de quedarse tomada. Sin
+    // esto, un pico deja el pool lleno para siempre.
+    idle_timeout: 30,
   });
-  return _sql;
+  return g[CLAVE]!;
 }
 
 /**

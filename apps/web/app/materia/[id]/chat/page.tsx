@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Bubble } from "../../../chat-ui";
 import { C, FONT, Dots, IconSend, subjectLabel } from "../../../ui";
+import { traerMateria } from "../../../datos";
 import type { Msg, Subject } from "../../../tipos";
 
 function cleanTutorText(t: string): string {
@@ -45,9 +46,7 @@ export default function ChatPage() {
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
 
   useEffect(() => {
-    fetch("/api/subjects").then((r) => r.json())
-      .then((j) => setSubject((j.subjects ?? j).find((s: Subject) => s.id === id)))
-      .catch(() => { /* el título lo pone el layout */ });
+    void traerMateria(id).then(setSubject);
   }, [id]);
 
   // La pregunta que llega por URL se manda UNA vez. El guard es un ref y no un
