@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { CaminoView } from "../../../camino";
+import { CaminoView, HojaLeccion } from "../../../camino";
 import { C, Dots, subjectLabel } from "../../../ui";
 import type { PlanItem, QuizQ, QuizResult, Subject } from "../../../tipos";
 
@@ -94,10 +94,17 @@ export default function CaminoPage() {
     finally { setPlanLoading(false); }
   }
 
-  /** "No entiendo esto" — la ÚNICA puerta al chat desde el camino, y llega con
-   *  contexto: la pregunta viaja en la URL y el chat la manda sola al abrir. */
-  function noEntiendo(item: PlanItem) {
-    const q = `Quiero estudiar: ${item.title}${item.focus ? ` (${item.focus})` : ""}. Enseñámelo desde el principio, paso a paso y con ejemplos.`;
+  /**
+   * Al chat, con contexto. Dos formas, y la diferencia importa:
+   *  · Sin `pregunta`: "no entiendo esto" → la lección entera desde el principio.
+   *  · Con `pregunta`: el alumno falló ESA pregunta → se le pide al tutor que
+   *    explique justo eso. Mandarlo a repasar la lección completa por un ítem
+   *    fallado es hacerle perder el rato que le quedaba.
+   */
+  function repasar(item: PlanItem, pregunta?: string) {
+    const q = pregunta
+      ? `En "${item.title}" me equivoqué en esto: "${pregunta}". Explicámelo de nuevo, simple y con un ejemplo, y después preguntame algo parecido para ver si entendí.`
+      : `Quiero estudiar: ${item.title}${item.focus ? ` (${item.focus})` : ""}. Enseñámelo desde el principio, paso a paso y con ejemplos.`;
     const p = new URLSearchParams({ q, unit: String(item.unit ?? ""), lesson: String(item.lesson ?? "") });
     router.push(`/materia/${id}/chat?${p}`);
   }
@@ -119,21 +126,32 @@ export default function CaminoPage() {
     );
   }
 
+  const abiertaItem = plan.find((p) => p.key === quizKey);
+
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 16px 28px" }}>
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 16px 40px" }}>
       <CaminoView
         items={plan} done={done} scores={scores} subject={subject} loading={planLoading}
-        quizKey={quizKey} quiz={quiz} quizAns={quizAns} quizRes={quizRes}
-        quizLoading={quizLoading} quizErr={quizErr}
+        abierta={quizKey}
         onAbrir={abrirQuiz}
-        onResponder={(n, i) => setQuizAns((a) => ({ ...a, [n]: i }))}
-        onEnviar={enviarQuiz}
-        onReintentar={() => { setQuizAns({}); setQuizRes(null); setQuizErr(""); }}
-        onNoEntiendo={noEntiendo}
+        onCerrar={() => setQuizKey("")}
         onExamen={() => router.push(`/materia/${id}/prueba`)}
         testLoading={false}
         onRegen={generarPlan}
-      />
+      >
+        {abiertaItem && (
+          <HojaLeccion
+            item={abiertaItem}
+            quiz={quiz} quizAns={quizAns} quizRes={quizRes}
+            quizLoading={quizLoading} quizErr={quizErr}
+            onResponder={(n, i) => setQuizAns((a) => ({ ...a, [n]: i }))}
+            onEnviar={() => enviarQuiz(abiertaItem)}
+            onReintentar={() => { setQuizAns({}); setQuizRes(null); setQuizErr(""); }}
+            onRepasar={(pregunta) => repasar(abiertaItem, pregunta)}
+            onCerrar={() => setQuizKey("")}
+          />
+        )}
+      </CaminoView>
     </div>
   );
 }

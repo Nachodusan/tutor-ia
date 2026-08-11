@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const maxDuration = 180;
 
 /**
- * POST /api/lesson/quiz — las 3 preguntas de chequeo de UNA lección del camino.
+ * POST /api/lesson/quiz — las 10 preguntas de chequeo de UNA lección del camino.
  * body: { subjectId, topicKey, title?, unit?, lesson?, p0?, p1? }
  *
  * CACHEADAS Y COMPARTIDAS: son las mismas para todos los alumnos de la materia,
@@ -93,7 +93,11 @@ export async function POST(req: Request) {
   try {
     items = await generarPreguntas(
       [{ key: topicKey, title: body.title ?? "", sample }],
-      { subjectName: materia.name, porTema: 3 },
+      // DIEZ y no tres. Con tres, acertar dos por descarte alcanzaba para
+      // pintar el nodo de verde: el número decía "dominado" sin haberlo medido.
+      // Diez hace que el resultado signifique algo y que el refuerzo sepa
+      // exactamente qué le costó.
+      { subjectName: materia.name, porTema: 10 },
     );
   } catch (e) {
     if (e instanceof SinPreguntas) {
