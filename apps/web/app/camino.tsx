@@ -19,10 +19,12 @@ export function aprobado(score: number, total: number): boolean {
 // Ahora serpentea. La amplitud sale de un seno para que la curva sea pareja sin
 // tabular offsets a mano, y el paso vertical es fijo para que el largo del
 // camino sea proporcional a lo que falta.
-const NODO = 62;      // diámetro del nodo
-const PASO = 112;     // distancia vertical entre centros
-const AMP = 74;       // cuánto se corre a los costados
-const posX = (i: number) => Math.sin(i * 0.85) * AMP;
+const NODO = 64;      // diámetro del nodo
+const PASO = 158;     // distancia vertical entre centros
+const AMP = 98;       // cuánto se corre a los costados
+// El paso de fase decide cuántos nodos entran en una vuelta completa. 0.7 da
+// ~9: la curva se lee como camino y no como zigzag de dientes de sierra.
+const posX = (i: number) => Math.sin(i * 0.7) * AMP;
 
 export function CaminoView({
   items, done, scores, subject, loading, abierta,
@@ -99,23 +101,31 @@ export function CaminoView({
             position: "absolute", left: "50%", top: y,
             transform: `translate(calc(-50% + ${x}px), -50%)`,
           };
-          // La etiqueta va DEBAJO del nodo y centrada, pero SOLO donde hace
-          // falta: el nodo actual, el abierto y los exámenes. Ponerle título a
-          // los catorce llenaba la pantalla de texto —al costado quedaban
-          // columnas de 100px partidas en tres líneas, y debajo se pisaban
-          // entre sí— y encima tapaba lo único que el alumno necesita ver de un
-          // golpe: por dónde va. El título completo está en la hoja, a un toque.
+          // La etiqueta va DEBAJO del nodo y centrada. Con el paso corto de
+          // antes (112 px) esto no entraba: un título de dos líneas se metía
+          // sobre el nodo siguiente, así que solo lo llevaba el nodo actual.
+          // Con 158 px de paso quedan ~94 px libres entre bordes y entran los
+          // catorce — que es lo que hace navegable el camino: sin nombres hay
+          // que tocar nodo por nodo para saber qué es cada uno.
+          // ⚠️ EL TÍTULO SE CORRE HACIA EL LADO CONTRARIO AL QUE VA LA CURVA.
+          // Centrado bajo el nodo quedaba justo sobre el trazo —el sendero sale
+          // del nodo hacia el siguiente y lo cruza en diagonal— y el texto se
+          // leía tachado. Se mira adónde va el tramo que sigue y la etiqueta se
+          // va para el otro lado; además lleva fondo, para que si algún tramo la
+          // roza igual el texto se siga leyendo.
+          const siguienteX = posX(k + 1);
+          const corrimiento = siguienteX > x ? -(NODO / 2 + 26) : (NODO / 2 + 26);
           const etiquetaPos: React.CSSProperties = {
-            position: "absolute", top: y + NODO / 2 + 7, left: "50%",
-            transform: `translateX(calc(-50% + ${x}px))`,
-            width: 168, textAlign: "center",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+            position: "absolute", top: y + NODO / 2 + 10, left: "50%",
+            transform: `translateX(calc(-50% + ${x + corrimiento}px))`,
+            width: 158, textAlign: "center",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
           };
           if (p.tipo === "examen") {
             return (
               <div key={`ex-${k}`}>
                 <div style={etiquetaPos}>
-                  <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12, color: p.listo ? C.text : C.dim, lineHeight: 1.25 }}>
+                  <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12, color: p.listo ? C.text : C.dim, lineHeight: 1.25, background: C.bg, borderRadius: 8, padding: "2px 6px" }}>
                     Prueba · lecciones {p.desde} a {p.hasta}
                   </span>
                 </div>
@@ -153,20 +163,19 @@ export function CaminoView({
                   Estás acá
                 </span>
               )}
-              {(esActual || seleccionado) && (
-                <div style={etiquetaPos}>
-                  <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, color: C.text, lineHeight: 1.25 }}>
-                    {p.item.title}
-                  </span>
-                </div>
-              )}
-              {/* La nota va PEGADA al nodo, no en la etiqueta: es el único dato
-                  que tiene que verse en todos los nodos hechos a la vez. */}
-              {sc && (
-                <span style={{ position: "absolute", top: y + NODO / 2 - 8, left: "50%", transform: `translateX(calc(-50% + ${x + NODO / 2 - 4}px))`, fontFamily: FONT.round, fontWeight: 800, fontSize: 10.5, color: bien ? C.okTx : C.warnTx, background: bien ? C.okBg : C.warnBg, border: `1.5px solid ${bien ? C.ok : C.warn}`, borderRadius: 999, padding: "1px 6px", whiteSpace: "nowrap" }}>
-                  {sc.score}/{sc.total}
+              <div style={etiquetaPos}>
+                <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, lineHeight: 1.25, color: hecho && !esActual && !seleccionado ? C.dim : C.text, background: C.bg, borderRadius: 8, padding: "2px 6px", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" }}>
+                  {p.item.title}
                 </span>
-              )}
+                {/* La nota va con el título y no colgando del nodo: ahí se
+                    cruzaba con el trazo del sendero. */}
+                {sc && (
+                  <span style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 10.5, color: bien ? C.okTx : C.warnTx, background: bien ? C.okBg : C.warnBg, border: `1.5px solid ${bien ? C.ok : C.warn}`, borderRadius: 999, padding: "1px 7px" }}>
+                    {sc.score}/{sc.total}
+                  </span>
+                )}
+              </div>
+
               <button onClick={() => (seleccionado ? onCerrar() : onAbrir(p.item))} title={p.item.title}
                 style={{
                   ...nodoPos,
@@ -192,7 +201,7 @@ export function CaminoView({
 /** Curva que pasa por los centros de las primeras `n` paradas. */
 function sendero(n: number): string {
   if (n <= 0) return "";
-  const pt = (k: number) => ({ x: Math.sin(k * 0.85) * AMP, y: k * PASO + NODO / 2 });
+  const pt = (k: number) => ({ x: posX(k), y: k * PASO + NODO / 2 });
   let d = "";
   for (let k = 0; k < n; k++) {
     const p = pt(k);
