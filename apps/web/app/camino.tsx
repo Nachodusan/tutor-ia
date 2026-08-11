@@ -20,11 +20,25 @@ export function aprobado(score: number, total: number): boolean {
 // tabular offsets a mano, y el paso vertical es fijo para que el largo del
 // camino sea proporcional a lo que falta.
 const NODO = 64;      // diámetro del nodo
-const PASO = 158;     // distancia vertical entre centros
-const AMP = 98;       // cuánto se corre a los costados
-// El paso de fase decide cuántos nodos entran en una vuelta completa. 0.7 da
-// ~9: la curva se lee como camino y no como zigzag de dientes de sierra.
-const posX = (i: number) => Math.sin(i * 0.7) * AMP;
+const PASO = 150;     // distancia vertical entre centros
+const AMP = 124;      // cuánto se corre a los costados
+/** Ancho del texto de cada parada. */
+const ETIQUETA = 150;
+/**
+ * El serpenteo, como patrón EXPLÍCITO de 8 paradas y no como seno.
+ *
+ * Con `sin(i * 0.62)` la primera media onda se comía las cinco paradas
+ * iniciales del MISMO lado: el camino arrancaba en el centro, se iba a la
+ * derecha y recién en la sexta volvía. En una pantalla de teléfono se ve la
+ * primera pantallada nada más, así que el alumno veía una curva floja pegada a
+ * un costado y el ancho izquierdo desperdiciado.
+ *
+ * El patrón alterna desde el arranque y toca los dos extremos en cada vuelta.
+ * Al ser una tabla se puede leer de un vistazo qué forma tiene, que con una
+ * fase en radianes había que ir a calcularlo.
+ */
+const VAIVEN = [0, 0.6, 1, 0.6, 0, -0.6, -1, -0.6];
+const posX = (i: number) => VAIVEN[i % VAIVEN.length]! * AMP;
 
 export function CaminoView({
   items, done, scores, subject, loading, abierta,
@@ -83,11 +97,11 @@ export function CaminoView({
       <div style={{ position: "relative", height: alto, width: "100%" }}>
         {/* El sendero, detrás de todo. Se dibuja de una sola pieza: dos tramos
             sueltos entre nodos se ven como escalones, no como un camino. */}
-        <svg width={AMP * 2 + 16} height={alto} viewBox={`${-(AMP + 8)} 0 ${AMP * 2 + 16} ${alto}`}
+        <svg width={AMP * 2 + NODO} height={alto} viewBox={`${-(AMP + NODO / 2)} 0 ${AMP * 2 + NODO} ${alto}`}
           style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", pointerEvents: "none" }} aria-hidden="true">
-          <path d={sendero(paradas.length)} fill="none" stroke={C.border} strokeWidth={12} strokeLinecap="round" />
+          <path d={sendero(paradas.length)} fill="none" stroke={C.border} strokeWidth={14} strokeLinecap="round" />
           {/* Lo recorrido, encima y en color: el avance se ve sin contar nodos. */}
-          <path d={sendero(hechasSeguidas(paradas, done))} fill="none" stroke={C.ok} strokeWidth={12} strokeLinecap="round" />
+          <path d={sendero(hechasSeguidas(paradas, done))} fill="none" stroke={C.ok} strokeWidth={14} strokeLinecap="round" />
         </svg>
 
         {paradas.map((p, k) => {
@@ -107,25 +121,34 @@ export function CaminoView({
           // Con 158 px de paso quedan ~94 px libres entre bordes y entran los
           // catorce — que es lo que hace navegable el camino: sin nombres hay
           // que tocar nodo por nodo para saber qué es cada uno.
-          // ⚠️ EL TÍTULO SE CORRE HACIA EL LADO CONTRARIO AL QUE VA LA CURVA.
-          // Centrado bajo el nodo quedaba justo sobre el trazo —el sendero sale
-          // del nodo hacia el siguiente y lo cruza en diagonal— y el texto se
-          // leía tachado. Se mira adónde va el tramo que sigue y la etiqueta se
-          // va para el otro lado; además lleva fondo, para que si algún tramo la
-          // roza igual el texto se siga leyendo.
+          // ⚠️ EL TÍTULO SE CORRE AL LADO CONTRARIO AL QUE VA LA CURVA, y bien
+          // afuera. Centrado bajo el nodo quedaba sobre el trazo —el sendero
+          // sale del nodo hacia el siguiente y lo cruza en diagonal— y el texto
+          // se leía tachado. Se tapó un rato con un fondo blanco detrás de cada
+          // título: eso arreglaba la legibilidad y ensuciaba el dibujo, porque
+          // se veían cajas blancas apoyadas sobre el camino. La solución es
+          // correrlo, no taparlo.
+          //
+          // Con la amplitud grande el corrimiento a veces se saldría de la
+          // pantalla, así que se acota: la etiqueta nunca cruza el borde.
           const siguienteX = posX(k + 1);
-          const corrimiento = siguienteX > x ? -(NODO / 2 + 26) : (NODO / 2 + 26);
+          const bruto = siguienteX > x ? -(NODO / 2 + 52) : (NODO / 2 + 52);
+          const tope = AMP + NODO / 2;   // medio ancho útil del contenedor
+          const corrimiento = Math.max(
+            -(tope - ETIQUETA / 2) - x,
+            Math.min(bruto, (tope - ETIQUETA / 2) - x),
+          );
           const etiquetaPos: React.CSSProperties = {
-            position: "absolute", top: y + NODO / 2 + 10, left: "50%",
+            position: "absolute", top: y + NODO / 2 + 12, left: "50%",
             transform: `translateX(calc(-50% + ${x + corrimiento}px))`,
-            width: 158, textAlign: "center",
+            width: ETIQUETA, textAlign: "center",
             display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
           };
           if (p.tipo === "examen") {
             return (
               <div key={`ex-${k}`}>
                 <div style={etiquetaPos}>
-                  <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12, color: p.listo ? C.text : C.dim, lineHeight: 1.25, background: C.bg, borderRadius: 8, padding: "2px 6px" }}>
+                  <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12, color: p.listo ? C.text : C.dim, lineHeight: 1.25 }}>
                     Prueba · lecciones {p.desde} a {p.hasta}
                   </span>
                 </div>
@@ -164,7 +187,7 @@ export function CaminoView({
                 </span>
               )}
               <div style={etiquetaPos}>
-                <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, lineHeight: 1.25, color: hecho && !esActual && !seleccionado ? C.dim : C.text, background: C.bg, borderRadius: 8, padding: "2px 6px", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" }}>
+                <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, lineHeight: 1.25, color: hecho && !esActual && !seleccionado ? C.dim : C.text }}>
                   {p.item.title}
                 </span>
                 {/* La nota va con el título y no colgando del nodo: ahí se
