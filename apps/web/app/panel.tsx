@@ -153,13 +153,15 @@ export function Dashboard({ profile, subjects, stats, teacher, onAbrir, onReinfo
  */
 /** Las tres actividades de una materia, tal como se ofrecen desde el panel. */
 const ACTIVIDADES = [
-  { clave: "camino", label: "Camino", icono: (n: number) => <IconList size={n} /> },
-  // El orbe de Aurora y no un globo de diálogo: es la identidad de la IA en el
-  // resto de la app (el encabezado, la llamada de voz), así que acá dice "acá
-  // hablás con el tutor" sin necesidad de leer la etiqueta. Un globo genérico
-  // podía ser cualquier chat.
-  { clave: "chat", label: "Preguntar", icono: (n: number) => <AuroraDot size={n + 2} /> },
-  { clave: "prueba", label: "Prueba", icono: (n: number) => <IconClipboard size={n} /> },
+  { clave: "camino", label: "Camino", icono: (n: number) => <IconList size={n} />, sinTexto: false },
+  // El orbe de Aurora, SIN etiqueta. Es la identidad de la IA en el resto de la
+  // app —el encabezado, la llamada de voz, el avatar del alumno—, así que ya
+  // dice "con esto hablás con el tutor"; el texto abajo repetía lo que el
+  // símbolo comunica solo. `label` se conserva para el `title` y el aria-label,
+  // que es lo que necesita quien navega con teclado o lector de pantalla: lo que
+  // se saca es el texto VISIBLE, no el nombre accesible.
+  { clave: "chat", label: "Preguntar", icono: (n: number) => <AuroraDot size={n + 4} />, sinTexto: true },
+  { clave: "prueba", label: "Prueba", icono: (n: number) => <IconClipboard size={n} />, sinTexto: false },
 ] as const;
 export type Actividad = (typeof ACTIVIDADES)[number]["clave"];
 
@@ -272,7 +274,8 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
               <button key={a.clave} onClick={() => !apagada && onAbrir(a.clave)} disabled={apagada}
                 title={apagada ? "Esta materia todavía no tiene camino" : a.label}
                 style={{
-                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
+                  justifyContent: "center", gap: 3,
                   padding: "9px 4px 10px", background: "none", border: "none",
                   borderLeft: i === 0 ? "none" : `1.5px solid ${C.border}`,
                   color: apagada ? C.border : C.dim, cursor: apagada ? "default" : "pointer",
@@ -280,7 +283,9 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
                 onMouseEnter={(e) => { if (!apagada) e.currentTarget.style.color = col; }}
                 onMouseLeave={(e) => { if (!apagada) e.currentTarget.style.color = C.dim; }}>
                 {a.icono(18)}
-                <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 11 }}>{a.label}</span>
+                {!a.sinTexto && (
+                  <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 11 }}>{a.label}</span>
+                )}
               </button>
             );
           })}
