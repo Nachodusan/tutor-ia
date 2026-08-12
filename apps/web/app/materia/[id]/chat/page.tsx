@@ -17,6 +17,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Bubble, VozLuces, estadoVoz } from "../../../chat-ui";
 import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, subjectLabel } from "../../../ui";
 import { traerMateria } from "../../../datos";
+import { turnoNuevo, turnoPaso, turnoTermino, interrupcionPaso, hayInterrupcion } from "../../../voz-turno";
 import type { CallState, Msg, Subject } from "../../../tipos";
 
 function cleanTutorText(t: string): string {
@@ -30,8 +31,14 @@ function cleanTutorText(t: string): string {
     .replace(/(^|[.!?¡¿]\s+)([a-záéíóúüñ])/g, (_m, p: string, c: string) => p + c.toUpperCase());
 }
 
-const SPEECH_THRESH = 6;
-const SILENCE_MS = 1200;
+/**
+ * Cuándo termina un turno y cuándo te están interrumpiendo: en `voz-turno.ts`,
+ * como funciones puras. Vivía acá adentro del bucle de animación, donde no hay
+ * forma de probarlo — el bucle ni siquiera corre con la pestaña en segundo
+ * plano. Ahora las reglas se prueban con trazas de audio sintéticas
+ * (`test/voz-turno.test.mjs`), incluida la que motivó todo esto: la pausa para
+ * pensar que se leía como final de la idea.
+ */
 
 export default function ChatPage() {
   const { id } = useParams<{ id: string }>();
@@ -60,7 +67,9 @@ export default function ChatPage() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number>(0);
   const callRef = useRef(false);
-  const levelRef = useRef(0);   // amplitud 0..1 para la animación del orbe
+  const levelRef = useRef(0);   // amplitud 0..1 para las luces de la barra
+  /** Cómo callar al tutor mientras habla (interrupción y corte de llamada). */
+  const cortarVozRef = useRef<(() => void) | null>(null);
 
   // Salir de la página con el micrófono abierto deja la luz del micro prendida
   // y el AudioContext vivo. Se corta al desmontar, pase lo que pase.
@@ -194,8 +203,19 @@ export default function ChatPage() {
             loop();
           } catch { /* */ }
         }
-        const done = () => { cancelAnimationFrame(raf); levelRef.current = 0; URL.revokeObjectURL(url); resolve(); };
+        let cerrado = false;
+        const done = () => {
+          if (cerrado) return;          // `pause()` + un `error` tardío llamarían dos veces
+          cerrado = true;
+          cancelAnimationFrame(raf); levelRef.current = 0;
+          cortarVozRef.current = null;
+          URL.revokeObjectURL(url); resolve();
+        };
         a.onended = done; a.onerror = done;
+        // CALLARLO DESDE AFUERA. `pause()` no dispara `ended`, así que sin esto
+        // la promesa quedaba colgada para siempre y el turno no seguía nunca:
+        // ni al interrumpir hablando, ni al cortar la llamada.
+        cortarVozRef.current = () => { try { a.pause(); } catch { /* */ } done(); };
         await a.play();
       } catch { resolve(); }
     });
@@ -203,7 +223,12 @@ export default function ChatPage() {
 
   async function startCall() {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // `echoCancellation` explícito y no `audio: true` a secas: el navegador
+      // suele ponerlo por defecto, pero de esto depende que el tutor no se
+      // interrumpa a sí mismo al escucharse por el parlante.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
       streamRef.current = stream;
       const ctx = new AudioContext(); audioCtxRef.current = ctx;
       const src = ctx.createMediaStreamSource(stream);
@@ -223,7 +248,8 @@ export default function ChatPage() {
     recRef.current = rec; rec.start();
     const analyser = analyserRef.current;
     const data = new Uint8Array(analyser.fftSize);
-    let speechDetected = false; let lastLoud = performance.now();
+    let turno = turnoNuevo();
+    let ultimo = performance.now();
     const tick = () => {
       if (!callRef.current || recRef.current !== rec || rec.state !== "recording") return;
       analyser.getByteTimeDomainData(data);
@@ -231,17 +257,56 @@ export default function ChatPage() {
       const level = sum / data.length;
       levelRef.current = Math.min(1, level / 26);
       const now = performance.now();
-      if (level > SPEECH_THRESH) { speechDetected = true; lastLoud = now; }
-      if (speechDetected && now - lastLoud > SILENCE_MS) { levelRef.current = 0; rec.stop(); return; }
+      turno = turnoPaso(turno, level, now - ultimo);
+      ultimo = now;
+      if (turnoTermino(turno)) { levelRef.current = 0; rec.stop(); return; }
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
   }
 
+  /**
+   * INTERRUMPIR AL TUTOR HABLÁNDOLE.
+   *
+   * Corre mientras el tutor habla: mira el MICRÓFONO (el analizador de la
+   * llamada, que sigue conectado) y si hay voz sostenida, calla el audio. El
+   * `await speak(...)` de arriba se destraba solo y el turno vuelve a escuchar.
+   *
+   * Por qué importa: cuando el detector de silencio corta una idea por la mitad,
+   * el tutor contesta muy bien la pregunta equivocada. Sin esto había que
+   * bancarse la explicación entera antes de poder aclarar.
+   *
+   * Se pierden los ~300 ms que tarda en confirmarse la interrupción (la primera
+   * sílaba). Es el precio de no cortarse a sí mismo con el eco del parlante: con
+   * confirmación inmediata, cualquier pico del propio audio lo callaba.
+   */
+  function vigilarInterrupcion(): () => void {
+    const analyser = analyserRef.current;
+    if (!analyser) return () => { /* sin micrófono no hay nada que vigilar */ };
+    const data = new Uint8Array(analyser.fftSize);
+    let sostenido = 0; let raf = 0; let vivo = true;
+    let ultimo = performance.now();
+    const tick = () => {
+      if (!vivo || !callRef.current) return;
+      analyser.getByteTimeDomainData(data);
+      let sum = 0; for (let i = 0; i < data.length; i++) sum += Math.abs(data[i]! - 128);
+      const level = sum / data.length;
+      const now = performance.now();
+      sostenido = interrupcionPaso(sostenido, level, now - ultimo);
+      ultimo = now;
+      if (hayInterrupcion(sostenido)) { cortarVozRef.current?.(); return; }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => { vivo = false; cancelAnimationFrame(raf); };
+  }
+
   function endCall() {
     callRef.current = false; cancelAnimationFrame(rafRef.current); levelRef.current = 0;
     try { if (recRef.current?.state === "recording") recRef.current.stop(); } catch { /* */ }
-    audioRef.current?.pause();
+    // Callarlo por la misma puerta que la interrupción: `pause()` a secas dejaba
+    // el `await speak(...)` colgado para siempre.
+    if (cortarVozRef.current) cortarVozRef.current(); else audioRef.current?.pause();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     audioCtxRef.current?.close().catch(() => {});
     streamRef.current = null; analyserRef.current = null; audioCtxRef.current = null;
@@ -258,7 +323,10 @@ export default function ChatPage() {
     const answer = await send(text);
     if (!callRef.current) return;
     setCallState("speaking");
+    // El tutor habla y el micrófono sigue abierto escuchando por si lo cortás.
+    const dejarDeVigilar = vigilarInterrupcion();
     await speak(answer);
+    dejarDeVigilar();
     if (callRef.current) listen();
   }
 
@@ -332,7 +400,11 @@ export default function ChatPage() {
                     {estadoVoz(callState)}
                   </span>
                   <span style={{ fontSize: 11.5, color: C.dim, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {callState === "listening" ? "Hablá cuando quieras" : "Tocá el botón rojo para cortar"}
+                    {/* Mientras habla se avisa que se lo puede interrumpir: si
+                        no, nadie lo intenta y se banca la explicación entera. */}
+                    {callState === "listening" ? "Hablá cuando quieras"
+                      : callState === "speaking" ? "Hablá y te dejo seguir a vos"
+                        : "Tocá el botón rojo para cortar"}
                   </span>
                 </span>
               </span>
