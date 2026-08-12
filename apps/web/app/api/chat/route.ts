@@ -33,6 +33,42 @@ const MODEL_ERROR_MSG =
 
 const countPedagogy = (p: Record<string, unknown[]> | null | undefined): number =>
   p ? Object.values(p).reduce((n, arr) => n + (arr?.length ?? 0), 0) : 0;
+
+/**
+ * EL PRIMER TEMA QUE LE FALTA DEL PLAN, por nombre.
+ *
+ * Es la respuesta a "el alumno no tiene dónde empezar". Antes, a un "hola" se le
+ * contestaba "¿qué tema querés que te explique?" — devolverle el problema a
+ * alguien que abrió la app justamente porque no sabe por dónde arrancar. Y si
+ * escribía algo sin tema, el turno llegaba al modelo sin material y el modelo
+ * INVENTABA un tema (en Biología ofreció conjugar verbos en pasado).
+ *
+ * Sale del plan de SU materia, que es el índice real de su libro. Si la materia
+ * todavía no tiene plan armado, devuelve null y el saludo queda como antes.
+ */
+async function primerTemaPendiente(subjectId: string | null, userId: string): Promise<string | null> {
+  if (!subjectId) return null;
+  try {
+    const sql = getSql();
+    const [plan, hechos] = await Promise.all([
+      sql<{ items: { key: string; title: string }[] }[]>`
+        select items from subject_plans where subject_id = ${subjectId}::uuid`,
+      sql<{ topic_key: string }[]>`
+        select topic_key from student_plan_progress
+        where user_id = ${userId}::uuid and subject_id = ${subjectId}::uuid`,
+    ]);
+    const items = plan[0]?.items ?? [];
+    if (!Array.isArray(items) || items.length === 0) return null;
+    const listos = new Set(hechos.map((h) => h.topic_key));
+    // El primero sin hacer; si ya hizo todos, el primero del plan para repasar.
+    const proximo = items.find((i) => i?.key && !listos.has(i.key)) ?? items[0];
+    return proximo?.title?.trim() || null;
+  } catch (e) {
+    // Sin plan no hay propuesta, pero el saludo tiene que salir igual.
+    console.error(`[chat] primerTemaPendiente: ${e instanceof Error ? e.message : e}`);
+    return null;
+  }
+}
 // STRUGGLE_RE / isStruggling viven en core: el golden set tiene que activar la
 // MISMA rama adaptativa del prompt que activa el chat.
 
@@ -78,10 +114,13 @@ export async function POST(req: Request) {
   // colapsaba las dos causas en una y no se podía saber cuál de los dos regex
   // se estaba comiendo preguntas reales. Misma semántica que antes.
   const hasContext = (body.history?.length ?? 0) > 0;
-  const social = socialReply(body.question, body.subjectName ?? undefined, hasContext);
+  // El primer tema PENDIENTE del plan de la materia. Solo hace falta cuando no
+  // hay conversación: es el caso del chico que abre el chat y saluda.
+  const primerTema = hasContext ? null : await primerTemaPendiente(body.subjectId ?? null, userId);
+  const social = socialReply(body.question, body.subjectName ?? undefined, hasContext, primerTema);
   const vague = social
     ? null
-    : needsTopicReply(body.question, hasContext, body.subjectName ?? undefined);
+    : needsTopicReply(body.question, hasContext, body.subjectName ?? undefined, primerTema);
   const conversational = social ?? vague;
   if (conversational) {
     logDecision({
@@ -141,6 +180,7 @@ export async function POST(req: Request) {
     lesson: body.lesson ?? null,
     studentGrade: null as string | null,
     familyIds: null as string[] | null,
+    primerTema,
   };
 
   let res;

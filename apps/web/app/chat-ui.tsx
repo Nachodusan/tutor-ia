@@ -160,7 +160,12 @@ export function VerificationBadge({ v, mode, scope, citations }: { v?: Verificat
     return (
       <div style={{ marginTop: 9, display: "inline-flex", gap: 7, alignItems: "flex-start", background: C.warnBg, color: C.warnTx, fontSize: 12.5, padding: "8px 12px", borderRadius: 12, lineHeight: 1.5, maxWidth: 460 }}>
         <span style={{ display: "flex", flexShrink: 0, marginTop: 1 }}><IconAlert size={14} /></span>
-        <span>Esto <strong>no está en tu libro</strong>. Te lo expliqué con lo que sé, así que conviene que lo chequees con tu profe.</span>
+        {/* Antes cerraba con "así que conviene que lo chequees con tu profe", y
+            eso salía en TODA respuesta fuera del libro. Un tutor que termina
+            cada explicación mandándote a preguntarle a otro se vuelve inútil:
+            el sello sirve para que el alumno sepa QUÉ está respaldado por su
+            material, no para desautorizar lo que acaba de leer. */}
+        <span>Esto <strong>no está en tu libro</strong>: te lo expliqué con lo que sé.</span>
       </div>
     );
   }
@@ -172,7 +177,7 @@ export function VerificationBadge({ v, mode, scope, citations }: { v?: Verificat
     return (
       <div style={{ marginTop: 9, display: "inline-flex", gap: 7, alignItems: "flex-start", background: C.panel2, color: C.dim, border: `1px solid ${C.border}`, fontSize: 12.5, padding: "8px 12px", borderRadius: 12, lineHeight: 1.5, maxWidth: 480 }}>
         <span style={{ display: "flex", flexShrink: 0, marginTop: 1 }}><IconBook size={14} /></span>
-        <span>Tu material toca este tema pero <strong style={{ color: C.text }}>no responde del todo</strong> lo que preguntaste. Lo que falta lo completé con lo que sé: chequealo con tu profe.</span>
+        <span>Tu material toca este tema pero <strong style={{ color: C.text }}>no responde del todo</strong> lo que preguntaste. Lo que falta lo completé con lo que sé.</span>
       </div>
     );
   }

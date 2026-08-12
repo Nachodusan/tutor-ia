@@ -36,6 +36,9 @@ export interface TeachRequest {
   /** Materias de la MISMA asignatura en todos los cursos (etapa 1 de la
    *  cascada de alcance). Las resuelve la ruta con `subjects.family`. */
   familyIds?: string[] | null;
+  /** Primer tema PENDIENTE del plan de la materia. Es lo que se le ofrece al
+   *  alumno que no trae tema propio, en vez de dejar que el modelo elija uno. */
+  primerTema?: string | null;
 }
 
 /** Etiquetas legibles de los tipos de pedagogía para el prompt. */
@@ -194,7 +197,20 @@ export function teachingAbstention(): string {
 // preguntas sobre el material → NO deben pasar por el gate de abstención; el
 // tutor responde conversacionalmente. Anclados a FIN de mensaje para no tragarse
 // preguntas reales ("hola, explicame la célula" → sí va a enseñanza).
-const GREETING_RE = /^\s*(hola+|buenas|buen[oa]s?\s*(d[ií]as|tardes|noches)?|buen\s*d[ií]a|hey|hi|hello|qu[ée]\s*tal|c[óo]mo\s*(est[áa]s|and[áa]s|va|te\s*va)|saludos|holis)[\s,.!¡¿?]*$/i;
+/**
+ * Un saludo puede venir REPETIDO o encadenado: "hola hola", "hola buenas",
+ * "hola, ¿cómo estás?". Anclado a un solo token, "Hola Hola" NO era un saludo:
+ * se iba al flujo de enseñanza, no había material de qué agarrarse y el modelo
+ * TERMINABA INVENTANDO UN TEMA — en Biología contestó con una pregunta sobre
+ * conjugar verbos en pasado. Un saludo mal reconocido no es un detalle: es la
+ * primera pantalla de la conversación.
+ */
+const SALUDO =
+  "(?:hola+|buenas|buen[oa]s?\\s*(?:d[ií]as|tardes|noches)?|buen\\s*d[ií]a|hey|hi|hello|qu[ée]\\s*tal|c[óo]mo\\s*(?:est[áa]s|and[áa]s|va|te\\s*va)|saludos|holis)";
+const GREETING_RE = new RegExp(
+  `^\\s*${SALUDO}(?:[\\s,.!¡¿?]+${SALUDO})*[\\s,.!¡¿?]*$`,
+  "i",
+);
 const BYE_RE = /^\s*(chau+|chao|adi[óo]s|nos\s*vemos|hasta\s*(luego|pronto|ma[ñn]ana)|bye|me\s*voy)[\s,.!]*$/i;
 
 /**
@@ -233,19 +249,34 @@ const GRACIAS_RE = /^\s*(much[ao]s?\s*)?gracias[\s,.!]*$/i;
  * La despedida SÍ queda fija siempre: un "chau" no gana nada pasando por el
  * modelo, y responderlo al instante es mejor que hacerlo esperar para irse.
  */
+/**
+ * LA PROPUESTA CONCRETA. Un alumno que abre el chat y saluda no tiene por qué
+ * saber qué pedir: preguntarle "¿qué tema querés?" le devuelve el problema.
+ * Si su plan tiene un primer tema pendiente, se lo ofrecemos por su nombre.
+ */
+function proponer(primerTema?: string | null, tema = ""): string {
+  return primerTema
+    ? `¿Arrancamos por “${primerTema}”? Es lo primero que tenés pendiente en tu plan. Si preferís otra cosa, decime.`
+    : `¿Qué tema${tema} querés que te explique?`;
+}
+
 export function socialReply(
   question: string,
   subjectName?: string,
   hasContext = false,
+  /** Primer tema pendiente del plan de la materia, si lo hay. */
+  primerTema?: string | null,
 ): string | null {
   const q = question.trim();
   if (!q) return null;
   const tema = subjectName ? ` de ${subjectName}` : "";
   if (BYE_RE.test(q)) return "¡Chau! Volvé cuando quieras seguir estudiando.";
   if (hasContext) return null;
-  if (GREETING_RE.test(q)) return `¡Hola! Soy tu tutor${tema}. ¿Qué tema querés que te explique?`;
+  if (GREETING_RE.test(q)) return `¡Hola! Soy tu tutor${tema}. ${proponer(primerTema, tema)}`;
   if (GRACIAS_RE.test(q) || AFIRMACION_RE.test(q)) {
-    return `¡Buenísimo! ¿Seguimos con otro tema${tema}, o querés que profundice en algo?`;
+    return primerTema
+      ? `¡Buenísimo! ${proponer(primerTema)}`
+      : `¡Buenísimo! ¿Seguimos con otro tema${tema}, o querés que profundice en algo?`;
   }
   return null;
 }
@@ -306,12 +337,19 @@ const VAGUE_RE = new RegExp(
 
 /** Si es un pedido vago SIN tema previo, devuelve un empujón conversacional para
  *  que el alumno elija tema; null si hay contexto o la pregunta trae tema. */
-export function needsTopicReply(question: string, hasContext: boolean, subjectName?: string): string | null {
+export function needsTopicReply(
+  question: string,
+  hasContext: boolean,
+  subjectName?: string,
+  primerTema?: string | null,
+): string | null {
   if (hasContext) return null;
   const q = question.trim();
   if (q.length > 90 || !VAGUE_RE.test(q)) return null;
   const tema = subjectName ? ` de ${subjectName}` : "";
-  return `¡Dale! ¿Sobre qué tema${tema} querés que te ayude? Decime uno —o tocá un tema de tu plan— y te lo explico con un ejemplo.`;
+  return primerTema
+    ? `¡Dale! ${proponer(primerTema)}`
+    : `¡Dale! ¿Sobre qué tema${tema} querés que te ayude? Decime uno —o tocá un tema de tu plan— y te lo explico con un ejemplo.`;
 }
 
 /** Cita legible del primer fragmento citable (para la UI). */
@@ -404,6 +442,7 @@ export async function* streamTeaching(
         // vista (sello `apoyado`) en vez de descartarse.
         parcial: ctx.parcial === true,
         studentGrade: req.studentGrade ?? null,
+        primerTema: req.primerTema ?? null,
         // De qué cursos salió el material que va en el prompt. Si no es el del
         // alumno, el modelo tiene que saberlo para poder decirlo.
         sourceGrades: [...new Set(ctx.citable.map((c) => c.grade).filter(Boolean))] as string[],
