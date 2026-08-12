@@ -1,73 +1,81 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { C, FONT, SOFT, AURORA, AuroraDot, Dots, IconVolume, IconCheck, IconAlert, IconChevron, IconBook } from "./ui";
+import { C, FONT, SOFT, AURORA, Dots, IconVolume, IconCheck, IconAlert, IconChevron, IconBook } from "./ui";
 import type { AnswerMode, AnswerScope, Citation, Msg, Verification, CallState } from "./tipos";
 
-export function VoiceOrb({ levelRef, state }: { levelRef: React.RefObject<number>; state: CallState }) {
-  const orb = useRef<HTMLDivElement>(null);
-  const ring = useRef<HTMLDivElement>(null);
+/**
+ * EL MODO CONVERSACIÓN NO TAPA NADA.
+ *
+ * Antes era una pantalla completa con un orbe grande en el medio. Se veía muy
+ * bien y escondía lo único que importa: EL TEXTO. El chico habla, el tutor
+ * transcribe lo que dijo y contesta por escrito mientras lo lee en voz alta —
+ * y todo eso estaba pasando DEBAJO de una pantalla que no dejaba verlo. En una
+ * app para estudiar, la respuesta escrita no es el detrás de escena: es el
+ * material que después se relee.
+ *
+ * Así que el modo voz ahora es esto: LUCES ABAJO. La conversación sigue en
+ * pantalla, entera y desplazándose sola, y el estado de la llamada vive en la
+ * misma barra donde antes se escribía.
+ *
+ * Las barras se mueven con el sonido REAL (`levelRef`, que alimentan el
+ * micrófono al escuchar y el analizador del audio al hablar). Una animación
+ * decorativa que se mueve igual con silencio y con voz no dice nada: acá el
+ * movimiento ES la señal de que te está escuchando.
+ */
+const BARRAS = 5;
+/** Alto relativo de cada barra: el centro reacciona más que los extremos. */
+const PESO = [0.55, 0.85, 1, 0.85, 0.55];
+
+export function VozLuces({ levelRef, state }: { levelRef: React.RefObject<number>; state: CallState }) {
+  const barras = useRef<(HTMLSpanElement | null)[]>([]);
+  const halo = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     let raf = 0;
+    const t0 = performance.now();
     const loop = () => {
-      const lvl = state === "thinking" ? 0.12 + 0.08 * (0.5 + 0.5 * Math.sin(Date.now() / 260)) : (levelRef.current ?? 0);
-      const s = 1 + lvl * 0.45;
-      if (orb.current) {
-        orb.current.style.transform = `scale(${s.toFixed(3)})`;
-        orb.current.style.boxShadow = `0 0 ${(28 + lvl * 80).toFixed(0)}px ${(8 + lvl * 24).toFixed(0)}px rgba(255,158,123,${(0.28 + lvl * 0.4).toFixed(2)})`;
+      const t = performance.now() - t0;
+      // Pensando: no hay audio que seguir (no entra ni sale sonido), así que la
+      // onda la pone el reloj. Es el único estado con movimiento inventado, y
+      // se nota distinto a propósito: más lento y más parejo.
+      const pensando = state === "thinking";
+      const lvl = pensando ? 0.28 + 0.22 * Math.sin(t / 280) : (levelRef.current ?? 0);
+      for (let i = 0; i < BARRAS; i++) {
+        const el = barras.current[i];
+        if (!el) continue;
+        const fase = Math.sin(t / (pensando ? 320 : 170) + i * 0.9) * 0.5 + 0.5;
+        const alto = 5 + lvl * 26 * PESO[i]! * (0.55 + 0.45 * fase);
+        el.style.height = `${alto.toFixed(1)}px`;
       }
-      if (ring.current) ring.current.style.transform = `scale(${(1.15 + lvl * 0.7).toFixed(3)})`, ring.current.style.opacity = `${(0.3 + lvl * 0.4).toFixed(2)}`;
+      if (halo.current) {
+        halo.current.style.opacity = `${(0.22 + lvl * 0.7).toFixed(2)}`;
+        halo.current.style.transform = `scaleY(${(0.8 + lvl * 0.6).toFixed(2)})`;
+      }
       raf = requestAnimationFrame(loop);
     };
     loop();
     return () => cancelAnimationFrame(raf);
   }, [state, levelRef]);
+
   return (
-    <div style={{ position: "relative", width: 200, height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div ref={ring} style={{ position: "absolute", width: 150, height: 150, borderRadius: "50%", border: `2px solid ${C.accentSoft}`, filter: "blur(1px)" }} />
-      <div ref={orb} style={{ width: 128, height: 128, borderRadius: "50%", background: AURORA, willChange: "transform, box-shadow", opacity: state === "thinking" ? 0.85 : 1, transition: "opacity .4s" }} />
-    </div>
+    <span style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 4, height: 32, flexShrink: 0 }}>
+      {/* El resplandor detrás de las barras: es lo que se ve de reojo cuando se
+          está leyendo la respuesta y no mirando la barra. */}
+      <span ref={halo} aria-hidden style={{
+        position: "absolute", left: -14, right: -14, top: 2, bottom: 2, borderRadius: 999,
+        background: AURORA, filter: "blur(11px)", transformOrigin: "center", pointerEvents: "none",
+      }} />
+      {Array.from({ length: BARRAS }, (_, i) => (
+        <span key={i} ref={(el) => { barras.current[i] = el; }}
+          style={{ position: "relative", width: 4, height: 6, borderRadius: 999, background: i % 2 ? C.accentSoft : C.peach, willChange: "height" }} />
+      ))}
+    </span>
   );
 }
 
-/**
- * EL MODO CONVERSACIÓN, ENCIMA DE LA CONVERSACIÓN.
- *
- * Antes era una pantalla opaca (un degradado blanco a pantalla completa): al
- * entrar en modo voz, el chat desaparecía. Ahora es un VIDRIO ESMERILADO — se
- * ve lo que hay abajo, desenfocado — así que se entiende que seguís en la misma
- * conversación y no en otra pantalla.
- *
- * Y NO TIENE BOTÓN DE TERMINAR. Cortar es el mismo botón que arrancó: el de voz
- * del compositor, que queda POR ENCIMA de este vidrio (z-index) y se pone rojo
- * mientras dura la llamada. Un botón para empezar y otro distinto para terminar
- * obliga a buscar dónde quedó el segundo.
- */
-export function CallOverlay({ state, levelRef, subject, lastMsg }: { state: CallState; levelRef: React.RefObject<number>; subject: string; lastMsg?: Msg }) {
-  const label = state === "listening" ? "Escuchando…" : state === "thinking" ? "Pensando…" : "Hablando…";
-  return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 50, padding: 24, color: C.text,
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20,
-      // El velo tiene que dejar ver y a la vez dar contraste al texto de arriba:
-      // solo blur, sin capa de color, y las burbujas de abajo compiten con el
-      // rótulo; solo capa de color, y volvemos a la pantalla opaca.
-      background: "rgba(255,255,255,.5)",
-      backdropFilter: "blur(13px) saturate(1.35)",
-      WebkitBackdropFilter: "blur(13px) saturate(1.35)",
-    }}>
-      <div style={{ color: C.dim, fontFamily: FONT.round, fontWeight: 600, fontSize: 14, letterSpacing: 0.3 }}>{subject}</div>
-      <VoiceOrb levelRef={levelRef} state={state} />
-      <div style={{ fontFamily: FONT.round, fontSize: 22, fontWeight: 700, marginTop: 4 }}>{label}</div>
-      <div style={{ color: C.dim, fontSize: 14, maxWidth: 360, textAlign: "center", minHeight: 40, lineHeight: 1.5 }}>
-        {state === "listening" ? "Hablá cuando quieras. Cuando pares, te respondo."
-          : state === "speaking" && lastMsg?.role === "assistant" ? clip(lastMsg.content)
-            : "Un momento…"}
-      </div>
-    </div>
-  );
+/** Rótulo del estado de la llamada. */
+export function estadoVoz(state: CallState): string {
+  return state === "listening" ? "Escuchando…" : state === "thinking" ? "Pensando…" : "Hablando…";
 }
-const clip = (t: string) => { const s = t.replace(/\s+/g, " ").trim(); return s.length > 130 ? s.slice(0, 130) + "…" : s; };
-
 export function CiteChip({ children }: { children: React.ReactNode }) {
   return (
     <span style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 6, background: C.panel2, border: `1px solid ${C.border}`, borderRadius: 10, padding: "5px 11px", fontFamily: FONT.mono, fontSize: 12.5, color: C.dim, overflow: "hidden" }}>

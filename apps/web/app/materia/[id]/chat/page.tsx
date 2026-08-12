@@ -14,7 +14,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { Bubble, CallOverlay } from "../../../chat-ui";
+import { Bubble, VozLuces, estadoVoz } from "../../../chat-ui";
 import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, subjectLabel } from "../../../ui";
 import { traerMateria } from "../../../datos";
 import type { CallState, Msg, Subject } from "../../../tipos";
@@ -66,14 +66,26 @@ export default function ChatPage() {
   // y el AudioContext vivo. Se corta al desmontar, pase lo que pase.
   useEffect(() => () => { if (callRef.current) endCall(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Escape corta. Desde que terminar es UN botón —el mismo que arrancó—, no
-  // tener salida de teclado dejaba encerrado a quien no puede tocarlo (y al que
-  // se le abrió sin querer).
+  // Dos formas de cortar además del botón.
+  //
+  // Escape, porque terminar es UN botón —el mismo que arrancó— y sin salida de
+  // teclado queda encerrado quien no puede tocarlo.
+  //
+  // Y IRSE DE LA PESTAÑA. Esto no es prolijidad: el detector de silencio corre
+  // con requestAnimationFrame, que el navegador CONGELA en segundo plano. Sin
+  // esto, cambiar de pestaña (o de app, en el teléfono) deja el micrófono
+  // grabando sin fin y el turno no termina nunca — el chico se fue y la luz del
+  // micro sigue prendida. Volver a hablar es un toque.
   useEffect(() => {
     if (callState === "idle") return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") endCall(); };
+    const onVis = () => { if (document.hidden) endCall(); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [callState]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
@@ -289,16 +301,8 @@ export default function ChatPage() {
              el velo: un degradado al color del fondo que lo disuelve antes de
              llegar. `pointerEvents: "none"` para no comerse los clics de las
              burbujas que quedan debajo. */}
-      {/* `zIndex` POR ENCIMA del overlay de voz (50) mientras dura la llamada:
-          es lo que hace que cortar sea el MISMO botón que arrancó. Sin esto, el
-          vidrio esmerilado lo tapa y hay que buscar otro botón para terminar. */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "0 16px 20px", pointerEvents: "none", zIndex: callState === "idle" ? undefined : 60 }}>
-        {/* El velo se va durante la llamada: es una banda opaca del color del
-            fondo y, sobre el vidrio, se vería como un zócalo blanco justo donde
-            se quiso transparencia. */}
-        {callState === "idle" && (
-          <div aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, top: -48, background: `linear-gradient(to top, ${C.bg} 58%, rgba(255,255,255,0))` }} />
-        )}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "0 16px 20px", pointerEvents: "none" }}>
+        <div aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, top: -48, background: `linear-gradient(to top, ${C.bg} 58%, rgba(255,255,255,0))` }} />
         <div style={{ position: "relative", maxWidth: 720, margin: "0 auto", pointerEvents: "auto" }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", background: C.panel, border: `1px solid ${foco ? C.accentSoft : C.border}`, borderRadius: 27, padding: 7, boxShadow: foco ? `${FLOAT}, 0 0 0 3px rgba(108,92,231,.14)` : FLOAT, transition: "border-color .15s, box-shadow .15s" }}>
             {/* Durante la llamada el compositor no escribe: dice cómo salir. Si
@@ -318,8 +322,19 @@ export default function ChatPage() {
                 </button>
               </>
             ) : (
-              <span style={{ flex: 1, minWidth: 0, padding: "11px 8px 11px 16px", fontSize: 14.5, fontFamily: FONT.round, fontWeight: 600, color: C.dim }}>
-                Tocá para cortar
+              /* EN LLAMADA: las luces y el estado, donde antes se escribía. No
+                 hay pantalla aparte — la conversación queda entera a la vista,
+                 que es lo único que el chico va a releer después. */
+              <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 13, padding: "0 4px 0 14px" }}>
+                <VozLuces levelRef={levelRef} state={callState} />
+                <span style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+                  <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 14.5, color: C.text, lineHeight: 1.2 }}>
+                    {estadoVoz(callState)}
+                  </span>
+                  <span style={{ fontSize: 11.5, color: C.dim, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {callState === "listening" ? "Hablá cuando quieras" : "Tocá el botón rojo para cortar"}
+                  </span>
+                </span>
               </span>
             )}
             {/* HABLAR — modo conversación, al lado de enviar. Es manos libres: el
@@ -344,13 +359,6 @@ export default function ChatPage() {
               partía en dos líneas. */}
         </div>
       </div>
-      {callState !== "idle" && (
-        <CallOverlay
-          state={callState} levelRef={levelRef}
-          subject={subject ? subjectLabel(subject) : "tu materia"}
-          lastMsg={messages[messages.length - 1]}
-        />
-      )}
     </div>
   );
 }
