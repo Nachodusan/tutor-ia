@@ -32,7 +32,11 @@ import { config } from "./config";
 /** Corta la última pregunta del texto: desde el inicio de la oración final que
  *  termina en "?" hasta el final. Devuelve null si el mensaje no cierra con una
  *  pregunta (nada que validar). */
-export function splitClosingQuestion(text: string): { body: string; question: string } | null {
+export function splitClosingQuestion(
+  text: string,
+): { body: string; question: string; inicio: number } | null {
+  // `trimEnd` no mueve el origen, así que `inicio` sirve como índice sobre el
+  // texto ORIGINAL. Eso es lo que permite empalmar sin adivinar dónde cortaba.
   const t = text.trimEnd();
   if (!t.endsWith("?")) return null;
   // El inicio de la última oración: después del último signo de cierre previo, o
@@ -49,7 +53,7 @@ export function splitClosingQuestion(text: string): { body: string; question: st
   const body = t.slice(0, inicio).trim();
   // Sin cuerpo no hay nada que copiar: la pregunta no puede estar auto-contestada.
   if (!body || question.length < 10) return null;
-  return { body, question };
+  return { body, question, inicio };
 }
 
 const JUEZ_SYSTEM = `Sos un evaluador de preguntas de comprensión. Te doy la EXPLICACIÓN que un tutor le dio a un estudiante y la PREGUNTA con la que la cerró.
@@ -112,9 +116,19 @@ export async function preguntaDeReemplazo(body: string): Promise<string | null> 
  * Valida (y si hace falta reemplaza) la pregunta de cierre de una respuesta ya
  * generada. Devuelve el texto final y si hubo reemplazo, para poder medirlo.
  */
-export async function validarPreguntaFinal(
-  answer: string,
-): Promise<{ text: string; replaced: boolean; checked: boolean }> {
+export interface CierreValidado {
+  text: string;
+  replaced: boolean;
+  checked: boolean;
+  /** La pregunta de reemplazo, cuando hubo. */
+  nueva?: string;
+  /** Índice, sobre la respuesta original, donde empezaba la pregunta vieja.
+   *  Lo necesita quien va emitiendo el stream para empalmar sin cortar el cuerpo
+   *  a mano. */
+  inicio?: number;
+}
+
+export async function validarPreguntaFinal(answer: string): Promise<CierreValidado> {
   if (!config.closingQuestionCheck) return { text: answer, replaced: false, checked: false };
   const partes = splitClosingQuestion(answer);
   if (!partes) return { text: answer, replaced: false, checked: false };
@@ -124,5 +138,11 @@ export async function validarPreguntaFinal(
 
   const nueva = await preguntaDeReemplazo(partes.body);
   if (!nueva) return { text: answer, replaced: false, checked: true };
-  return { text: `${partes.body}\n\n${nueva}`, replaced: true, checked: true };
+  return {
+    text: `${partes.body}\n\n${nueva}`,
+    replaced: true,
+    checked: true,
+    nueva,
+    inicio: partes.inicio,
+  };
 }

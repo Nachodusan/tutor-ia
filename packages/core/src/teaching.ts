@@ -16,7 +16,7 @@ import { chatStream, type ChatMsg } from "./client";
 import { config } from "./config";
 import { normalizeStudentQuery } from "./query-normalize";
 import { TEACHING_SYSTEM, buildTeachingTurn } from "./prompts";
-import { splitClosingQuestion, validarPreguntaFinal } from "./closing-question";
+import { validarPreguntaFinal } from "./closing-question";
 import type { ChatMessage } from "./types";
 
 export interface TeachRequest {
@@ -215,9 +215,24 @@ const BYE_RE = /^\s*(chau+|chao|adi[óo]s|nos\s*vemos|hasta\s*(luego|pronto|ma[�
  */
 const AFIRMACION_RE =
   /^\s*(genial|perfecto|buen[íi]simo|excelente|ok|okey|okay|dale|listo|entend[íi]|clar[íi]?simo|de\s*acuerdo)[\s,.!]*$/i;
-/** Agradecimiento puro: es social SIEMPRE, haya o no conversación. */
 const GRACIAS_RE = /^\s*(much[ao]s?\s*)?gracias[\s,.!]*$/i;
 
+/**
+ * LAS FRASES FIJAS SON SOLO PARA LA PUERTA DE ENTRADA.
+ *
+ * Antes un "gracias" o un "hola" devolvían SIEMPRE el mismo texto, aunque
+ * llegaran en medio de una charla: el chico terminaba de entender algo, decía
+ * "gracias" y recibía un "¡Buenísimo! ¿Seguimos con otro tema de Biología?"
+ * idéntico al de la vez anterior y al de la próxima. Eso no es conversar, es un
+ * menú de teléfono — y era una de las cosas que hacían sentir al tutor rígido.
+ *
+ * Con conversación en curso, estos mensajes van al modelo, que ve de qué venían
+ * hablando y cierra como cerraría una persona. Cuesta un turno de generación; es
+ * exactamente lo que se estaba ahorrando de más.
+ *
+ * La despedida SÍ queda fija siempre: un "chau" no gana nada pasando por el
+ * modelo, y responderlo al instante es mejor que hacerlo esperar para irse.
+ */
 export function socialReply(
   question: string,
   subjectName?: string,
@@ -226,12 +241,10 @@ export function socialReply(
   const q = question.trim();
   if (!q) return null;
   const tema = subjectName ? ` de ${subjectName}` : "";
-  if (GREETING_RE.test(q)) return `¡Hola! Soy tu tutor${tema}. ¿Qué tema querés que te explique?`;
   if (BYE_RE.test(q)) return "¡Chau! Volvé cuando quieras seguir estudiando.";
-  if (GRACIAS_RE.test(q)) return `¡Buenísimo! ¿Seguimos con otro tema${tema}, o querés que profundice en algo?`;
-  // Con conversación en curso, una afirmación es respuesta al chequeo del tutor:
-  // que la vea el modelo y decida si avanza o refuerza.
-  if (!hasContext && AFIRMACION_RE.test(q)) {
+  if (hasContext) return null;
+  if (GREETING_RE.test(q)) return `¡Hola! Soy tu tutor${tema}. ¿Qué tema querés que te explique?`;
+  if (GRACIAS_RE.test(q) || AFIRMACION_RE.test(q)) {
     return `¡Buenísimo! ¿Seguimos con otro tema${tema}, o querés que profundice en algo?`;
   }
   return null;
@@ -249,13 +262,27 @@ export function socialReply(
 // SECUENCIA de cláusulas vagas + muletillas de cortesía, anclada de punta a
 // punta: si cualquier pedazo trae tema ("dame otro ejemplo de fracciones"), el
 // ancla final falla y el mensaje NO es vago.
+/**
+ * PEDIDOS SOBRE LA FORMA. No traen tema y diluyen la búsqueda igual que un "no
+ * entendí": medido, "explicámelo en dos frases nomás, corto" después de "¿qué es
+ * una célula?" hacía que la consulta fuera la pregunta MÁS esa muletilla, el
+ * material de la propia materia no pasaba el gate y el turno se quedaba sin
+ * libro — habiendo tenido material excelente un turno antes.
+ *
+ * Van como grupo propio porque aparecen de dos formas: solos ("más corto") y
+ * pegados al verbo ("explicámelo en dos frases").
+ */
+const FORMA =
+  "(?:en\\s+(?:una|dos|tres|pocas)\\s+(?:frases?|l[íi]neas?|palabras)|m[áa]s\\s+cort[oa]|cort[oa]|m[áa]s\\s+breve|breve(?:mente)?|resum[íi](?:d[oa]|melo)?|en\\s+resumen|m[áa]s\\s+despacio|sin\\s+ejemplos?|nom[áa]s)";
+
 const VAGUE_CLAUSE = [
   "¿?\\s*(?:por|para)\\s*qu[ée]\\s+(?:es\\s+)?importante(?:\\s+esto)?\\??",
   "(?:dame|da|quiero|pon[ée]me|tir[áa]me)\\s+(?:un|otro)?\\s*ejemplos?(?:\\s+concretos?)?",
   "otro\\s+ejemplo",
   "m[áa]s\\s+ejemplos?",
   // "explicá mejor" · "explicámelo de otra forma" · "me lo explicas más fácil"
-  "(?:me\\s+l[oa]\\s+)?explic[áa]s?(?:me(?:l[oa])?)?\\s+(?:mejor|m[áa]s\\s+f[áa]cil|de\\s+nuevo|otra\\s+vez|eso|m[áa]s|(?:de\\s+)?otra\\s+forma)",
+  // · "explicámelo en dos frases"
+  `(?:me\\s+l[oa]\\s+)?explic[áa]s?(?:me(?:l[oa])?)?\\s+(?:mejor|m[áa]s\\s+f[áa]cil|de\\s+nuevo|otra\\s+vez|eso|m[áa]s|(?:de\\s+)?otra\\s+forma|${FORMA})`,
   "(?:sigo|seguimos)\\s+sin\\s+entender(?:l[oa])?",
   "no\\s+entend[íi](?:\\s+nada)?",
   "no\\s+(?:lo\\s+|la\\s+)?(?:entiendo|pillo|cacho|capto)(?:\\s+nada)?",
@@ -268,6 +295,7 @@ const VAGUE_CLAUSE = [
   "m[áa]s",
   "ampli[áa](?:me)?",
   "profundiz[áa]",
+  FORMA,
 ].join("|");
 /** Muletillas de cortesía: decoran el pedido sin aportar tema. */
 const MULETILLA = "(?:por\\s*favor|porfa+|porfis|porfi|plis)";
@@ -429,23 +457,23 @@ export async function* streamTeachingChecked(
       emitido = hasta;
     }
   }
-  const { text, replaced, checked } = await validarPreguntaFinal(full);
+  const { replaced, checked, nueva, inicio } = await validarPreguntaFinal(full);
   onCheck?.({ checked, replaced });
-  if (!replaced) {
-    // Nada que cambiar: sale la cola tal cual (lo ya emitido es prefijo de `full`).
+  // El empalme se hace SOBRE `full` y con el índice donde empezaba la pregunta
+  // vieja — nunca reconstruyendo desde el texto validado.
+  //
+  // Antes se cortaba con `body.length`, que es el largo del cuerpo YA RECORTADO
+  // (`trim()`), no una posición dentro de `full`. Con un solo espacio de más al
+  // principio de la respuesta, ese largo caía unos caracteres antes del corte
+  // real y el alumno veía una frase partida al medio colgando arriba de la
+  // pregunta nueva: "Si estuvieras descansando después de correr," y nada más.
+  // Salió en la primera corrida que miré de cerca.
+  if (!replaced || nueva == null || inicio == null || inicio < emitido) {
+    // Nada que cambiar (o la pregunta ya salió a pantalla y cambiarla sería
+    // peor): sale la cola tal cual.
     if (full.length > emitido) yield full.slice(emitido);
     return;
   }
-  // Reemplazada. `text` comparte el cuerpo con `full` salvo por el `trim()` que
-  // aplica el split, así que NO se asume: se verifica que lo ya emitido sea
-  // prefijo de `text` antes de continuar desde el cursor. Si no lo fuera (no
-  // debería), se cierra el cuerpo y se emite la pregunta nueva sola: peor es
-  // duplicar medio renglón en la pantalla de un chico.
-  const yaEmitido = full.slice(0, emitido);
-  if (text.startsWith(yaEmitido)) {
-    yield text.slice(emitido);
-  } else {
-    const corte = text.lastIndexOf("\n\n");
-    yield `${full.slice(emitido, splitClosingQuestion(full)?.body.length ?? full.length)}\n\n${text.slice(corte + 2)}`;
-  }
+  if (inicio > emitido) yield full.slice(emitido, inicio).trimEnd();
+  yield `\n\n${nueva}`;
 }

@@ -136,8 +136,21 @@ export interface Decision {
 const SELF_ABSTAIN_RE =
   /\b(no\s+(?:lo\s+)?(?:encuentro|encontr[ée]|veo|aparece|figura|est[áa]|tengo)\b[^.!?]{0,60}\b(?:material|apunte|libro|texto|informaci[óo]n|contenido|fragmento)|(?:tu|el)\s+material\s+no\s+(?:cubre|incluye|trae|menciona|habla|dice|tiene)|no\s+puedo\s+(?:responder|contestar|ayudarte\s+con\s+eso)|no\s+quiero\s+(?:inventar|tirarte)|eso\s+no\s+lo\s+veo\s+en\s+tu\s+material)/i;
 
+/**
+ * "…pero te lo explico igual". DECIR que algo no está en el libro y ENSEÑARLO
+ * igual es lo contrario de abstenerse: es el modo general funcionando como debe.
+ *
+ * Sin esto, la señal se envenenó sola: desde que el prompt pide reconocer el
+ * hueco con naturalidad, TODA respuesta sin material arranca con una negación y
+ * quedaba contada como auto-abstención — justo la métrica que sirve para
+ * distinguir "el umbral está mal" de "el prompt es demasiado miedoso".
+ */
+const RESPONDE_IGUAL_RE =
+  /\b(te\s+(?:l[oa]\s+)?(?:explico|cuento|respondo|digo|aclaro)\s+(?:igual|lo\s+mismo|de\s+todos\s+modos)|igual\s+te\s+(?:l[oa]\s+)?(?:explico|cuento|respondo)|con\s+lo\s+que\s+s[ée]|por\s+lo\s+que\s+(?:yo\s+)?s[ée])\b/i;
+
 export function looksLikeSelfAbstention(text: string): boolean {
-  return SELF_ABSTAIN_RE.test(text.slice(0, 240));
+  const inicio = text.slice(0, 240);
+  return SELF_ABSTAIN_RE.test(inicio) && !RESPONDE_IGUAL_RE.test(inicio);
 }
 
 function on(): boolean {
