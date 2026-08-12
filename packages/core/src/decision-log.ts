@@ -148,9 +148,32 @@ const SELF_ABSTAIN_RE =
 const RESPONDE_IGUAL_RE =
   /\b(te\s+(?:l[oa]\s+)?(?:explico|cuento|respondo|digo|aclaro)\s+(?:igual|lo\s+mismo|de\s+todos\s+modos)|igual\s+te\s+(?:l[oa]\s+)?(?:explico|cuento|respondo)|con\s+lo\s+que\s+s[ée]|por\s+lo\s+que\s+(?:yo\s+)?s[ée])\b/i;
 
+/** Lo que dice una abstención DE VERDAD después del "pero": te devuelve la
+ *  pelota en vez de enseñar. */
+const INVITA_RE =
+  /\b(reformul|otro\s+tema|otra\s+pregunta|sub[íi]s?\b|subir|plan\s+de\s+estudio|simulaci[óo]n\s+de\s+prueba)/i;
+
+/**
+ * ¿El turno es una NEGATIVA, o un "no está en tu libro… PERO igual te enseño"?
+ *
+ * La diferencia no está en la negación —las dos arrancan igual— sino en lo que
+ * viene después. Medido sobre las respuestas reales del subconjunto: las tres
+ * marcadas como abstención decían "no tengo el material específico… pero te
+ * puedo explicar la lógica general", "…pero por lo general se enseña que…",
+ * "…pero en la historia clásica…", y seguían con la clase entera. Contarlas como
+ * negativas invierte el signo de la única métrica que distingue "el umbral está
+ * mal calibrado" de "el prompt es demasiado miedoso".
+ */
 export function looksLikeSelfAbstention(text: string): boolean {
   const inicio = text.slice(0, 240);
-  return SELF_ABSTAIN_RE.test(inicio) && !RESPONDE_IGUAL_RE.test(inicio);
+  if (!SELF_ABSTAIN_RE.test(inicio)) return false;
+  if (RESPONDE_IGUAL_RE.test(inicio)) return false;
+  const pero = text.search(/\b(pero|aunque|igual(?:mente)?|de\s+todos\s+modos)\b/i);
+  const sigueEnsenando =
+    pero >= 0 && pero < 240 &&
+    text.length - pero > 120 &&
+    !INVITA_RE.test(text.slice(pero, pero + 240));
+  return !sigueEnsenando;
 }
 
 function on(): boolean {
