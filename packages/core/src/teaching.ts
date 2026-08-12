@@ -14,7 +14,7 @@ import {
 } from "@tutor-ia/rag";
 import { chatStream, type ChatMsg } from "./client";
 import { config } from "./config";
-import { normalizeStudentQuery } from "./query-normalize";
+import { limpiarMuletillas, normalizeStudentQuery } from "./query-normalize";
 import { TEACHING_SYSTEM, buildTeachingTurn } from "./prompts";
 import { validarPreguntaFinal } from "./closing-question";
 import type { ChatMessage } from "./types";
@@ -111,13 +111,56 @@ function retrievalQuery(req: TeachRequest): { query: string; vague: boolean; pre
   // ayuda desde entonces.
   const conTema = (req.history ?? [])
     .filter((m) => m.role === "user")
-    .filter((m) => !VAGUE_RE.test(m.content.trim()));
-  const prevUser = conTema.slice(-2).map((m) => m.content).join(" ");
+    .filter((m) => !sinTema(m.content));
+  // EL TEMA PUEDE HABERLO PUESTO EL TUTOR.
+  //
+  // Si el alumno nunca dijo un tema, la ventana queda vacía… y eso pasa
+  // justamente cuando el tutor ACABA DE PROPONER UNO y el chico aceptó. Visto en
+  // pantalla: "¡Hola! ¿Arrancamos por «Relaciones filogenéticas y coevolución»?"
+  // → "Perfecto, si quieren empezar con eso." → la consulta era "Hola Hola
+  // Perfecto, si quieren empezar con eso", sin una sola palabra de contenido, no
+  // había material, y el tutor volvía a preguntar de qué tema quería hablar.
+  // Después de que el chico ya le dijo que sí.
+  const ventana = conTema.slice(-2).map((m) => m.content).join(" ");
+  // La propuesta del tutor se usa SOLO si el turno de ahora tampoco trae tema.
+  // Si el chico ignora lo que le ofrecieron y pregunta otra cosa ("¿qué es la
+  // célula?"), meter el tema propuesto le ensucia SU pregunta con un tema que
+  // decidió no estudiar.
+  const actualSinTema = sinTema(req.question);
+  const prevUser = ventana || (actualSinTema ? temaPropuesto(req.history ?? []) : "");
   // Un pedido vago ("dame otro ejemplo", "no entendí") NO aporta tema y diluye el
   // retrieval; si ya hay tema en la charla, dejá que ése mande.
-  const vague = Boolean(prevUser) && VAGUE_RE.test(req.question.trim());
-  const q = vague ? "" : req.question;
+  const vague = Boolean(prevUser) && actualSinTema;
+  // A la BÚSQUEDA va la pregunta sin muletillas de arranque; al modelo y a los
+  // regex (social/vago/trabado) va la original, donde el registro es señal.
+  const q = vague ? "" : limpiarMuletillas(req.question);
   return { query: `${prevUser} ${q}`.trim(), vague, prevUser };
+}
+
+/**
+ * Turnos que NO aportan tema: pedidos vagos, saludos, agradecimientos y
+ * aceptaciones. Antes solo se filtraban los vagos, así que un "Hola Hola" se
+ * quedaba en la ventana y se usaba como consulta de búsqueda.
+ */
+function sinTema(texto: string): boolean {
+  const t = texto.trim();
+  return VAGUE_RE.test(t) || GREETING_RE.test(t) || GRACIAS_RE.test(t) ||
+    AFIRMACION_RE.test(t) || ACEPTA_RE.test(t);
+}
+
+/**
+ * El tema que propuso el tutor en su último turno. Prefiere lo que está ENTRE
+ * COMILLAS —así se ofrece el tema del plan— y si no, el arranque del mensaje.
+ */
+function temaPropuesto(history: ChatMessage[]): string {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const m = history[i]!;
+    if (m.role !== "assistant") continue;
+    const entrecomillado = m.content.match(/[“"«]([^”"»]{4,80})[”"»]/);
+    if (entrecomillado) return entrecomillado[1]!.trim();
+    return m.content.replace(/\s+/g, " ").trim().slice(0, 160);
+  }
+  return "";
 }
 
 /**
@@ -232,6 +275,25 @@ const BYE_RE = /^\s*(chau+|chao|adi[óo]s|nos\s*vemos|hasta\s*(luego|pronto|ma[�
 const AFIRMACION_RE =
   /^\s*(genial|perfecto|buen[íi]simo|excelente|ok|okey|okay|dale|listo|entend[íi]|clar[íi]?simo|de\s*acuerdo)[\s,.!]*$/i;
 const GRACIAS_RE = /^\s*(much[ao]s?\s*)?gracias[\s,.!]*$/i;
+
+/**
+ * ACEPTAR LO QUE EL TUTOR PROPUSO: "dale", "perfecto, empecemos con eso", "sí,
+ * vamos con eso". No es un tema —no tiene una sola palabra de contenido— pero
+ * tampoco es un mensaje social: es un SÍ, y lo que sigue tiene que ser la clase
+ * del tema propuesto, no otra pregunta.
+ */
+const ACEPTA_RE = new RegExp(
+  "^\\s*(?:(?:s[íi]|ok(?:ey|ay)?|dale|listo|perfecto|genial|buen[íi]simo|excelente|clar[oi]|de\\s*acuerdo|obvio)[\\s,.!]*)*" +
+    "(?:(?:s[íi]|si)\\s+)?(?:(?:quer[ée]s|quieren|quieres|podemos|pod[ée]s|puedes)\\s+)?" +
+    "(?:empez(?:ar|amos|á)|empec(?:emos|é)|arranc(?:ar|amos|á)|arranqu(?:emos|é)|comenz(?:ar|amos|á)|" +
+    "comenc(?:emos|é)|seguimos|sigamos|vamos|veamos|hagamos|dale)\\b" +
+    // La cola SOLO puede señalar hacia atrás. Con un comodín acá, "empecemos con
+    // la fotosíntesis" —que sí trae tema— quedaba marcado como aceptación y su
+    // tema no llegaba a la búsqueda.
+    "(?:\\s*(?:con|por|desde)?\\s*(?:eso|esto|ese|esa|aquello|ah[íi]|entonces|ya|nom[áa]s|" +
+    "de\\s+una|primero|el\\s+primero|ese\\s+tema|ese\\s+punto))*[\\s,.!¡¿?]*$",
+  "i",
+);
 
 /**
  * LAS FRASES FIJAS SON SOLO PARA LA PUERTA DE ENTRADA.

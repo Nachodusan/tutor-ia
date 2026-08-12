@@ -36,6 +36,47 @@ Reglas ESTRICTAS:
 - NO inventes nombres propios que el estudiante no dijo.
 - Devolvé SOLO la pregunta reescrita, sin comillas ni explicación.`;
 
+/**
+ * MULETILLAS DE ARRANQUE — se sacan de la CONSULTA, nunca del mensaje.
+ *
+ * Medido con el mismo material y la misma pregunta:
+ *   "¿qué es una célula?"                    → topScore 0.383, 6 fragmentos
+ *   "no, mejor explicame qué es una célula"  → topScore 0.084, NADA
+ * La misma duda, escrita como habla un chico, se quedaba sin libro. Y es la
+ * forma en que se escribe cuando la conversación ya empezó: es justo el turno
+ * donde el tutor tiene que estar más fino, no menos.
+ *
+ * El puente por LLM (abajo) ataca lo mismo pero cuesta una llamada y solo corre
+ * cuando el gate ya cortó; esto es determinista, gratis y corre siempre. Se
+ * sacan SOLO arranques cerrados —interjecciones, conectores y verbos de pedido—
+ * y nunca contenido: si al terminar no queda nada sustantivo, se usa la original.
+ */
+const MULETILLAS: RegExp[] = [
+  // "no," · "sí" · "ok" · "dale" · "bueno" · "ah" · "oye" · "profe" · "mirá"
+  /^(?:no|s[íi]|ok(?:ey|ay)?|dale|bueno|ah+|eh+|mmm+|oye|profe|hola|mir[áa]|mira|escuch[áa])\b[\s,.:;!¡]*/i,
+  // conectores de arranque
+  /^(?:mejor|entonces|ahora|igual|pero|y|adem[áa]s|tambi[ée]n|a\s+ver)\b[\s,.:;!¡]*/i,
+  // "me podés" · "podrías" · "quiero saber" · "necesito que me"
+  /^(?:me\s+)?(?:pod[ée]s|puedes|podr[íi]as|quiero\s+saber|quiero\s+que\s+me|necesito\s+que\s+me|necesito|quiero)\b[\s,.:;]*/i,
+  // verbos de pedido: "explicame", "contame", "decime", "enseñame", "hablame de"
+  /^(?:explic[áa]r?(?:me(?:l[oa])?)?|expl[íi]came|cont[áa]r?me|dec[íi]r?me|ens[eé][ñn][áa]?r?me|h[áa]bl[áa]?r?me\s+de|ayud[áa]me\s+con)\b[\s,.:;]*/i,
+  // cortesía al principio
+  /^(?:por\s*favor|porfa+|porfis|plis)\b[\s,.:;]*/i,
+];
+
+/** Saca las muletillas de arranque. Devuelve la original si no queda nada. */
+export function limpiarMuletillas(q: string): string {
+  let t = q.trim().replace(/^[¿¡\s]+/, "");
+  for (let vuelta = 0; vuelta < 6; vuelta++) {
+    const antes = t;
+    for (const re of MULETILLAS) t = t.replace(re, "");
+    t = t.replace(/^[¿¡\s,.:;]+/, "");
+    if (t === antes) break;
+  }
+  // Que quede algo con sustancia: si de "no, dale" no sobra nada, la original.
+  return t.trim().length >= 4 ? t.trim() : q.trim();
+}
+
 export interface NormalizedQuery {
   /** La consulta a usar: la reescrita, o la original si falló o no cambió. */
   query: string;
