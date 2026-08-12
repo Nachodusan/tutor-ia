@@ -15,7 +15,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Bubble, CallOverlay } from "../../../chat-ui";
-import { C, FONT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, subjectLabel } from "../../../ui";
+import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, subjectLabel } from "../../../ui";
 import { traerMateria } from "../../../datos";
 import type { CallState, Msg, Subject } from "../../../tipos";
 
@@ -40,6 +40,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
+  const [foco, setFoco] = useState(false);   // el compositor se ilumina al escribir
   const sessionRef = useRef<string | null>(null);
   const messagesRef = useRef<Msg[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -240,18 +241,21 @@ export default function ChatPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <div style={{ position: "relative", display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Leer en voz alta lo que el tutor responde, sin entrar en conversación:
-          sirve para el que quiere escuchar mientras lee. */}
-      <div style={{ display: "flex", justifyContent: "flex-end", padding: "8px 16px 0" }}>
+          sirve para el que quiere escuchar mientras lee. También flota: es un
+          control de la pantalla, no parte de la conversación. */}
+      <div style={{ display: "flex", justifyContent: "flex-end", padding: "10px 16px 0" }}>
         <button onClick={() => setTtsOn((v) => !v)} title={ttsOn ? "Dejar de leer en voz alta" : "Leer las respuestas en voz alta"}
           aria-label={ttsOn ? "Dejar de leer en voz alta" : "Leer las respuestas en voz alta"}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, background: ttsOn ? C.userBubble : "transparent", color: ttsOn ? C.accentSoft : C.dim, border: `1.5px solid ${ttsOn ? C.accentSoft : C.border}`, borderRadius: 999, padding: "5px 11px", fontSize: 12, fontFamily: FONT.round, fontWeight: 600, cursor: "pointer" }}>
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, background: ttsOn ? C.userBubble : C.panel, color: ttsOn ? C.accentSoft : C.dim, border: `1px solid ${ttsOn ? C.accentSoft : C.border}`, borderRadius: 999, padding: "7px 13px", fontSize: 12, fontFamily: FONT.round, fontWeight: 600, cursor: "pointer", boxShadow: SOFT }}>
           {ttsOn ? <IconVolume size={14} /> : <IconVolumeOff size={14} />}
           {ttsOn ? "Leyendo" : "Leer en voz alta"}
         </button>
       </div>
-      <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 16px 8px" }}>
+      {/* El padding de abajo es el alto del compositor flotante: sin eso, el
+          último mensaje queda debajo y no hay scroll que lo saque. */}
+      <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 16px 104px" }}>
         <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
           {messages.length === 0 && (
             <div style={{ textAlign: "center", color: C.dim, padding: "36px 12px", fontSize: 14.5, lineHeight: 1.6 }}>
@@ -262,31 +266,54 @@ export default function ChatPage() {
           {messages.map((m, i) => <Bubble key={i} m={m} />)}
         </div>
       </div>
-      <div style={{ borderTop: `1px solid ${C.border}`, background: C.bg, padding: "10px 16px 14px", flexShrink: 0 }}>
-        <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", gap: 8, alignItems: "flex-end" }}>
-          <input
-            value={question} onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
-            placeholder="¿Qué querés que te explique?"
-            style={{ flex: 1, minWidth: 0, background: C.panel2, border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 15, fontFamily: FONT.sans, color: C.text, outline: "none" }} />
-          <button onClick={() => void send()} disabled={loading || !question.trim()} title="Enviar"
-            style={{ flexShrink: 0, width: 44, height: 44, display: "grid", placeItems: "center", borderRadius: 12, border: `2px solid ${C.ink}`, background: loading || !question.trim() ? C.panel2 : C.accent, color: loading || !question.trim() ? C.dim : "#fff", cursor: loading || !question.trim() ? "default" : "pointer" }}>
-            {loading ? <Dots /> : <IconSend size={18} />}
-          </button>
-          {/* HABLAR — modo conversación, al lado de enviar. Es manos libres: el
-              micrófono escucha, corta solo cuando dejás de hablar y el tutor
-              contesta en voz alta. Va acá y no escondido en el encabezado
-              porque es una forma de MANDAR el mensaje, igual que la flecha. */}
-          <button onClick={() => (callState === "idle" ? void startCall() : endCall())}
-            title={callState === "idle" ? "Hablar con el tutor" : "Cortar"}
-            aria-label={callState === "idle" ? "Hablar con el tutor" : "Cortar"}
-            style={{ flexShrink: 0, width: 44, height: 44, display: "grid", placeItems: "center", borderRadius: 12, border: `2px solid ${C.ink}`, background: callState === "idle" ? C.accentSoft : C.bad, color: "#fff", cursor: "pointer" }}>
-            <IconWave size={19} />
-          </button>
+      {/* EL COMPOSITOR, EN EL AIRE.
+          Antes era una barra pegada al borde de abajo, con su línea divisoria y
+          su fondo: partía la pantalla en dos y el chat terminaba en un zócalo.
+          Ahora flota sobre la conversación — que sigue corriendo por debajo — y
+          la única separación es la sombra.
+
+          Que flote trae dos problemas y los dos se resuelven acá:
+           · El último mensaje quedaría tapado. Por eso el scroll lleva
+             `paddingBottom` del alto de esta zona (ALTO_COMPOSITOR).
+           · El texto pasaría POR DETRÁS y se leería cortado a la mitad. Por eso
+             el velo: un degradado al color del fondo que lo disuelve antes de
+             llegar. `pointerEvents: "none"` para no comerse los clics de las
+             burbujas que quedan debajo. */}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "0 16px 20px", pointerEvents: "none" }}>
+        <div aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, top: -48, background: `linear-gradient(to top, ${C.bg} 58%, rgba(255,255,255,0))` }} />
+        <div style={{ position: "relative", maxWidth: 720, margin: "0 auto", pointerEvents: "auto" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", background: C.panel, border: `1px solid ${foco ? C.accentSoft : C.border}`, borderRadius: 27, padding: 7, boxShadow: foco ? `${FLOAT}, 0 0 0 3px rgba(108,92,231,.14)` : FLOAT, transition: "border-color .15s, box-shadow .15s" }}>
+            <input
+              value={question} onChange={(e) => setQuestion(e.target.value)}
+              onFocus={() => setFoco(true)} onBlur={() => setFoco(false)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
+              placeholder="¿Qué querés que te explique?"
+              style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", borderRadius: 20, padding: "11px 8px 11px 16px", fontSize: 15.5, fontFamily: FONT.sans, color: C.text, outline: "none" }} />
+            <button onClick={() => void send()} disabled={loading || !question.trim()} title="Enviar"
+              style={{ flexShrink: 0, width: 42, height: 42, display: "grid", placeItems: "center", borderRadius: "50%", border: "none", background: loading || !question.trim() ? C.panel2 : CTA, color: loading || !question.trim() ? C.dim : "#fff", cursor: loading || !question.trim() ? "default" : "pointer", boxShadow: loading || !question.trim() ? "none" : "0 8px 18px -7px rgba(108,92,231,.75)", transition: "background .15s, box-shadow .15s" }}>
+              {loading ? <Dots /> : <IconSend size={18} />}
+            </button>
+            {/* HABLAR — modo conversación, al lado de enviar. Es manos libres: el
+                micrófono escucha, corta solo cuando dejás de hablar y el tutor
+                contesta en voz alta. Va acá y no escondido en el encabezado
+                porque es una forma de MANDAR el mensaje, igual que la flecha.
+                Queda en blanco y no relleno: dos círculos llenos uno al lado del
+                otro pelean, y el que manda es la flecha. */}
+            <button onClick={() => (callState === "idle" ? void startCall() : endCall())}
+              title={callState === "idle" ? "Hablar con el tutor" : "Cortar"}
+              aria-label={callState === "idle" ? "Hablar con el tutor" : "Cortar"}
+              style={{ flexShrink: 0, width: 42, height: 42, display: "grid", placeItems: "center", borderRadius: "50%", border: callState === "idle" ? `1.5px solid ${C.border}` : "none", background: callState === "idle" ? C.panel : C.bad, color: callState === "idle" ? C.accentSoft : "#fff", cursor: "pointer", boxShadow: callState === "idle" ? SOFT : "0 8px 18px -7px rgba(212,36,25,.7)" }}>
+              <IconWave size={19} />
+            </button>
+          </div>
+          {/* Acá abajo iba "El tutor enseña con tu material · si algo no está en
+              tu libro, te avisa". Se fue, y no se perdió nada: con el chat en
+              blanco lo dice la pantalla vacía con esas mismas palabras (estaban
+              duplicadas en la misma vista), y con la conversación empezada lo
+              dice mucho mejor el sello de CADA respuesta. Lo único que aportaba
+              era apretar la barra contra el borde — en pantalla angosta se
+              partía en dos líneas. */}
         </div>
-        <p style={{ textAlign: "center", color: C.dim, fontSize: 11.5, marginTop: 8 }}>
-          El tutor enseña con tu material · si algo no está en tu libro, te avisa
-        </p>
       </div>
       {callState !== "idle" && (
         <CallOverlay

@@ -40,6 +40,14 @@ export const FONT = {
 export const HARD = (c: string) => `4px 4px 0 0 ${c}`;
 /** Sombra difusa (Aurora): la burbuja flota. */
 export const SOFT = "0 6px 20px -8px rgba(40,30,60,.20)";
+/**
+ * Sombra de ELEVACIÓN (Aurora): lo que está por encima del contenido y no
+ * pertenece al flujo — el compositor del chat, sus botones. Dos capas a
+ * propósito: la difusa da la altura, la corta apoya el borde para que el objeto
+ * no parezca despegado del todo. Con una sola, o flota como calcomanía o no se
+ * despega nada.
+ */
+export const FLOAT = "0 16px 36px -16px rgba(40,30,60,.34), 0 3px 10px -5px rgba(40,30,60,.12)";
 
 // ── Etiquetas ───────────────────────────────────────────────────────────────
 export const gradeLabel = (g: string) => `${g.slice(0, -1)}° ${g.endsWith("M") ? "Medio" : "Básico"}`;
