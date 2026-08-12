@@ -1,87 +1,89 @@
 "use client";
 /**
- * LA PRUEBA — página propia.
+ * LAS PRUEBAS RENDIDAS — la pantalla que abre "Prueba".
  *
- * Antes se abría ENCIMA del chat, así que rendirla y volver era un cambio de
- * estado invisible: sin URL, sin "atrás", y con el chat entero todavía montado
- * abajo. Acá es una página: se puede compartir el link, volver con el navegador
- * y salir sin perder nada (lo que importa se guardó en el servidor al corregir).
+ * Antes tocar "Prueba" generaba una nueva al instante. Eso perdía todo lo
+ * anterior: la prueba se veía una vez al corregir y desaparecía, aunque quedara
+ * guardada entera en la base. Y es justo lo que un chico quiere mirar la noche
+ * antes de la prueba de verdad — qué le tomaron y en qué se equivocó.
+ *
+ * Ahora esto es el listado, y rendir una nueva es un botón.
  */
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { TestView } from "../../../prueba";
-import { subjectLabel } from "../../../ui";
-import { traerMateria } from "../../../datos";
-import type { Subject, TestItem } from "../../../tipos";
+import { C, FONT, HARD, Dots, IconClipboard, IconChevron, IconArrow, scoreTone } from "../../../ui";
 
-export default function PruebaPage() {
+interface Intento { id: string; at: string; score: number; total: number }
+
+const FECHA = new Intl.DateTimeFormat("es-CL", {
+  day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+});
+
+export default function PruebasPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [subject, setSubject] = useState<Subject | undefined>();
-  const [items, setItems] = useState<TestItem[] | null>(null);
-  const [testId, setTestId] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [intentos, setIntentos] = useState<Intento[] | null>(null);
 
   useEffect(() => {
-    void traerMateria(id).then(setSubject);
+    fetch(`/api/test/historial?subjectId=${id}`)
+      .then((r) => r.json())
+      .then((j) => setIntentos(j.intentos ?? []))
+      .catch(() => setIntentos([]));
   }, [id]);
 
-  // La prueba se arma al ENTRAR: llegar a esta página ya es pedirla, y un botón
-  // "generar" antes de la prueba sería un clic que no decide nada.
-  useEffect(() => { void generar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id]);
-
-  async function generar() {
-    if (loading) return;
-    setLoading(true); setItems(null); setTestId(null); setAnswers({}); setSubmitted(false);
-    try {
-      const r = await fetch("/api/test", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId: id, subjectName: subject ? subjectLabel(subject) : null }),
-      });
-      const j = await r.json();
-      setItems(r.ok ? (j.items ?? []) : []);
-      setTestId(r.ok ? (j.testId ?? null) : null);
-    } catch { setItems([]); }
-    finally { setLoading(false); }
-  }
-
-  async function corregir() {
-    if (!items || !testId) return;
-    try {
-      // La clave vive en el servidor: se mandan SOLO las respuestas.
-      const r = await fetch("/api/test/submit", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ testId, answers: items.map((it) => answers[it.n] ?? null) }),
-      });
-      if (!r.ok) return;
-      const j = await r.json();
-      const porN = new Map<number, { correct: number; explain: string }>(
-        (j.key ?? []).map((k: { n: number; correct: number; explain: string }) => [k.n, k]),
-      );
-      setItems((prev) => (prev ?? []).map((it) => ({ ...it, ...(porN.get(it.n) ?? {}) })));
-      setSubmitted(true);
-    } catch { /* que reintente */ }
-  }
-
-  /** "Estudiar esto" desde el resultado: va al chat con la pregunta armada. */
-  function estudiar(it: TestItem) {
-    const q = `Quiero repasar: ${it.topic}. Explicámelo simple, desde el principio y con un ejemplo.`;
-    const p = new URLSearchParams({ q, unit: String(it.unit ?? ""), lesson: String(it.lesson ?? "") });
-    router.push(`/materia/${id}/chat?${p}`);
-  }
-
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 16px 28px" }}>
-      <TestView
-        items={items} loading={loading} answers={answers} submitted={submitted} subject={subject}
-        onAnswer={(n, i) => { if (!submitted) setAnswers((a) => ({ ...a, [n]: i })); }}
-        onSubmit={corregir}
-        onRetake={generar}
-        onStudy={estudiar}
-        onClose={() => router.push(`/materia/${id}/camino`)}
-      />
+    <div style={{ maxWidth: 620, margin: "0 auto", padding: "16px 16px 32px" }}>
+      <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 21 }}>Simulación de prueba</div>
+      <div style={{ color: C.dim, fontSize: 13.5, marginTop: 2, lineHeight: 1.45 }}>
+        Preguntas de opción múltiple armadas con tu material. Podés volver a mirar
+        las que ya rendiste.
+      </div>
+
+      <button onClick={() => router.push(`/materia/${id}/prueba/nueva`)}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, width: "100%", textAlign: "left", marginTop: 16, background: C.coral, color: "#fff", border: `2px solid ${C.ink}`, borderRadius: 14, boxShadow: HARD(C.ink), padding: "15px 16px", cursor: "pointer" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+          <span style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 11, display: "grid", placeItems: "center", background: "rgba(255,255,255,.22)" }}>
+            <IconClipboard size={20} />
+          </span>
+          <span style={{ minWidth: 0 }}>
+            <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 16 }}>Rendir una prueba nueva</span>
+            <span style={{ display: "block", fontSize: 13, opacity: .9, marginTop: 1 }}>Se arma en el momento con tu libro</span>
+          </span>
+        </span>
+        <IconArrow size={20} />
+      </button>
+
+      <div style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 13, color: C.dim, textTransform: "uppercase", letterSpacing: .6, margin: "26px 0 10px" }}>
+        Las que rendiste
+      </div>
+
+      {intentos === null && <div style={{ color: C.dim }}><Dots /></div>}
+
+      {intentos?.length === 0 && (
+        <div style={{ color: C.dim, fontSize: 14, lineHeight: 1.55, background: C.panel2, border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "14px 15px" }}>
+          Todavía no rendiste ninguna. Cuando lo hagas, van a quedar acá con sus
+          preguntas y tus respuestas, para que puedas repasarlas.
+        </div>
+      )}
+
+      <div style={{ display: "grid", gap: 10 }}>
+        {(intentos ?? []).map((i) => {
+          // El color sigue a la nota: un 2 de 8 en verde leía como logro.
+          const t = scoreTone(i.total > 0 ? i.score / i.total : 0);
+          return (
+            <button key={i.id} onClick={() => router.push(`/materia/${id}/prueba/${i.id}`)}
+              style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 14, padding: "13px 14px", cursor: "pointer" }}>
+              <span style={{ flexShrink: 0, fontFamily: FONT.round, fontWeight: 800, fontSize: 15, color: t.tx, background: t.bg, border: `1.5px solid ${t.tx}`, borderRadius: 999, padding: "4px 11px" }}>
+                {i.score}/{i.total}
+              </span>
+              <span style={{ minWidth: 0, flex: 1, fontSize: 13.5, color: C.text }}>
+                {FECHA.format(new Date(i.at))}
+              </span>
+              <span style={{ color: C.dim, flexShrink: 0 }}><IconChevron size={18} /></span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
