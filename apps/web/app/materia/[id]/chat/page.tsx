@@ -66,6 +66,16 @@ export default function ChatPage() {
   // y el AudioContext vivo. Se corta al desmontar, pase lo que pase.
   useEffect(() => () => { if (callRef.current) endCall(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Escape corta. Desde que terminar es UN botón —el mismo que arrancó—, no
+  // tener salida de teclado dejaba encerrado a quien no puede tocarlo (y al que
+  // se le abrió sin querer).
+  useEffect(() => {
+    if (callState === "idle") return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") endCall(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [callState]);   // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
 
@@ -279,20 +289,39 @@ export default function ChatPage() {
              el velo: un degradado al color del fondo que lo disuelve antes de
              llegar. `pointerEvents: "none"` para no comerse los clics de las
              burbujas que quedan debajo. */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "0 16px 20px", pointerEvents: "none" }}>
-        <div aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, top: -48, background: `linear-gradient(to top, ${C.bg} 58%, rgba(255,255,255,0))` }} />
+      {/* `zIndex` POR ENCIMA del overlay de voz (50) mientras dura la llamada:
+          es lo que hace que cortar sea el MISMO botón que arrancó. Sin esto, el
+          vidrio esmerilado lo tapa y hay que buscar otro botón para terminar. */}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "0 16px 20px", pointerEvents: "none", zIndex: callState === "idle" ? undefined : 60 }}>
+        {/* El velo se va durante la llamada: es una banda opaca del color del
+            fondo y, sobre el vidrio, se vería como un zócalo blanco justo donde
+            se quiso transparencia. */}
+        {callState === "idle" && (
+          <div aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, top: -48, background: `linear-gradient(to top, ${C.bg} 58%, rgba(255,255,255,0))` }} />
+        )}
         <div style={{ position: "relative", maxWidth: 720, margin: "0 auto", pointerEvents: "auto" }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", background: C.panel, border: `1px solid ${foco ? C.accentSoft : C.border}`, borderRadius: 27, padding: 7, boxShadow: foco ? `${FLOAT}, 0 0 0 3px rgba(108,92,231,.14)` : FLOAT, transition: "border-color .15s, box-shadow .15s" }}>
-            <input
-              value={question} onChange={(e) => setQuestion(e.target.value)}
-              onFocus={() => setFoco(true)} onBlur={() => setFoco(false)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
-              placeholder="¿Qué querés que te explique?"
-              style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", borderRadius: 20, padding: "11px 8px 11px 16px", fontSize: 15.5, fontFamily: FONT.sans, color: C.text, outline: "none" }} />
-            <button onClick={() => void send()} disabled={loading || !question.trim()} title="Enviar"
-              style={{ flexShrink: 0, width: 42, height: 42, display: "grid", placeItems: "center", borderRadius: "50%", border: "none", background: loading || !question.trim() ? C.panel2 : CTA, color: loading || !question.trim() ? C.dim : "#fff", cursor: loading || !question.trim() ? "default" : "pointer", boxShadow: loading || !question.trim() ? "none" : "0 8px 18px -7px rgba(108,92,231,.75)", transition: "background .15s, box-shadow .15s" }}>
-              {loading ? <Dots /> : <IconSend size={18} />}
-            </button>
+            {/* Durante la llamada el compositor no escribe: dice cómo salir. Si
+                se dejara el campo, se podría mandar una pregunta escrita en el
+                medio del turno de voz y las dos respuestas se pisarían. */}
+            {callState === "idle" ? (
+              <>
+                <input
+                  value={question} onChange={(e) => setQuestion(e.target.value)}
+                  onFocus={() => setFoco(true)} onBlur={() => setFoco(false)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
+                  placeholder="¿Qué querés que te explique?"
+                  style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", borderRadius: 20, padding: "11px 8px 11px 16px", fontSize: 15.5, fontFamily: FONT.sans, color: C.text, outline: "none" }} />
+                <button onClick={() => void send()} disabled={loading || !question.trim()} title="Enviar"
+                  style={{ flexShrink: 0, width: 42, height: 42, display: "grid", placeItems: "center", borderRadius: "50%", border: "none", background: loading || !question.trim() ? C.panel2 : CTA, color: loading || !question.trim() ? C.dim : "#fff", cursor: loading || !question.trim() ? "default" : "pointer", boxShadow: loading || !question.trim() ? "none" : "0 8px 18px -7px rgba(108,92,231,.75)", transition: "background .15s, box-shadow .15s" }}>
+                  {loading ? <Dots /> : <IconSend size={18} />}
+                </button>
+              </>
+            ) : (
+              <span style={{ flex: 1, minWidth: 0, padding: "11px 8px 11px 16px", fontSize: 14.5, fontFamily: FONT.round, fontWeight: 600, color: C.dim }}>
+                Tocá para cortar
+              </span>
+            )}
             {/* HABLAR — modo conversación, al lado de enviar. Es manos libres: el
                 micrófono escucha, corta solo cuando dejás de hablar y el tutor
                 contesta en voz alta. Va acá y no escondido en el encabezado
@@ -320,7 +349,6 @@ export default function ChatPage() {
           state={callState} levelRef={levelRef}
           subject={subject ? subjectLabel(subject) : "tu materia"}
           lastMsg={messages[messages.length - 1]}
-          onEnd={endCall}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { C, FONT, SOFT, AURORA, AuroraDot, Dots, IconVolume, IconCheck, IconAlert, IconX, IconChevron, IconBook } from "./ui";
+import { C, FONT, SOFT, AURORA, AuroraDot, Dots, IconVolume, IconCheck, IconAlert, IconChevron, IconBook } from "./ui";
 import type { AnswerMode, AnswerScope, Citation, Msg, Verification, CallState } from "./tipos";
 
 export function VoiceOrb({ levelRef, state }: { levelRef: React.RefObject<number>; state: CallState }) {
@@ -29,10 +29,32 @@ export function VoiceOrb({ levelRef, state }: { levelRef: React.RefObject<number
   );
 }
 
-export function CallOverlay({ state, levelRef, subject, lastMsg, onEnd }: { state: CallState; levelRef: React.RefObject<number>; subject: string; lastMsg?: Msg; onEnd: () => void }) {
+/**
+ * EL MODO CONVERSACIÓN, ENCIMA DE LA CONVERSACIÓN.
+ *
+ * Antes era una pantalla opaca (un degradado blanco a pantalla completa): al
+ * entrar en modo voz, el chat desaparecía. Ahora es un VIDRIO ESMERILADO — se
+ * ve lo que hay abajo, desenfocado — así que se entiende que seguís en la misma
+ * conversación y no en otra pantalla.
+ *
+ * Y NO TIENE BOTÓN DE TERMINAR. Cortar es el mismo botón que arrancó: el de voz
+ * del compositor, que queda POR ENCIMA de este vidrio (z-index) y se pone rojo
+ * mientras dura la llamada. Un botón para empezar y otro distinto para terminar
+ * obliga a buscar dónde quedó el segundo.
+ */
+export function CallOverlay({ state, levelRef, subject, lastMsg }: { state: CallState; levelRef: React.RefObject<number>; subject: string; lastMsg?: Msg }) {
   const label = state === "listening" ? "Escuchando…" : state === "thinking" ? "Pensando…" : "Hablando…";
   return (
-    <div style={{ position: "fixed", inset: 0, background: "radial-gradient(circle at 50% 32%, #F7F5FF, #FFFFFF)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, zIndex: 50, padding: 24, color: C.text }}>
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 50, padding: 24, color: C.text,
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20,
+      // El velo tiene que dejar ver y a la vez dar contraste al texto de arriba:
+      // solo blur, sin capa de color, y las burbujas de abajo compiten con el
+      // rótulo; solo capa de color, y volvemos a la pantalla opaca.
+      background: "rgba(255,255,255,.5)",
+      backdropFilter: "blur(13px) saturate(1.35)",
+      WebkitBackdropFilter: "blur(13px) saturate(1.35)",
+    }}>
       <div style={{ color: C.dim, fontFamily: FONT.round, fontWeight: 600, fontSize: 14, letterSpacing: 0.3 }}>{subject}</div>
       <VoiceOrb levelRef={levelRef} state={state} />
       <div style={{ fontFamily: FONT.round, fontSize: 22, fontWeight: 700, marginTop: 4 }}>{label}</div>
@@ -41,9 +63,6 @@ export function CallOverlay({ state, levelRef, subject, lastMsg, onEnd }: { stat
           : state === "speaking" && lastMsg?.role === "assistant" ? clip(lastMsg.content)
             : "Un momento…"}
       </div>
-      <button onClick={onEnd} style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8, background: C.coral, color: "#fff", border: "none", borderRadius: 999, padding: "13px 26px", cursor: "pointer", fontFamily: FONT.round, fontSize: 15, fontWeight: 700, boxShadow: "0 8px 18px -6px rgba(255,92,58,.5)" }}>
-        <IconX size={18} /> Terminar
-      </button>
     </div>
   );
 }

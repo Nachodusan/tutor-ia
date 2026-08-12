@@ -7,8 +7,8 @@ import type { PlanItem, Subject } from "./tipos";
  * pasó a necesitarla también (ver el submit de la prueba). Se re-exporta para
  * que quien pinta nodos la siga pidiendo acá, donde la busca.
  */
-export { aprobado } from "./nota";
 import { aprobado } from "./nota";
+export { aprobado };
 
 // ── GEOMETRÍA DEL CAMINO ────────────────────────────────────────────────────
 // Antes era una lista vertical: todos los nodos alineados, todas las filas del
