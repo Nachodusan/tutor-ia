@@ -202,7 +202,14 @@ export interface TeachingOptions {
    *  del alumno. Etapa 1 de la cascada. Sin esto la cascada saltea directo a
    *  todo el corpus. */
   familyIds?: string[] | null;
-  /** false → no llegar nunca a la etapa de corpus completo. */
+  /**
+   * Buscar en el corpus ENTERO (otras asignaturas) cuando la propia no alcanza.
+   *
+   * ⚠️ APAGADO POR DEFECTO, y es una decisión de producto, no una calibración:
+   * el alumno entra a UNA materia y espera que le contesten con ESA materia. Ver
+   * el comentario de la etapa, abajo. Las herramientas de medición pueden
+   * encenderlo para estudiar el corpus completo.
+   */
   corpusCompleto?: boolean;
   /** Curso del alumno ("1M"): ordena el material por cercanía de nivel. */
   studentGrade?: string | null;
@@ -530,10 +537,25 @@ export async function retrieveForTeaching(
   // libro del propio curso se queda, aunque puntúe bajo: es el libro que el
   // chico tiene sobre la mesa y con el que lo van a evaluar, y esa es la promesa
   // del producto. La etapa que hay que vigilar es la de al lado, no la de casa.
+  //
+  // ── 2026-08-11: ESTA ETAPA YA NO CORRE EN EL PRODUCTO ───────────────────────
+  // Todo lo de arriba sigue siendo cierto y por eso el código queda: cuando la
+  // etapa corría, así es como tenía que decidir. Lo que cambió es si tiene que
+  // correr, y la respuesta es NO — por producto, no por calibración.
+  //
+  // El alumno entra a Biología y pregunta algo de Biología. Que el tutor le
+  // conteste con el libro de Lengua es raro aunque el fragmento sea bueno:
+  // rompe la promesa de la materia en la que está parado, y el sello que lo
+  // avisaba ("esto lo saqué de otro libro tuyo") explica el salto pero no lo
+  // justifica. Sin esta etapa, lo que antes venía de otra asignatura ahora se
+  // responde en modo `general` —conocimiento propio del tutor, marcado como no
+  // respaldado— que es un encuadre honesto y no mezcla materias.
+  //
+  // Se enciende con `corpusCompleto: true` para medir, nunca para atender.
   const flojo =
     scope === "otro_curso" && (content?.topScore ?? 0) < UMBRAL_OTRA_MATERIA;
   if (
-    !dirigido && !directedOk && opts.corpusCompleto !== false &&
+    !dirigido && !directedOk && opts.corpusCompleto === true &&
     (!content?.grounded || flojo)
   ) {
     // LISTÓN MÁS ALTO para la etapa de otra materia. Un fragmento de Ciencias
