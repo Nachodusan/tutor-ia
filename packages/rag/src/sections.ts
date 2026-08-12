@@ -134,10 +134,22 @@ function muestreoRepartido<T>(xs: T[], k: number): T[] {
 
 export async function getPlanTopics(
   subjectId: string,
-  opts: { limit?: number; spread?: boolean } = {},
+  opts: { limit?: number; spread?: boolean; keys?: string[] } = {},
 ): Promise<PlanTopic[]> {
   const sql = getSql();
   const limit = opts.limit ?? 14;
+  /**
+   * LECCIONES PEDIDAS POR CLAVE — el alumno eligió qué entra en su prueba.
+   *
+   * Manda sobre `spread`: cuando hay un pedido explícito, repartir por todo el
+   * libro sería ignorarlo. Y manda sobre el orden: se respeta el del índice,
+   * que es el que el alumno vio en el camino.
+   *
+   * Si se piden MÁS de `limit`, se reparten a lo largo de LO ELEGIDO (no se
+   * cortan las primeras): la prueba sigue tocando el principio y el final de lo
+   * que el alumno marcó. Quien llama es el que avisa que hubo recorte.
+   */
+  const pedidas = opts.keys?.length ? new Set(opts.keys) : null;
 
   const secciones = await sql<{
     document_id: string; subject_id: string; doc_title: string; ord: number; title: string;
@@ -153,11 +165,21 @@ export async function getPlanTopics(
 
   if (secciones.length >= 3) {
     const variosTomos = new Set(secciones.map((s) => s.document_id)).size > 1;
+    const candidatas = pedidas
+      ? secciones.filter((s) => pedidas.has(claveTema(s.document_id, s.ord, s.title)))
+      : secciones;
     // `spread` reparte por todo el libro (prueba); sin él, el ORDEN del índice
     // manda (plan de estudio: las primeras `limit` lecciones, como siempre).
-    const elegidas = opts.spread
-      ? muestreoRepartido(secciones, limit)
-      : secciones.slice(0, limit);
+    const elegidas = pedidas
+      ? (candidatas.length > limit ? muestreoRepartido(candidatas, limit) : candidatas)
+      : opts.spread
+        ? muestreoRepartido(secciones, limit)
+        : secciones.slice(0, limit);
+    // Con pedido y cero coincidencias se devuelve VACÍO en vez de caer al
+    // legacy: el libro sí tiene índice, así que las claves son de otra cosa
+    // (un plan viejo, otra materia) y servir "el legacy de toda la materia"
+    // sería tomarle una prueba de lo que no eligió.
+    if (elegidas.length === 0) return [];
     const muestras = await muestrasDeRango(elegidas.map((s) => ({
       documentId: s.document_id, pageStart: s.page_start, pageEnd: s.page_end,
     })));
@@ -176,7 +198,14 @@ export async function getPlanTopics(
     }));
   }
 
-  return legacyTopics(subjectId, limit);
+  // Sin índice legible: el fallback legacy. Se pide con el tope del PLAN (14) y
+  // no con `limit`, porque las claves pedidas salieron de ese mismo plan: con un
+  // límite menor, la lección elegida podía quedar fuera de la consulta y "no
+  // existir" para la prueba.
+  const legacy = await legacyTopics(subjectId, pedidas ? Math.max(limit, 14) : limit);
+  if (!pedidas) return legacy;
+  const filtradas = legacy.filter((t) => pedidas.has(t.key));
+  return filtradas.length > limit ? muestreoRepartido(filtradas, limit) : filtradas;
 }
 
 /**

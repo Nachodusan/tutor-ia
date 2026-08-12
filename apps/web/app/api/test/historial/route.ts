@@ -64,8 +64,8 @@ export async function GET(req: Request) {
 
   // El listado NO trae las preguntas: son ~8 por intento con sus 4 opciones, y
   // la pantalla solo muestra fecha y nota. Se piden al abrir uno.
-  const filas = await sql<{ id: string; score: string; submitted_at: Date; total: number }[]>`
-    select a.id, a.score, a.submitted_at,
+  const filas = await sql<{ id: string; score: string; submitted_at: Date; total: number; title: string }[]>`
+    select a.id, a.score, a.submitted_at, e.title,
            jsonb_array_length(e.questions)::int as total
     from exam_attempts a join exams e on e.id = a.exam_id
     where a.user_id = ${auth.userId}::uuid and e.subject_id = ${subjectId}::uuid
@@ -76,11 +76,15 @@ export async function GET(req: Request) {
     // `exam_attempts.score` es el CONTEO de aciertos, no una fracción (ver el
     // submit: `questions.filter(...).length`). Tratarlo como porcentaje daba
     // notas absurdas del tipo "48 de 8".
+    // `title` dice DE QUÉ fue cada prueba desde que el alumno elige los puntos.
+    // Sin eso, dos intentos de la misma materia se ven idénticos en el listado
+    // aunque uno haya sido de una lección sola y el otro de todo el libro.
     intentos: filas.map((f) => ({
       id: f.id,
       at: new Date(f.submitted_at).toISOString(),
       score: Number(f.score),
       total: f.total,
+      title: f.title ?? "",
     })),
   });
 }

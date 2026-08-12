@@ -1,5 +1,6 @@
 import { getSql, toJson } from "@tutor-ia/db";
 import { requireUser, unauthorized } from "@/lib/auth";
+import { aprobado } from "../../../nota";
 
 export const runtime = "nodejs";
 
@@ -63,22 +64,48 @@ export async function POST(req: Request) {
   const total = questions.length;
   const score = questions.filter((q, i) => answers[i] === q.correct).length;
 
+  // EL TEMA SE JUZGA COMPLETO, NO PREGUNTA POR PREGUNTA.
+  //
+  // Desde que el alumno elige qué entra, una prueba puede tomar 8 preguntas del
+  // MISMO punto. Escribiendo de a una, cada acierto borraba la fila y cada error
+  // la volvía a insertar: mandaba la ÚLTIMA pregunta del tema. Con 4 de 8 bien y
+  // la última acertada, el punto quedaba como dominado — y ese es el número que
+  // alimenta "Para reforzar" y el panel del docente.
+  //
+  // La regla es la misma que pinta los nodos del camino (dos tercios): que el
+  // chico vea el mismo criterio en las dos pantallas.
+  const porTema = new Map<
+    string,
+    { topic: string; unit: number | null; lesson: number | null; bien: number; total: number }
+  >();
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i]!;
+    const key = q.key || q.topic || "";
+    if (!key) continue;
+    const t = porTema.get(key) ?? {
+      topic: q.topic ?? key, unit: q.unit ?? null, lesson: q.lesson ?? null, bien: 0, total: 0,
+    };
+    t.total++;
+    if (answers[i] === q.correct) t.bien++;
+    porTema.set(key, t);
+  }
+
   await sql.begin(async (tx) => {
     if (sid) {
-      for (let i = 0; i < questions.length; i++) {
-        const q = questions[i]!;
-        const key = q.key || q.topic || "";
-        if (!key) continue;
-        const acerto = answers[i] === q.correct;
-        if (acerto) {
-          // Acertó: el tema deja de estar para reforzar.
+      for (const [key, t] of porTema) {
+        if (aprobado(t.bien, t.total)) {
+          // Le fue bien: el tema deja de estar para reforzar.
           await tx`
             delete from student_weak_topics
             where user_id = ${uid}::uuid and subject_id = ${sid}::uuid and topic_key = ${key}`;
         } else {
+          // `misses + 1` por PRUEBA y no por pregunta fallada: la columna cuenta
+          // "veces que le fue mal en este tema", y sumar de a una por pregunta
+          // haría incomparables las filas viejas con las nuevas justo en la
+          // columna que ordena la lista de refuerzo.
           await tx`
             insert into student_weak_topics (user_id, subject_id, topic_key, topic, unit, lesson, misses, last_at)
-            values (${uid}::uuid, ${sid}::uuid, ${key}, ${q.topic ?? key}, ${q.unit ?? null}, ${q.lesson ?? null}, 1, now())
+            values (${uid}::uuid, ${sid}::uuid, ${key}, ${t.topic}, ${t.unit}, ${t.lesson}, 1, now())
             on conflict (user_id, subject_id, topic_key) do update set
               misses  = student_weak_topics.misses + 1,
               topic   = excluded.topic,   -- la etiqueta legible se refresca

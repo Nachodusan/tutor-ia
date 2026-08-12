@@ -13,7 +13,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { C, FONT, HARD, Dots, IconClipboard, IconChevron, IconArrow, scoreTone } from "../../../ui";
 
-interface Intento { id: string; at: string; score: number; total: number }
+interface Intento { id: string; at: string; score: number; total: number; title?: string }
+/** El título por defecto no aporta nada en una lista que ya se llama así. */
+const GENERICO = "Simulación de prueba";
 
 const FECHA = new Intl.DateTimeFormat("es-CL", {
   day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
@@ -47,7 +49,7 @@ export default function PruebasPage() {
           </span>
           <span style={{ minWidth: 0 }}>
             <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 16 }}>Rendir una prueba nueva</span>
-            <span style={{ display: "block", fontSize: 13, opacity: .9, marginTop: 1 }}>Se arma en el momento con tu libro</span>
+            <span style={{ display: "block", fontSize: 13, opacity: .9, marginTop: 1 }}>Elegís qué entra y se arma con tu libro</span>
           </span>
         </span>
         <IconArrow size={20} />
@@ -72,12 +74,24 @@ export default function PruebasPage() {
           const t = scoreTone(i.total > 0 ? i.score / i.total : 0);
           return (
             <button key={i.id} onClick={() => router.push(`/materia/${id}/prueba/${i.id}`)}
-              style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 14, padding: "13px 14px", cursor: "pointer" }}>
+              // `minWidth: 0` en el ítem de la grilla: sin eso su ancho mínimo
+              // es el del contenido, y un título largo sin cortes empuja la
+              // tarjeta fuera de la pantalla (con barra horizontal y el chevron
+              // afuera). El `ellipsis` de adentro no alcanza si el de afuera
+              // puede crecer.
+              style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, textAlign: "left", background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 14, padding: "13px 14px", cursor: "pointer" }}>
               <span style={{ flexShrink: 0, fontFamily: FONT.round, fontWeight: 800, fontSize: 15, color: t.tx, background: t.bg, border: `1.5px solid ${t.tx}`, borderRadius: 999, padding: "4px 11px" }}>
                 {i.score}/{i.total}
               </span>
-              <span style={{ minWidth: 0, flex: 1, fontSize: 13.5, color: C.text }}>
-                {FECHA.format(new Date(i.at))}
+              <span style={{ minWidth: 0, flex: 1 }}>
+                <span style={{ display: "block", fontSize: 13.5, color: C.text }}>
+                  {FECHA.format(new Date(i.at))}
+                </span>
+                {i.title && i.title !== GENERICO && (
+                  <span style={{ display: "block", fontSize: 12, color: C.dim, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {i.title}
+                  </span>
+                )}
               </span>
               <span style={{ color: C.dim, flexShrink: 0 }}><IconChevron size={18} /></span>
             </button>

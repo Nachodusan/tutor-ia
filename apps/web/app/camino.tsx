@@ -3,13 +3,12 @@ import { C, FONT, HARD, Dots, IconCheck, IconSpark, IconStar, IconLock, subjectL
 import type { PlanItem, Subject } from "./tipos";
 
 /**
- * ¿Le fue bien en la lección? DOS TERCIOS, no "0.67": `ceil(3 * 0.67)` daba 3, o
- * sea que con 2 de 3 —que es lo que se quiso pedir— el nodo salía ámbar. El
- * redondeo de un decimal escrito a mano se comió la regla entera.
+ * ¿Le fue bien en la lección? La regla se mudó a `nota.ts` cuando el servidor
+ * pasó a necesitarla también (ver el submit de la prueba). Se re-exporta para
+ * que quien pinta nodos la siga pidiendo acá, donde la busca.
  */
-export function aprobado(score: number, total: number): boolean {
-  return total > 0 && score >= Math.ceil((total * 2) / 3);
-}
+export { aprobado } from "./nota";
+import { aprobado } from "./nota";
 
 // ── GEOMETRÍA DEL CAMINO ────────────────────────────────────────────────────
 // Antes era una lista vertical: todos los nodos alineados, todas las filas del

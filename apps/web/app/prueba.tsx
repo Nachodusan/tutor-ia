@@ -1,10 +1,11 @@
 "use client";
 import { C, FONT, HARD, Dots, IconCheck, IconX, IconClipboard, IconArrow, subjectLabel, scoreTone, AuroraDot, BigBtn, IconBack, IconSpark } from "./ui";
+import { aprobado } from "./nota";
 import type { Subject, TestItem } from "./tipos";
 
 const stripOptLetter = (o: string) => o.replace(/^\s*[A-Da-d1-4]\s*[)\.\-:]\s+/, "").trim();
 
-export function TestView({ items, loading, answers, submitted, subject, onAnswer, onSubmit, onRetake, onStudy, onClose }: { items: TestItem[] | null; loading: boolean; answers: Record<number, number>; submitted: boolean; subject?: Subject; onAnswer: (n: number, i: number) => void; onSubmit: () => void; onRetake: () => void; onStudy: (it: TestItem) => void; onClose: () => void }) {
+export function TestView({ items, loading, answers, submitted, subject, error, onAnswer, onSubmit, onRetake, onStudy, onClose }: { items: TestItem[] | null; loading: boolean; answers: Record<number, number>; submitted: boolean; subject?: Subject; error?: string | null; onAnswer: (n: number, i: number) => void; onSubmit: () => void; onRetake: () => void; onStudy: (it: TestItem) => void; onClose: () => void }) {
   const area = subject ? subjectLabel(subject) : "";
   if (loading || items === null) {
     return (
@@ -17,18 +18,50 @@ export function TestView({ items, loading, answers, submitted, subject, onAnswer
     );
   }
   if (items.length === 0) {
+    // El MOTIVO del servidor, cuando lo hay: "no encontré esos puntos" se
+    // arregla volviendo a elegir y "probá de nuevo en un momento" se arregla
+    // reintentando. El cartel único de antes no distinguía, así que el alumno
+    // tenía que adivinar cuál de las dos cosas le pasó.
     return (
       <div style={{ textAlign: "center", padding: "50px 8px", color: C.dim }}>
-        <p style={{ fontSize: 14, lineHeight: 1.5 }}>No pude armar una prueba para esta materia todavía.</p>
-        <div style={{ marginTop: 14 }}><BigBtn onClick={onClose}>Volver</BigBtn></div>
+        <p style={{ fontSize: 14, lineHeight: 1.5, maxWidth: 420, margin: "0 auto" }}>
+          {error ?? "No pude armar una prueba para esta materia todavía."}
+        </p>
+        <div style={{ marginTop: 14, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+          <BigBtn onClick={onRetake}>Probar de nuevo</BigBtn>
+          <button onClick={onClose} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: C.panel, color: C.text, border: `1.5px solid ${C.ink}`, borderRadius: 999, padding: "9px 18px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 700, fontSize: 14 }}>
+            <IconBack size={14} /> Elegir de nuevo
+          </button>
+        </div>
       </div>
     );
   }
   const answered = items.filter((it) => answers[it.n] != null).length;
   const results = items.map((it) => ({ it, ok: answers[it.n] === it.correct }));
   const score = results.filter((r) => r.ok).length;
-  const weak = results.filter((r) => !r.ok).map((r) => r.it);
-  const strong = results.filter((r) => r.ok).map((r) => r.it);
+
+  // EL RESULTADO SE AGRUPA POR TEMA.
+  //
+  // Antes había una fila por PREGUNTA, que con una pregunta por lección era lo
+  // mismo. Desde que el alumno elige los puntos, una prueba puede traer 4 del
+  // mismo: fallar 3 mostraba "Sistema endocrino" tres veces seguidas, cada una
+  // con su botón "Estudiar" al mismo lado.
+  //
+  // Y el criterio es el MISMO que usa el submit para anotar los temas a
+  // reforzar (dos tercios): si acá dijera "lo dominás" por una respuesta buena
+  // de cuatro, el chico vería un cartel verde por algo que el sistema le está
+  // guardando como flojo.
+  const temas = new Map<string, { it: TestItem; bien: number; total: number }>();
+  for (const { it, ok } of results) {
+    const k = it.key || it.topic;
+    const t = temas.get(k) ?? { it, bien: 0, total: 0 };
+    t.total++;
+    if (ok) t.bien++;
+    temas.set(k, t);
+  }
+  const porTema = [...temas.values()];
+  const weak = porTema.filter((t) => !aprobado(t.bien, t.total));
+  const strong = porTema.filter((t) => aprobado(t.bien, t.total)).map((t) => t.it);
   return (
     <div style={{ padding: "4px 2px 20px" }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
@@ -93,7 +126,7 @@ export function QuestionCard({ item, chosen, submitted, onAnswer }: { item: Test
   );
 }
 
-export function ResultBanner({ score, total, weak, strong, onStudy, onRetake }: { score: number; total: number; weak: TestItem[]; strong: TestItem[]; onStudy: (it: TestItem) => void; onRetake: () => void }) {
+export function ResultBanner({ score, total, weak, strong, onStudy, onRetake }: { score: number; total: number; weak: { it: TestItem; bien: number; total: number }[]; strong: TestItem[]; onStudy: (it: TestItem) => void; onRetake: () => void }) {
   const pct = Math.round((score / total) * 100);
   const tone = pct >= 80 ? C.ok : pct >= 50 ? C.warn : C.bad;
   const msg = pct >= 80 ? "¡Muy bien! Dominás casi todo." : pct >= 50 ? "¡Buen trabajo! Reforcemos algunas cosas." : "Tranqui, repasemos juntos lo que cuesta.";
@@ -112,11 +145,18 @@ export function ResultBanner({ score, total, weak, strong, onStudy, onRetake }: 
         <div style={{ marginTop: 18 }}>
           <div style={lbl}>📌 Para reforzar</div>
           <div style={{ display: "grid", gap: 8 }}>
-            {weak.map((it) => (
-              <div key={it.n} style={{ display: "flex", alignItems: "center", gap: 10, background: C.panel2, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 12px" }}>
+            {weak.map(({ it, bien, total: n }) => (
+              <div key={it.key || it.n} style={{ display: "flex", alignItems: "center", gap: 10, background: C.panel2, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 12px" }}>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 700, fontSize: 14.5, color: C.text }}>{it.topic}</span>
-                  {it.p0 != null && <span style={{ display: "block", fontFamily: FONT.mono, fontSize: 11.5, color: C.dim }}>pág. {it.p0}{it.p1 && it.p1 !== it.p0 ? `–${it.p1}` : ""}</span>}
+                  <span style={{ display: "block", fontFamily: FONT.mono, fontSize: 11.5, color: C.dim }}>
+                    {/* Cuánto de ESE punto salió bien. Con varias preguntas por
+                        tema, "para reforzar" a secas no distingue el 0 de 4 del
+                        2 de 4, que es justo lo que decide por dónde empezar. */}
+                    {n > 1 ? `${bien} de ${n}` : ""}
+                    {n > 1 && it.p0 != null ? " · " : ""}
+                    {it.p0 != null ? `pág. ${it.p0}${it.p1 && it.p1 !== it.p0 ? `–${it.p1}` : ""}` : ""}
+                  </span>
                 </span>
                 <button onClick={() => onStudy(it)}
                   style={{ display: "inline-flex", alignItems: "center", gap: 5, background: C.accent, color: "#fff", border: `2px solid ${C.ink}`, borderRadius: 10, padding: "7px 13px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 700, fontSize: 13, flexShrink: 0, boxShadow: HARD(C.coral) }}>
