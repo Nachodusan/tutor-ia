@@ -1,0 +1,545 @@
+{
+  "generatedAt": "2026-08-13T01:03:50.050Z",
+  "golden": "/Users/dusan/Documents/ia/packages/eval/golden/charla-conversacional.jsonl",
+  "engine": "deepinfra@api.deepinfra.com · Qwen/Qwen3.6-35B-A3B · temp=0 top_p=0.9 max_tokens=2048 reasoning=off",
+  "usage": {
+    "inputTokens": 73371,
+    "outputTokens": 1883,
+    "totalTokens": 75254,
+    "reasoningTokens": 0,
+    "calls": 33,
+    "retries": 0
+  },
+  "rows": [
+    {
+      "id": "conv-comentario",
+      "t1": {
+        "q": "¿Qué es la mitocondria?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.2241971992326247,
+        "chunkIds": [
+          "b49e41c5-0391-4c4a-9a55-575e70b9e025",
+          "8be36aba-ad12-4dba-a83a-8584b3063b18",
+          "3e1c4568-7f26-4a80-a7b5-17fbd6570a52",
+          "d0610981-0d4f-485b-9458-f330a381f49d",
+          "6a4753a7-78fc-460e-b54c-3294f01e3906",
+          "ad480829-d2d9-40df-8e34-551d35546770"
+        ],
+        "answer": "La mitocondria es como la central eléctrica de la célula. Su función principal es la respiración celular, que es el proceso por el cual obtenemos energía.\n\nBásicamente, toma la glucosa (el azúcar que viene de la fotosíntesis o de lo que comemos) y, usando oxígeno, la degrada para liberar energía en forma de ATP. Esos ATP son las \"monedas\" que la célula usa para moverse, pensar y vivir.\n\n¿Te imaginás qué pasaría con una célula si le quitamos las mitocondrias?",
+        "ms": 10217,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "ah, entonces es la que hace la energía. mi mamá dice que cuando uno corre mucho le duelen las piernas por eso",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": false,
+        "topScore": 0.058893235402608525,
+        "chunkIds": [],
+        "answer": "Esa conexión con tu mamá es muy buena, pero hay un pequeño detalle. El dolor de piernas al correr no es porque se acabe la energía, sino porque se acumula un ácido (ácido láctico) cuando el músculo no alcanza a recibir suficiente oxígeno rápido.\n\nLa mitocondria es la que usa ese oxígeno para producir energía limpia. Si no hay suficiente oxígeno, la célula se ve obligada a hacer un proceso más lento y \"sucio\" que genera ese ácido.\n\n¿Por qué creés que entonces el dolor desaparece cuando dejás de correr y descansás?",
+        "ms": 25424,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Qué es la mitocondria?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.2241971992326247,
+          "chunkIds": [
+            "b49e41c5-0391-4c4a-9a55-575e70b9e025",
+            "8be36aba-ad12-4dba-a83a-8584b3063b18",
+            "3e1c4568-7f26-4a80-a7b5-17fbd6570a52",
+            "d0610981-0d4f-485b-9458-f330a381f49d",
+            "6a4753a7-78fc-460e-b54c-3294f01e3906",
+            "ad480829-d2d9-40df-8e34-551d35546770"
+          ],
+          "answer": "La mitocondria es como la central eléctrica de la célula. Su función principal es la respiración celular, que es el proceso por el cual obtenemos energía.\n\nBásicamente, toma la glucosa (el azúcar que viene de la fotosíntesis o de lo que comemos) y, usando oxígeno, la degrada para liberar energía en forma de ATP. Esos ATP son las \"monedas\" que la célula usa para moverse, pensar y vivir.\n\n¿Te imaginás qué pasaría con una célula si le quitamos las mitocondrias?",
+          "ms": 10217,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "ah, entonces es la que hace la energía. mi mamá dice que cuando uno corre mucho le duelen las piernas por eso",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": false,
+          "topScore": 0.058893235402608525,
+          "chunkIds": [],
+          "answer": "Esa conexión con tu mamá es muy buena, pero hay un pequeño detalle. El dolor de piernas al correr no es porque se acabe la energía, sino porque se acumula un ácido (ácido láctico) cuando el músculo no alcanza a recibir suficiente oxígeno rápido.\n\nLa mitocondria es la que usa ese oxígeno para producir energía limpia. Si no hay suficiente oxígeno, la célula se ve obligada a hacer un proceso más lento y \"sucio\" que genera ese ácido.\n\n¿Por qué creés que entonces el dolor desaparece cuando dejás de correr y descansás?",
+          "ms": 25424,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": null,
+      "distintaJuez": null,
+      "jaccardChunks": null,
+      "perdioMaterial": true
+    },
+    {
+      "id": "conv-formato",
+      "t1": {
+        "q": "¿Qué es una célula?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.20552046389380046,
+        "chunkIds": [
+          "52041622-6a67-4528-b124-5224f792b9a9",
+          "6f78a1a4-2568-465b-a6d3-22837cb2b999",
+          "6febf2d1-0e02-4cef-827e-47c18ea1abac",
+          "54350be9-33d5-4008-88d5-f3a0dc97a24d",
+          "fc99663d-b2f3-4111-801e-b51a2a92ab8b",
+          "f7894527-e02f-49bf-9529-3224bf641ad6"
+        ],
+        "answer": "Una célula es la unidad más pequeña que puede vivir por sí sola y hacer todo lo que necesita para funcionar, como comer, respirar y reproducirse. Es como el ladrillo básico de todo ser vivo: vos, un árbol o hasta una bacteria están hechos de células.\n\nSi una célula es la unidad más pequeña que puede vivir por sí sola, ¿qué pasaría si intentáramos aislar solo el núcleo o solo la membrana de una célula para ver si pueden sobrevivir independientemente?",
+        "ms": 16492,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "explicámelo en dos frases nomás, corto",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.2667887346305699,
+        "chunkIds": [
+          "52041622-6a67-4528-b124-5224f792b9a9",
+          "6f78a1a4-2568-465b-a6d3-22837cb2b999",
+          "6febf2d1-0e02-4cef-827e-47c18ea1abac",
+          "54350be9-33d5-4008-88d5-f3a0dc97a24d",
+          "fc99663d-b2f3-4111-801e-b51a2a92ab8b",
+          "f7894527-e02f-49bf-9529-3224bf641ad6"
+        ],
+        "answer": "Una célula es la unidad básica de la vida, capaz de realizar todas las funciones vitales por sí misma. Es como el ladrillo más pequeño que, al juntarse, forma todos los tejidos y órganos de tu cuerpo.\n\nSi una célula pierde la capacidad de realizar una de sus funciones vitales, ¿qué creés que le pasaría al tejido u órgano del que forma parte?",
+        "ms": 9369,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Qué es una célula?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.20552046389380046,
+          "chunkIds": [
+            "52041622-6a67-4528-b124-5224f792b9a9",
+            "6f78a1a4-2568-465b-a6d3-22837cb2b999",
+            "6febf2d1-0e02-4cef-827e-47c18ea1abac",
+            "54350be9-33d5-4008-88d5-f3a0dc97a24d",
+            "fc99663d-b2f3-4111-801e-b51a2a92ab8b",
+            "f7894527-e02f-49bf-9529-3224bf641ad6"
+          ],
+          "answer": "Una célula es la unidad más pequeña que puede vivir por sí sola y hacer todo lo que necesita para funcionar, como comer, respirar y reproducirse. Es como el ladrillo básico de todo ser vivo: vos, un árbol o hasta una bacteria están hechos de células.\n\nSi una célula es la unidad más pequeña que puede vivir por sí sola, ¿qué pasaría si intentáramos aislar solo el núcleo o solo la membrana de una célula para ver si pueden sobrevivir independientemente?",
+          "ms": 16492,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "explicámelo en dos frases nomás, corto",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.2667887346305699,
+          "chunkIds": [
+            "52041622-6a67-4528-b124-5224f792b9a9",
+            "6f78a1a4-2568-465b-a6d3-22837cb2b999",
+            "6febf2d1-0e02-4cef-827e-47c18ea1abac",
+            "54350be9-33d5-4008-88d5-f3a0dc97a24d",
+            "fc99663d-b2f3-4111-801e-b51a2a92ab8b",
+            "f7894527-e02f-49bf-9529-3224bf641ad6"
+          ],
+          "answer": "Una célula es la unidad básica de la vida, capaz de realizar todas las funciones vitales por sí misma. Es como el ladrillo más pequeño que, al juntarse, forma todos los tejidos y órganos de tu cuerpo.\n\nSi una célula pierde la capacidad de realizar una de sus funciones vitales, ¿qué creés que le pasaría al tejido u órgano del que forma parte?",
+          "ms": 9369,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.8798257818519306,
+      "distintaJuez": false,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "conv-fuera-libro",
+      "t1": {
+        "q": "¿Cómo funciona el sistema endocrino?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9990713806970021,
+        "chunkIds": [
+          "2e746c7f-88f2-4aac-934a-b59b4846a9fd",
+          "58b892fd-07de-46ed-8735-ca5ca4a02eb3",
+          "22812651-1a3e-4caa-b27f-856a94daa2db",
+          "ba9cb85a-741f-409e-93fb-681dfa34aed8",
+          "ab797363-288e-4c84-8c58-8b337306def1",
+          "c40144e9-6a19-4964-ab19-b1eb37782384"
+        ],
+        "answer": "Imaginate que tu cuerpo es como una ciudad enorme. El sistema nervioso sería como el teléfono o el internet: envía señales rapidísimas para que reaccionés al instante, como frenar si aparece un auto. Pero el sistema endocrino es más bien como el correo postal.\n\nEste sistema usa glándulas que fabrican sustancias llamadas hormonas. Estas hormonas viajan por la sangre (que es como la ruta de los camiones de correo) hasta llegar a las células que necesitan la orden. La diferencia clave es que, aunque la respuesta es más lenta que la del nervio, dura mucho más tiempo. Por ejemplo, cuando estás estresado, las hormonas te mantienen en alerta y con energía durante un rato, no solo por un segundo.\n\n¿Se te ocurre alguna situación en la que tu cuerpo necesite una respuesta que dure horas o días, en lugar de ser instantánea?",
+        "ms": 14062,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "y por qué a mí me da tanto sueño en la tarde? tiene que ver con eso?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.8638088468647882,
+        "chunkIds": [
+          "2e746c7f-88f2-4aac-934a-b59b4846a9fd",
+          "58b892fd-07de-46ed-8735-ca5ca4a02eb3",
+          "ab797363-288e-4c84-8c58-8b337306def1",
+          "15d2b5aa-c535-4553-a44c-eada34ebe442",
+          "2c8fd57d-1711-4165-bf92-57f8d50cd959",
+          "6b6c85f9-7d48-4b0a-9140-cc22a2172331"
+        ],
+        "answer": "¡Sí, tiene todo que ver! De hecho, el material menciona específicamente a la glándula pineal, que está en tu cerebro y se encarga de secretar melatonina. Esta hormona es la que le avisa a tu cuerpo que es hora de bajar las revoluciones y dormir, regulando esos ritmos biológicos.\n\nPor eso, cuando llega la tarde o la noche, tu cuerpo empieza a producir más melatonina para prepararse para el descanso. Si te da mucho sueño en la tarde, puede ser que tu ciclo de sueño-estar despierto esté un poco desajustado o que estés recibiendo mucha luz artificial (como del celular) que confunde a esa glándula y le dice que no es hora de dormir todavía.\n\n¿Qué pasaría con tu nivel de somnolencia si pasás la tarde leyendo un libro con luz tenue en lugar de mirar la pantalla de un celular?",
+        "ms": 15409,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Cómo funciona el sistema endocrino?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9990713806970021,
+          "chunkIds": [
+            "2e746c7f-88f2-4aac-934a-b59b4846a9fd",
+            "58b892fd-07de-46ed-8735-ca5ca4a02eb3",
+            "22812651-1a3e-4caa-b27f-856a94daa2db",
+            "ba9cb85a-741f-409e-93fb-681dfa34aed8",
+            "ab797363-288e-4c84-8c58-8b337306def1",
+            "c40144e9-6a19-4964-ab19-b1eb37782384"
+          ],
+          "answer": "Imaginate que tu cuerpo es como una ciudad enorme. El sistema nervioso sería como el teléfono o el internet: envía señales rapidísimas para que reaccionés al instante, como frenar si aparece un auto. Pero el sistema endocrino es más bien como el correo postal.\n\nEste sistema usa glándulas que fabrican sustancias llamadas hormonas. Estas hormonas viajan por la sangre (que es como la ruta de los camiones de correo) hasta llegar a las células que necesitan la orden. La diferencia clave es que, aunque la respuesta es más lenta que la del nervio, dura mucho más tiempo. Por ejemplo, cuando estás estresado, las hormonas te mantienen en alerta y con energía durante un rato, no solo por un segundo.\n\n¿Se te ocurre alguna situación en la que tu cuerpo necesite una respuesta que dure horas o días, en lugar de ser instantánea?",
+          "ms": 14062,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "y por qué a mí me da tanto sueño en la tarde? tiene que ver con eso?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.8638088468647882,
+          "chunkIds": [
+            "2e746c7f-88f2-4aac-934a-b59b4846a9fd",
+            "58b892fd-07de-46ed-8735-ca5ca4a02eb3",
+            "ab797363-288e-4c84-8c58-8b337306def1",
+            "15d2b5aa-c535-4553-a44c-eada34ebe442",
+            "2c8fd57d-1711-4165-bf92-57f8d50cd959",
+            "6b6c85f9-7d48-4b0a-9140-cc22a2172331"
+          ],
+          "answer": "¡Sí, tiene todo que ver! De hecho, el material menciona específicamente a la glándula pineal, que está en tu cerebro y se encarga de secretar melatonina. Esta hormona es la que le avisa a tu cuerpo que es hora de bajar las revoluciones y dormir, regulando esos ritmos biológicos.\n\nPor eso, cuando llega la tarde o la noche, tu cuerpo empieza a producir más melatonina para prepararse para el descanso. Si te da mucho sueño en la tarde, puede ser que tu ciclo de sueño-estar despierto esté un poco desajustado o que estés recibiendo mucha luz artificial (como del celular) que confunde a esa glándula y le dice que no es hora de dormir todavía.\n\n¿Qué pasaría con tu nivel de somnolencia si pasás la tarde leyendo un libro con luz tenue en lugar de mirar la pantalla de un celular?",
+          "ms": 15409,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.6971082226576834,
+      "distintaJuez": true,
+      "jaccardChunks": 0.3333333333333333,
+      "perdioMaterial": false
+    },
+    {
+      "id": "conv-personal",
+      "t1": {
+        "q": "¿Qué es la evolución?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.8896956186909729,
+        "chunkIds": [
+          "b5507abd-0581-4abd-ae1e-44cbcd8e8192",
+          "2dfe855a-b2d6-457e-be05-134f649ab5f5",
+          "18d2e07e-6728-4dc8-ae72-71ee0d7593eb",
+          "217aee9a-d03a-47e9-8902-8edc1112dfe1",
+          "d240a4f5-daa3-4ed3-bf50-70b1daf2e40e",
+          "59ff6062-5326-4890-9a36-e73c5814bd6e"
+        ],
+        "answer": "La evolución es, en el fondo, la historia de cómo los seres vivos han cambiado a lo largo del tiempo. No es que una especie se transforme mágicamente en otra, sino que las poblaciones van modificando sus características generación tras generación.\n\nImaginate que tenés una población de insectos y algunos nacen con un color que los hace más difíciles de ver para los pájaros. Esos van a tener más chances de sobrevivir y tener crías, mientras que los más visibles se los comerán. Con el tiempo, la mayoría de los insectos serán del color camuflado. Eso es evolución: la población entera cambió porque los genes de los que sobrevivieron pasaron a la siguiente generación.\n\n¿Se te ocurre un ejemplo de un animal que haya cambiado de color para esconderse en su entorno?",
+        "ms": 12278,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "la verdad me aburre un poco esta materia, tengo prueba el viernes y no me entra nada",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": false,
+        "topScore": 0.1213363609765462,
+        "chunkIds": [],
+        "answer": "Te entiendo, es normal sentirse así cuando hay mucha materia y la prueba cerca. No te preocupes, vamos a ir por lo que más entra para que te quede claro y no te agobies.\n\nSi tuvieras que elegir solo dos temas de los que vimos para repasar antes del examen, ¿cuáles serían y por qué crees que son los más importantes?",
+        "ms": 41927,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Qué es la evolución?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.8896956186909729,
+          "chunkIds": [
+            "b5507abd-0581-4abd-ae1e-44cbcd8e8192",
+            "2dfe855a-b2d6-457e-be05-134f649ab5f5",
+            "18d2e07e-6728-4dc8-ae72-71ee0d7593eb",
+            "217aee9a-d03a-47e9-8902-8edc1112dfe1",
+            "d240a4f5-daa3-4ed3-bf50-70b1daf2e40e",
+            "59ff6062-5326-4890-9a36-e73c5814bd6e"
+          ],
+          "answer": "La evolución es, en el fondo, la historia de cómo los seres vivos han cambiado a lo largo del tiempo. No es que una especie se transforme mágicamente en otra, sino que las poblaciones van modificando sus características generación tras generación.\n\nImaginate que tenés una población de insectos y algunos nacen con un color que los hace más difíciles de ver para los pájaros. Esos van a tener más chances de sobrevivir y tener crías, mientras que los más visibles se los comerán. Con el tiempo, la mayoría de los insectos serán del color camuflado. Eso es evolución: la población entera cambió porque los genes de los que sobrevivieron pasaron a la siguiente generación.\n\n¿Se te ocurre un ejemplo de un animal que haya cambiado de color para esconderse en su entorno?",
+          "ms": 12278,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "la verdad me aburre un poco esta materia, tengo prueba el viernes y no me entra nada",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": false,
+          "topScore": 0.1213363609765462,
+          "chunkIds": [],
+          "answer": "Te entiendo, es normal sentirse así cuando hay mucha materia y la prueba cerca. No te preocupes, vamos a ir por lo que más entra para que te quede claro y no te agobies.\n\nSi tuvieras que elegir solo dos temas de los que vimos para repasar antes del examen, ¿cuáles serían y por qué crees que son los más importantes?",
+          "ms": 41927,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": null,
+      "distintaJuez": null,
+      "jaccardChunks": null,
+      "perdioMaterial": true
+    },
+    {
+      "id": "conv-cierre",
+      "t1": {
+        "q": "¿Para qué sirve la clasificación de los seres vivos?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9738630310582316,
+        "chunkIds": [
+          "f946ff06-8078-4aba-9400-fd7f80318c11",
+          "9cc5c661-8b26-4c88-bfb5-bb923b7053aa",
+          "1b112aa5-af84-48c6-acfa-719ba9154f42",
+          "e1b5ff3c-fa6a-4afe-9e3c-84a9618db7e4",
+          "75318372-401e-4797-a890-2986104f9eb7",
+          "e8cfb7e8-4db5-4ffb-aca8-d98d31db9c79"
+        ],
+        "answer": "La clasificación sirve para organizar toda esa inmensa variedad de vida que hay en la Tierra, porque sin un sistema sería imposible identificar o estudiar a los organismos. Es como cuando ordenás los libros en la biblioteca: si no tenés un orden, no encontrás nada. Al agrupar a los seres vivos según patrones comunes, los científicos pueden entender mejor sus relaciones, su historia evolutiva y cómo se comportan, lo que hace mucho más fácil trabajar con ellos. ¿Se te ocurre alguna otra situación de tu vida diaria donde clasificar cosas te ayude a encontrar lo que buscás más rápido?",
+        "ms": 10956,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "listo, ya entendí, gracias",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.7849795652261533,
+        "chunkIds": [
+          "f946ff06-8078-4aba-9400-fd7f80318c11",
+          "9cc5c661-8b26-4c88-bfb5-bb923b7053aa",
+          "1b112aa5-af84-48c6-acfa-719ba9154f42",
+          "e1b5ff3c-fa6a-4afe-9e3c-84a9618db7e4",
+          "e8cfb7e8-4db5-4ffb-aca8-d98d31db9c79",
+          "1ce9fbb5-54fd-4c6d-bf00-5d966b2ee414"
+        ],
+        "answer": "¡Genial! Me alegra que te haya quedado claro. Si en algún momento querés repasar o profundizar en otro tema, acá estoy. ¡Éxitos!",
+        "ms": 5175,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Para qué sirve la clasificación de los seres vivos?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9738630310582316,
+          "chunkIds": [
+            "f946ff06-8078-4aba-9400-fd7f80318c11",
+            "9cc5c661-8b26-4c88-bfb5-bb923b7053aa",
+            "1b112aa5-af84-48c6-acfa-719ba9154f42",
+            "e1b5ff3c-fa6a-4afe-9e3c-84a9618db7e4",
+            "75318372-401e-4797-a890-2986104f9eb7",
+            "e8cfb7e8-4db5-4ffb-aca8-d98d31db9c79"
+          ],
+          "answer": "La clasificación sirve para organizar toda esa inmensa variedad de vida que hay en la Tierra, porque sin un sistema sería imposible identificar o estudiar a los organismos. Es como cuando ordenás los libros en la biblioteca: si no tenés un orden, no encontrás nada. Al agrupar a los seres vivos según patrones comunes, los científicos pueden entender mejor sus relaciones, su historia evolutiva y cómo se comportan, lo que hace mucho más fácil trabajar con ellos. ¿Se te ocurre alguna otra situación de tu vida diaria donde clasificar cosas te ayude a encontrar lo que buscás más rápido?",
+          "ms": 10956,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "listo, ya entendí, gracias",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.7849795652261533,
+          "chunkIds": [
+            "f946ff06-8078-4aba-9400-fd7f80318c11",
+            "9cc5c661-8b26-4c88-bfb5-bb923b7053aa",
+            "1b112aa5-af84-48c6-acfa-719ba9154f42",
+            "e1b5ff3c-fa6a-4afe-9e3c-84a9618db7e4",
+            "e8cfb7e8-4db5-4ffb-aca8-d98d31db9c79",
+            "1ce9fbb5-54fd-4c6d-bf00-5d966b2ee414"
+          ],
+          "answer": "¡Genial! Me alegra que te haya quedado claro. Si en algún momento querés repasar o profundizar en otro tema, acá estoy. ¡Éxitos!",
+          "ms": 5175,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.5365735086649362,
+      "distintaJuez": false,
+      "jaccardChunks": 0.7142857142857143,
+      "perdioMaterial": false
+    },
+    {
+      "id": "conv-desacuerdo",
+      "t1": {
+        "q": "¿Qué son las adaptaciones?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.6460914168173028,
+        "chunkIds": [
+          "71e12ebb-17fa-486a-9cae-c26ebff495c9",
+          "4df8e989-5cee-4c2c-958a-7085f0cf1918",
+          "dceeda42-66a0-47b4-8492-65d3eb1569c8",
+          "d5c32bff-b70f-488f-8f5f-076c1ed224a4",
+          "9864b1c4-531d-4396-adac-de45c9844484",
+          "1ce9fbb5-54fd-4c6d-bf00-5d966b2ee414"
+        ],
+        "answer": "Mirá, una adaptación es básicamente un rasgo que le sirve a un organismo para vivir mejor y tener más hijos en su entorno. No es algo que el animal \"decida\" tener, sino que es el resultado de la selección natural: con el tiempo, los que tenían ese rasgo favorable sobrevivieron más y lo pasaron a sus hijos, hasta que casi todos en la población lo tuvieron.\n\nPor ejemplo, el material menciona que las aletas son una adaptación para los peces y algunos mamíferos porque les permite moverse en el agua. O el caso de las polillas en Londres: cuando el aire se ensució y los árboles se oscurecieron, las polillas negras tenían una adaptación (el camuflaje) que las hacía menos visibles para las aves, así que sobrevivieron más que las blancas.\n\n¿Se te ocurre algún ejemplo de un animal que tenga un rasgo que lo ayude a esconderse o a conseguir comida en su hábitat?",
+        "ms": 9970,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "pero eso no es lo mismo que la selección natural? me estás diciendo lo mismo dos veces",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9437914861426415,
+        "chunkIds": [
+          "4df8e989-5cee-4c2c-958a-7085f0cf1918",
+          "dceeda42-66a0-47b4-8492-65d3eb1569c8",
+          "71e12ebb-17fa-486a-9cae-c26ebff495c9",
+          "217aee9a-d03a-47e9-8902-8edc1112dfe1",
+          "2dfe855a-b2d6-457e-be05-134f649ab5f5",
+          "971c20c2-56ad-43d6-b577-817ffe490f25"
+        ],
+        "answer": "Tenés razón en que se parecen mucho, porque el mecanismo es el mismo: hay variabilidad, hay selección y hay herencia. La diferencia clave está en quién hace la selección. En la selección natural, es el ambiente (el clima, los depredadores, la comida) el que decide qué individuos sobreviven. En la domesticación, que es selección artificial, es el ser humano el que elige qué animales o plantas quiere y los reproduce para tenerlos.\n\nEl material usa el ejemplo del perro, que viene del lobo. Nosotros no esperamos a que el lobo sea más amigable por naturaleza; nosotros seleccionamos a los lobos más tranquilos y los cruzamos generación tras generación hasta obtener un perro. Es como si el humano fuera el \"ambiente\" que presiona a la especie.\n\n¿Se te ocurre algún animal doméstico que tenga una característica que no le serviría de nada en la naturaleza, pero que a nosotros nos guste?",
+        "ms": 15473,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Qué son las adaptaciones?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.6460914168173028,
+          "chunkIds": [
+            "71e12ebb-17fa-486a-9cae-c26ebff495c9",
+            "4df8e989-5cee-4c2c-958a-7085f0cf1918",
+            "dceeda42-66a0-47b4-8492-65d3eb1569c8",
+            "d5c32bff-b70f-488f-8f5f-076c1ed224a4",
+            "9864b1c4-531d-4396-adac-de45c9844484",
+            "1ce9fbb5-54fd-4c6d-bf00-5d966b2ee414"
+          ],
+          "answer": "Mirá, una adaptación es básicamente un rasgo que le sirve a un organismo para vivir mejor y tener más hijos en su entorno. No es algo que el animal \"decida\" tener, sino que es el resultado de la selección natural: con el tiempo, los que tenían ese rasgo favorable sobrevivieron más y lo pasaron a sus hijos, hasta que casi todos en la población lo tuvieron.\n\nPor ejemplo, el material menciona que las aletas son una adaptación para los peces y algunos mamíferos porque les permite moverse en el agua. O el caso de las polillas en Londres: cuando el aire se ensució y los árboles se oscurecieron, las polillas negras tenían una adaptación (el camuflaje) que las hacía menos visibles para las aves, así que sobrevivieron más que las blancas.\n\n¿Se te ocurre algún ejemplo de un animal que tenga un rasgo que lo ayude a esconderse o a conseguir comida en su hábitat?",
+          "ms": 9970,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "pero eso no es lo mismo que la selección natural? me estás diciendo lo mismo dos veces",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9437914861426415,
+          "chunkIds": [
+            "4df8e989-5cee-4c2c-958a-7085f0cf1918",
+            "dceeda42-66a0-47b4-8492-65d3eb1569c8",
+            "71e12ebb-17fa-486a-9cae-c26ebff495c9",
+            "217aee9a-d03a-47e9-8902-8edc1112dfe1",
+            "2dfe855a-b2d6-457e-be05-134f649ab5f5",
+            "971c20c2-56ad-43d6-b577-817ffe490f25"
+          ],
+          "answer": "Tenés razón en que se parecen mucho, porque el mecanismo es el mismo: hay variabilidad, hay selección y hay herencia. La diferencia clave está en quién hace la selección. En la selección natural, es el ambiente (el clima, los depredadores, la comida) el que decide qué individuos sobreviven. En la domesticación, que es selección artificial, es el ser humano el que elige qué animales o plantas quiere y los reproduce para tenerlos.\n\nEl material usa el ejemplo del perro, que viene del lobo. Nosotros no esperamos a que el lobo sea más amigable por naturaleza; nosotros seleccionamos a los lobos más tranquilos y los cruzamos generación tras generación hasta obtener un perro. Es como si el humano fuera el \"ambiente\" que presiona a la especie.\n\n¿Se te ocurre algún animal doméstico que tenga una característica que no le serviría de nada en la naturaleza, pero que a nosotros nos guste?",
+          "ms": 15473,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.670002969346824,
+      "distintaJuez": true,
+      "jaccardChunks": 0.3333333333333333,
+      "perdioMaterial": false
+    }
+  ]
+}

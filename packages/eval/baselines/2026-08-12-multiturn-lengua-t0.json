@@ -1,0 +1,2756 @@
+{
+  "generatedAt": "2026-08-13T01:00:28.941Z",
+  "golden": "/Users/dusan/Documents/ia/packages/eval/golden/conversations.jsonl",
+  "engine": "deepinfra@api.deepinfra.com · Qwen/Qwen3.6-35B-A3B · temp=0 top_p=0.9 max_tokens=2048 reasoning=off",
+  "usage": {
+    "inputTokens": 412514,
+    "outputTokens": 10362,
+    "totalTokens": 422876,
+    "reasoningTokens": 0,
+    "calls": 176,
+    "retries": 0
+  },
+  "rows": [
+    {
+      "id": "c001",
+      "t1": {
+        "q": "¿Quién reunió los fragmentos de la antigua leyenda y los plasmó en el libro sobre Tristán e Isolda?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9993965595527763,
+        "chunkIds": [
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "161137d9-f85b-4432-b270-a12a4634c570",
+          "e78ce149-d482-46a9-b95a-218cbbb91738",
+          "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+          "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8"
+        ],
+        "answer": "Ese fue Joseph Bédier. Él era un académico y escritor francés del siglo XX que se dedicó a juntar los fragmentos que quedaban de la leyenda original y los escribió en un libro titulado \"La historia de Tristán e Isolda\".\n\nSi Bédier hubiera encontrado fragmentos contradictorios sobre el final de la historia, ¿cómo habría decidido cuál versión incluir en su libro?",
+        "ms": 12029,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no cacho, me lo explicas mas facil porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9993877004625831,
+        "chunkIds": [
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "161137d9-f85b-4432-b270-a12a4634c570",
+          "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+          "e78ce149-d482-46a9-b95a-218cbbb91738",
+          "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8"
+        ],
+        "answer": "Entiendo, a veces los textos literarios pueden sonar un poco complicados. La idea es muy simple: Joseph Bédier fue como un detective o un armero que juntó las piezas sueltas de una historia vieja. Imaginá que tenés un rompecabezas gigante que se rompió hace siglos y solo quedaron algunos pedacitos. Bédier encontró esos pedacitos (los fragmentos de la leyenda) y los armó en el orden correcto para crear el libro que leemos hoy. Sin él, la historia de Tristán e Isolda se habría perdido o contado de mil formas distintas.\n\n¿Te imaginá cómo sería si tuvieras que armar un rompecabezas y te faltaran las piezas de las esquinas?",
+        "ms": 10729,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Quién reunió los fragmentos de la antigua leyenda y los plasmó en el libro sobre Tristán e Isolda?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9993965595527763,
+          "chunkIds": [
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "161137d9-f85b-4432-b270-a12a4634c570",
+            "e78ce149-d482-46a9-b95a-218cbbb91738",
+            "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+            "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8"
+          ],
+          "answer": "Ese fue Joseph Bédier. Él era un académico y escritor francés del siglo XX que se dedicó a juntar los fragmentos que quedaban de la leyenda original y los escribió en un libro titulado \"La historia de Tristán e Isolda\".\n\nSi Bédier hubiera encontrado fragmentos contradictorios sobre el final de la historia, ¿cómo habría decidido cuál versión incluir en su libro?",
+          "ms": 12029,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no cacho, me lo explicas mas facil porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9993877004625831,
+          "chunkIds": [
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "161137d9-f85b-4432-b270-a12a4634c570",
+            "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+            "e78ce149-d482-46a9-b95a-218cbbb91738",
+            "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8"
+          ],
+          "answer": "Entiendo, a veces los textos literarios pueden sonar un poco complicados. La idea es muy simple: Joseph Bédier fue como un detective o un armero que juntó las piezas sueltas de una historia vieja. Imaginá que tenés un rompecabezas gigante que se rompió hace siglos y solo quedaron algunos pedacitos. Bédier encontró esos pedacitos (los fragmentos de la leyenda) y los armó en el orden correcto para crear el libro que leemos hoy. Sin él, la historia de Tristán e Isolda se habría perdido o contado de mil formas distintas.\n\n¿Te imaginá cómo sería si tuvieras que armar un rompecabezas y te faltaran las piezas de las esquinas?",
+          "ms": 10729,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.7659381382011905,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c002",
+      "t1": {
+        "q": "¿En qué tipo de sociedad y en qué época se sitúa la leyenda de Tristán e Isolda?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9920412810829894,
+        "chunkIds": [
+          "724526ac-857d-4b3a-bc54-4fd0f58ce821",
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+          "c2c150d4-a6a9-47ab-8839-161ade063212",
+          "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+          "e18d0252-d1a9-4b72-8243-9936db2820c4"
+        ],
+        "answer": "La leyenda de Tristán e Isolda se sitúa en la Edad Media, un periodo que abarca desde el siglo V hasta el XV. Específicamente, la sociedad que se describe es la feudal, donde existían relaciones de vasallaje entre reyes, nobles y guerreros.\n\n¿Te imaginás cómo sería la vida diaria de un caballero en esa época, comparada con la de hoy?",
+        "ms": 9705,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no entendi nada, explicamelo de otra forma",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9930746692274546,
+        "chunkIds": [
+          "724526ac-857d-4b3a-bc54-4fd0f58ce821",
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+          "c2c150d4-a6a9-47ab-8839-161ade063212",
+          "e18d0252-d1a9-4b72-8243-9936db2820c4",
+          "81e1e6d3-df3f-4754-a571-8e2ae550569e"
+        ],
+        "answer": "Entiendo que la explicación anterior no te quedó clara. Vamos a cambiar el enfoque y usar algo más concreto.\n\nLa leyenda de Tristán e Isolda ocurre en la Edad Media, específicamente en la sociedad feudal. Para que lo visualices fácil, imaginá un sistema de \"jefes y subordinados\". En esa época, la vida giraba en torno al vasallaje: los nobles y reyes daban tierras y protección a cambio de lealtad y servicios militares de los caballeros.\n\nEl material destaca que esta historia refleja la visión de mundo de ese momento, donde existía el \"amor cortés\". Esto no es el amor romántico de hoy, sino un ideal entre un caballero (hombre noble y guerrero) y una dama de alta alcurnia, donde él la servía y ella era un modelo de castidad, casi como la Virgen María.\n\n¿Podés identificar en la historia algún personaje que cumpla con el rol de caballero vasallo o el de la dama idealizada?",
+        "ms": 15540,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿En qué tipo de sociedad y en qué época se sitúa la leyenda de Tristán e Isolda?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9920412810829894,
+          "chunkIds": [
+            "724526ac-857d-4b3a-bc54-4fd0f58ce821",
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+            "c2c150d4-a6a9-47ab-8839-161ade063212",
+            "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+            "e18d0252-d1a9-4b72-8243-9936db2820c4"
+          ],
+          "answer": "La leyenda de Tristán e Isolda se sitúa en la Edad Media, un periodo que abarca desde el siglo V hasta el XV. Específicamente, la sociedad que se describe es la feudal, donde existían relaciones de vasallaje entre reyes, nobles y guerreros.\n\n¿Te imaginás cómo sería la vida diaria de un caballero en esa época, comparada con la de hoy?",
+          "ms": 9705,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no entendi nada, explicamelo de otra forma",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9930746692274546,
+          "chunkIds": [
+            "724526ac-857d-4b3a-bc54-4fd0f58ce821",
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+            "c2c150d4-a6a9-47ab-8839-161ade063212",
+            "e18d0252-d1a9-4b72-8243-9936db2820c4",
+            "81e1e6d3-df3f-4754-a571-8e2ae550569e"
+          ],
+          "answer": "Entiendo que la explicación anterior no te quedó clara. Vamos a cambiar el enfoque y usar algo más concreto.\n\nLa leyenda de Tristán e Isolda ocurre en la Edad Media, específicamente en la sociedad feudal. Para que lo visualices fácil, imaginá un sistema de \"jefes y subordinados\". En esa época, la vida giraba en torno al vasallaje: los nobles y reyes daban tierras y protección a cambio de lealtad y servicios militares de los caballeros.\n\nEl material destaca que esta historia refleja la visión de mundo de ese momento, donde existía el \"amor cortés\". Esto no es el amor romántico de hoy, sino un ideal entre un caballero (hombre noble y guerrero) y una dama de alta alcurnia, donde él la servía y ella era un modelo de castidad, casi como la Virgen María.\n\n¿Podés identificar en la historia algún personaje que cumpla con el rol de caballero vasallo o el de la dama idealizada?",
+          "ms": 15540,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.8368225881045652,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c003",
+      "t1": {
+        "q": "En el vocabulario, ¿qué significa la palabra 'vasallo'?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.38428012150097574,
+        "chunkIds": [
+          "d8393cbd-083b-470f-a043-2eaf44b49194",
+          "e18d0252-d1a9-4b72-8243-9936db2820c4",
+          "34ea4c28-b1fd-4b72-a814-10979a1f9e08",
+          "941a2ab1-65b0-4e18-b8d5-43caeeea7bba",
+          "e78ce149-d482-46a9-b95a-218cbbb91738",
+          "c2c150d4-a6a9-47ab-8839-161ade063212"
+        ],
+        "answer": "En el texto, vasallo es básicamente el servidor o el hombre que está al servicio de un rey o de un señor feudal. Es como un lazo de obediencia y lealtad: el vasallo debe acatar las órdenes y proteger a su señor, y a cambio recibe protección y tierras.\n\nEn la historia, Tristán usa esta palabra para describir su relación con Isolda, pero no como un sirviente común, sino como alguien que se entrega por completo a ella, reconociendo que ella tiene el poder sobre su corazón y su vida.\n\n¿Se te ocurre algún otro ejemplo de la vida real o de otras historias donde alguien se sienta \"al servicio\" de otra persona por amor o lealtad?",
+        "ms": 15562,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "sigo sin entender, dame otro ejemplo porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.38428012150097574,
+        "chunkIds": [
+          "d8393cbd-083b-470f-a043-2eaf44b49194",
+          "e18d0252-d1a9-4b72-8243-9936db2820c4",
+          "34ea4c28-b1fd-4b72-a814-10979a1f9e08",
+          "941a2ab1-65b0-4e18-b8d5-43caeeea7bba",
+          "e78ce149-d482-46a9-b95a-218cbbb91738",
+          "c2c150d4-a6a9-47ab-8839-161ade063212"
+        ],
+        "answer": "Entiendo que el ejemplo anterior no te quedó claro. Vamos a probar con algo más cotidiano.\n\nImaginate que sos el capitán de un equipo de fútbol y yo soy uno de tus jugadores. Vos me elegís, me dás la camiseta y me decís qué jugar. A cambio, yo te prometo correr por vos, seguir tus instrucciones en el campo y defender tu equipo con todo. Esa relación de lealtad y servicio es lo que significa ser vasallo: alguien que sirve a otro a cambio de protección o un lugar.\n\nEn el texto, Tristán dice que es vasallo de Isolda porque siente que ella tiene el poder sobre él y él debe obedecerla y amarla, igual que un caballero sirve a su rey o a su dama.\n\n¿Podrías decirme, en tu opinión, qué es lo que Tristán \"recibe\" a cambio de ser vasallo de Isolda, según lo que leen en el fragmento?",
+        "ms": 14075,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "En el vocabulario, ¿qué significa la palabra 'vasallo'?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.38428012150097574,
+          "chunkIds": [
+            "d8393cbd-083b-470f-a043-2eaf44b49194",
+            "e18d0252-d1a9-4b72-8243-9936db2820c4",
+            "34ea4c28-b1fd-4b72-a814-10979a1f9e08",
+            "941a2ab1-65b0-4e18-b8d5-43caeeea7bba",
+            "e78ce149-d482-46a9-b95a-218cbbb91738",
+            "c2c150d4-a6a9-47ab-8839-161ade063212"
+          ],
+          "answer": "En el texto, vasallo es básicamente el servidor o el hombre que está al servicio de un rey o de un señor feudal. Es como un lazo de obediencia y lealtad: el vasallo debe acatar las órdenes y proteger a su señor, y a cambio recibe protección y tierras.\n\nEn la historia, Tristán usa esta palabra para describir su relación con Isolda, pero no como un sirviente común, sino como alguien que se entrega por completo a ella, reconociendo que ella tiene el poder sobre su corazón y su vida.\n\n¿Se te ocurre algún otro ejemplo de la vida real o de otras historias donde alguien se sienta \"al servicio\" de otra persona por amor o lealtad?",
+          "ms": 15562,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "sigo sin entender, dame otro ejemplo porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.38428012150097574,
+          "chunkIds": [
+            "d8393cbd-083b-470f-a043-2eaf44b49194",
+            "e18d0252-d1a9-4b72-8243-9936db2820c4",
+            "34ea4c28-b1fd-4b72-a814-10979a1f9e08",
+            "941a2ab1-65b0-4e18-b8d5-43caeeea7bba",
+            "e78ce149-d482-46a9-b95a-218cbbb91738",
+            "c2c150d4-a6a9-47ab-8839-161ade063212"
+          ],
+          "answer": "Entiendo que el ejemplo anterior no te quedó claro. Vamos a probar con algo más cotidiano.\n\nImaginate que sos el capitán de un equipo de fútbol y yo soy uno de tus jugadores. Vos me elegís, me dás la camiseta y me decís qué jugar. A cambio, yo te prometo correr por vos, seguir tus instrucciones en el campo y defender tu equipo con todo. Esa relación de lealtad y servicio es lo que significa ser vasallo: alguien que sirve a otro a cambio de protección o un lugar.\n\nEn el texto, Tristán dice que es vasallo de Isolda porque siente que ella tiene el poder sobre él y él debe obedecerla y amarla, igual que un caballero sirve a su rey o a su dama.\n\n¿Podrías decirme, en tu opinión, qué es lo que Tristán \"recibe\" a cambio de ser vasallo de Isolda, según lo que leen en el fragmento?",
+          "ms": 14075,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.8528811317507612,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c004",
+      "t1": {
+        "q": "¿De qué nacionalidad era O. Henry y en qué años vivió?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.5686734014015622,
+        "chunkIds": [
+          "90dc8761-28e9-4b28-bcbb-05f9b615589b",
+          "06b450b4-aa4a-444f-b967-720d16e35988",
+          "6c5d894a-c235-458f-97d4-18c56a94c371",
+          "7252511f-0433-4a93-a0af-bcbfa3de090e",
+          "522860cb-284f-487b-8fa2-46398ad35084",
+          "941a2ab1-65b0-4e18-b8d5-43caeeea7bba"
+        ],
+        "answer": "O. Henry era estadounidense. Nació en 1862 y murió en 1910.\n\nSi O. Henry hubiera nacido en 1950, ¿cómo habría cambiado su estilo narrativo al vivir en la era de internet?",
+        "ms": 10779,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no cacho, me lo explicas mas facil porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.6005375342434677,
+        "chunkIds": [
+          "90dc8761-28e9-4b28-bcbb-05f9b615589b",
+          "06b450b4-aa4a-444f-b967-720d16e35988",
+          "6c5d894a-c235-458f-97d4-18c56a94c371",
+          "7252511f-0433-4a93-a0af-bcbfa3de090e",
+          "522860cb-284f-487b-8fa2-46398ad35084",
+          "941a2ab1-65b0-4e18-b8d5-43caeeea7bba"
+        ],
+        "answer": "Entiendo, a veces los datos sueltos no entran. Olvidate de las fechas por un segundo. Lo importante es que O. Henry era de EE. UU., como el barrio de Nueva York donde pasan sus historias. Imaginá que es como un vecino que te cuenta chistes de la vida real, pero con un final sorpresa.\n\nSi O. Henry escribiera una historia ambientada en tu ciudad actual, ¿qué tipo de final sorpresa le pondrías a un personaje cotidiano?",
+        "ms": 12591,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿De qué nacionalidad era O. Henry y en qué años vivió?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.5686734014015622,
+          "chunkIds": [
+            "90dc8761-28e9-4b28-bcbb-05f9b615589b",
+            "06b450b4-aa4a-444f-b967-720d16e35988",
+            "6c5d894a-c235-458f-97d4-18c56a94c371",
+            "7252511f-0433-4a93-a0af-bcbfa3de090e",
+            "522860cb-284f-487b-8fa2-46398ad35084",
+            "941a2ab1-65b0-4e18-b8d5-43caeeea7bba"
+          ],
+          "answer": "O. Henry era estadounidense. Nació en 1862 y murió en 1910.\n\nSi O. Henry hubiera nacido en 1950, ¿cómo habría cambiado su estilo narrativo al vivir en la era de internet?",
+          "ms": 10779,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no cacho, me lo explicas mas facil porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.6005375342434677,
+          "chunkIds": [
+            "90dc8761-28e9-4b28-bcbb-05f9b615589b",
+            "06b450b4-aa4a-444f-b967-720d16e35988",
+            "6c5d894a-c235-458f-97d4-18c56a94c371",
+            "7252511f-0433-4a93-a0af-bcbfa3de090e",
+            "522860cb-284f-487b-8fa2-46398ad35084",
+            "941a2ab1-65b0-4e18-b8d5-43caeeea7bba"
+          ],
+          "answer": "Entiendo, a veces los datos sueltos no entran. Olvidate de las fechas por un segundo. Lo importante es que O. Henry era de EE. UU., como el barrio de Nueva York donde pasan sus historias. Imaginá que es como un vecino que te cuenta chistes de la vida real, pero con un final sorpresa.\n\nSi O. Henry escribiera una historia ambientada en tu ciudad actual, ¿qué tipo de final sorpresa le pondrías a un personaje cotidiano?",
+          "ms": 12591,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.6390786172485526,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c005",
+      "t1": {
+        "q": "En el cuento 'La última hoja', ¿cuál fue la obra maestra de Behrman?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9885433225113782,
+        "chunkIds": [
+          "eb8c9e08-70d9-43d6-a854-92dcb9901915",
+          "4803bbc6-bdd9-4b26-b686-0a52744da1c3",
+          "49d1ea95-7df6-4f0f-8f71-65772cc40c28",
+          "3bd81e4d-e2bb-478e-a1a0-f8156c1308a5",
+          "ce1d9d79-dc01-414f-ab31-4cdb6a2d5bd7",
+          "96412e53-a65d-4623-9998-5734835c89df"
+        ],
+        "answer": "La obra maestra de Behrman fue esa última hoja de hiedra que pintó en la pared afuera de la ventana de Johnsy.\n\nFíjate que Behrman llevaba veinticinco años diciendo que iba a pintar su gran obra, pero nunca lo había hecho. En realidad, era un poco fracasado y solo hacía dibujos comerciales. Pero cuando vio que Johnsy estaba tan desesperada, creyendo que moriría cuando cayera la última hoja, él salió con su linterna y sus pinceles a la noche, con frío y lluvia, y pintó una hoja tan real que ni el viento podía moverla.\n\nEsa hoja pintada fue lo que le devolvió las ganas de vivir a Johnsy, porque al ver que la hoja seguía ahí, ella entendió que no estaba sola y que valía la pena seguir luchando. El precio fue la vida de Behrman, que se enfermó de neumonía por estar expuesto a la tormenta, pero para él, salvar a su vecina valió más que cualquier cuadro en un museo.\n\nSi tuvieras que elegir, ¿creés que una obra maestra tiene que ser algo que cuelgues en una pared bonita, o puede ser un acto que cambie la vida de alguien?",
+        "ms": 13886,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no entendi nada, explicamelo de otra forma",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9885433225113782,
+        "chunkIds": [
+          "eb8c9e08-70d9-43d6-a854-92dcb9901915",
+          "4803bbc6-bdd9-4b26-b686-0a52744da1c3",
+          "49d1ea95-7df6-4f0f-8f71-65772cc40c28",
+          "3bd81e4d-e2bb-478e-a1a0-f8156c1308a5",
+          "ce1d9d79-dc01-414f-ab31-4cdb6a2d5bd7",
+          "96412e53-a65d-4623-9998-5734835c89df"
+        ],
+        "answer": "Entiendo que la explicación anterior no te entró. Vamos a cambiar el enfoque. Olvidate por un momento de la pintura y pensemos en la psicología de Johnsy.\n\nEl material dice que Johnsy estaba \"morbosa\" (con ideas insanas) y creía que su vida dependía de la hoja. No es que la hoja la matara físicamente, sino que ella se había convencido de que, si la hoja caía, ella dejaría de luchar. Es como si hubiera dado la \"llave\" de su vida a una planta.\n\nBehrman, que era un fracasado como pintor pero tenía un gran corazón, se dio cuenta de que Johnsy necesitaba una razón para seguir viva. No le podía dar medicina, le tenía que dar esperanza. Entonces, en lugar de pintar un cuadro en un museo, usó la pared de afuera como su lienzo.\n\nLa clave no es que la hoja fuera bonita, sino que era IMPOSIBLE que cayera porque era pintura. Al ver que la naturaleza \"fallaba\" y la hoja se quedaba ahí, Johnsy se dio cuenta de que ella también podía \"fallar\" a la muerte y sobrevivir.\n\nPara ver si se entiende la diferencia: si Behrman hubiera pintado una hoja en un cuadro y lo hubiera colgado en la habitación, ¿creés que Johnsy habría recuperado la esperanza igual? ¿Por qué sí o por qué no?",
+        "ms": 14877,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "En el cuento 'La última hoja', ¿cuál fue la obra maestra de Behrman?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9885433225113782,
+          "chunkIds": [
+            "eb8c9e08-70d9-43d6-a854-92dcb9901915",
+            "4803bbc6-bdd9-4b26-b686-0a52744da1c3",
+            "49d1ea95-7df6-4f0f-8f71-65772cc40c28",
+            "3bd81e4d-e2bb-478e-a1a0-f8156c1308a5",
+            "ce1d9d79-dc01-414f-ab31-4cdb6a2d5bd7",
+            "96412e53-a65d-4623-9998-5734835c89df"
+          ],
+          "answer": "La obra maestra de Behrman fue esa última hoja de hiedra que pintó en la pared afuera de la ventana de Johnsy.\n\nFíjate que Behrman llevaba veinticinco años diciendo que iba a pintar su gran obra, pero nunca lo había hecho. En realidad, era un poco fracasado y solo hacía dibujos comerciales. Pero cuando vio que Johnsy estaba tan desesperada, creyendo que moriría cuando cayera la última hoja, él salió con su linterna y sus pinceles a la noche, con frío y lluvia, y pintó una hoja tan real que ni el viento podía moverla.\n\nEsa hoja pintada fue lo que le devolvió las ganas de vivir a Johnsy, porque al ver que la hoja seguía ahí, ella entendió que no estaba sola y que valía la pena seguir luchando. El precio fue la vida de Behrman, que se enfermó de neumonía por estar expuesto a la tormenta, pero para él, salvar a su vecina valió más que cualquier cuadro en un museo.\n\nSi tuvieras que elegir, ¿creés que una obra maestra tiene que ser algo que cuelgues en una pared bonita, o puede ser un acto que cambie la vida de alguien?",
+          "ms": 13886,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no entendi nada, explicamelo de otra forma",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9885433225113782,
+          "chunkIds": [
+            "eb8c9e08-70d9-43d6-a854-92dcb9901915",
+            "4803bbc6-bdd9-4b26-b686-0a52744da1c3",
+            "49d1ea95-7df6-4f0f-8f71-65772cc40c28",
+            "3bd81e4d-e2bb-478e-a1a0-f8156c1308a5",
+            "ce1d9d79-dc01-414f-ab31-4cdb6a2d5bd7",
+            "96412e53-a65d-4623-9998-5734835c89df"
+          ],
+          "answer": "Entiendo que la explicación anterior no te entró. Vamos a cambiar el enfoque. Olvidate por un momento de la pintura y pensemos en la psicología de Johnsy.\n\nEl material dice que Johnsy estaba \"morbosa\" (con ideas insanas) y creía que su vida dependía de la hoja. No es que la hoja la matara físicamente, sino que ella se había convencido de que, si la hoja caía, ella dejaría de luchar. Es como si hubiera dado la \"llave\" de su vida a una planta.\n\nBehrman, que era un fracasado como pintor pero tenía un gran corazón, se dio cuenta de que Johnsy necesitaba una razón para seguir viva. No le podía dar medicina, le tenía que dar esperanza. Entonces, en lugar de pintar un cuadro en un museo, usó la pared de afuera como su lienzo.\n\nLa clave no es que la hoja fuera bonita, sino que era IMPOSIBLE que cayera porque era pintura. Al ver que la naturaleza \"fallaba\" y la hoja se quedaba ahí, Johnsy se dio cuenta de que ella también podía \"fallar\" a la muerte y sobrevivir.\n\nPara ver si se entiende la diferencia: si Behrman hubiera pintado una hoja en un cuadro y lo hubiera colgado en la habitación, ¿creés que Johnsy habría recuperado la esperanza igual? ¿Por qué sí o por qué no?",
+          "ms": 14877,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.80431220693069,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c006",
+      "t1": {
+        "q": "¿Cuáles son los principales instrumentos de la música mapuche?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9829546348107038,
+        "chunkIds": [
+          "06fd626b-77cd-47ff-a372-9be4666592ed",
+          "981d0d48-ed4b-4645-813e-459156510a13",
+          "89c50a7d-2620-48bf-91de-c16f2838f24f",
+          "d4fac96a-e81c-470b-8227-281e8ef3ac6e",
+          "a4d3929d-3cba-47a6-b05d-459668069dd4",
+          "6c5d894a-c235-458f-97d4-18c56a94c371"
+        ],
+        "answer": "La música mapuche usa instrumentos que hacen sonidos muy particulares, como los de la naturaleza. Los principales son el kultrún, que es un tambor de percusión; la pifilca, que es un instrumento de viento; y la trutruca, que también es de viento pero suena más grave y profundo.\n\nSi tuvieras que elegir uno de estos tres para acompañar un canto suave y lento, ¿cuál te imaginas que encajaría mejor y por qué?",
+        "ms": 11151,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "sigo sin entender, dame otro ejemplo porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9825120690798905,
+        "chunkIds": [
+          "06fd626b-77cd-47ff-a372-9be4666592ed",
+          "981d0d48-ed4b-4645-813e-459156510a13",
+          "89c50a7d-2620-48bf-91de-c16f2838f24f",
+          "d4fac96a-e81c-470b-8227-281e8ef3ac6e",
+          "a4d3929d-3cba-47a6-b05d-459668069dd4",
+          "6c5d894a-c235-458f-97d4-18c56a94c371"
+        ],
+        "answer": "Entiendo que el ejemplo anterior no te quedó claro. Vamos a probar con algo más visual. Imaginá que estás en una fiesta. La pifilca y la trutruca son como las flautas o los saxofones: llevan la melodía, lo que cantás o silbás. El kultrún, en cambio, es como la batería o el tambor: marca el ritmo, el \"bum-bum-bum\" que acompaña todo. Si la música fuera una canción, los vientos son la letra y el kultrún es el ritmo de fondo.\n\nSi en una celebración se tocara solo el kultrún sin ninguna flauta ni trutruca, ¿qué parte de la experiencia musical se perdería y por qué?",
+        "ms": 13611,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Cuáles son los principales instrumentos de la música mapuche?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9829546348107038,
+          "chunkIds": [
+            "06fd626b-77cd-47ff-a372-9be4666592ed",
+            "981d0d48-ed4b-4645-813e-459156510a13",
+            "89c50a7d-2620-48bf-91de-c16f2838f24f",
+            "d4fac96a-e81c-470b-8227-281e8ef3ac6e",
+            "a4d3929d-3cba-47a6-b05d-459668069dd4",
+            "6c5d894a-c235-458f-97d4-18c56a94c371"
+          ],
+          "answer": "La música mapuche usa instrumentos que hacen sonidos muy particulares, como los de la naturaleza. Los principales son el kultrún, que es un tambor de percusión; la pifilca, que es un instrumento de viento; y la trutruca, que también es de viento pero suena más grave y profundo.\n\nSi tuvieras que elegir uno de estos tres para acompañar un canto suave y lento, ¿cuál te imaginas que encajaría mejor y por qué?",
+          "ms": 11151,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "sigo sin entender, dame otro ejemplo porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9825120690798905,
+          "chunkIds": [
+            "06fd626b-77cd-47ff-a372-9be4666592ed",
+            "981d0d48-ed4b-4645-813e-459156510a13",
+            "89c50a7d-2620-48bf-91de-c16f2838f24f",
+            "d4fac96a-e81c-470b-8227-281e8ef3ac6e",
+            "a4d3929d-3cba-47a6-b05d-459668069dd4",
+            "6c5d894a-c235-458f-97d4-18c56a94c371"
+          ],
+          "answer": "Entiendo que el ejemplo anterior no te quedó claro. Vamos a probar con algo más visual. Imaginá que estás en una fiesta. La pifilca y la trutruca son como las flautas o los saxofones: llevan la melodía, lo que cantás o silbás. El kultrún, en cambio, es como la batería o el tambor: marca el ritmo, el \"bum-bum-bum\" que acompaña todo. Si la música fuera una canción, los vientos son la letra y el kultrún es el ritmo de fondo.\n\nSi en una celebración se tocara solo el kultrún sin ninguna flauta ni trutruca, ¿qué parte de la experiencia musical se perdería y por qué?",
+          "ms": 13611,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.7731001905306766,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c007",
+      "t1": {
+        "q": "¿Qué tipo de género periodístico es la entrevista y qué combina?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9846367649593041,
+        "chunkIds": [
+          "289f537b-c69f-4b64-bad6-c49d959231ed",
+          "06fd626b-77cd-47ff-a372-9be4666592ed",
+          "086d382d-0e7b-4b96-891e-ba9693dc8186",
+          "8dca3e14-8d52-4c0f-b672-a8b854baf44e",
+          "67a1bccf-75a4-493d-ac0a-c2d7f3f88ca6",
+          "827448da-98c1-4235-ae39-208a51e717eb"
+        ],
+        "answer": "La entrevista es un género periodístico híbrido, lo que significa que no es solo informativa ni solo de opinión, sino que combina ambas cosas. Mientras que los textos informativos buscan dar datos objetivos y los de opinión expresan puntos de vista, en la entrevista se mezclan: el periodista hace preguntas para informar sobre la vida o ideas de alguien, pero también deja que esa persona exprese sus opiniones personales. Por eso, al leerla, tenés que estar atento para distinguir qué parte es un hecho concreto y qué parte es la visión subjetiva del entrevistado. ¿Te parece que es más fácil identificar las opiniones o los hechos cuando leés una entrevista?",
+        "ms": 12472,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no cacho, me lo explicas mas facil porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9852520330495782,
+        "chunkIds": [
+          "289f537b-c69f-4b64-bad6-c49d959231ed",
+          "086d382d-0e7b-4b96-891e-ba9693dc8186",
+          "06fd626b-77cd-47ff-a372-9be4666592ed",
+          "8dca3e14-8d52-4c0f-b672-a8b854baf44e",
+          "67a1bccf-75a4-493d-ac0a-c2d7f3f88ca6",
+          "827448da-98c1-4235-ae39-208a51e717eb"
+        ],
+        "answer": "Entiendo, a veces suena muy técnico. Miralo así: la entrevista es como un puente. De un lado está el periodista, que va a buscar datos reales (hechos: dónde nació, qué estudió, cuándo hizo algo). Del otro lado está la persona entrevistada, que cuenta cómo se siente o qué piensa (opinión: su visión, su crítica, su experiencia). La entrevista combina esos dos mundos: te da la información objetiva, pero también te deja escuchar la voz y la opinión de quien habla. Es como si te contaran la historia de alguien, pero con sus propias palabras.\n\nSi tuvieras que entrevistar a un amigo sobre su viaje más reciente, ¿qué preguntas le harías para obtener los datos objetivos y cuáles para conocer su opinión personal?",
+        "ms": 16564,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Qué tipo de género periodístico es la entrevista y qué combina?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9846367649593041,
+          "chunkIds": [
+            "289f537b-c69f-4b64-bad6-c49d959231ed",
+            "06fd626b-77cd-47ff-a372-9be4666592ed",
+            "086d382d-0e7b-4b96-891e-ba9693dc8186",
+            "8dca3e14-8d52-4c0f-b672-a8b854baf44e",
+            "67a1bccf-75a4-493d-ac0a-c2d7f3f88ca6",
+            "827448da-98c1-4235-ae39-208a51e717eb"
+          ],
+          "answer": "La entrevista es un género periodístico híbrido, lo que significa que no es solo informativa ni solo de opinión, sino que combina ambas cosas. Mientras que los textos informativos buscan dar datos objetivos y los de opinión expresan puntos de vista, en la entrevista se mezclan: el periodista hace preguntas para informar sobre la vida o ideas de alguien, pero también deja que esa persona exprese sus opiniones personales. Por eso, al leerla, tenés que estar atento para distinguir qué parte es un hecho concreto y qué parte es la visión subjetiva del entrevistado. ¿Te parece que es más fácil identificar las opiniones o los hechos cuando leés una entrevista?",
+          "ms": 12472,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no cacho, me lo explicas mas facil porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9852520330495782,
+          "chunkIds": [
+            "289f537b-c69f-4b64-bad6-c49d959231ed",
+            "086d382d-0e7b-4b96-891e-ba9693dc8186",
+            "06fd626b-77cd-47ff-a372-9be4666592ed",
+            "8dca3e14-8d52-4c0f-b672-a8b854baf44e",
+            "67a1bccf-75a4-493d-ac0a-c2d7f3f88ca6",
+            "827448da-98c1-4235-ae39-208a51e717eb"
+          ],
+          "answer": "Entiendo, a veces suena muy técnico. Miralo así: la entrevista es como un puente. De un lado está el periodista, que va a buscar datos reales (hechos: dónde nació, qué estudió, cuándo hizo algo). Del otro lado está la persona entrevistada, que cuenta cómo se siente o qué piensa (opinión: su visión, su crítica, su experiencia). La entrevista combina esos dos mundos: te da la información objetiva, pero también te deja escuchar la voz y la opinión de quien habla. Es como si te contaran la historia de alguien, pero con sus propias palabras.\n\nSi tuvieras que entrevistar a un amigo sobre su viaje más reciente, ¿qué preguntas le harías para obtener los datos objetivos y cuáles para conocer su opinión personal?",
+          "ms": 16564,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.8088978509262172,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c008",
+      "t1": {
+        "q": "En la obra 'El ahogado', ¿quién dice ser el ahogado?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.8020137116524473,
+        "chunkIds": [
+          "2f2b306c-b84b-421f-ae70-42284a6c8414",
+          "00361199-8978-44de-88ce-57b93184ccd9",
+          "45f9c027-4c82-4205-a737-add7fcb7c27f",
+          "f5be2c3d-375c-4bb0-800c-d53090168313",
+          "f3e2f96d-f3b5-40d2-a3ff-c0af222b4fc7",
+          "3a1d2cc5-ea42-4169-b2c4-e5535db8b086"
+        ],
+        "answer": "En la obra, es el Vagabundo quien dice ser el ahogado. Al principio, el Escritor se asusta y piensa que el tipo va a suicidarse, pero luego el Vagabundo le aclara que no se va a matar de verdad, sino que está actuando. Él salta al agua, hace ruidos y sale flotando para que la gente crea que se ahogó y así les cobra tres rublos por ver el espectáculo.\n\n¿Te parece que el Escritor debería haberse quedado a ver la función o se hizo bien en irse?",
+        "ms": 12584,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no entendi nada, explicamelo de otra forma",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.8020137116524473,
+        "chunkIds": [
+          "2f2b306c-b84b-421f-ae70-42284a6c8414",
+          "00361199-8978-44de-88ce-57b93184ccd9",
+          "45f9c027-4c82-4205-a737-add7fcb7c27f",
+          "f5be2c3d-375c-4bb0-800c-d53090168313",
+          "f3e2f96d-f3b5-40d2-a3ff-c0af222b4fc7",
+          "3a1d2cc5-ea42-4169-b2c4-e5535db8b086"
+        ],
+        "answer": "Entiendo que la primera vez no te quedó claro. Vamos a cambiar el enfoque. Imaginá que estás en una plaza y ves a alguien gritando \"¡Socorro, me ahogo!\" y tirándose al río. Tu instinto es correr a salvarlo, ¿no? Pero resulta que ese tipo solo está actuando para que la gente le tire monedas. En la obra, el Vagabundo hace exactamente eso: se hace pasar por alguien que se suicida para cobrar entrada. No es un suicidio real, es un show barato.\n\n¿Qué reacción tendrías tú si descubrieras que la persona que te pidió ayuda era solo un actor buscando dinero?",
+        "ms": 16782,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "En la obra 'El ahogado', ¿quién dice ser el ahogado?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.8020137116524473,
+          "chunkIds": [
+            "2f2b306c-b84b-421f-ae70-42284a6c8414",
+            "00361199-8978-44de-88ce-57b93184ccd9",
+            "45f9c027-4c82-4205-a737-add7fcb7c27f",
+            "f5be2c3d-375c-4bb0-800c-d53090168313",
+            "f3e2f96d-f3b5-40d2-a3ff-c0af222b4fc7",
+            "3a1d2cc5-ea42-4169-b2c4-e5535db8b086"
+          ],
+          "answer": "En la obra, es el Vagabundo quien dice ser el ahogado. Al principio, el Escritor se asusta y piensa que el tipo va a suicidarse, pero luego el Vagabundo le aclara que no se va a matar de verdad, sino que está actuando. Él salta al agua, hace ruidos y sale flotando para que la gente crea que se ahogó y así les cobra tres rublos por ver el espectáculo.\n\n¿Te parece que el Escritor debería haberse quedado a ver la función o se hizo bien en irse?",
+          "ms": 12584,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no entendi nada, explicamelo de otra forma",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.8020137116524473,
+          "chunkIds": [
+            "2f2b306c-b84b-421f-ae70-42284a6c8414",
+            "00361199-8978-44de-88ce-57b93184ccd9",
+            "45f9c027-4c82-4205-a737-add7fcb7c27f",
+            "f5be2c3d-375c-4bb0-800c-d53090168313",
+            "f3e2f96d-f3b5-40d2-a3ff-c0af222b4fc7",
+            "3a1d2cc5-ea42-4169-b2c4-e5535db8b086"
+          ],
+          "answer": "Entiendo que la primera vez no te quedó claro. Vamos a cambiar el enfoque. Imaginá que estás en una plaza y ves a alguien gritando \"¡Socorro, me ahogo!\" y tirándose al río. Tu instinto es correr a salvarlo, ¿no? Pero resulta que ese tipo solo está actuando para que la gente le tire monedas. En la obra, el Vagabundo hace exactamente eso: se hace pasar por alguien que se suicida para cobrar entrada. No es un suicidio real, es un show barato.\n\n¿Qué reacción tendrías tú si descubrieras que la persona que te pidió ayuda era solo un actor buscando dinero?",
+          "ms": 16782,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.7930311840081044,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c009",
+      "t1": {
+        "q": "En el relato policial de la señora Stevens, ¿quién resultó ser el asesino y de qué murió?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9646443771573557,
+        "chunkIds": [
+          "3cbf28a5-30a4-40b5-8503-e9e8f315c2d1",
+          "e4a7f23d-5252-45f9-aa2c-4e2772a6b0bb",
+          "fd444608-e93a-4d0e-a79f-d508db722fe1",
+          "94af8911-ed5f-480a-bf1e-657002469c0f",
+          "752d43cc-2139-40b2-a7ae-4b8bd86ac625",
+          "6735b727-07e2-44b9-aee6-5f6fa200ba3b"
+        ],
+        "answer": "En el cuento, la señora Stevens no se suicidó, sino que fue asesinada por su hermano, el doctor Pablo. Él aprovechó que ella tomaba su whisky con hielo para meterle veneno en los cubitos de hielo que ella misma sacaba de la heladera de su casa. Cuando el hielo se derritió en la bebida, liberó el cianuro y la envenenó.\n\n¿Te parece lógico que el detective haya tardado tanto en darse cuenta de que el hielo era el arma del crimen?",
+        "ms": 11207,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "sigo sin entender, dame otro ejemplo porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9646443771573557,
+        "chunkIds": [
+          "3cbf28a5-30a4-40b5-8503-e9e8f315c2d1",
+          "e4a7f23d-5252-45f9-aa2c-4e2772a6b0bb",
+          "fd444608-e93a-4d0e-a79f-d508db722fe1",
+          "94af8911-ed5f-480a-bf1e-657002469c0f",
+          "752d43cc-2139-40b2-a7ae-4b8bd86ac625",
+          "6735b727-07e2-44b9-aee6-5f6fa200ba3b"
+        ],
+        "answer": "Entiendo que el texto original es un poco confuso porque mezcla muchas pistas. Vamos a simplificarlo con una analogía más directa.\n\nImaginate que querés envenenar a alguien, pero no podés tocar su vaso ni su bebida porque hay testigos o cámaras. Lo que hacés es envenenar el **envase** donde se guarda algo que él va a usar después. En el cuento, el asesino (el hermano veterinario) sabía que su hermana siempre tomaba whisky con hielo hecho en casa. Entonces, en lugar de echar veneno en el vaso, echó veneno en el agua de la heladera para hacer los cubitos. Cuando ella sacó el hielo y lo puso en el whisky, el veneno se disolvió en la bebida y la mató. Es como si envenenaras la bolsa de papas fritas en lugar de las papas mismas; el peligro está en el envase, no en el contenido inmediato.\n\n¿Se te ocurre otra situación cotidiana donde el peligro no esté en lo que tocas, sino en algo que lo rodea o lo prepara?",
+        "ms": 16439,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "En el relato policial de la señora Stevens, ¿quién resultó ser el asesino y de qué murió?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9646443771573557,
+          "chunkIds": [
+            "3cbf28a5-30a4-40b5-8503-e9e8f315c2d1",
+            "e4a7f23d-5252-45f9-aa2c-4e2772a6b0bb",
+            "fd444608-e93a-4d0e-a79f-d508db722fe1",
+            "94af8911-ed5f-480a-bf1e-657002469c0f",
+            "752d43cc-2139-40b2-a7ae-4b8bd86ac625",
+            "6735b727-07e2-44b9-aee6-5f6fa200ba3b"
+          ],
+          "answer": "En el cuento, la señora Stevens no se suicidó, sino que fue asesinada por su hermano, el doctor Pablo. Él aprovechó que ella tomaba su whisky con hielo para meterle veneno en los cubitos de hielo que ella misma sacaba de la heladera de su casa. Cuando el hielo se derritió en la bebida, liberó el cianuro y la envenenó.\n\n¿Te parece lógico que el detective haya tardado tanto en darse cuenta de que el hielo era el arma del crimen?",
+          "ms": 11207,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "sigo sin entender, dame otro ejemplo porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9646443771573557,
+          "chunkIds": [
+            "3cbf28a5-30a4-40b5-8503-e9e8f315c2d1",
+            "e4a7f23d-5252-45f9-aa2c-4e2772a6b0bb",
+            "fd444608-e93a-4d0e-a79f-d508db722fe1",
+            "94af8911-ed5f-480a-bf1e-657002469c0f",
+            "752d43cc-2139-40b2-a7ae-4b8bd86ac625",
+            "6735b727-07e2-44b9-aee6-5f6fa200ba3b"
+          ],
+          "answer": "Entiendo que el texto original es un poco confuso porque mezcla muchas pistas. Vamos a simplificarlo con una analogía más directa.\n\nImaginate que querés envenenar a alguien, pero no podés tocar su vaso ni su bebida porque hay testigos o cámaras. Lo que hacés es envenenar el **envase** donde se guarda algo que él va a usar después. En el cuento, el asesino (el hermano veterinario) sabía que su hermana siempre tomaba whisky con hielo hecho en casa. Entonces, en lugar de echar veneno en el vaso, echó veneno en el agua de la heladera para hacer los cubitos. Cuando ella sacó el hielo y lo puso en el whisky, el veneno se disolvió en la bebida y la mató. Es como si envenenaras la bolsa de papas fritas en lugar de las papas mismas; el peligro está en el envase, no en el contenido inmediato.\n\n¿Se te ocurre otra situación cotidiana donde el peligro no esté en lo que tocas, sino en algo que lo rodea o lo prepara?",
+          "ms": 16439,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.6330453103471744,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c010",
+      "t1": {
+        "q": "¿Quién creó el inodoro de oro que fue robado del palacio Blenheim?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9995003716192583,
+        "chunkIds": [
+          "420c070d-d902-41be-838b-6c60540e5769",
+          "93b1d27c-c35f-4295-a9a9-36ee4e847bba",
+          "15e15edd-b3fa-4cdd-9ba9-87a60df7840f",
+          "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+          "bc69c639-6c8e-40be-a648-66759705099d",
+          "fb7b5ce5-7956-4aad-93a1-dba71eae6959"
+        ],
+        "answer": "Ese inodoro de oro, que vale más de cinco millones de euros, fue creado por el artista italiano Maurizio Cattelan. Es el mismo tipo que hizo esa obra famosa de un plátano pegado a la pared con cinta aislante.\n\nSi tuvieras que crear una obra de arte con un objeto cotidiano que todos usamos a diario, ¿cuál elegirías y qué mensaje crees que transmitiría?",
+        "ms": 12493,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no cacho, me lo explicas mas facil porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9995674615179484,
+        "chunkIds": [
+          "420c070d-d902-41be-838b-6c60540e5769",
+          "93b1d27c-c35f-4295-a9a9-36ee4e847bba",
+          "15e15edd-b3fa-4cdd-9ba9-87a60df7840f",
+          "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+          "bc69c639-6c8e-40be-a648-66759705099d",
+          "fb7b5ce5-7956-4aad-93a1-dba71eae6959"
+        ],
+        "answer": "Entiendo, a veces los nombres y los detalles se mezclan. La idea central es que el inodoro no era un objeto común, sino una obra de arte creada por un artista italiano llamado Maurizio Cattelan. Él hizo esa pieza de oro para que la gente la usara, pero con un mensaje: criticar cuánto valor le damos a las cosas materiales y al dinero. Básicamente, usó algo que todos usamos (un baño) hecho con un metal muy caro para hacer que la gente piense sobre el lujo y el arte.\n\nSi vos tuvieras que hacer una obra de arte con un objeto que usás todos los días, ¿cuál elegirías para criticar algo de la sociedad?",
+        "ms": 11881,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Quién creó el inodoro de oro que fue robado del palacio Blenheim?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9995003716192583,
+          "chunkIds": [
+            "420c070d-d902-41be-838b-6c60540e5769",
+            "93b1d27c-c35f-4295-a9a9-36ee4e847bba",
+            "15e15edd-b3fa-4cdd-9ba9-87a60df7840f",
+            "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+            "bc69c639-6c8e-40be-a648-66759705099d",
+            "fb7b5ce5-7956-4aad-93a1-dba71eae6959"
+          ],
+          "answer": "Ese inodoro de oro, que vale más de cinco millones de euros, fue creado por el artista italiano Maurizio Cattelan. Es el mismo tipo que hizo esa obra famosa de un plátano pegado a la pared con cinta aislante.\n\nSi tuvieras que crear una obra de arte con un objeto cotidiano que todos usamos a diario, ¿cuál elegirías y qué mensaje crees que transmitiría?",
+          "ms": 12493,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no cacho, me lo explicas mas facil porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9995674615179484,
+          "chunkIds": [
+            "420c070d-d902-41be-838b-6c60540e5769",
+            "93b1d27c-c35f-4295-a9a9-36ee4e847bba",
+            "15e15edd-b3fa-4cdd-9ba9-87a60df7840f",
+            "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+            "bc69c639-6c8e-40be-a648-66759705099d",
+            "fb7b5ce5-7956-4aad-93a1-dba71eae6959"
+          ],
+          "answer": "Entiendo, a veces los nombres y los detalles se mezclan. La idea central es que el inodoro no era un objeto común, sino una obra de arte creada por un artista italiano llamado Maurizio Cattelan. Él hizo esa pieza de oro para que la gente la usara, pero con un mensaje: criticar cuánto valor le damos a las cosas materiales y al dinero. Básicamente, usó algo que todos usamos (un baño) hecho con un metal muy caro para hacer que la gente piense sobre el lujo y el arte.\n\nSi vos tuvieras que hacer una obra de arte con un objeto que usás todos los días, ¿cuál elegirías para criticar algo de la sociedad?",
+          "ms": 11881,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.8578492302144931,
+      "distintaJuez": false,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c011",
+      "t1": {
+        "q": "¿Quién adaptó como radioteatro la novela 'La guerra de los mundos'?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9994046459991637,
+        "chunkIds": [
+          "941a2ab1-65b0-4e18-b8d5-43caeeea7bba",
+          "20db8aa7-d29b-4d50-83de-3bc223a9c566",
+          "f6c16e88-6d33-433a-9d27-37679b7681e6",
+          "bc10f190-6e8e-4a5b-9a15-79046c8fae62",
+          "3847a57a-3929-4396-9a07-20b8fbf4816f",
+          "4d55ff0b-b031-4d9b-87ee-41756adf49d0"
+        ],
+        "answer": "Fue el actor y director estadounidense Orson Welles. Él lo adaptó como un noticiario de última hora, lo que hizo que mucha gente creyera que era real y entrara en pánico. ¿Te parece que fue buena idea presentarlo así o fue demasiado arriesgado?",
+        "ms": 9451,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no entendi nada, explicamelo de otra forma",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.99944862371577,
+        "chunkIds": [
+          "941a2ab1-65b0-4e18-b8d5-43caeeea7bba",
+          "20db8aa7-d29b-4d50-83de-3bc223a9c566",
+          "f6c16e88-6d33-433a-9d27-37679b7681e6",
+          "bc10f190-6e8e-4a5b-9a15-79046c8fae62",
+          "3847a57a-3929-4396-9a07-20b8fbf4816f",
+          "4d55ff0b-b031-4d9b-87ee-41756adf49d0"
+        ],
+        "answer": "Entiendo que la primera vez no te quedó claro. Vamos a cambiar el enfoque. La idea central no es solo quién lo hizo, sino por qué es famoso ese radioteatro.\n\nImaginate que estás escuchando la radio y de repente suena una noticia de última hora: \"¡Atención! Los marcianos han aterrizado en Nueva Jersey\". Si la noticia parece real, con reportes en vivo y testimonios, es muy probable que te asustes. Eso es lo que hizo Orson Welles: usó el formato de noticiero para que sonara real.\n\nEl material explica que, aunque al principio avisaron que era ficción, mucha gente se asustó de verdad. Pero hay un dato clave: el pánico masivo que se cuenta en la historia es exagerado. Lo que sí pasó es que los medios de comunicación (como el New York Times) hablaron de \"histeria masiva\" y eso creó el mito.\n\nPara que lo veas distinto, pensemos en esto: si hoy te cuentan una noticia falsa en redes sociales y la compartís sin verificar, ¿estás actuando igual que los oyentes de 1938?",
+        "ms": 14816,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Quién adaptó como radioteatro la novela 'La guerra de los mundos'?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9994046459991637,
+          "chunkIds": [
+            "941a2ab1-65b0-4e18-b8d5-43caeeea7bba",
+            "20db8aa7-d29b-4d50-83de-3bc223a9c566",
+            "f6c16e88-6d33-433a-9d27-37679b7681e6",
+            "bc10f190-6e8e-4a5b-9a15-79046c8fae62",
+            "3847a57a-3929-4396-9a07-20b8fbf4816f",
+            "4d55ff0b-b031-4d9b-87ee-41756adf49d0"
+          ],
+          "answer": "Fue el actor y director estadounidense Orson Welles. Él lo adaptó como un noticiario de última hora, lo que hizo que mucha gente creyera que era real y entrara en pánico. ¿Te parece que fue buena idea presentarlo así o fue demasiado arriesgado?",
+          "ms": 9451,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no entendi nada, explicamelo de otra forma",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.99944862371577,
+          "chunkIds": [
+            "941a2ab1-65b0-4e18-b8d5-43caeeea7bba",
+            "20db8aa7-d29b-4d50-83de-3bc223a9c566",
+            "f6c16e88-6d33-433a-9d27-37679b7681e6",
+            "bc10f190-6e8e-4a5b-9a15-79046c8fae62",
+            "3847a57a-3929-4396-9a07-20b8fbf4816f",
+            "4d55ff0b-b031-4d9b-87ee-41756adf49d0"
+          ],
+          "answer": "Entiendo que la primera vez no te quedó claro. Vamos a cambiar el enfoque. La idea central no es solo quién lo hizo, sino por qué es famoso ese radioteatro.\n\nImaginate que estás escuchando la radio y de repente suena una noticia de última hora: \"¡Atención! Los marcianos han aterrizado en Nueva Jersey\". Si la noticia parece real, con reportes en vivo y testimonios, es muy probable que te asustes. Eso es lo que hizo Orson Welles: usó el formato de noticiero para que sonara real.\n\nEl material explica que, aunque al principio avisaron que era ficción, mucha gente se asustó de verdad. Pero hay un dato clave: el pánico masivo que se cuenta en la historia es exagerado. Lo que sí pasó es que los medios de comunicación (como el New York Times) hablaron de \"histeria masiva\" y eso creó el mito.\n\nPara que lo veas distinto, pensemos en esto: si hoy te cuentan una noticia falsa en redes sociales y la compartís sin verificar, ¿estás actuando igual que los oyentes de 1938?",
+          "ms": 14816,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.6825447079581893,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c012",
+      "t1": {
+        "q": "¿Qué expresa el emisor cuando usa el modo indicativo?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9808455590446847,
+        "chunkIds": [
+          "1b441089-e835-45df-a4f8-c4fbde5d5463",
+          "788a57ea-05df-4c57-a032-9fb97abee6c1",
+          "1b5478bc-395d-449b-849b-ebda6b464ffc",
+          "ad7ced21-5ed8-467e-b102-93fcdea41be1",
+          "8a275d43-b92a-4964-aef4-13bc15799aa0",
+          "10e40373-8af7-4f94-99a3-a5bf38dcf058"
+        ],
+        "answer": "El modo indicativo es como decir las cosas con seguridad. Cuando lo usás, el emisor está expresando la acción como algo real, efectivo o cierto. Es la forma de hablar que usás para contar hechos que pasaron, que están pasando o que van a pasar, sin dudar de que existen. Por ejemplo, si decís \"Yo escribo\" o \"Ella bailará\", estás usando el indicativo porque presentás esas acciones como verdaderas.\n\n¿Podés darme un ejemplo de una frase que uses en tu día a día donde estés contando algo que realmente pasó o vas a pasar?",
+        "ms": 12646,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "sigo sin entender, dame otro ejemplo porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.984879514735598,
+        "chunkIds": [
+          "1b441089-e835-45df-a4f8-c4fbde5d5463",
+          "788a57ea-05df-4c57-a032-9fb97abee6c1",
+          "1b5478bc-395d-449b-849b-ebda6b464ffc",
+          "ad7ced21-5ed8-467e-b102-93fcdea41be1",
+          "8a275d43-b92a-4964-aef4-13bc15799aa0",
+          "10e40373-8af7-4f94-99a3-a5bf38dcf058"
+        ],
+        "answer": "Entiendo que el ejemplo anterior no te quedó claro. Vamos a probar con algo más cotidiano. Imaginá que estás hablando con un amigo. Si le decís \"Hoy hace sol\", estás usando el indicativo porque estás describiendo un hecho real, algo que está pasando ahora mismo y que ambos pueden ver. Es como decir la verdad de lo que ocurre. En cambio, si le decís \"Ojalá haga sol mañana\", ahí ya no es indicativo, porque el sol no está saliendo hoy, es solo un deseo. El indicativo es para lo que es cierto o real, sin importar si fue ayer, hoy o será mañana.\n\n¿Se te ocurre alguna frase corta que uses para contarle a alguien algo que realmente te pasó hoy?",
+        "ms": 12239,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Qué expresa el emisor cuando usa el modo indicativo?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9808455590446847,
+          "chunkIds": [
+            "1b441089-e835-45df-a4f8-c4fbde5d5463",
+            "788a57ea-05df-4c57-a032-9fb97abee6c1",
+            "1b5478bc-395d-449b-849b-ebda6b464ffc",
+            "ad7ced21-5ed8-467e-b102-93fcdea41be1",
+            "8a275d43-b92a-4964-aef4-13bc15799aa0",
+            "10e40373-8af7-4f94-99a3-a5bf38dcf058"
+          ],
+          "answer": "El modo indicativo es como decir las cosas con seguridad. Cuando lo usás, el emisor está expresando la acción como algo real, efectivo o cierto. Es la forma de hablar que usás para contar hechos que pasaron, que están pasando o que van a pasar, sin dudar de que existen. Por ejemplo, si decís \"Yo escribo\" o \"Ella bailará\", estás usando el indicativo porque presentás esas acciones como verdaderas.\n\n¿Podés darme un ejemplo de una frase que uses en tu día a día donde estés contando algo que realmente pasó o vas a pasar?",
+          "ms": 12646,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "sigo sin entender, dame otro ejemplo porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.984879514735598,
+          "chunkIds": [
+            "1b441089-e835-45df-a4f8-c4fbde5d5463",
+            "788a57ea-05df-4c57-a032-9fb97abee6c1",
+            "1b5478bc-395d-449b-849b-ebda6b464ffc",
+            "ad7ced21-5ed8-467e-b102-93fcdea41be1",
+            "8a275d43-b92a-4964-aef4-13bc15799aa0",
+            "10e40373-8af7-4f94-99a3-a5bf38dcf058"
+          ],
+          "answer": "Entiendo que el ejemplo anterior no te quedó claro. Vamos a probar con algo más cotidiano. Imaginá que estás hablando con un amigo. Si le decís \"Hoy hace sol\", estás usando el indicativo porque estás describiendo un hecho real, algo que está pasando ahora mismo y que ambos pueden ver. Es como decir la verdad de lo que ocurre. En cambio, si le decís \"Ojalá haga sol mañana\", ahí ya no es indicativo, porque el sol no está saliendo hoy, es solo un deseo. El indicativo es para lo que es cierto o real, sin importar si fue ayer, hoy o será mañana.\n\n¿Se te ocurre alguna frase corta que uses para contarle a alguien algo que realmente te pasó hoy?",
+          "ms": 12239,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.7923500074296005,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c013",
+      "t1": {
+        "q": "¿Qué tipos de narrador pueden encargarse de la narración en un relato policial?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.985127082685094,
+        "chunkIds": [
+          "6b3882d0-8c80-4ddb-89e6-a110c0530442",
+          "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+          "fb7b5ce5-7956-4aad-93a1-dba71eae6959",
+          "9360fe20-133b-41e6-9558-286f90d41006",
+          "464333b1-cd16-450a-a7d1-7ef1dc81db4f",
+          "5301bbe2-faa3-4e85-9d07-e2a38e4ee262"
+        ],
+        "answer": "En los relatos policiales, la historia puede ser contada por dos tipos principales de narrador. El primero es el **narrador omnisciente**, que es una voz externa a la historia y que lo sabe todo sobre los personajes y los hechos. El segundo es el **narrador protagonista o testigo**, donde el mismo detective u otro personaje involucrado relata lo que pasó, dando su propia perspectiva.\n\n¿Te imaginas cómo cambiaría la tensión de la historia si el detective nos cuenta sus propios pensamientos y dudas, en lugar de que un narrador externo nos lo explique todo?",
+        "ms": 10852,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no cacho, me lo explicas mas facil porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9888435470006152,
+        "chunkIds": [
+          "6b3882d0-8c80-4ddb-89e6-a110c0530442",
+          "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+          "fb7b5ce5-7956-4aad-93a1-dba71eae6959",
+          "9360fe20-133b-41e6-9558-286f90d41006",
+          "464333b1-cd16-450a-a7d1-7ef1dc81db4f",
+          "5301bbe2-faa3-4e85-9d07-e2a38e4ee262"
+        ],
+        "answer": "Tranqui, lo vemos con un ejemplo de la vida real. Imaginá que estás viendo una película de detectives. Si el narrador es **omnisciente**, es como si la cámara volara por encima de todo: te muestra al asesino escondido, te dice qué piensa la víctima y te cuenta secretos que nadie más sabe. Es una voz externa que lo sabe todo.\n\nEn cambio, si el narrador es **protagonista o testigo**, es como si la cámara estuviera pegada al hombro del detective. Vos solo sabés lo que él ve, escucha o deduce. Si él no está en la habitación, no sabe qué pasó ahí. Vos y él están descubriendo la verdad al mismo tiempo.\n\n¿Cuál de los dos te genera más intriga: saberlo todo desde el principio o tener que adivinar junto con el detective?",
+        "ms": 16828,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Qué tipos de narrador pueden encargarse de la narración en un relato policial?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.985127082685094,
+          "chunkIds": [
+            "6b3882d0-8c80-4ddb-89e6-a110c0530442",
+            "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+            "fb7b5ce5-7956-4aad-93a1-dba71eae6959",
+            "9360fe20-133b-41e6-9558-286f90d41006",
+            "464333b1-cd16-450a-a7d1-7ef1dc81db4f",
+            "5301bbe2-faa3-4e85-9d07-e2a38e4ee262"
+          ],
+          "answer": "En los relatos policiales, la historia puede ser contada por dos tipos principales de narrador. El primero es el **narrador omnisciente**, que es una voz externa a la historia y que lo sabe todo sobre los personajes y los hechos. El segundo es el **narrador protagonista o testigo**, donde el mismo detective u otro personaje involucrado relata lo que pasó, dando su propia perspectiva.\n\n¿Te imaginas cómo cambiaría la tensión de la historia si el detective nos cuenta sus propios pensamientos y dudas, en lugar de que un narrador externo nos lo explique todo?",
+          "ms": 10852,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no cacho, me lo explicas mas facil porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9888435470006152,
+          "chunkIds": [
+            "6b3882d0-8c80-4ddb-89e6-a110c0530442",
+            "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+            "fb7b5ce5-7956-4aad-93a1-dba71eae6959",
+            "9360fe20-133b-41e6-9558-286f90d41006",
+            "464333b1-cd16-450a-a7d1-7ef1dc81db4f",
+            "5301bbe2-faa3-4e85-9d07-e2a38e4ee262"
+          ],
+          "answer": "Tranqui, lo vemos con un ejemplo de la vida real. Imaginá que estás viendo una película de detectives. Si el narrador es **omnisciente**, es como si la cámara volara por encima de todo: te muestra al asesino escondido, te dice qué piensa la víctima y te cuenta secretos que nadie más sabe. Es una voz externa que lo sabe todo.\n\nEn cambio, si el narrador es **protagonista o testigo**, es como si la cámara estuviera pegada al hombro del detective. Vos solo sabés lo que él ve, escucha o deduce. Si él no está en la habitación, no sabe qué pasó ahí. Vos y él están descubriendo la verdad al mismo tiempo.\n\n¿Cuál de los dos te genera más intriga: saberlo todo desde el principio o tener que adivinar junto con el detective?",
+          "ms": 16828,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.8073375932915208,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c014",
+      "t1": {
+        "q": "En el poema 'El viajero de todos los mares', ¿cómo se representa el amor?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9991895458512229,
+        "chunkIds": [
+          "2bdbef3c-3c1e-4e21-82ff-06eb7ae19fe4",
+          "4b007449-1a0f-405b-8a08-acc94ebf1307",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+          "8b9992c0-71fd-41a1-8d0d-3782982ea365",
+          "c2c150d4-a6a9-47ab-8839-161ade063212",
+          "b15f3d6b-6525-4457-875f-46c8b174d286"
+        ],
+        "answer": "En el poema, el amor no se presenta como algo que te atrapa o te obliga a quedarte quieto. Al contrario, aparece como una fuerza que te libera y te da una nueva vida. La autora lo compara con un \"viajero de todos los mares\", lo que sugiere que es un compañero de camino, no una jaula.\n\nBásicamente, el amor llega para salvar al hablante de su tristeza profunda y le devuelve el sentido de la vida, pero sin someterlo. Es un amor libre y abierto que invita a recorrer nuevos caminos juntos, como si fueran compañeros de viaje en lugar de prisioneros.\n\nSi tuvieras que elegir una palabra para describir ese tipo de amor que te acompaña pero no te encierra,\n\n¿cuál sería esa palabra y por qué crees que encaja mejor que otras como \"posesivo\" o \"protector\"?",
+        "ms": 15974,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no entendi nada, explicamelo de otra forma",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9991895458512229,
+        "chunkIds": [
+          "2bdbef3c-3c1e-4e21-82ff-06eb7ae19fe4",
+          "4b007449-1a0f-405b-8a08-acc94ebf1307",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+          "8b9992c0-71fd-41a1-8d0d-3782982ea365",
+          "c2c150d4-a6a9-47ab-8839-161ade063212",
+          "b15f3d6b-6525-4457-875f-46c8b174d286"
+        ],
+        "answer": "Entiendo que la primera vez no te quedó claro. Vamos a cambiar el enfoque. Olvidá por un momento las palabras poéticas y pensemos en una situación real.\n\nImaginate que estás atrapado en una habitación oscura, aburrido y triste, sin saber qué hacer. De pronto, entra alguien que te invita a salir a caminar, a ver el mundo, a explorar. Esa persona no te encierra ni te obliga a quedarte; te da las llaves y te dice: \"Vamos juntos a descubrir cosas nuevas\".\n\nEse es el amor que describe el poema. No es una cadena que te ata, sino un compañero que te saca de la tristeza y te ayuda a vivir con más alegría y libertad. Es como tener un amigo que te anima a ser mejor y a disfrutar la vida, sin controlarte.\n\nSi tuvieras que elegir entre un amor que es como una \"jaula dorada\" (bonita pero te encierra) o un amor que es como un \"compañero de viaje\" (te acompaña pero te deja libre), ¿cuál crees que se parece más a lo que explica el texto?",
+        "ms": 13926,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "En el poema 'El viajero de todos los mares', ¿cómo se representa el amor?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9991895458512229,
+          "chunkIds": [
+            "2bdbef3c-3c1e-4e21-82ff-06eb7ae19fe4",
+            "4b007449-1a0f-405b-8a08-acc94ebf1307",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+            "8b9992c0-71fd-41a1-8d0d-3782982ea365",
+            "c2c150d4-a6a9-47ab-8839-161ade063212",
+            "b15f3d6b-6525-4457-875f-46c8b174d286"
+          ],
+          "answer": "En el poema, el amor no se presenta como algo que te atrapa o te obliga a quedarte quieto. Al contrario, aparece como una fuerza que te libera y te da una nueva vida. La autora lo compara con un \"viajero de todos los mares\", lo que sugiere que es un compañero de camino, no una jaula.\n\nBásicamente, el amor llega para salvar al hablante de su tristeza profunda y le devuelve el sentido de la vida, pero sin someterlo. Es un amor libre y abierto que invita a recorrer nuevos caminos juntos, como si fueran compañeros de viaje en lugar de prisioneros.\n\nSi tuvieras que elegir una palabra para describir ese tipo de amor que te acompaña pero no te encierra,\n\n¿cuál sería esa palabra y por qué crees que encaja mejor que otras como \"posesivo\" o \"protector\"?",
+          "ms": 15974,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no entendi nada, explicamelo de otra forma",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9991895458512229,
+          "chunkIds": [
+            "2bdbef3c-3c1e-4e21-82ff-06eb7ae19fe4",
+            "4b007449-1a0f-405b-8a08-acc94ebf1307",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+            "8b9992c0-71fd-41a1-8d0d-3782982ea365",
+            "c2c150d4-a6a9-47ab-8839-161ade063212",
+            "b15f3d6b-6525-4457-875f-46c8b174d286"
+          ],
+          "answer": "Entiendo que la primera vez no te quedó claro. Vamos a cambiar el enfoque. Olvidá por un momento las palabras poéticas y pensemos en una situación real.\n\nImaginate que estás atrapado en una habitación oscura, aburrido y triste, sin saber qué hacer. De pronto, entra alguien que te invita a salir a caminar, a ver el mundo, a explorar. Esa persona no te encierra ni te obliga a quedarte; te da las llaves y te dice: \"Vamos juntos a descubrir cosas nuevas\".\n\nEse es el amor que describe el poema. No es una cadena que te ata, sino un compañero que te saca de la tristeza y te ayuda a vivir con más alegría y libertad. Es como tener un amigo que te anima a ser mejor y a disfrutar la vida, sin controlarte.\n\nSi tuvieras que elegir entre un amor que es como una \"jaula dorada\" (bonita pero te encierra) o un amor que es como un \"compañero de viaje\" (te acompaña pero te deja libre), ¿cuál crees que se parece más a lo que explica el texto?",
+          "ms": 13926,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.7755325907680324,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c015",
+      "t1": {
+        "q": "En el vocabulario, ¿qué significa la palabra 'atelier'?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.42017781737079096,
+        "chunkIds": [
+          "92adb972-1f17-41cf-87b3-42e20fc9bdf9",
+          "06b450b4-aa4a-444f-b967-720d16e35988",
+          "e78ce149-d482-46a9-b95a-218cbbb91738",
+          "086d382d-0e7b-4b96-891e-ba9693dc8186",
+          "941a2ab1-65b0-4e18-b8d5-43caeeea7bba",
+          "c120772c-19d7-4a8e-8ac2-4fe31c61d1ee"
+        ],
+        "answer": "En el texto aparece una lista de palabras con su significado entre paréntesis. Si mirás ahí, verás que \"atelier\" se define como el taller o estudio de un artista. Básicamente, es el lugar donde pintores, escultores o creadores trabajan y guardan sus materiales.\n\n¿Qué tipo de espacio sería un atelier para un músico que compone y graba sus propias canciones?",
+        "ms": 10709,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "sigo sin entender, dame otro ejemplo porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.42017781737079096,
+        "chunkIds": [
+          "92adb972-1f17-41cf-87b3-42e20fc9bdf9",
+          "06b450b4-aa4a-444f-b967-720d16e35988",
+          "e78ce149-d482-46a9-b95a-218cbbb91738",
+          "086d382d-0e7b-4b96-891e-ba9693dc8186",
+          "941a2ab1-65b0-4e18-b8d5-43caeeea7bba",
+          "c120772c-19d7-4a8e-8ac2-4fe31c61d1ee"
+        ],
+        "answer": "Entiendo que el ejemplo anterior no te quedó claro. Mirá, la palabra \"atelier\" viene del francés y simplemente significa taller. Es el lugar donde un artista trabaja. Si un pintor tiene su atelier, es su estudio con caballetes y pinturas. Si un escultor tiene el suyo, es donde tiene el barro y las herramientas. Es solo el nombre elegante para decir \"mi lugar de trabajo creativo\".\n\n¿Y si un diseñador de moda tiene un atelier, qué tipo de cosas creés que habría adentro?",
+        "ms": 10506,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "En el vocabulario, ¿qué significa la palabra 'atelier'?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.42017781737079096,
+          "chunkIds": [
+            "92adb972-1f17-41cf-87b3-42e20fc9bdf9",
+            "06b450b4-aa4a-444f-b967-720d16e35988",
+            "e78ce149-d482-46a9-b95a-218cbbb91738",
+            "086d382d-0e7b-4b96-891e-ba9693dc8186",
+            "941a2ab1-65b0-4e18-b8d5-43caeeea7bba",
+            "c120772c-19d7-4a8e-8ac2-4fe31c61d1ee"
+          ],
+          "answer": "En el texto aparece una lista de palabras con su significado entre paréntesis. Si mirás ahí, verás que \"atelier\" se define como el taller o estudio de un artista. Básicamente, es el lugar donde pintores, escultores o creadores trabajan y guardan sus materiales.\n\n¿Qué tipo de espacio sería un atelier para un músico que compone y graba sus propias canciones?",
+          "ms": 10709,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "sigo sin entender, dame otro ejemplo porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.42017781737079096,
+          "chunkIds": [
+            "92adb972-1f17-41cf-87b3-42e20fc9bdf9",
+            "06b450b4-aa4a-444f-b967-720d16e35988",
+            "e78ce149-d482-46a9-b95a-218cbbb91738",
+            "086d382d-0e7b-4b96-891e-ba9693dc8186",
+            "941a2ab1-65b0-4e18-b8d5-43caeeea7bba",
+            "c120772c-19d7-4a8e-8ac2-4fe31c61d1ee"
+          ],
+          "answer": "Entiendo que el ejemplo anterior no te quedó claro. Mirá, la palabra \"atelier\" viene del francés y simplemente significa taller. Es el lugar donde un artista trabaja. Si un pintor tiene su atelier, es su estudio con caballetes y pinturas. Si un escultor tiene el suyo, es donde tiene el barro y las herramientas. Es solo el nombre elegante para decir \"mi lugar de trabajo creativo\".\n\n¿Y si un diseñador de moda tiene un atelier, qué tipo de cosas creés que habría adentro?",
+          "ms": 10506,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.8853644309301336,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c016",
+      "t1": {
+        "q": "En el poema 'Dime si molesto' de Blanca Varela, ¿qué le contesta la hablante al hombre que entra preguntando si molesta?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9573806114923407,
+        "chunkIds": [
+          "46163c8c-27a8-4e50-8b48-965353ce7b5c",
+          "c3abea5e-45b9-484f-ae87-17f09b394e74",
+          "319acb57-5f91-470b-9d93-79ef4ac039e4",
+          "8b9992c0-71fd-41a1-8d0d-3782982ea365",
+          "4d324d9c-4be0-468c-940e-69653b5a0c69",
+          "a37ffda3-c8c6-42dd-9ffc-b553b8dcc25b"
+        ],
+        "answer": "En el poema, la hablante no le dice que no molesta ni lo ignora. Al contrario, le responde con mucha fuerza: le dice que no solo lo recibe, sino que él \"pone patas arriba toda mi existencia\". Básicamente, le está diciendo que su llegada cambia todo lo que ella conocía, desordenando su vida por completo, pero al final lo da la bienvenida. Es una forma muy intensa de decir que esa persona tiene un poder enorme sobre ella.\n\n¿Te parece que esa respuesta suena más como un reclamo o como una forma de aceptar que su vida va a cambiar?",
+        "ms": 10341,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no cacho, me lo explicas mas facil porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9573806114923407,
+        "chunkIds": [
+          "46163c8c-27a8-4e50-8b48-965353ce7b5c",
+          "c3abea5e-45b9-484f-ae87-17f09b394e74",
+          "319acb57-5f91-470b-9d93-79ef4ac039e4",
+          "8b9992c0-71fd-41a1-8d0d-3782982ea365",
+          "4d324d9c-4be0-468c-940e-69653b5a0c69",
+          "a37ffda3-c8c6-42dd-9ffc-b553b8dcc25b"
+        ],
+        "answer": "Entiendo, a veces las palabras suenan raras. Miralo así: el tipo entra y pregunta si está estorbando. Ella le dice que no es que solo \"moleste\", sino que él le \"pone patas arriba\" la vida. Es como cuando entrás a tu cuarto y encontrás todo desordenado o cambiado; tu rutina se rompió. Ella le está diciendo que su llegada le cambió todo el orden, pero que igual lo da la bienvenida.\n\n¿Vos crees que \"poner patas arriba\" la vida es algo malo o puede ser bueno?",
+        "ms": 10222,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "En el poema 'Dime si molesto' de Blanca Varela, ¿qué le contesta la hablante al hombre que entra preguntando si molesta?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9573806114923407,
+          "chunkIds": [
+            "46163c8c-27a8-4e50-8b48-965353ce7b5c",
+            "c3abea5e-45b9-484f-ae87-17f09b394e74",
+            "319acb57-5f91-470b-9d93-79ef4ac039e4",
+            "8b9992c0-71fd-41a1-8d0d-3782982ea365",
+            "4d324d9c-4be0-468c-940e-69653b5a0c69",
+            "a37ffda3-c8c6-42dd-9ffc-b553b8dcc25b"
+          ],
+          "answer": "En el poema, la hablante no le dice que no molesta ni lo ignora. Al contrario, le responde con mucha fuerza: le dice que no solo lo recibe, sino que él \"pone patas arriba toda mi existencia\". Básicamente, le está diciendo que su llegada cambia todo lo que ella conocía, desordenando su vida por completo, pero al final lo da la bienvenida. Es una forma muy intensa de decir que esa persona tiene un poder enorme sobre ella.\n\n¿Te parece que esa respuesta suena más como un reclamo o como una forma de aceptar que su vida va a cambiar?",
+          "ms": 10341,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no cacho, me lo explicas mas facil porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9573806114923407,
+          "chunkIds": [
+            "46163c8c-27a8-4e50-8b48-965353ce7b5c",
+            "c3abea5e-45b9-484f-ae87-17f09b394e74",
+            "319acb57-5f91-470b-9d93-79ef4ac039e4",
+            "8b9992c0-71fd-41a1-8d0d-3782982ea365",
+            "4d324d9c-4be0-468c-940e-69653b5a0c69",
+            "a37ffda3-c8c6-42dd-9ffc-b553b8dcc25b"
+          ],
+          "answer": "Entiendo, a veces las palabras suenan raras. Miralo así: el tipo entra y pregunta si está estorbando. Ella le dice que no es que solo \"moleste\", sino que él le \"pone patas arriba\" la vida. Es como cuando entrás a tu cuarto y encontrás todo desordenado o cambiado; tu rutina se rompió. Ella le está diciendo que su llegada le cambió todo el orden, pero que igual lo da la bienvenida.\n\n¿Vos crees que \"poner patas arriba\" la vida es algo malo o puede ser bueno?",
+          "ms": 10222,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.7073939387022188,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c017",
+      "t1": {
+        "q": "En el poema 'Consejo de ancianos' de Óscar Hahn, ¿a quién le dicen que se cuide y cuándo?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.4644247214281251,
+        "chunkIds": [
+          "c3abea5e-45b9-484f-ae87-17f09b394e74",
+          "46163c8c-27a8-4e50-8b48-965353ce7b5c",
+          "6d72d960-c87c-402a-80af-db5d3487a078",
+          "ce1d9d79-dc01-414f-ab31-4cdb6a2d5bd7",
+          "4d324d9c-4be0-468c-940e-69653b5a0c69",
+          "319acb57-5f91-470b-9d93-79ef4ac039e4"
+        ],
+        "answer": "En ese poema, el hablante le dice \"cuídate\" a Adán. Es una referencia bíblica, así que es a la primera persona de la historia, cuando salió del paraíso a buscar su costilla perdida. El momento es justo al principio de su viaje, cuando está entrando al mundo y no sabe lo que lo espera. Básicamente, le están advirttiendo que el mundo es peligroso y que lo que busque podría lastimarlo. ¿Te imaginás qué tipo de \"cuchillo\" podría encontrar Adán en ese mundo nuevo?",
+        "ms": 11230,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no entendi nada, explicamelo de otra forma",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.4644247214281251,
+        "chunkIds": [
+          "c3abea5e-45b9-484f-ae87-17f09b394e74",
+          "46163c8c-27a8-4e50-8b48-965353ce7b5c",
+          "6d72d960-c87c-402a-80af-db5d3487a078",
+          "ce1d9d79-dc01-414f-ab31-4cdb6a2d5bd7",
+          "4d324d9c-4be0-468c-940e-69653b5a0c69",
+          "319acb57-5f91-470b-9d93-79ef4ac039e4"
+        ],
+        "answer": "Entiendo que la primera vez no pegó. Vamos a cambiar el enfoque. Olvidate por un momento de Adán y del paraíso. Imaginá que estás a punto de entrar a una fiesta nueva, o a tu primer día de colegio, o a empezar un trabajo. Es emocionante, pero también da un poco de miedo porque no sabés qué vas a encontrar.\n\nEl poema es como si unos amigos te agarraran del brazo antes de cruzar la puerta y te dijeran: \"Oí, tené cuidado. Lo que más deseás (tu costilla, tu pareja, tu éxito) puede estar ahí, pero llegar con tanta fuerza que te lastime\". No es que el amor sea malo, es que es una fuerza muy grande que puede doler si no estás preparado. Es una advertencia: \"cuídate, que esto duele\".\n\nSi tuvieras que aconsejarle a alguien que está muy ansioso por conseguir su primer gran empleo, ¿qué le dirías basándote en la idea de que el deseo puede llegar a lastimar si no se está preparado?",
+        "ms": 13386,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "En el poema 'Consejo de ancianos' de Óscar Hahn, ¿a quién le dicen que se cuide y cuándo?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.4644247214281251,
+          "chunkIds": [
+            "c3abea5e-45b9-484f-ae87-17f09b394e74",
+            "46163c8c-27a8-4e50-8b48-965353ce7b5c",
+            "6d72d960-c87c-402a-80af-db5d3487a078",
+            "ce1d9d79-dc01-414f-ab31-4cdb6a2d5bd7",
+            "4d324d9c-4be0-468c-940e-69653b5a0c69",
+            "319acb57-5f91-470b-9d93-79ef4ac039e4"
+          ],
+          "answer": "En ese poema, el hablante le dice \"cuídate\" a Adán. Es una referencia bíblica, así que es a la primera persona de la historia, cuando salió del paraíso a buscar su costilla perdida. El momento es justo al principio de su viaje, cuando está entrando al mundo y no sabe lo que lo espera. Básicamente, le están advirttiendo que el mundo es peligroso y que lo que busque podría lastimarlo. ¿Te imaginás qué tipo de \"cuchillo\" podría encontrar Adán en ese mundo nuevo?",
+          "ms": 11230,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no entendi nada, explicamelo de otra forma",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.4644247214281251,
+          "chunkIds": [
+            "c3abea5e-45b9-484f-ae87-17f09b394e74",
+            "46163c8c-27a8-4e50-8b48-965353ce7b5c",
+            "6d72d960-c87c-402a-80af-db5d3487a078",
+            "ce1d9d79-dc01-414f-ab31-4cdb6a2d5bd7",
+            "4d324d9c-4be0-468c-940e-69653b5a0c69",
+            "319acb57-5f91-470b-9d93-79ef4ac039e4"
+          ],
+          "answer": "Entiendo que la primera vez no pegó. Vamos a cambiar el enfoque. Olvidate por un momento de Adán y del paraíso. Imaginá que estás a punto de entrar a una fiesta nueva, o a tu primer día de colegio, o a empezar un trabajo. Es emocionante, pero también da un poco de miedo porque no sabés qué vas a encontrar.\n\nEl poema es como si unos amigos te agarraran del brazo antes de cruzar la puerta y te dijeran: \"Oí, tené cuidado. Lo que más deseás (tu costilla, tu pareja, tu éxito) puede estar ahí, pero llegar con tanta fuerza que te lastime\". No es que el amor sea malo, es que es una fuerza muy grande que puede doler si no estás preparado. Es una advertencia: \"cuídate, que esto duele\".\n\nSi tuvieras que aconsejarle a alguien que está muy ansioso por conseguir su primer gran empleo, ¿qué le dirías basándote en la idea de que el deseo puede llegar a lastimar si no se está preparado?",
+          "ms": 13386,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.7420174375603676,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c018",
+      "t1": {
+        "q": "Según el libro, ¿qué significa interpretar una obra?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9085542915359455,
+        "chunkIds": [
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "a729022e-6d0e-4672-a669-3a9cb5a4c67f",
+          "ff72e098-43e0-4dc9-a834-1319919c72e3",
+          "289f537b-c69f-4b64-bad6-c49d959231ed",
+          "b15f3d6b-6525-4457-875f-46c8b174d286",
+          "2bdbef3c-3c1e-4e21-82ff-06eb7ae19fe4"
+        ],
+        "answer": "Interpretar es como armar un rompecabezas donde las piezas no tienen un único lugar fijo. Significa construirle sentido a algo que puede entenderse de varias formas, porque su significado es abierto. Por eso, las obras de arte, ya sean pinturas o libros, siempre están listas para que cada persona les encuentre su propia explicación.\n\nSi una misma canción puede evocar recuerdos de infancia en una persona y sensaciones de libertad en otra, ¿qué elemento del contexto personal crees que determina esa interpretación diferente?",
+        "ms": 11527,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "sigo sin entender, dame otro ejemplo porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9085542915359455,
+        "chunkIds": [
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "a729022e-6d0e-4672-a669-3a9cb5a4c67f",
+          "ff72e098-43e0-4dc9-a834-1319919c72e3",
+          "289f537b-c69f-4b64-bad6-c49d959231ed",
+          "b15f3d6b-6525-4457-875f-46c8b174d286",
+          "2bdbef3c-3c1e-4e21-82ff-06eb7ae19fe4"
+        ],
+        "answer": "Entiendo que el ejemplo anterior no te quedó claro. Vamos a probar con algo más cotidiano.\n\nImaginá que mirás una foto de un perro durmiendo en el jardín. Vos podés decir: \"está descansando\". Pero tu amigo, que acaba de perder a su mascota, podría decir: \"está buscando paz\". Ambas respuestas son correctas porque la foto no dice qué pensar, deja que cada uno ponga su propia historia.\n\nEso es interpretar: no hay una única respuesta correcta, sino que vos construis el sentido usando lo que sabés y lo que sentís.\n\n¿Se te ocurre alguna canción que a vos te haga sentir una cosa y a tu mejor amigo otra completamente distinta?",
+        "ms": 11672,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "Según el libro, ¿qué significa interpretar una obra?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9085542915359455,
+          "chunkIds": [
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "a729022e-6d0e-4672-a669-3a9cb5a4c67f",
+            "ff72e098-43e0-4dc9-a834-1319919c72e3",
+            "289f537b-c69f-4b64-bad6-c49d959231ed",
+            "b15f3d6b-6525-4457-875f-46c8b174d286",
+            "2bdbef3c-3c1e-4e21-82ff-06eb7ae19fe4"
+          ],
+          "answer": "Interpretar es como armar un rompecabezas donde las piezas no tienen un único lugar fijo. Significa construirle sentido a algo que puede entenderse de varias formas, porque su significado es abierto. Por eso, las obras de arte, ya sean pinturas o libros, siempre están listas para que cada persona les encuentre su propia explicación.\n\nSi una misma canción puede evocar recuerdos de infancia en una persona y sensaciones de libertad en otra, ¿qué elemento del contexto personal crees que determina esa interpretación diferente?",
+          "ms": 11527,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "sigo sin entender, dame otro ejemplo porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9085542915359455,
+          "chunkIds": [
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "a729022e-6d0e-4672-a669-3a9cb5a4c67f",
+            "ff72e098-43e0-4dc9-a834-1319919c72e3",
+            "289f537b-c69f-4b64-bad6-c49d959231ed",
+            "b15f3d6b-6525-4457-875f-46c8b174d286",
+            "2bdbef3c-3c1e-4e21-82ff-06eb7ae19fe4"
+          ],
+          "answer": "Entiendo que el ejemplo anterior no te quedó claro. Vamos a probar con algo más cotidiano.\n\nImaginá que mirás una foto de un perro durmiendo en el jardín. Vos podés decir: \"está descansando\". Pero tu amigo, que acaba de perder a su mascota, podría decir: \"está buscando paz\". Ambas respuestas son correctas porque la foto no dice qué pensar, deja que cada uno ponga su propia historia.\n\nEso es interpretar: no hay una única respuesta correcta, sino que vos construis el sentido usando lo que sabés y lo que sentís.\n\n¿Se te ocurre alguna canción que a vos te haga sentir una cosa y a tu mejor amigo otra completamente distinta?",
+          "ms": 11672,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.6521152997813896,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c019",
+      "t1": {
+        "q": "En la historia de Tristán e Isolda, ¿de qué acusaron injustamente los nobles a Tristán?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9993781649050556,
+        "chunkIds": [
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "d8393cbd-083b-470f-a043-2eaf44b49194",
+          "edad4afc-2467-4850-a2a6-f448a5f9e915",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+          "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+          "e18d0252-d1a9-4b72-8243-9936db2820c4"
+        ],
+        "answer": "Los nobles lo acusaron de querer robarle el trono a su tío, el rey Marcos. Básicamente, le tenían miedo porque pensaban que Tristán era el heredero legítimo y que, si el rey no tenía hijos, él terminaría siendo el nuevo rey. Por eso lo presionaban para que se casara y así evitar que Tristán llegara al poder.\n\n¿Te parece que esa era la única razón por la que lo miraban con malos ojos, o creés que había algo más en su personalidad que molestaba a la corte?",
+        "ms": 10736,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no cacho, me lo explicas mas facil porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9993781649050556,
+        "chunkIds": [
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "d8393cbd-083b-470f-a043-2eaf44b49194",
+          "edad4afc-2467-4850-a2a6-f448a5f9e915",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+          "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+          "e18d0252-d1a9-4b72-8243-9936db2820c4"
+        ],
+        "answer": "Entiendo, a veces los textos antiguos se enredan mucho. Mirá, la idea es simple: los nobles eran unos celosos. Le tenían miedo a Tristán porque pensaban que él era el verdadero heredero del trono. Si el rey Marcos no tenía hijos, Tristán terminaba siendo el rey. Para evitar eso, lo acusaron de querer robarle el poder, aunque en realidad Tristán solo estaba cumpliendo con su deber. Es como si te acusaran de querer quitarte el puesto de capitán del equipo solo porque sos muy bueno y todos saben que si el capitán falla, vos lo reemplazás.\n\n¿Qué pasaría con la dinámica de poder si el rey Marcos tuviera un hijo varón y Tristán siguiera siendo el mejor guerrero del reino?",
+        "ms": 12130,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "En la historia de Tristán e Isolda, ¿de qué acusaron injustamente los nobles a Tristán?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9993781649050556,
+          "chunkIds": [
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "d8393cbd-083b-470f-a043-2eaf44b49194",
+            "edad4afc-2467-4850-a2a6-f448a5f9e915",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+            "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+            "e18d0252-d1a9-4b72-8243-9936db2820c4"
+          ],
+          "answer": "Los nobles lo acusaron de querer robarle el trono a su tío, el rey Marcos. Básicamente, le tenían miedo porque pensaban que Tristán era el heredero legítimo y que, si el rey no tenía hijos, él terminaría siendo el nuevo rey. Por eso lo presionaban para que se casara y así evitar que Tristán llegara al poder.\n\n¿Te parece que esa era la única razón por la que lo miraban con malos ojos, o creés que había algo más en su personalidad que molestaba a la corte?",
+          "ms": 10736,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no cacho, me lo explicas mas facil porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9993781649050556,
+          "chunkIds": [
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "d8393cbd-083b-470f-a043-2eaf44b49194",
+            "edad4afc-2467-4850-a2a6-f448a5f9e915",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+            "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+            "e18d0252-d1a9-4b72-8243-9936db2820c4"
+          ],
+          "answer": "Entiendo, a veces los textos antiguos se enredan mucho. Mirá, la idea es simple: los nobles eran unos celosos. Le tenían miedo a Tristán porque pensaban que él era el verdadero heredero del trono. Si el rey Marcos no tenía hijos, Tristán terminaba siendo el rey. Para evitar eso, lo acusaron de querer robarle el poder, aunque en realidad Tristán solo estaba cumpliendo con su deber. Es como si te acusaran de querer quitarte el puesto de capitán del equipo solo porque sos muy bueno y todos saben que si el capitán falla, vos lo reemplazás.\n\n¿Qué pasaría con la dinámica de poder si el rey Marcos tuviera un hijo varón y Tristán siguiera siendo el mejor guerrero del reino?",
+          "ms": 12130,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.8085662886779169,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c020",
+      "t1": {
+        "q": "¿Cómo se llama el castillo del rey Marcos y dónde queda?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.8755534168956836,
+        "chunkIds": [
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+          "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+          "d8393cbd-083b-470f-a043-2eaf44b49194",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+          "bc69c639-6c8e-40be-a648-66759705099d"
+        ],
+        "answer": "Ese dato específico no está en el texto que tengo acá, así que no puedo darte el nombre exacto ni la ubicación precisa sin inventar algo. Lo que sí sé, por lo que leímos, es que el rey Marcos es el tío de Tristán y que la historia tiene que ver con Cornualles.\n\nSi el rey Marcos no fuera el tío de Tristán sino su padre, ¿cómo cambiaría la dinámica de los conflictos que se mencionan en la historia?",
+        "ms": 10399,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no entendi nada, explicamelo de otra forma",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.8710362989796612,
+        "chunkIds": [
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+          "d8393cbd-083b-470f-a043-2eaf44b49194",
+          "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+          "bc69c639-6c8e-40be-a648-66759705099d"
+        ],
+        "answer": "Entiendo que la explicación anterior no te sirvió. Vamos a simplificarlo mucho. El texto dice que el castillo se llama Tintagel y está en Cornualles. Es el lugar donde vive el rey Marcos, que es el tío de Tristán.\n\nSi el rey Marcos es el tío de Tristán, ¿por qué creés que los nobles querían que el rey se case con Isolda en lugar de dejar que Tristán herede el trono?",
+        "ms": 9326,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Cómo se llama el castillo del rey Marcos y dónde queda?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.8755534168956836,
+          "chunkIds": [
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+            "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+            "d8393cbd-083b-470f-a043-2eaf44b49194",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+            "bc69c639-6c8e-40be-a648-66759705099d"
+          ],
+          "answer": "Ese dato específico no está en el texto que tengo acá, así que no puedo darte el nombre exacto ni la ubicación precisa sin inventar algo. Lo que sí sé, por lo que leímos, es que el rey Marcos es el tío de Tristán y que la historia tiene que ver con Cornualles.\n\nSi el rey Marcos no fuera el tío de Tristán sino su padre, ¿cómo cambiaría la dinámica de los conflictos que se mencionan en la historia?",
+          "ms": 10399,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no entendi nada, explicamelo de otra forma",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.8710362989796612,
+          "chunkIds": [
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+            "d8393cbd-083b-470f-a043-2eaf44b49194",
+            "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+            "bc69c639-6c8e-40be-a648-66759705099d"
+          ],
+          "answer": "Entiendo que la explicación anterior no te sirvió. Vamos a simplificarlo mucho. El texto dice que el castillo se llama Tintagel y está en Cornualles. Es el lugar donde vive el rey Marcos, que es el tío de Tristán.\n\nSi el rey Marcos es el tío de Tristán, ¿por qué creés que los nobles querían que el rey se case con Isolda en lugar de dejar que Tristán herede el trono?",
+          "ms": 9326,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.7453713041076648,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c021",
+      "t1": {
+        "q": "¿Quién preparó el filtro de amor en la historia de Tristán e Isolda y con qué ingredientes lo hizo?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9873387465733461,
+        "chunkIds": [
+          "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "161137d9-f85b-4432-b270-a12a4634c570",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+          "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+          "6af86f01-0d21-40f4-a9bc-86c54717e44c"
+        ],
+        "answer": "El filtro lo preparó la madre de Isolda. Ella juntó hierbas, flores y raíces, y las mezcló con vino para crear ese brebaje tan poderoso. Básicamente eran ingredientes naturales mezclados con vino.\n\nSi en lugar de vino se usara agua, ¿cómo creés que cambiaría el efecto del filtro?",
+        "ms": 12928,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "sigo sin entender, dame otro ejemplo porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9888832041491947,
+        "chunkIds": [
+          "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "161137d9-f85b-4432-b270-a12a4634c570",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+          "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+          "724526ac-857d-4b3a-bc54-4fd0f58ce821"
+        ],
+        "answer": "Entiendo que el ejemplo anterior no te quedó claro. Vamos a cambiar la forma de verlo.\n\nImaginate que el filtro es como un \"interruptor mágico\". La madre de Isolda lo preparó con hierbas, flores y raíces mezcladas en vino. El objetivo era que, al beberlo, el amor se encendiera automáticamente entre los que lo tomaran.\n\nPero mirá bien qué pasó en la historia: el filtro estaba destinado al Rey Marcos y a Isolda para su boda. Sin embargo, por un error o una confusión, Tristán e Isolda lo bebieron juntos en el barco. Ahí es donde el \"interruptor\" se prendió entre ellos, no entre Isolda y el Rey.\n\nSi el filtro era solo para que el Rey y Isolda se amaran, ¿por qué creés que el texto dice que los \"narradores corrompieron la historia\" al decir que el Rey también bebió?",
+        "ms": 12419,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Quién preparó el filtro de amor en la historia de Tristán e Isolda y con qué ingredientes lo hizo?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9873387465733461,
+          "chunkIds": [
+            "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "161137d9-f85b-4432-b270-a12a4634c570",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+            "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+            "6af86f01-0d21-40f4-a9bc-86c54717e44c"
+          ],
+          "answer": "El filtro lo preparó la madre de Isolda. Ella juntó hierbas, flores y raíces, y las mezcló con vino para crear ese brebaje tan poderoso. Básicamente eran ingredientes naturales mezclados con vino.\n\nSi en lugar de vino se usara agua, ¿cómo creés que cambiaría el efecto del filtro?",
+          "ms": 12928,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "sigo sin entender, dame otro ejemplo porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9888832041491947,
+          "chunkIds": [
+            "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "161137d9-f85b-4432-b270-a12a4634c570",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+            "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+            "724526ac-857d-4b3a-bc54-4fd0f58ce821"
+          ],
+          "answer": "Entiendo que el ejemplo anterior no te quedó claro. Vamos a cambiar la forma de verlo.\n\nImaginate que el filtro es como un \"interruptor mágico\". La madre de Isolda lo preparó con hierbas, flores y raíces mezcladas en vino. El objetivo era que, al beberlo, el amor se encendiera automáticamente entre los que lo tomaran.\n\nPero mirá bien qué pasó en la historia: el filtro estaba destinado al Rey Marcos y a Isolda para su boda. Sin embargo, por un error o una confusión, Tristán e Isolda lo bebieron juntos en el barco. Ahí es donde el \"interruptor\" se prendió entre ellos, no entre Isolda y el Rey.\n\nSi el filtro era solo para que el Rey y Isolda se amaran, ¿por qué creés que el texto dice que los \"narradores corrompieron la historia\" al decir que el Rey también bebió?",
+          "ms": 12419,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.728738510494847,
+      "distintaJuez": true,
+      "jaccardChunks": 0.7142857142857143,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c022",
+      "t1": {
+        "q": "En el vocabulario del capítulo de Tristán e Isolda, ¿qué significa la palabra 'singlar'?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9349641073499726,
+        "chunkIds": [
+          "d8393cbd-083b-470f-a043-2eaf44b49194",
+          "e78ce149-d482-46a9-b95a-218cbbb91738",
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+          "e18d0252-d1a9-4b72-8243-9936db2820c4",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8"
+        ],
+        "answer": "Singlar es navegar. En el texto, cuando dicen que la nave \"singlaba\", significa que estaba navegando, avanzando por el mar. Es una palabra un poco antigua, pero en el contexto de la historia, se usa para describir el movimiento del barco mientras los personajes viajan.\n\n¿Se te ocurre alguna otra situación en la que podrías usar \"singlar\" en lugar de \"navegar\"?",
+        "ms": 10731,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no cacho, me lo explicas mas facil porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9349641073499726,
+        "chunkIds": [
+          "d8393cbd-083b-470f-a043-2eaf44b49194",
+          "e78ce149-d482-46a9-b95a-218cbbb91738",
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+          "e18d0252-d1a9-4b72-8243-9936db2820c4",
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8"
+        ],
+        "answer": "Entiendo, a veces las palabras antiguas suenan raras. Mirá, \"singlar\" es simplemente un sinónimo de \"navegar\". Cuando el texto dice \"la nave singlaba\", quiere decir que el barco estaba avanzando por el mar. Es como si dijeran \"el barco navegaba\".\n\nSi en un cuento de aventuras aparece la frase \"los piratas singlaban hacia la isla del tesoro\", ¿qué acción estarían realizando los piratas?",
+        "ms": 10924,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "En el vocabulario del capítulo de Tristán e Isolda, ¿qué significa la palabra 'singlar'?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9349641073499726,
+          "chunkIds": [
+            "d8393cbd-083b-470f-a043-2eaf44b49194",
+            "e78ce149-d482-46a9-b95a-218cbbb91738",
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+            "e18d0252-d1a9-4b72-8243-9936db2820c4",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8"
+          ],
+          "answer": "Singlar es navegar. En el texto, cuando dicen que la nave \"singlaba\", significa que estaba navegando, avanzando por el mar. Es una palabra un poco antigua, pero en el contexto de la historia, se usa para describir el movimiento del barco mientras los personajes viajan.\n\n¿Se te ocurre alguna otra situación en la que podrías usar \"singlar\" en lugar de \"navegar\"?",
+          "ms": 10731,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no cacho, me lo explicas mas facil porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9349641073499726,
+          "chunkIds": [
+            "d8393cbd-083b-470f-a043-2eaf44b49194",
+            "e78ce149-d482-46a9-b95a-218cbbb91738",
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+            "e18d0252-d1a9-4b72-8243-9936db2820c4",
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8"
+          ],
+          "answer": "Entiendo, a veces las palabras antiguas suenan raras. Mirá, \"singlar\" es simplemente un sinónimo de \"navegar\". Cuando el texto dice \"la nave singlaba\", quiere decir que el barco estaba avanzando por el mar. Es como si dijeran \"el barco navegaba\".\n\nSi en un cuento de aventuras aparece la frase \"los piratas singlaban hacia la isla del tesoro\", ¿qué acción estarían realizando los piratas?",
+          "ms": 10924,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.8969512761112917,
+      "distintaJuez": false,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c023",
+      "t1": {
+        "q": "Si el rey Marcos nunca bebió el vino de hierbas, ¿qué fue lo que le inspiró su amor por Isolda?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9952140877696309,
+        "chunkIds": [
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+          "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+          "6af86f01-0d21-40f4-a9bc-86c54717e44c",
+          "d8393cbd-083b-470f-a043-2eaf44b49194"
+        ],
+        "answer": "Esa es una clave importantísima del texto. A diferencia de lo que muchos creen, el amor del rey Marcos no nació de un hechizo ni de un filtro mágico. El fragmento explica que él jamás probó esa pócima. Lo que despertó su sentimiento fue algo mucho más interno y humano: la \"tierna nobleza de su corazón\". Básicamente, el autor quiere mostrar que Marcos amaba a Isolda por quien era ella y por la bondad de su propia alma, no porque estuviera bajo algún sortilegio. Es una forma de amor más pura y consciente, aunque también más dolorosa para él, porque sabía que ella amaba a otro.\n\n¿Te parece que ese tipo de amor, basado en la nobleza y no en la magia, lo hace más fuerte o más trágico para el personaje?",
+        "ms": 26196,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no entendi nada, explicamelo de otra forma",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.993197334988885,
+        "chunkIds": [
+          "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+          "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+          "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+          "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+          "6af86f01-0d21-40f4-a9bc-86c54717e44c",
+          "d8393cbd-083b-470f-a043-2eaf44b49194"
+        ],
+        "answer": "Entiendo que la confusión viene porque hay dos versiones de la historia mezcladas. Imaginá que estás viendo una película y te cuentan un final alternativo. En el texto, el autor dice que hay \"mentirosos\" (los narradores) que inventaron que Marcos bebió el filtro. Pero el autor de este libro asegura que eso es falso. La verdad, según él, es que Marcos era un hombre noble y bondadoso, y se enamoró de Isolda simplemente porque ella era una persona maravillosa y él tenía un corazón tierno. No hubo magia ni pócimas para él; fue un amor natural, aunque muy doloroso porque ella amaba a otro. Es como si dijéramos: \"No fue un hechizo, fue que se dieron cuenta de lo valiosa que era ella\".\n\n¿Ves la diferencia? Para Marcos fue un amor de admiración y nobleza, mientras que para Tristán e Isolda sí hubo magia. ¿Te queda claro que el filtro solo afectó a los amantes jóvenes y no al rey?",
+        "ms": 15166,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "Si el rey Marcos nunca bebió el vino de hierbas, ¿qué fue lo que le inspiró su amor por Isolda?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9952140877696309,
+          "chunkIds": [
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+            "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+            "6af86f01-0d21-40f4-a9bc-86c54717e44c",
+            "d8393cbd-083b-470f-a043-2eaf44b49194"
+          ],
+          "answer": "Esa es una clave importantísima del texto. A diferencia de lo que muchos creen, el amor del rey Marcos no nació de un hechizo ni de un filtro mágico. El fragmento explica que él jamás probó esa pócima. Lo que despertó su sentimiento fue algo mucho más interno y humano: la \"tierna nobleza de su corazón\". Básicamente, el autor quiere mostrar que Marcos amaba a Isolda por quien era ella y por la bondad de su propia alma, no porque estuviera bajo algún sortilegio. Es una forma de amor más pura y consciente, aunque también más dolorosa para él, porque sabía que ella amaba a otro.\n\n¿Te parece que ese tipo de amor, basado en la nobleza y no en la magia, lo hace más fuerte o más trágico para el personaje?",
+          "ms": 26196,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no entendi nada, explicamelo de otra forma",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.993197334988885,
+          "chunkIds": [
+            "669ce0ca-1160-415d-ac14-4be0fc94d9c8",
+            "d51a2a21-d2c1-4a40-bc4a-d232324e6a3d",
+            "81e1e6d3-df3f-4754-a571-8e2ae550569e",
+            "d48f569c-44bd-49ac-9aea-5a228d09d63f",
+            "6af86f01-0d21-40f4-a9bc-86c54717e44c",
+            "d8393cbd-083b-470f-a043-2eaf44b49194"
+          ],
+          "answer": "Entiendo que la confusión viene porque hay dos versiones de la historia mezcladas. Imaginá que estás viendo una película y te cuentan un final alternativo. En el texto, el autor dice que hay \"mentirosos\" (los narradores) que inventaron que Marcos bebió el filtro. Pero el autor de este libro asegura que eso es falso. La verdad, según él, es que Marcos era un hombre noble y bondadoso, y se enamoró de Isolda simplemente porque ella era una persona maravillosa y él tenía un corazón tierno. No hubo magia ni pócimas para él; fue un amor natural, aunque muy doloroso porque ella amaba a otro. Es como si dijéramos: \"No fue un hechizo, fue que se dieron cuenta de lo valiosa que era ella\".\n\n¿Ves la diferencia? Para Marcos fue un amor de admiración y nobleza, mientras que para Tristán e Isolda sí hubo magia. ¿Te queda claro que el filtro solo afectó a los amantes jóvenes y no al rey?",
+          "ms": 15166,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.7831769854580347,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "c024",
+      "t1": {
+        "q": "En el cuento 'La última hoja', ¿qué contaba Johnsy al revés mirando por la ventana y qué creía que iba a pasar cuando cayera la última?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.9969845904076926,
+        "chunkIds": [
+          "2bdbd46f-8ba7-40ab-bed9-825223b6d264",
+          "34706950-580a-4958-babe-694b400db25c",
+          "4803bbc6-bdd9-4b26-b686-0a52744da1c3",
+          "49d1ea95-7df6-4f0f-8f71-65772cc40c28",
+          "96412e53-a65d-4623-9998-5734835c89df",
+          "99db4e45-f571-4131-be7d-a6d2c89f9f30"
+        ],
+        "answer": "Johnsy contaba las hojas de la hiedra que caían de la pared de enfrente, pero al revés, empezando por el número más alto y bajando hasta llegar a cero. Ella creía que, en el momento en que cayera la última hoja, ella también moriría. Es como si hubiera puesto su vida en manos de esa planta, pensando que su destino estaba ligado a si la hoja se quedaba o no. ¿Te parece que esa conexión entre la hoja y su vida era lógica o más bien una idea que le dio la enfermedad?",
+        "ms": 9934,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "sigo sin entender, dame otro ejemplo porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": true,
+        "topScore": 0.9969845904076926,
+        "chunkIds": [
+          "2bdbd46f-8ba7-40ab-bed9-825223b6d264",
+          "34706950-580a-4958-babe-694b400db25c",
+          "4803bbc6-bdd9-4b26-b686-0a52744da1c3",
+          "49d1ea95-7df6-4f0f-8f71-65772cc40c28",
+          "96412e53-a65d-4623-9998-5734835c89df",
+          "99db4e45-f571-4131-be7d-a6d2c89f9f30"
+        ],
+        "answer": "Entiendo que el ejemplo anterior no te haya quedado claro. Vamos a probar con algo más cotidiano. Imaginá que estás esperando un partido de fútbol muy importante, pero empieza a llover torrencialmente y el campo se inunda. Vos, que estabas emocionado, empiezas a pensar: \"Si el partido se cancela, no vale la pena seguir esperando, me voy a la cama\". Tu ánimo depende de una decisión externa (el árbitro o el clima), no de tu estado físico.\n\nEn el cuento pasa algo similar. Johnsy está tan débil por la enfermedad que su cerebro conecta su vida con algo que no puede controlar: las hojas que caen. Ella no cuenta las hojas para saber qué hora es, sino para medir cuánto tiempo le queda de vida. Para ella, la hoja es como un contador regresivo: mientras haya hojas, hay esperanza; cuando caiga la última, su \"contador\" llega a cero y ella muere. No es que la hoja la mate, sino que su mente ya se dio por vencida.\n\n¿Podrías imaginarte una situación en la vida real donde alguien deje de hacer algo importante solo porque una condición externa (como el clima o un horario) no se cumple?",
+        "ms": 13621,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "En el cuento 'La última hoja', ¿qué contaba Johnsy al revés mirando por la ventana y qué creía que iba a pasar cuando cayera la última?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.9969845904076926,
+          "chunkIds": [
+            "2bdbd46f-8ba7-40ab-bed9-825223b6d264",
+            "34706950-580a-4958-babe-694b400db25c",
+            "4803bbc6-bdd9-4b26-b686-0a52744da1c3",
+            "49d1ea95-7df6-4f0f-8f71-65772cc40c28",
+            "96412e53-a65d-4623-9998-5734835c89df",
+            "99db4e45-f571-4131-be7d-a6d2c89f9f30"
+          ],
+          "answer": "Johnsy contaba las hojas de la hiedra que caían de la pared de enfrente, pero al revés, empezando por el número más alto y bajando hasta llegar a cero. Ella creía que, en el momento en que cayera la última hoja, ella también moriría. Es como si hubiera puesto su vida en manos de esa planta, pensando que su destino estaba ligado a si la hoja se quedaba o no. ¿Te parece que esa conexión entre la hoja y su vida era lógica o más bien una idea que le dio la enfermedad?",
+          "ms": 9934,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "sigo sin entender, dame otro ejemplo porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.9969845904076926,
+          "chunkIds": [
+            "2bdbd46f-8ba7-40ab-bed9-825223b6d264",
+            "34706950-580a-4958-babe-694b400db25c",
+            "4803bbc6-bdd9-4b26-b686-0a52744da1c3",
+            "49d1ea95-7df6-4f0f-8f71-65772cc40c28",
+            "96412e53-a65d-4623-9998-5734835c89df",
+            "99db4e45-f571-4131-be7d-a6d2c89f9f30"
+          ],
+          "answer": "Entiendo que el ejemplo anterior no te haya quedado claro. Vamos a probar con algo más cotidiano. Imaginá que estás esperando un partido de fútbol muy importante, pero empieza a llover torrencialmente y el campo se inunda. Vos, que estabas emocionado, empiezas a pensar: \"Si el partido se cancela, no vale la pena seguir esperando, me voy a la cama\". Tu ánimo depende de una decisión externa (el árbitro o el clima), no de tu estado físico.\n\nEn el cuento pasa algo similar. Johnsy está tan débil por la enfermedad que su cerebro conecta su vida con algo que no puede controlar: las hojas que caen. Ella no cuenta las hojas para saber qué hora es, sino para medir cuánto tiempo le queda de vida. Para ella, la hoja es como un contador regresivo: mientras haya hojas, hay esperanza; cuando caiga la última, su \"contador\" llega a cero y ella muere. No es que la hoja la mate, sino que su mente ya se dio por vencida.\n\n¿Podrías imaginarte una situación en la vida real donde alguien deje de hacer algo importante solo porque una condición externa (como el clima o un horario) no se cumple?",
+          "ms": 13621,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.6901978300183341,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "x001",
+      "t1": {
+        "q": "¿Qué es la fotosíntesis?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": false,
+        "topScore": 0.0007325874654186427,
+        "chunkIds": [],
+        "answer": "La fotosíntesis es básicamente cómo las plantas se cocinan solas. Usan la luz del sol para transformar el agua y el dióxido de carbono (el gas que nosotros expulsamos al respirar) en azúcar, que es su comida, y liberan oxígeno como sobra, que es lo que nosotros necesitamos para vivir. Es como una fábrica verde que convierte energía solar en energía química.\n\n¿Qué pasaría con la producción de oxígeno si las plantas se movieran a un planeta donde no hay luz solar?",
+        "ms": 12799,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "no cacho, me lo explicas mas facil porfa",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": false,
+        "topScore": 0.0007953020150704459,
+        "chunkIds": [],
+        "answer": "Tranqui, lo hacemos más simple. Imaginá que la planta es una cocina. El sol es la hornalla encendida, el agua y el aire son los ingredientes, y la planta cocina todo eso para hacer su propia comida (azúcar). Como sobra de esa \"cocina\", suelta el oxígeno que nosotros respiramos. Básicamente, es la planta comiendo luz.\n\n¿Vos creés que una planta en un cuarto totalmente oscuro podría seguir haciendo su \"comida\" así?",
+        "ms": 10151,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Qué es la fotosíntesis?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": false,
+          "topScore": 0.0007325874654186427,
+          "chunkIds": [],
+          "answer": "La fotosíntesis es básicamente cómo las plantas se cocinan solas. Usan la luz del sol para transformar el agua y el dióxido de carbono (el gas que nosotros expulsamos al respirar) en azúcar, que es su comida, y liberan oxígeno como sobra, que es lo que nosotros necesitamos para vivir. Es como una fábrica verde que convierte energía solar en energía química.\n\n¿Qué pasaría con la producción de oxígeno si las plantas se movieran a un planeta donde no hay luz solar?",
+          "ms": 12799,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no cacho, me lo explicas mas facil porfa",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": false,
+          "topScore": 0.0007953020150704459,
+          "chunkIds": [],
+          "answer": "Tranqui, lo hacemos más simple. Imaginá que la planta es una cocina. El sol es la hornalla encendida, el agua y el aire son los ingredientes, y la planta cocina todo eso para hacer su propia comida (azúcar). Como sobra de esa \"cocina\", suelta el oxígeno que nosotros respiramos. Básicamente, es la planta comiendo luz.\n\n¿Vos creés que una planta en un cuarto totalmente oscuro podría seguir haciendo su \"comida\" así?",
+          "ms": 10151,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "y por que las plantas necesitan la luz del sol?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": false,
+          "topScore": 0.0014002448805913023,
+          "chunkIds": [],
+          "answer": "La luz del sol es la energía que activa todo el proceso. Sin esa energía, la planta no tiene \"fuerza\" para unir las moléculas de agua y dióxido de carbono y transformarlas en azúcar. Es como intentar armar un mueble sin herramientas: tenés las piezas, pero no tenés la fuerza para ponerlas juntas. La luz es la herramienta que le permite a la planta \"cocinar\" su comida.\n\n¿Qué creés que le pasaría a una planta si la ponés en un lugar con mucha agua y aire, pero sin ninguna luz?",
+          "ms": 26100,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": null,
+      "distintaJuez": null,
+      "jaccardChunks": null,
+      "perdioMaterial": false
+    },
+    {
+      "id": "x002",
+      "t1": {
+        "q": "¿Cómo se calcula el área de un triángulo?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": false,
+        "topScore": 0.0013237333623692393,
+        "chunkIds": [],
+        "answer": "No tengo el material de tu libro para este tema, pero te lo explico igual porque es un concepto clave.\n\nImaginate que tenés un triángulo y querés saber cuánto espacio ocupa. La fórmula es muy simple: multiplicás la base por la altura y, después, dividís todo por dos. ¿Por qué dividís por dos? Porque un triángulo es exactamente la mitad de un rectángulo que tenga la misma base y la misma altura.\n\nPor ejemplo, si la base mide 10 cm y la altura 5 cm, primero hacés 10 por 5 (que da 50) y luego dividís por 2, así que el área es 25 cm cuadrados.\n\nSi tuvieras un triángulo con base 8 y altura 6,\n\n¿Cuánto mediría el área de ese triángulo?",
+        "ms": 24553,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "dame otro ejemplo",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": false,
+        "topScore": 0.00039426315925084054,
+        "chunkIds": [],
+        "answer": "Dale, vamos con otro. Imaginá que tenés una rebanada de pizza triangular. Si la base de la rebanada mide 12 cm y la punta está a 4 cm de distancia (esa es la altura), primero multiplicás 12 por 4, que da 48. Como es la mitad de un rectángulo, dividís por 2 y te da 24 cm cuadrados.\n\nSi ahora tenés un triángulo con base 10 y altura 3,\n\n¿Cuánto mediría el área de ese triángulo?",
+        "ms": 19274,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Cómo se calcula el área de un triángulo?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": false,
+          "topScore": 0.0013237333623692393,
+          "chunkIds": [],
+          "answer": "No tengo el material de tu libro para este tema, pero te lo explico igual porque es un concepto clave.\n\nImaginate que tenés un triángulo y querés saber cuánto espacio ocupa. La fórmula es muy simple: multiplicás la base por la altura y, después, dividís todo por dos. ¿Por qué dividís por dos? Porque un triángulo es exactamente la mitad de un rectángulo que tenga la misma base y la misma altura.\n\nPor ejemplo, si la base mide 10 cm y la altura 5 cm, primero hacés 10 por 5 (que da 50) y luego dividís por 2, así que el área es 25 cm cuadrados.\n\nSi tuvieras un triángulo con base 8 y altura 6,\n\n¿Cuánto mediría el área de ese triángulo?",
+          "ms": 24553,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "dame otro ejemplo",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": false,
+          "topScore": 0.00039426315925084054,
+          "chunkIds": [],
+          "answer": "Dale, vamos con otro. Imaginá que tenés una rebanada de pizza triangular. Si la base de la rebanada mide 12 cm y la punta está a 4 cm de distancia (esa es la altura), primero multiplicás 12 por 4, que da 48. Como es la mitad de un rectángulo, dividís por 2 y te da 24 cm cuadrados.\n\nSi ahora tenés un triángulo con base 10 y altura 3,\n\n¿Cuánto mediría el área de ese triángulo?",
+          "ms": 19274,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": null,
+      "distintaJuez": null,
+      "jaccardChunks": null,
+      "perdioMaterial": false
+    },
+    {
+      "id": "x003",
+      "t1": {
+        "q": "¿Qué es el narrador de una historia?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.8871827845976975,
+        "chunkIds": [
+          "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+          "415df138-59e5-4717-bdba-17a8463c8153",
+          "1c0b3e61-b848-40a8-b929-64f1ae0a5b24",
+          "6b3882d0-8c80-4ddb-89e6-a110c0530442",
+          "3c6e751d-aad9-4188-bebb-0e37a9a95f79",
+          "9360fe20-133b-41e6-9558-286f90d41006"
+        ],
+        "answer": "El narrador es simplemente la voz que cuenta la historia. No es el autor real (el que escribió el libro), sino una voz ficticia que crea el escritor para contarte lo que pasa. Imaginá que es como un amigo que te está relatando algo que vio o que le contaron.\n\nEsta voz tiene una perspectiva, es decir, un punto de vista. Puede ser un personaje de la historia (como el detective mismo) o alguien externo que solo observa. Lo importante es que el narrador decide qué detalles te cuenta, en qué orden y con qué tono, para mantener tu interés o hacerte sentir suspenso.\n\n¿Se te ocurre algún libro o película donde el protagonista te cuente la historia en primera persona, como si te estuviera hablando a vos?",
+        "ms": 12596,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "¿y qué es la célula?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": false,
+        "topScore": 0.08317279830538676,
+        "chunkIds": [],
+        "answer": "No tengo el material de biología para este tema, pero te lo explico igual. La célula es la unidad más pequeña de vida. Es como el ladrillo básico de todo ser vivo: vos, un árbol, hasta una bacteria, todo está hecho de células.\n\nPiensalo así: si un edificio está hecho de ladrillos, tu cuerpo está hecho de células. Cada una tiene su propia vida, come, crece y se reproduce, pero juntas forman tejidos, órganos y todo tu cuerpo. Es la estructura fundamental que nos permite existir.\n\nSi una célula individual puede comer y reproducirse por sí misma, ¿por qué no podríamos considerar a una sola célula como un ser vivo completo en lugar de solo una parte de uno?",
+        "ms": 32359,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": 0.7899055480957031
+      },
+      "turnos": [
+        {
+          "q": "¿Qué es el narrador de una historia?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.8871827845976975,
+          "chunkIds": [
+            "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+            "415df138-59e5-4717-bdba-17a8463c8153",
+            "1c0b3e61-b848-40a8-b929-64f1ae0a5b24",
+            "6b3882d0-8c80-4ddb-89e6-a110c0530442",
+            "3c6e751d-aad9-4188-bebb-0e37a9a95f79",
+            "9360fe20-133b-41e6-9558-286f90d41006"
+          ],
+          "answer": "El narrador es simplemente la voz que cuenta la historia. No es el autor real (el que escribió el libro), sino una voz ficticia que crea el escritor para contarte lo que pasa. Imaginá que es como un amigo que te está relatando algo que vio o que le contaron.\n\nEsta voz tiene una perspectiva, es decir, un punto de vista. Puede ser un personaje de la historia (como el detective mismo) o alguien externo que solo observa. Lo importante es que el narrador decide qué detalles te cuenta, en qué orden y con qué tono, para mantener tu interés o hacerte sentir suspenso.\n\n¿Se te ocurre algún libro o película donde el protagonista te cuente la historia en primera persona, como si te estuviera hablando a vos?",
+          "ms": 12596,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "¿y qué es la célula?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": false,
+          "topScore": 0.08317279830538676,
+          "chunkIds": [],
+          "answer": "No tengo el material de biología para este tema, pero te lo explico igual. La célula es la unidad más pequeña de vida. Es como el ladrillo básico de todo ser vivo: vos, un árbol, hasta una bacteria, todo está hecho de células.\n\nPiensalo así: si un edificio está hecho de ladrillos, tu cuerpo está hecho de células. Cada una tiene su propia vida, come, crece y se reproduce, pero juntas forman tejidos, órganos y todo tu cuerpo. Es la estructura fundamental que nos permite existir.\n\nSi una célula individual puede comer y reproducirse por sí misma, ¿por qué no podríamos considerar a una sola célula como un ser vivo completo en lugar de solo una parte de uno?",
+          "ms": 32359,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": 0.7899055480957031
+        },
+        {
+          "q": "no entendi nada, explicamelo de otra forma",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.6933207282525169,
+          "chunkIds": [
+            "c94a00c2-91d1-40f8-adb1-bbb69f5da77b",
+            "fc5e709a-f8a6-470c-b434-de9c2e9da768",
+            "2824a9b3-45eb-4622-90c6-db72cbead8de",
+            "4db28c93-41d1-4cd1-a32b-74d50ffa5a33",
+            "ab1f5562-f3a3-4da6-bfbd-f54470da5b76",
+            "fe6a1d6a-f180-43cc-8c52-606f0b8a173d"
+          ],
+          "answer": "Entiendo que la primera vez no entró. Vamos a cambiar el enfoque. Olvidá la teoría por un momento y pensemos en cómo nos cuentan las cosas en la vida real.\n\nImaginá que estás viendo una película de misterio. Hay dos formas principales de que te cuenten lo que pasa:\n\n1.  **El que sabe todo (Omnisciente):** Es como si la cámara volara por la habitación. Ves lo que hace el detective, pero también ves lo que piensa el ladrón en otra casa, y hasta lo que siente la víctima. No hay secretos para esta voz.\n2.  **El que solo ve (Objetivo):** Es como si fueras una cámara de seguridad fija en la esquina. Solo ves lo que entra por la puerta y escuchás lo que se dice. No sabés qué piensa nadie, solo lo que hacen y dicen.\n\nAhora, si el narrador es un personaje de la historia (como el detective mismo), ahí entra en **primera persona**. Vos solo sabés lo que él sabe y siente. Si él no ve algo, vos tampoco.\n\nLa clave para no confundirse es preguntar: \"¿Esta voz conoce los pensamientos de los demás o solo lo que ve?\". Si conoce todo, es omnisciente. Si solo ve, es objetivo. Si es un personaje, es interno.\n\n¿Podrías imaginarte una situación de la vida real (como ver una discusión entre amigos) y decirme qué tipo de narrador sería si solo escuchas lo que gritan, pero no sabes por qué están enojados?",
+          "ms": 20587,
+          "scope": "otro_curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": null,
+      "distintaJuez": null,
+      "jaccardChunks": null,
+      "perdioMaterial": true
+    },
+    {
+      "id": "x004",
+      "t1": {
+        "q": "¿Qué es el narrador de una historia?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.8871827845976975,
+        "chunkIds": [
+          "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+          "415df138-59e5-4717-bdba-17a8463c8153",
+          "1c0b3e61-b848-40a8-b929-64f1ae0a5b24",
+          "6b3882d0-8c80-4ddb-89e6-a110c0530442",
+          "3c6e751d-aad9-4188-bebb-0e37a9a95f79",
+          "9360fe20-133b-41e6-9558-286f90d41006"
+        ],
+        "answer": "El narrador es simplemente la voz que cuenta la historia. No es el autor real (el que escribió el libro), sino una voz ficticia que crea el escritor para contarte lo que pasa.\n\nImaginate que estás viendo una película: el narrador es como la cámara o la voz en off que te guía. Puede ser un personaje de la historia (como el detective que investiga) o alguien externo que solo observa. Lo importante es que su forma de contar define qué detalles te da y qué tono usa, lo que a su vez genera suspenso o misterio.\n\n¿Te imaginas cómo cambiaría la historia si el detective contara sus propios crímenes en primera persona en lugar de un testigo externo?",
+        "ms": 10418,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "¿y cuál es la diferencia con el autor?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0.7349498854559647,
+        "chunkIds": [
+          "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+          "415df138-59e5-4717-bdba-17a8463c8153",
+          "1c0b3e61-b848-40a8-b929-64f1ae0a5b24",
+          "9360fe20-133b-41e6-9558-286f90d41006",
+          "6b3882d0-8c80-4ddb-89e6-a110c0530442",
+          "3c6e751d-aad9-4188-bebb-0e37a9a95f79"
+        ],
+        "answer": "Buena pregunta, porque es la confusión más común. El autor es la persona real, con nombre y apellido, que escribió el libro (como Edgar Allan Poe). El narrador, en cambio, es una voz ficticia, una máscara que el autor se pone para contar la historia.\n\nImaginate que el autor es un actor y el narrador es el personaje que interpreta. El autor crea al narrador, le da una personalidad, un tono y una forma de ver el mundo, pero no son la misma persona. Por eso, a veces el narrador dice cosas que el autor no necesariamente piensa o sabe.\n\n¿Se te ocurre algún ejemplo de una película o serie donde el personaje que cuenta la historia tenga una opinión muy distinta a la del director o guionista?",
+        "ms": 13643,
+        "scope": "curso",
+        "mode": "libro",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Qué es el narrador de una historia?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.8871827845976975,
+          "chunkIds": [
+            "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+            "415df138-59e5-4717-bdba-17a8463c8153",
+            "1c0b3e61-b848-40a8-b929-64f1ae0a5b24",
+            "6b3882d0-8c80-4ddb-89e6-a110c0530442",
+            "3c6e751d-aad9-4188-bebb-0e37a9a95f79",
+            "9360fe20-133b-41e6-9558-286f90d41006"
+          ],
+          "answer": "El narrador es simplemente la voz que cuenta la historia. No es el autor real (el que escribió el libro), sino una voz ficticia que crea el escritor para contarte lo que pasa.\n\nImaginate que estás viendo una película: el narrador es como la cámara o la voz en off que te guía. Puede ser un personaje de la historia (como el detective que investiga) o alguien externo que solo observa. Lo importante es que su forma de contar define qué detalles te da y qué tono usa, lo que a su vez genera suspenso o misterio.\n\n¿Te imaginas cómo cambiaría la historia si el detective contara sus propios crímenes en primera persona en lugar de un testigo externo?",
+          "ms": 10418,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "¿y cuál es la diferencia con el autor?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.7349498854559647,
+          "chunkIds": [
+            "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+            "415df138-59e5-4717-bdba-17a8463c8153",
+            "1c0b3e61-b848-40a8-b929-64f1ae0a5b24",
+            "9360fe20-133b-41e6-9558-286f90d41006",
+            "6b3882d0-8c80-4ddb-89e6-a110c0530442",
+            "3c6e751d-aad9-4188-bebb-0e37a9a95f79"
+          ],
+          "answer": "Buena pregunta, porque es la confusión más común. El autor es la persona real, con nombre y apellido, que escribió el libro (como Edgar Allan Poe). El narrador, en cambio, es una voz ficticia, una máscara que el autor se pone para contar la historia.\n\nImaginate que el autor es un actor y el narrador es el personaje que interpreta. El autor crea al narrador, le da una personalidad, un tono y una forma de ver el mundo, pero no son la misma persona. Por eso, a veces el narrador dice cosas que el autor no necesariamente piensa o sabe.\n\n¿Se te ocurre algún ejemplo de una película o serie donde el personaje que cuenta la historia tenga una opinión muy distinta a la del director o guionista?",
+          "ms": 13643,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "dame un ejemplo concreto",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0.7675962115286746,
+          "chunkIds": [
+            "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+            "415df138-59e5-4717-bdba-17a8463c8153",
+            "6b3882d0-8c80-4ddb-89e6-a110c0530442",
+            "1c0b3e61-b848-40a8-b929-64f1ae0a5b24",
+            "9360fe20-133b-41e6-9558-286f90d41006",
+            "3c6e751d-aad9-4188-bebb-0e37a9a95f79"
+          ],
+          "answer": "Claro, tomemos el ejemplo de la señorita Marple que aparece en tu guía. Al principio, el cuento tiene un narrador externo que nos cuenta qué pasa en la casa y cómo se siente la gente, pero no sabe lo que ella piensa. De pronto, el texto cambia y empieza a narrar desde la mente de Marple, usando su propia voz para explicar cómo ella deduce quién es el culpable.\n\nEso es un cambio de narrador: pasamos de una voz que solo observa (externa) a una voz que vive la historia desde adentro (testigo o protagonista). Es como si la cámara de una película dejara de mostrar la escena desde afuera y entrara directamente a los pensamientos del personaje.\n\n¿Se te ocurre alguna película donde el protagonista te cuente sus pensamientos en voz alta mientras mira lo que hacen los demás?",
+          "ms": 16587,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "no entendi, explicamelo mas facil",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": true,
+          "topScore": 0.7675962115286746,
+          "chunkIds": [
+            "791a9d2b-f365-46fc-8f50-0cfbdd4bff0e",
+            "415df138-59e5-4717-bdba-17a8463c8153",
+            "6b3882d0-8c80-4ddb-89e6-a110c0530442",
+            "1c0b3e61-b848-40a8-b929-64f1ae0a5b24",
+            "9360fe20-133b-41e6-9558-286f90d41006",
+            "3c6e751d-aad9-4188-bebb-0e37a9a95f79"
+          ],
+          "answer": "Entiendo que te confundiste con los nombres, es normal porque suenan parecidos. Olvidá lo de la película y pensemos en un partido de fútbol.\n\nEl **autor** es el entrenador que diseñó el juego y escribió las reglas. El **narrador** es el jugador que está en la cancha y te cuenta lo que ve.\n\nEn tu material dicen que hay dos tipos principales de narradores en lo policial:\n1. **Testigo:** Es como un compañero de equipo que solo ve lo que pasa a su alrededor (usa \"yo\" o \"él\", pero no sabe lo que piensan los demás).\n2. **Omnisciente:** Es como si fueras el árbitro con superpoderes; sabes todo, hasta lo que sienten los jugadores, aunque no lo digan.\n\nLa clave es que el narrador es una voz creada por el autor para guiarte, no es la persona real que escribió el libro.\n\n¿Podrías decirme cuál de los dos (testigo u omnisciente) crees que sería más útil para un detective que necesita descubrir un secreto sin que nadie se entere?",
+          "ms": 14541,
+          "scope": "curso",
+          "mode": "libro",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": 0.8512357109793709,
+      "distintaJuez": true,
+      "jaccardChunks": 1,
+      "perdioMaterial": false
+    },
+    {
+      "id": "x005",
+      "t1": {
+        "q": "¿Cuál fue el resultado de las últimas elecciones presidenciales en Chile?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": false,
+        "topScore": 0.0009421051011915867,
+        "chunkIds": [],
+        "answer": "No puedo saber cómo está hoy, mi información llega hasta 2024. Hasta entonces el presidente era Gabriel Boric, pero desde ahí pudo haber cambiado — confirmalo con alguien o en las noticias.",
+        "ms": 13716,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "y como funciona el sistema de votacion?",
+        "routed": "teach",
+        "struggling": false,
+        "grounded": false,
+        "topScore": 0.0004570766680592802,
+        "chunkIds": [],
+        "answer": "No tengo el material de tu libro sobre esto, pero te lo explico igual. En Chile, el sistema presidencial es como una carrera donde cada región elige a sus representantes (diputados y senadores) y, aparte, todos los ciudadanos votan directamente por el presidente. Es como elegir al capitán del equipo y a los subcapitanes por separado. ¿Te imaginas por qué sería raro que el presidente fuera elegido solo por los senadores?",
+        "ms": 24889,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "¿Cuál fue el resultado de las últimas elecciones presidenciales en Chile?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": false,
+          "topScore": 0.0009421051011915867,
+          "chunkIds": [],
+          "answer": "No puedo saber cómo está hoy, mi información llega hasta 2024. Hasta entonces el presidente era Gabriel Boric, pero desde ahí pudo haber cambiado — confirmalo con alguien o en las noticias.",
+          "ms": 13716,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "y como funciona el sistema de votacion?",
+          "routed": "teach",
+          "struggling": false,
+          "grounded": false,
+          "topScore": 0.0004570766680592802,
+          "chunkIds": [],
+          "answer": "No tengo el material de tu libro sobre esto, pero te lo explico igual. En Chile, el sistema presidencial es como una carrera donde cada región elige a sus representantes (diputados y senadores) y, aparte, todos los ciudadanos votan directamente por el presidente. Es como elegir al capitán del equipo y a los subcapitanes por separado. ¿Te imaginas por qué sería raro que el presidente fuera elegido solo por los senadores?",
+          "ms": 24889,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": null,
+      "distintaJuez": null,
+      "jaccardChunks": null,
+      "perdioMaterial": false
+    },
+    {
+      "id": "x006",
+      "t1": {
+        "q": "hola",
+        "routed": "social",
+        "struggling": false,
+        "grounded": true,
+        "topScore": 0,
+        "chunkIds": [],
+        "answer": "¡Hola! Soy tu tutor. ¿Qué tema querés que te explique?",
+        "ms": 0,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "t2": {
+        "q": "hola profe, no entendí lo de ayer del narrador",
+        "routed": "teach",
+        "struggling": true,
+        "grounded": false,
+        "topScore": 0.05282206059026448,
+        "chunkIds": [],
+        "answer": "Entiendo que te haya quedado la duda. Como no tengo el material de ayer a mano, no sé exactamente qué tipo de narrador vimos (si era el que contaba la historia desde afuera o uno de los personajes).\n\nContame, ¿recuerdas si el narrador era un personaje más de la trama o alguien que solo observaba? Con eso puedo explicártelo de nuevo para que te quede claro.",
+        "ms": 28370,
+        "scope": "ninguno",
+        "mode": "general",
+        "parcial": false,
+        "answEntail": null
+      },
+      "turnos": [
+        {
+          "q": "hola",
+          "routed": "social",
+          "struggling": false,
+          "grounded": true,
+          "topScore": 0,
+          "chunkIds": [],
+          "answer": "¡Hola! Soy tu tutor. ¿Qué tema querés que te explique?",
+          "ms": 0,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        },
+        {
+          "q": "hola profe, no entendí lo de ayer del narrador",
+          "routed": "teach",
+          "struggling": true,
+          "grounded": false,
+          "topScore": 0.05282206059026448,
+          "chunkIds": [],
+          "answer": "Entiendo que te haya quedado la duda. Como no tengo el material de ayer a mano, no sé exactamente qué tipo de narrador vimos (si era el que contaba la historia desde afuera o uno de los personajes).\n\nContame, ¿recuerdas si el narrador era un personaje más de la trama o alguien que solo observaba? Con eso puedo explicártelo de nuevo para que te quede claro.",
+          "ms": 28370,
+          "scope": "ninguno",
+          "mode": "general",
+          "parcial": false,
+          "answEntail": null
+        }
+      ],
+      "coseno": null,
+      "distintaJuez": null,
+      "jaccardChunks": null,
+      "perdioMaterial": false
+    }
+  ]
+}
