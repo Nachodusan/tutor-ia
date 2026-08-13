@@ -20,7 +20,12 @@ export { aprobado };
 // tabular offsets a mano, y el paso vertical es fijo para que el largo del
 // camino sea proporcional a lo que falta.
 const NODO = 64;      // diámetro del nodo
-const PASO = 150;     // distancia vertical entre centros
+const PASO = 164;     // distancia vertical entre centros
+/** Aire del tablero: margen interior arriba/abajo y a los costados. Sin esto el
+ *  primer nodo nacía pegado al filo y los extremos del vaivén besaban el borde
+ *  — todo correcto y todo asfixiado. */
+const MARGEN_V = 48;
+const MARGEN_H = 48;
 /**
  * Cuánto se corre a los costados. Es el MÍNIMO y el valor de arranque (antes de
  * medir): la amplitud real es ELÁSTICA al ancho del contenedor — con 124 fijos,
@@ -75,7 +80,7 @@ export function CaminoView({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const amp = ancho ? Math.min(Math.max((ancho - NODO) / 2 - 14, AMP), AMP_MAX) : AMP;
+  const amp = ancho ? Math.min(Math.max((ancho - NODO) / 2 - MARGEN_H, AMP), AMP_MAX) : AMP;
   // Un examen cada 5 lecciones. Cada 5 y no "por unidad" porque varios planes
   // vienen con `unit: null` — el índice del libro no la trae — y agrupar por
   // unidad dejaría materias enteras sin ningún hito.
@@ -103,8 +108,8 @@ export function CaminoView({
 
   // +1 parada visual: LA META. No es una lección — es el lugar al que se llega,
   // y verla desde el arranque es lo que convierte la lista en un recorrido.
-  const alto = (paradas.length + 1) * PASO + NODO;
-  const centro = (k: number) => ({ x: posX(k, amp), y: k * PASO + NODO / 2 });
+  const alto = (paradas.length + 1) * PASO + NODO + MARGEN_V * 2;
+  const centro = (k: number) => ({ x: posX(k, amp), y: MARGEN_V + k * PASO + NODO / 2 });
   const completo = items.length > 0 && done.length >= items.length;
   const pct = items.length ? Math.round((done.length / items.length) * 100) : 0;
 
@@ -122,9 +127,9 @@ export function CaminoView({
         }
       `}</style>
 
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
         <div>
-          <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 21 }}>Tu camino</div>
+          <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 24, letterSpacing: -0.3 }}>Tu camino</div>
           <div style={{ color: C.dim, fontSize: 13.5 }}>{area} · {done.length} de {items.length} lecciones</div>
         </div>
         <button onClick={onRegen} disabled={loading} title="Armar otro plan"
@@ -135,8 +140,8 @@ export function CaminoView({
 
       {/* EL AVANCE, GRANDE Y PRIMERO (mundo Bloques: borde tinta, sombra dura).
           El número es el protagonista: es lo que el chico vino a mirar. */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
-        <div style={{ flex: 1, height: 22, background: C.panel2, border: `2px solid ${C.ink}`, borderRadius: 999, boxShadow: HARD(C.ink), overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 30 }}>
+        <div style={{ flex: 1, height: 24, background: C.panel2, border: `2px solid ${C.ink}`, borderRadius: 999, boxShadow: HARD(C.ink), overflow: "hidden" }}>
           <div style={{
             width: `${Math.max(pct, 4)}%`, height: "100%", borderRadius: 999,
             background: completo ? C.sun : `linear-gradient(90deg, ${C.ok}, #35C579)`,
@@ -148,12 +153,16 @@ export function CaminoView({
         </div>
       </div>
 
+      {/* EL TABLERO. Una tarjeta del mundo Bloques —borde tinta, sombra dura,
+          papel de puntos— y no puntos sueltos que sangran hasta los bordes: el
+          marco es lo que hace que el camino se lea como un objeto y no como
+          elementos flotando en la página. */}
       <div ref={lienzo} style={{
         position: "relative", height: alto, width: "100%",
-        // Papel cuadriculado de puntos: el fondo dice "mapa" sin gritar. Los
-        // puntos son del color del borde y quedan DETRÁS del sendero.
+        background: C.panel, border: `2px solid ${C.ink}`,
+        boxShadow: HARD(C.ink), borderRadius: 22, overflow: "hidden",
         backgroundImage: `radial-gradient(${C.border} 1.5px, transparent 1.5px)`,
-        backgroundSize: "26px 26px", borderRadius: 18,
+        backgroundSize: "26px 26px",
       }}>
         {/* El sendero, detrás de todo y de una sola pieza: dos tramos sueltos
             entre nodos se ven como escalones, no como un camino.
@@ -198,15 +207,15 @@ export function CaminoView({
           const etiquetaPos: React.CSSProperties = aLaIzquierda
             ? {
                 position: "absolute", top: y, transform: "translateY(-50%)",
-                right: `calc(50% - ${x - NODO / 2 - 14}px)`,
-                width: `calc(50% + ${x - NODO / 2 - 18}px)`,
+                right: `calc(50% - ${x - NODO / 2 - 22}px)`,
+                width: `calc(50% + ${x - NODO / 2 - 26 - MARGEN_H}px)`,
                 textAlign: "right",
                 display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5,
               }
             : {
                 position: "absolute", top: y, transform: "translateY(-50%)",
-                left: `calc(50% + ${x + NODO / 2 + 14}px)`,
-                width: `calc(50% - ${x + NODO / 2 + 18}px)`,
+                left: `calc(50% + ${x + NODO / 2 + 22}px)`,
+                width: `calc(50% - ${x + NODO / 2 + 26 + MARGEN_H}px)`,
                 textAlign: "left",
                 display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 5,
               };
@@ -296,8 +305,8 @@ export function CaminoView({
           const { x, y } = centro(k);
           const aLaIzquierda = x > 0 || (x === 0 && posX(k + 1, amp) >= 0);
           const etiquetaMeta: React.CSSProperties = aLaIzquierda
-            ? { position: "absolute", top: y, transform: "translateY(-50%)", right: `calc(50% - ${x - NODO / 2 - 14}px)`, width: `calc(50% + ${x - NODO / 2 - 18}px)`, textAlign: "right" }
-            : { position: "absolute", top: y, transform: "translateY(-50%)", left: `calc(50% + ${x + NODO / 2 + 14}px)`, width: `calc(50% - ${x + NODO / 2 + 18}px)`, textAlign: "left" };
+            ? { position: "absolute", top: y, transform: "translateY(-50%)", right: `calc(50% - ${x - NODO / 2 - 22}px)`, width: `calc(50% + ${x - NODO / 2 - 26 - MARGEN_H}px)`, textAlign: "right" }
+            : { position: "absolute", top: y, transform: "translateY(-50%)", left: `calc(50% + ${x + NODO / 2 + 22}px)`, width: `calc(50% - ${x + NODO / 2 + 26 + MARGEN_H}px)`, textAlign: "left" };
           return (
             <div>
               <div style={etiquetaMeta}>
@@ -334,7 +343,7 @@ export function CaminoView({
 /** Curva que pasa por los centros de las primeras `n` paradas. */
 function sendero(n: number, amp: number): string {
   if (n <= 0) return "";
-  const pt = (k: number) => ({ x: posX(k, amp), y: k * PASO + NODO / 2 });
+  const pt = (k: number) => ({ x: posX(k, amp), y: MARGEN_V + k * PASO + NODO / 2 });
   let d = "";
   for (let k = 0; k < n; k++) {
     const p = pt(k);
