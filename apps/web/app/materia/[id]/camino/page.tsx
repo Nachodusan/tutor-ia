@@ -76,7 +76,10 @@ export default function CaminoPage() {
 
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 16px 40px" }}>
+    // Ancho generoso: el camino serpentea más cuanto más ancho es su contenedor
+    // (la amplitud es elástica, ver camino.tsx). 1100 y no "sin tope": en un
+    // monitor ultra-ancho un vaivén de pantalla completa marea en vez de guiar.
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 20px 40px" }}>
       <CaminoView
         items={plan} done={done} scores={scores} subject={subject} loading={planLoading}
         onAbrir={(it) => router.push(`/materia/${id}/camino/${it.key}`)}

@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef, useState } from "react";
 import { C, FONT, HARD, Dots, IconCheck, IconSpark, IconStar, IconLock, subjectLabel } from "./ui";
 import type { PlanItem, Subject } from "./tipos";
 
@@ -20,7 +21,16 @@ export { aprobado };
 // camino sea proporcional a lo que falta.
 const NODO = 64;      // diámetro del nodo
 const PASO = 150;     // distancia vertical entre centros
-const AMP = 124;      // cuánto se corre a los costados
+/**
+ * Cuánto se corre a los costados. Es el MÍNIMO y el valor de arranque (antes de
+ * medir): la amplitud real es ELÁSTICA al ancho del contenedor — con 124 fijos,
+ * en una pantalla ancha el camino quedaba como una cinta apretada en el medio y
+ * los dos tercios de la página vacíos.
+ */
+const AMP = 124;
+/** Tope de la amplitud: en un monitor ultra-ancho, un vaivén de pantalla
+ *  completa marea en vez de guiar. */
+const AMP_MAX = 440;
 /** Ancho del texto de cada parada. */
 const ETIQUETA = 150;
 /**
@@ -37,7 +47,7 @@ const ETIQUETA = 150;
  * fase en radianes había que ir a calcularlo.
  */
 const VAIVEN = [0, 0.6, 1, 0.6, 0, -0.6, -1, -0.6];
-const posX = (i: number) => VAIVEN[i % VAIVEN.length]! * AMP;
+const posX = (i: number, amp: number) => VAIVEN[i % VAIVEN.length]! * amp;
 
 export function CaminoView({
   items, done, scores, subject, loading,
@@ -52,6 +62,20 @@ export function CaminoView({
 }) {
   const area = subject ? subjectLabel(subject) : "";
   const actual = items.find((it) => !done.includes(it.key))?.key ?? "";
+  // AMPLITUD ELÁSTICA: el serpenteo usa el ancho que el contenedor tenga de
+  // verdad. Se mide con ResizeObserver (cubre el resize de la ventana Y el
+  // cambio de contenedor); hasta la primera medición vale el mínimo, así el
+  // primer render del servidor no difiere del cliente.
+  const lienzo = useRef<HTMLDivElement>(null);
+  const [ancho, setAncho] = useState(0);
+  useEffect(() => {
+    const el = lienzo.current;
+    if (!el) return;
+    const ro = new ResizeObserver((es) => setAncho(es[0]?.contentRect.width ?? 0));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const amp = ancho ? Math.min(Math.max((ancho - NODO) / 2 - 14, AMP), AMP_MAX) : AMP;
   // Un examen cada 5 lecciones. Cada 5 y no "por unidad" porque varios planes
   // vienen con `unit: null` — el índice del libro no la trae — y agrupar por
   // unidad dejaría materias enteras sin ningún hito.
@@ -80,7 +104,7 @@ export function CaminoView({
   // +1 parada visual: LA META. No es una lección — es el lugar al que se llega,
   // y verla desde el arranque es lo que convierte la lista en un recorrido.
   const alto = (paradas.length + 1) * PASO + NODO;
-  const centro = (k: number) => ({ x: posX(k), y: k * PASO + NODO / 2 });
+  const centro = (k: number) => ({ x: posX(k, amp), y: k * PASO + NODO / 2 });
   const completo = items.length > 0 && done.length >= items.length;
   const pct = items.length ? Math.round((done.length / items.length) * 100) : 0;
 
@@ -124,7 +148,7 @@ export function CaminoView({
         </div>
       </div>
 
-      <div style={{
+      <div ref={lienzo} style={{
         position: "relative", height: alto, width: "100%",
         // Papel cuadriculado de puntos: el fondo dice "mapa" sin gritar. Los
         // puntos son del color del borde y quedan DETRÁS del sendero.
@@ -135,11 +159,11 @@ export function CaminoView({
             entre nodos se ven como escalones, no como un camino.
             LO QUE FALTA va PUNTEADO —huellas por pisar— y lo recorrido lo tapa
             en color sólido: el avance se ve de lejos, sin contar nodos. */}
-        <svg width={AMP * 2 + NODO} height={alto} viewBox={`${-(AMP + NODO / 2)} 0 ${AMP * 2 + NODO} ${alto}`}
+        <svg width={amp * 2 + NODO} height={alto} viewBox={`${-(amp + NODO / 2)} 0 ${amp * 2 + NODO} ${alto}`}
           style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", pointerEvents: "none" }} aria-hidden="true">
-          <path d={sendero(paradas.length + 1)} fill="none" stroke={C.border} strokeWidth={11}
+          <path d={sendero(paradas.length + 1, amp)} fill="none" stroke={C.border} strokeWidth={11}
             strokeLinecap="round" strokeDasharray="0.1 22" />
-          <path d={sendero(completo ? paradas.length + 1 : hechasSeguidas(paradas, done))}
+          <path d={sendero(completo ? paradas.length + 1 : hechasSeguidas(paradas, done), amp)}
             fill="none" stroke={C.ok} strokeWidth={14} strokeLinecap="round" />
         </svg>
 
@@ -170,7 +194,7 @@ export function CaminoView({
           // El lado se elige por la posición del nodo y no por el rumbo de la
           // curva porque es lo que garantiza ESPACIO: con el nodo en un extremo,
           // el lado de afuera tiene 40 px y el de adentro casi 300.
-          const aLaIzquierda = x > 0 || (x === 0 && posX(k + 1) >= 0);
+          const aLaIzquierda = x > 0 || (x === 0 && posX(k + 1, amp) >= 0);
           const etiquetaPos: React.CSSProperties = aLaIzquierda
             ? {
                 position: "absolute", top: y, transform: "translateY(-50%)",
@@ -270,7 +294,7 @@ export function CaminoView({
         {(() => {
           const k = paradas.length;
           const { x, y } = centro(k);
-          const aLaIzquierda = x > 0 || (x === 0 && posX(k + 1) >= 0);
+          const aLaIzquierda = x > 0 || (x === 0 && posX(k + 1, amp) >= 0);
           const etiquetaMeta: React.CSSProperties = aLaIzquierda
             ? { position: "absolute", top: y, transform: "translateY(-50%)", right: `calc(50% - ${x - NODO / 2 - 14}px)`, width: `calc(50% + ${x - NODO / 2 - 18}px)`, textAlign: "right" }
             : { position: "absolute", top: y, transform: "translateY(-50%)", left: `calc(50% + ${x + NODO / 2 + 14}px)`, width: `calc(50% - ${x + NODO / 2 + 18}px)`, textAlign: "left" };
@@ -308,9 +332,9 @@ export function CaminoView({
 }
 
 /** Curva que pasa por los centros de las primeras `n` paradas. */
-function sendero(n: number): string {
+function sendero(n: number, amp: number): string {
   if (n <= 0) return "";
-  const pt = (k: number) => ({ x: posX(k), y: k * PASO + NODO / 2 });
+  const pt = (k: number) => ({ x: posX(k, amp), y: k * PASO + NODO / 2 });
   let d = "";
   for (let k = 0; k < n; k++) {
     const p = pt(k);
