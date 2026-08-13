@@ -1,0 +1,13 @@
+-- La VOZ del tutor, elegida por el alumno.
+--
+-- Vivía en localStorage del navegador, y eso está mal para un producto de
+-- colegio: en una sala de computación treinta chicos comparten el mismo perfil
+-- de navegador —o sea, la misma voz—, y el que estudia en el computador de la
+-- sala y después en el teléfono de la casa la pierde en el camino. La
+-- preferencia tiene que seguir al ALUMNO, como ya lo hace `tts_on` acá al lado.
+--
+-- Nullable a propósito: null = "todavía no eligió" y se usa la del catálogo.
+-- No se pone una constraint con la lista de voces: el catálogo vive en el
+-- código (apps/web/app/voces.ts) y va a cambiar más seguido que el esquema; un
+-- id desconocido cae en la voz por defecto, que es el comportamiento correcto.
+alter table student_profiles add column if not exists tts_voice text;

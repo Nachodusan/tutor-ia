@@ -63,8 +63,11 @@ export default function Home() {
   async function saveProfile(p: Profile) {
     setProfile(p);
     try {
-      await fetch("/api/me", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+      // `POST /api/me` devolvía 405 —esa ruta solo tiene GET— y el `catch` de
+      // abajo se tragaba el error: el curso se veía cambiado en pantalla y NO
+      // se guardaba. La ruta que guarda es esta, y no la llamaba nadie.
+      await fetch("/api/me/profile", {
+        method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ grade: p.grade }),
       });
     } catch { /* queda en memoria; se reintenta al próximo guardado */ }

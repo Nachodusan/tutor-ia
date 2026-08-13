@@ -4,6 +4,8 @@ import { readFile, rm, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { toSpeech } from "@/lib/speech";
+import { getSql } from "@tutor-ia/db";
+import { requireUser, unauthorized } from "@/lib/auth";
 import { buscarVoz, type Voz } from "../../../voces";
 
 const execFileAsync = promisify(execFile);
@@ -85,10 +87,23 @@ async function hablarRemoto(
   }
 }
 
-/** POST /api/voice/tts — body: { text, voz? } → audio. */
+/**
+ * POST /api/voice/tts — body: { text } → audio.
+ *
+ * LA VOZ SALE DEL PERFIL, no del cuerpo del pedido. Antes la mandaba el
+ * navegador y acá se validaba contra el catálogo; ahora directamente no hay
+ * entrada del cliente que llegue a un argumento de `say` ni a una URL de
+ * inferencia. Y como es del alumno y no del aparato, lo sigue al teléfono.
+ */
 export async function POST(req: Request) {
-  const { text, voz: vozId } = (await req.json()) as { text?: string; voz?: string };
-  const voz = buscarVoz(vozId);
+  const auth = await requireUser(req);
+  if (!auth) return unauthorized();
+  const { text } = (await req.json()) as { text?: string };
+
+  const sql = getSql();
+  const [perfil] = await sql<{ tts_voice: string | null }[]>`
+    select tts_voice from student_profiles where user_id = ${auth.userId}::uuid`;
+  const voz = buscarVoz(perfil?.tts_voice);
 
   // Se corta el texto CRUDO y se normaliza después: al revés, el corte podría
   // caer dentro de un `[[slnc …]]` nuestro y `say` leería el comando a medias.

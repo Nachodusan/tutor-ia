@@ -340,14 +340,22 @@ function ElegirVoz({ onCerrar }: { onCerrar: () => void }) {
   const audio = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    setElegida(localStorage.getItem(CLAVE_VOZ) ?? VOZ_POR_DEFECTO);
+    // Del PERFIL, no del navegador: en una sala de computación todos comparten
+    // el navegador, y la preferencia es del alumno.
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setElegida(j?.profile?.ttsVoice ?? VOZ_POR_DEFECTO))
+      .catch(() => { /* se queda con la de defecto */ });
     // Al salir, que no quede una prueba sonando sobre el panel.
     return () => { audio.current?.pause(); };
   }, []);
 
   function elegir(id: string) {
-    setElegida(id);
-    localStorage.setItem(CLAVE_VOZ, id);
+    setElegida(id);   // la pantalla responde ya; el guardado va detrás
+    void fetch("/api/me/profile", {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ttsVoice: id }),
+    }).catch(() => { /* si falla, sigue la voz anterior en el próximo turno */ });
   }
 
   async function probar(v: Voz) {

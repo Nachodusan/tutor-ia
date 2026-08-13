@@ -21,22 +21,31 @@ export async function PUT(req: Request) {
   const body = (await req.json().catch(() => ({}))) as {
     grade?: string | null;
     ttsOn?: boolean;
+    ttsVoice?: string | null;
   };
   const sql = getSql();
 
+  // CADA CAMPO SE ACTUALIZA SOLO SI VINO. Antes `tts_on` era
+  // `excluded.tts_on` con `body.ttsOn ?? false` detrás: guardar el CURSO
+  // apagaba la lectura en voz alta, porque el cuerpo no traía `ttsOn` y el
+  // `?? false` lo escribía igual. Con `null` + `coalesce`, lo que no se manda
+  // no se toca — que es lo que espera cualquiera que llame a esta ruta para
+  // cambiar una sola cosa.
   await sql`
-    insert into student_profiles (user_id, grade, grade_set_at, tts_on)
+    insert into student_profiles (user_id, grade, grade_set_at, tts_on, tts_voice)
     values (
       ${auth.userId}::uuid,
       ${body.grade ?? null},
       ${body.grade ? new Date() : null},
-      ${body.ttsOn ?? false}
+      ${body.ttsOn ?? false},
+      ${body.ttsVoice ?? null}
     )
     on conflict (user_id) do update set
       grade        = coalesce(excluded.grade, student_profiles.grade),
       -- Solo se sella la primera vez que se elige el curso.
       grade_set_at = coalesce(student_profiles.grade_set_at, excluded.grade_set_at),
-      tts_on       = excluded.tts_on,
+      tts_on       = coalesce(${body.ttsOn ?? null}::boolean, student_profiles.tts_on),
+      tts_voice    = coalesce(excluded.tts_voice, student_profiles.tts_voice),
       updated_at   = now()`;
 
   return Response.json({ ok: true });

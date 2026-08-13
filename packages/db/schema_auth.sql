@@ -67,6 +67,10 @@ create table if not exists student_profiles (
   grade        text,                                  -- "7B" | "1M" …
   grade_set_at timestamptz,
   tts_on       boolean not null default false,
+  -- Voz elegida (id del catálogo de apps/web/app/voces.ts). null = la de
+  -- defecto. Va acá y no en el navegador: en una sala de computación todos
+  -- comparten el navegador, y la preferencia es del alumno, no del aparato.
+  tts_voice    text,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
