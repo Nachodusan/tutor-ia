@@ -80,7 +80,16 @@ export function CaminoView({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const amp = ancho ? Math.min(Math.max((ancho - NODO) / 2 - MARGEN_H, AMP), AMP_MAX) : AMP;
+  // El PISO (AMP) no puede pisar el borde: en un teléfono, 124 dejaba el nodo a
+  // 13 px del filo del tablero y se veía asfixiado. El piso se recorta a lo que
+  // entre dejando al menos MARGEN_MIN.
+  const MARGEN_MIN = 26;
+  const amp = ancho
+    ? Math.min(
+        Math.max((ancho - NODO) / 2 - MARGEN_H, Math.min(AMP, (ancho - NODO) / 2 - MARGEN_MIN)),
+        AMP_MAX,
+      )
+    : AMP;
   // Un examen cada 5 lecciones. Cada 5 y no "por unidad" porque varios planes
   // vienen con `unit: null` — el índice del libro no la trae — y agrupar por
   // unidad dejaría materias enteras sin ningún hito.
@@ -170,10 +179,36 @@ export function CaminoView({
             en color sólido: el avance se ve de lejos, sin contar nodos. */}
         <svg width={amp * 2 + NODO} height={alto} viewBox={`${-(amp + NODO / 2)} 0 ${amp * 2 + NODO} ${alto}`}
           style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", pointerEvents: "none" }} aria-hidden="true">
-          <path d={sendero(paradas.length + 1, amp)} fill="none" stroke={C.border} strokeWidth={11}
-            strokeLinecap="round" strokeDasharray="0.1 22" />
-          <path d={sendero(completo ? paradas.length + 1 : hechasSeguidas(paradas, done), amp)}
-            fill="none" stroke={C.ok} strokeWidth={14} strokeLinecap="round" />
+          {(() => {
+            const todo = sendero(paradas.length + 1, amp);
+            const hecho = sendero(completo ? paradas.length + 1 : hechasSeguidas(paradas, done), amp);
+            return (
+              <>
+                {/* LO QUE FALTA: huellas. Van MÁS OSCURAS que los puntos del
+                    papel —eran del mismo `C.border` y se confundían con el
+                    fondo— y con contorno propio, para que se lean como camino
+                    por pisar y no como textura. */}
+                <path d={todo} fill="none" stroke={C.ink} strokeWidth={17} strokeLinecap="round"
+                  strokeDasharray="0.1 27" opacity={0.12} />
+                <path d={todo} fill="none" stroke={C.dim} strokeWidth={10} strokeLinecap="round"
+                  strokeDasharray="0.1 27" opacity={0.38} />
+
+                {/* LO RECORRIDO: una RUTA. Casco de tinta como todo lo demás del
+                    mundo Bloques —el sendero era la única pieza del dibujo sin
+                    borde negro y por eso se leía pegada de otro lado—, el verde
+                    plano adentro, y la línea discontinua del medio, que es lo
+                    que hace que el ojo lea "camino" y no "franja".
+                    Probado con una luz diagonal en vez de la línea: daba volumen
+                    de TUBO, que es justo lo que este mundo plano no quiere. */}
+                <path d={hecho} fill="none" stroke={C.ink} strokeWidth={24}
+                  strokeLinecap="round" strokeLinejoin="round" />
+                <path d={hecho} fill="none" stroke={C.ok} strokeWidth={18}
+                  strokeLinecap="round" strokeLinejoin="round" />
+                <path d={hecho} fill="none" stroke="#FFFFFF" strokeWidth={2.5}
+                  strokeLinecap="round" strokeDasharray="11 13" opacity={0.62} />
+              </>
+            );
+          })()}
         </svg>
 
         {paradas.map((p, k) => {
