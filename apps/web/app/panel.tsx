@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
-import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, scoreTone, IconList, IconClipboard } from "./ui";
+import { useEffect, useRef, useState } from "react";
+import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, scoreTone, IconList, IconClipboard, IconVolume, IconCheck } from "./ui";
+import { VOCES, VOZ_POR_DEFECTO, CLAVE_VOZ, type Voz } from "./voces";
 import { REVIEW_MAX } from "./tipos";
 import type { Profile, Subject, SubjectStats, WeakTopic } from "./tipos";
 
@@ -84,6 +85,7 @@ export function Dashboard({ profile, subjects, stats, teacher, onAbrir, onReinfo
       Number(!!a.disabled) - Number(!!b.disabled) ||
       subjectLabel(a).localeCompare(subjectLabel(b)));
   const apagadas = misSubjects.filter((s) => s.disabled).length;
+  const [vozAbierta, setVozAbierta] = useState(false);
   // Para reforzar: de TODAS las materias — el alumno pudo rendir una prueba en
   // cualquiera. Se excluyen las apagadas: mandarlo a repasar algo que no puede
   // abrir es un callejón sin salida.
@@ -104,9 +106,12 @@ export function Dashboard({ profile, subjects, stats, teacher, onAbrir, onReinfo
             </div>
           </div>
           {teacher && <IconBtn onClick={() => (window.location.href = "/docente")} title="Panel del curso"><IconUsers size={17} /></IconBtn>}
+          <IconBtn onClick={() => setVozAbierta(true)} title="Voz del tutor"><IconVolume size={17} /></IconBtn>
           <IconBtn onClick={onEdit} title="Editar perfil"><IconSettings size={17} /></IconBtn>
           <IconBtn onClick={onLogout} title="Cambiar de alumno"><IconSwap size={17} /></IconBtn>
         </header>
+
+        {vozAbierta && <ElegirVoz onCerrar={() => setVozAbierta(false)} />}
 
         <SectionTitle icon={<IconStar size={15} />}>Tus materias</SectionTitle>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 16, marginBottom: 36 }}>
@@ -316,3 +321,95 @@ export function WeakCard({ s, w, onClick }: { s: Subject; w: WeakTopic; onClick:
 }
 
 // --- Simulación de prueba (mundo Panel · bloques) ---
+
+/**
+ * ELEGIR LA VOZ DEL TUTOR.
+ *
+ * Con un botón de PROBAR adentro: elegir una voz sin escucharla es elegir a
+ * ciegas, y salir del panel, entrar a una materia y abrir el chat solo para oír
+ * una frase hace que nadie las compare nunca. Acá se prueban las cinco seguidas.
+ *
+ * La elección vive en el navegador (localStorage) y viaja en cada pedido de
+ * audio. No va al perfil del alumno a propósito: es preferencia de ESTE aparato
+ * —los parlantes del computador de la casa no son los del teléfono— y no algo
+ * que valga la pena migrar en la base.
+ */
+function ElegirVoz({ onCerrar }: { onCerrar: () => void }) {
+  const [elegida, setElegida] = useState<string>(VOZ_POR_DEFECTO);
+  const [probando, setProbando] = useState<string | null>(null);
+  const audio = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    setElegida(localStorage.getItem(CLAVE_VOZ) ?? VOZ_POR_DEFECTO);
+    // Al salir, que no quede una prueba sonando sobre el panel.
+    return () => { audio.current?.pause(); };
+  }, []);
+
+  function elegir(id: string) {
+    setElegida(id);
+    localStorage.setItem(CLAVE_VOZ, id);
+  }
+
+  async function probar(v: Voz) {
+    audio.current?.pause();
+    setProbando(v.id);
+    try {
+      const r = await fetch("/api/voice/tts", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: MUESTRA, voz: v.id }),
+      });
+      if (!r.ok) return;
+      const a = new Audio(URL.createObjectURL(await r.blob()));
+      audio.current = a;
+      a.onended = () => setProbando(null);
+      await a.play();
+    } catch { /* si no suena, el botón vuelve solo */ }
+    finally { setProbando((p) => (p === v.id ? null : p)); }
+  }
+
+  return (
+    <div onClick={onCerrar}
+      style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(25,22,33,.45)", display: "grid", placeItems: "center", padding: 18 }}>
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 18, boxShadow: HARD(C.ink), padding: 20, width: "min(520px, 100%)", maxHeight: "86dvh", overflowY: "auto" }}>
+        <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 19 }}>La voz del tutor</div>
+        <div style={{ color: C.dim, fontSize: 13.5, marginTop: 3, marginBottom: 16, lineHeight: 1.45 }}>
+          Probá y elegí. El tiempo es lo que tarda en empezar a hablar.
+        </div>
+
+        <div style={{ display: "grid", gap: 9 }}>
+          {VOCES.map((v) => {
+            const sel = v.id === elegida;
+            return (
+              <div key={v.id}
+                style={{ display: "flex", alignItems: "center", gap: 11, background: sel ? "rgba(43,68,255,.06)" : C.panel, border: `2px solid ${sel ? C.accent : C.border}`, borderRadius: 13, padding: "11px 13px" }}>
+                <button onClick={() => elegir(v.id)} aria-pressed={sel} title={`Usar ${v.nombre}`}
+                  style={{ display: "flex", alignItems: "center", gap: 11, flex: 1, minWidth: 0, background: "none", border: "none", textAlign: "left", cursor: "pointer", padding: 0 }}>
+                  <span style={{ width: 22, height: 22, flexShrink: 0, borderRadius: "50%", border: `2px solid ${sel ? C.accent : C.border}`, background: sel ? C.accent : "transparent", color: "#fff", display: "grid", placeItems: "center" }}>
+                    {sel && <IconCheck size={13} />}
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 700, fontSize: 14.5 }}>{v.nombre}</span>
+                    <span style={{ display: "block", color: C.dim, fontSize: 12.5, lineHeight: 1.35 }}>{v.detalle}</span>
+                  </span>
+                </button>
+                <button onClick={() => void probar(v)} disabled={probando === v.id} title={`Escuchar ${v.nombre}`}
+                  style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6, background: C.panel2, color: C.text, border: `1.5px solid ${C.ink}`, borderRadius: 999, padding: "7px 13px", cursor: probando === v.id ? "default" : "pointer", fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5 }}>
+                  {probando === v.id ? <Dots /> : <><IconVolume size={13} /> Probar</>}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ marginTop: 18, textAlign: "center" }}>
+          <BigBtn onClick={onCerrar}>Listo</BigBtn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Frase de prueba: la que diría el tutor de verdad, con pregunta al final. */
+const MUESTRA =
+  "Mirá, la célula es la unidad más pequeña que puede vivir sola. ¿Se te ocurre algo tan chico que solo se vea con microscopio?";

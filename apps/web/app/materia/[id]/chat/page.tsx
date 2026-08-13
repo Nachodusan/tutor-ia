@@ -17,6 +17,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Bubble, VozLuces, estadoVoz } from "../../../chat-ui";
 import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, subjectLabel } from "../../../ui";
 import { traerMateria } from "../../../datos";
+import { CLAVE_VOZ, VOZ_POR_DEFECTO } from "../../../voces";
 import { turnoNuevo, turnoPaso, turnoTermino, interrupcionPaso, hayInterrupcion } from "../../../voz-turno";
 import type { CallState, Msg, Subject } from "../../../tipos";
 
@@ -180,7 +181,12 @@ export default function ChatPage() {
       if (!text.trim()) return resolve();
       try {
         audioRef.current?.pause();
-        const res = await fetch("/api/voice/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+        // La voz la elige el alumno desde el panel; se lee en cada turno para
+        // que un cambio se sienta en la conversación en curso, sin recargar.
+        const res = await fetch("/api/voice/tts", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, voz: localStorage.getItem(CLAVE_VOZ) ?? VOZ_POR_DEFECTO }),
+        });
         if (!res.ok) return resolve();
         const url = URL.createObjectURL(await res.blob());
         const a = new Audio(url);

@@ -53,7 +53,15 @@ const REEMPLAZOS: [RegExp, string][] = [
  * Convierte el texto que se muestra en pantalla en texto para hablar.
  * Devuelve "" si no queda nada que decir (p. ej. un mensaje que era solo un emoji).
  */
-export function toSpeech(input: string): string {
+/**
+ * `prosodia: false` devuelve el texto SIN los `[[slnc …]]`.
+ *
+ * Esos comandos son de `say` y solo `say` los entiende: cualquier otro motor los
+ * lee en voz alta ("corchete corchete slnc doscientos sesenta"). Todo lo demás
+ * —markdown, emoji, abreviaturas, la guardia anti-inyección— sirve igual para
+ * cualquier voz, así que se comparte.
+ */
+export function toSpeech(input: string, opts: { prosodia?: boolean } = {}): string {
   let t = (input ?? "").replace(/\r\n?/g, "\n");
 
   // 1) Markdown que el modelo mete de vez en cuando pese al prompt.
@@ -90,6 +98,8 @@ export function toSpeech(input: string): string {
   if (!/[\p{L}\p{N}]/u.test(t)) return "";
 
   // 6) Prosodia. Se inserta DESPUÉS de limpiar, para que nada de arriba lo toque.
+  //    Solo para `say`: los otros motores leerían los comandos en voz alta.
+  if (opts.prosodia === false) return t.replace(/\n+/g, " ").replace(/[ \t]{2,}/g, " ").trim();
   t = t
     .replace(/\n{2,}/g, ` [[slnc ${PAUSA_PARRAFO}]] `)
     .replace(/\n/g, ` [[slnc ${PAUSA_ORACION}]] `)

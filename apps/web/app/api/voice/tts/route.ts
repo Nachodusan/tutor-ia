@@ -4,6 +4,7 @@ import { readFile, rm, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { toSpeech } from "@/lib/speech";
+import { buscarVoz, type Voz } from "../../../voces";
 
 const execFileAsync = promisify(execFile);
 export const runtime = "nodejs";
@@ -50,21 +51,71 @@ function pickVoice(): Promise<string> {
   return voicePromise;
 }
 
-/** POST /api/voice/tts — body: { text } → audio/wav. */
+/**
+ * Voz REMOTA (DeepInfra). Devuelve el audio o `null` si no se pudo — el llamador
+ * cae al sistema. Nunca se le pasa texto del navegador como modelo: `voz` sale
+ * del catálogo, que es la lista blanca.
+ */
+async function hablarRemoto(
+  voz: Voz,
+  texto: string,
+): Promise<{ audio: Buffer; tipo: string } | null> {
+  const key = process.env.DEEPINFRA_API_KEY;
+  if (!key || !voz.modelo) return null;
+  try {
+    const r = await fetch(`https://api.deepinfra.com/v1/inference/${voz.modelo}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ text: texto, ...(voz.extra ?? {}) }),
+      signal: AbortSignal.timeout(45_000),
+    });
+    if (!r.ok) {
+      console.error(`[tts] ${voz.id}: HTTP ${r.status}`);
+      return null;
+    }
+    const j = (await r.json()) as { audio?: string; output_format?: string };
+    // Llega como data URI: "data:audio/mp3;base64,…".
+    const b64 = j.audio?.split(",")[1];
+    if (!b64) return null;
+    const fmt = j.output_format === "mp3" ? "mpeg" : (j.output_format ?? "wav");
+    return { audio: Buffer.from(b64, "base64"), tipo: `audio/${fmt}` };
+  } catch (e) {
+    console.error(`[tts] ${voz.id} falló: ${e instanceof Error ? e.message : e}`);
+    return null;
+  }
+}
+
+/** POST /api/voice/tts — body: { text, voz? } → audio. */
 export async function POST(req: Request) {
-  const { text } = (await req.json()) as { text?: string };
+  const { text, voz: vozId } = (await req.json()) as { text?: string; voz?: string };
+  const voz = buscarVoz(vozId);
+
   // Se corta el texto CRUDO y se normaliza después: al revés, el corte podría
   // caer dentro de un `[[slnc …]]` nuestro y `say` leería el comando a medias.
-  const clean = toSpeech((text ?? "").slice(0, 4000));
+  // La prosodia solo va para `say`: los otros motores leen los comandos en voz alta.
+  const clean = toSpeech((text ?? "").slice(0, 4000), { prosodia: voz.motor === "sistema" });
   if (!clean) return new Response("Nada que leer.", { status: 400 });
 
-  const voice = await pickVoice();
+  if (voz.motor === "deepinfra") {
+    const remoto = await hablarRemoto(voz, clean);
+    if (remoto) {
+      return new Response(new Uint8Array(remoto.audio), {
+        headers: { "Content-Type": remoto.tipo, "Cache-Control": "no-cache" },
+      });
+    }
+    // CAE AL SISTEMA en vez de devolver error: el chico está esperando una
+    // respuesta hablada, y una voz fea es infinitamente mejor que el silencio.
+    console.warn(`[tts] ${voz.id} no respondió; se usa la voz del sistema`);
+  }
+
+  const voice = voz.vozSistema || (await pickVoice());
+  const clean2 = voz.motor === "sistema" ? clean : toSpeech((text ?? "").slice(0, 4000));
   const dir = await mkdtemp(join(tmpdir(), "tts-"));
   const wav = join(dir, "out.wav");
   try {
     await execFileAsync(
       "say",
-      ["-v", voice, ...TTS_RATE, "-o", wav, "--data-format=LEI16@22050", clean],
+      ["-v", voice, ...TTS_RATE, "-o", wav, "--data-format=LEI16@22050", clean2],
       { timeout: 45000 },
     );
     const audio = await readFile(wav);
