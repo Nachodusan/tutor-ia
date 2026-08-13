@@ -94,7 +94,9 @@ export interface TeachingResult {
  * falla y el tutor se abstiene de más. Prepende los últimos turnos del ESTUDIANTE
  * (donde vive el tema) a la pregunta actual.
  */
-function retrievalQuery(req: TeachRequest): { query: string; vague: boolean; prevUser: string } {
+function retrievalQuery(req: TeachRequest): {
+  query: string; vague: boolean; prevUser: string; temaCharla: string;
+} {
   // ⚠️ Los últimos DOS turnos CON TEMA, no los últimos dos a secas.
   //
   // Medido en el eval multiturno (charla x004, 4 turnos sobre el narrador): el
@@ -122,6 +124,13 @@ function retrievalQuery(req: TeachRequest): { query: string; vague: boolean; pre
   // había material, y el tutor volvía a preguntar de qué tema quería hablar.
   // Después de que el chico ya le dijo que sí.
   const ventana = conTema.slice(-2).map((m) => m.content).join(" ");
+  /**
+   * EL TEMA DE LA CHARLA, venga de donde venga: de lo que el alumno dijo antes
+   * o de lo que el tutor propuso. Siempre disponible, aunque el turno de ahora
+   * SÍ parezca traer tema — es la red de seguridad de `getTeachingContext`
+   * cuando la búsqueda con las palabras del alumno no encuentra nada.
+   */
+  const temaCharla = ventana || temaPropuesto(req.history ?? []);
   // La propuesta del tutor se usa SOLO si el turno de ahora tampoco trae tema.
   // Si el chico ignora lo que le ofrecieron y pregunta otra cosa ("¿qué es la
   // célula?"), meter el tema propuesto le ensucia SU pregunta con un tema que
@@ -134,7 +143,7 @@ function retrievalQuery(req: TeachRequest): { query: string; vague: boolean; pre
   // A la BÚSQUEDA va la pregunta sin muletillas de arranque; al modelo y a los
   // regex (social/vago/trabado) va la original, donde el registro es señal.
   const q = vague ? "" : limpiarMuletillas(req.question);
-  return { query: `${prevUser} ${q}`.trim(), vague, prevUser };
+  return { query: `${prevUser} ${q}`.trim(), vague, prevUser, temaCharla };
 }
 
 /**
@@ -178,7 +187,7 @@ function temaPropuesto(history: ChatMessage[]): string {
  * Medido en el set de alumno: 17→9 abstenciones, recall@5 47,3%→62,4%.
  */
 export async function getTeachingContext(req: TeachRequest): Promise<TeachingResult> {
-  const { query, vague, prevUser } = retrievalQuery(req);
+  const { query, vague, prevUser, temaCharla } = retrievalQuery(req);
   try {
     const opts = {
       userId: req.userId,
@@ -195,7 +204,30 @@ export async function getTeachingContext(req: TeachRequest): Promise<TeachingRes
       vagueTurn: vague || Boolean(req.struggling),
     };
     const ctx = await retrieveForTeaching(query, opts);
-    if (ctx.grounded || vague || !config.queryNormalize) {
+    if (ctx.grounded) return { ctx, grounded: true, qNorm: false, qNormMs: 0 };
+
+    // ⚠️ ACÁ HUBO UN "RESCATE CON EL TEMA DE LA CHARLA" Y SE SACÓ, MEDIDO.
+    //
+    // La idea era: si la búsqueda con las palabras del alumno no encuentra
+    // nada y la conversación tiene un tema, buscar ese tema. Cubría cualquier
+    // forma de decir que sí sin perseguirlas con expresiones regulares.
+    //
+    // Lo que hace de verdad es pegarle material VIEJO a una pregunta NUEVA.
+    // Medido: charla sobre relaciones filogenéticas, el chico pregunta "¿qué es
+    // una metáfora?" —que el libro de Biología no cubre—, la búsqueda propia
+    // falla como corresponde… y el rescate devolvía la pág. 48, "¿Cómo
+    // clasificar a los seres vivos?", con el sello `libro`. Una pregunta sobre
+    // metáforas respaldada por una página de taxonomía.
+    //
+    // Es la misma falla que ya se corrigió una vez desde el otro lado (contestar
+    // Biología con el libro de Lengua), y el sello equivocado es peor que no
+    // encontrar nada: `general` es honesto, `libro` mintiendo no.
+    //
+    // Lo que SÍ resuelve el caso que motivó todo esto —"Vale, si me interesa"
+    // después de una propuesta— es reconocer la aceptación (ACEPTA_RE, que
+    // decide si el turno aporta tema) más la regla del prompt. Sin adivinar.
+
+    if (vague || !config.queryNormalize) {
       return { ctx, grounded: ctx.grounded, qNorm: false, qNormMs: 0 };
     }
     // El gate cortó con la cruda: reintento con la pregunta normalizada.
@@ -283,10 +315,10 @@ const GRACIAS_RE = /^\s*(much[ao]s?\s*)?gracias[\s,.!]*$/i;
  * del tema propuesto, no otra pregunta.
  */
 const ACEPTA_RE = new RegExp(
-  "^\\s*(?:(?:s[íi]|ok(?:ey|ay)?|dale|listo|perfecto|genial|buen[íi]simo|excelente|clar[oi]|de\\s*acuerdo|obvio)[\\s,.!]*)*" +
+  "^\\s*(?:(?:s[íi]|ok(?:ey|ay)?|dale|vale|bueno|listo|perfecto|genial|buen[íi]simo|excelente|clar[oi]|de\\s*acuerdo|obvio|por\\s*supuesto)[\\s,.!]*)*" +
     "(?:(?:s[íi]|si)\\s+)?(?:(?:quer[ée]s|quieren|quieres|podemos|pod[ée]s|puedes)\\s+)?" +
     "(?:empez(?:ar|amos|á)|empec(?:emos|é)|arranc(?:ar|amos|á)|arranqu(?:emos|é)|comenz(?:ar|amos|á)|" +
-    "comenc(?:emos|é)|seguimos|sigamos|vamos|veamos|hagamos|dale)\\b" +
+    "comenc(?:emos|é)|seguimos|sigamos|vamos|veamos|hagamos|dale|me\\s+interesa|quiero)\\b" +
     // La cola SOLO puede señalar hacia atrás. Con un comodín acá, "empecemos con
     // la fotosíntesis" —que sí trae tema— quedaba marcado como aceptación y su
     // tema no llegaba a la búsqueda.
