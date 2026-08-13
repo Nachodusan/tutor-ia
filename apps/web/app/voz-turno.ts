@@ -23,11 +23,22 @@ export const SPEECH_THRESH = 6;
  */
 export const SILENCE_MS = 1800;
 /**
- * Voz acumulada mínima para que un turno cuente. Antes alcanzaba UN cuadro por
- * encima del umbral —un portazo, una silla— para abrir un turno que 1,2 s
- * después se mandaba a transcribir: ruido convertido en pregunta.
+ * Voz acumulada mínima para que un turno cuente. Existe para que UN cuadro por
+ * encima del umbral —un portazo, una silla— no abra un turno que se manda a
+ * transcribir: ruido convertido en pregunta.
+ *
+ * ⚠️ ERA 400 ms Y ESE NÚMERO ROMPÍA LA CONVERSACIÓN. Un "hola" suelto no llega a
+ * 400 ms de voz CONTADA —solo las vocales cruzan el umbral, las consonantes no—,
+ * así que el turno no podía cerrarse nunca y había que repetir "hola, hola,
+ * hola" hasta acumular. Reportado tal cual por quien lo usó.
+ *
+ * 150 ms alcanza para descartar un impulso (un golpe dura menos de 100 ms) y
+ * deja pasar cualquier palabra. Y el filtro de ruido de verdad está ABAJO, no
+ * acá: whisper devuelve vacío ante audio sin voz y el turno vuelve a escuchar
+ * solo. Un turno falso cuesta una transcripción desperdiciada; un turno que no
+ * cierra cuesta la conversación.
  */
-export const MIN_HABLA_MS = 400;
+export const MIN_HABLA_MS = 150;
 /** Techo del turno. Sin esto, una sala en silencio graba para siempre. */
 export const MAX_TURNO_MS = 45_000;
 /**

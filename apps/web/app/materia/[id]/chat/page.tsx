@@ -70,6 +70,9 @@ export default function ChatPage() {
   const levelRef = useRef(0);   // amplitud 0..1 para las luces de la barra
   /** Cómo callar al tutor mientras habla (interrupción y corte de llamada). */
   const cortarVozRef = useRef<(() => void) | null>(null);
+  /** Lo que el chico va diciendo, mientras lo dice. Se limpia al mandarlo. */
+  const [parcial, setParcial] = useState("");
+  const parcialEnVueloRef = useRef(false);
 
   // Salir de la página con el micrófono abierto deja la luz del micro prendida
   // y el AudioContext vivo. Se corta al desmontar, pase lo que pase.
@@ -98,7 +101,9 @@ export default function ChatPage() {
   }, [callState]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
-  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
+  // También con `parcial`: si no, lo que el chico está diciendo aparece debajo
+  // del borde y hay que arrastrar para verlo.
+  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages, parcial]);
 
   useEffect(() => {
     void traerMateria(id).then(setSubject);
@@ -242,14 +247,57 @@ export default function ChatPage() {
     } catch { alert("No pude acceder al micrófono. Revisá los permisos."); }
   }
 
+  /**
+   * TRANSCRIPCIÓN EN VIVO, mientras el chico habla.
+   *
+   * Cada trozo que suelta el MediaRecorder se manda con TODOS los anteriores —
+   * el primero lleva la cabecera del contenedor, así que solo la pila completa
+   * es decodificable— y lo transcripto se muestra al pie de la conversación.
+   *
+   * Se hace con el whisper LOCAL, que tarda ~300 ms por cada 3 s de audio
+   * (medido). La alternativa era el reconocedor del navegador, que es
+   * instantáneo y gratis pero manda la voz de un menor a los servidores de
+   * Google. No vale la pena: acá el audio no sale de la máquina.
+   *
+   * UNA sola transcripción en vuelo a la vez: si la anterior no volvió, este
+   * trozo se saltea. Perder un parcial no se nota; encolarlos hace que el texto
+   * llegue cada vez más tarde y termine contradiciendo lo que el chico ya dijo.
+   */
+  async function transcribirParcial(chunks: Blob[], mime: string, rec: MediaRecorder) {
+    if (parcialEnVueloRef.current || chunks.length === 0) return;
+    parcialEnVueloRef.current = true;
+    try {
+      const res = await fetch("/api/voice/stt", {
+        method: "POST",
+        body: new Blob(chunks, { type: mime || "audio/webm" }),
+      });
+      const t = (await res.json()).text?.trim() ?? "";
+      // Entre que salió el pedido y volvió, el turno pudo haber terminado (o el
+      // chico cortado la llamada). Un parcial que llega tarde reescribiría
+      // texto viejo encima de "Pensando…", así que se descarta: solo vale si
+      // sigue siendo EL MISMO grabador el que está escuchando.
+      if (t && callRef.current && recRef.current === rec) setParcial(t);
+    } catch { /* un parcial perdido no rompe nada */ }
+    finally { parcialEnVueloRef.current = false; }
+  }
+
   function listen() {
     if (!callRef.current || !streamRef.current || !analyserRef.current) return;
     setCallState("listening");
+    setParcial("");
     const rec = new MediaRecorder(streamRef.current);
     const chunks: Blob[] = [];
-    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    rec.ondataavailable = (e) => {
+      if (!e.data.size) return;
+      chunks.push(e.data);
+      // Con `rec.stop()` llega el último trozo: ahí NO se pide un parcial, que
+      // la transcripción final ya viene en camino.
+      if (rec.state === "recording") void transcribirParcial([...chunks], rec.mimeType, rec);
+    };
     rec.onstop = () => handleUtterance(chunks, rec.mimeType);
-    recRef.current = rec; rec.start();
+    // 1,2 s de trozo: más corto y whisper transcribe pedazos de palabra; más
+    // largo y el texto aparece tarde y deja de sentirse en vivo.
+    recRef.current = rec; rec.start(1200);
     const analyser = analyserRef.current;
     const data = new Uint8Array(analyser.fftSize);
     let turno = turnoNuevo();
@@ -314,12 +362,13 @@ export default function ChatPage() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     audioCtxRef.current?.close().catch(() => {});
     streamRef.current = null; analyserRef.current = null; audioCtxRef.current = null;
+    setParcial("");
     setCallState("idle");
   }
 
   async function handleUtterance(chunks: Blob[], mime: string) {
     if (!callRef.current) return;
-    setCallState("thinking"); levelRef.current = 0;
+    setCallState("thinking"); levelRef.current = 0; setParcial("");
     let text = "";
     try { const res = await fetch("/api/voice/stt", { method: "POST", body: new Blob(chunks, { type: mime || "audio/webm" }) }); text = (await res.json()).text?.trim() ?? ""; } catch { /* */ }
     if (!callRef.current) return;
@@ -358,6 +407,15 @@ export default function ChatPage() {
             </div>
           )}
           {messages.map((m, i) => <Bubble key={i} m={m} />)}
+          {/* LO QUE EL CHICO ESTÁ DICIENDO, mientras lo dice. Va del lado del
+              alumno y con el mismo color de sus burbujas, pero a media tinta y
+              con borde punteado: todavía no es un mensaje, es lo que se oyó
+              hasta acá y puede cambiar en la próxima palabra. */}
+          {parcial && (
+            <div style={{ alignSelf: "flex-end", maxWidth: "82%", background: C.userBubble, color: "#2B2740", opacity: .62, border: `1.5px dashed ${C.accentSoft}`, borderRadius: "18px 18px 6px 18px", padding: "10px 14px", fontSize: 15, lineHeight: 1.5 }}>
+              {parcial}
+            </div>
+          )}
         </div>
       </div>
       {/* EL COMPOSITOR, EN EL AIRE.

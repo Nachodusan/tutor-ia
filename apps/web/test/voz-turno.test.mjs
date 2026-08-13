@@ -58,6 +58,21 @@ test("un ruido suelto no abre un turno", () => {
   assert.equal(corte, null, "un ruido corto no puede mandarse a transcribir");
 });
 
+test("un 'hola' suelto SÍ cierra el turno", () => {
+  // EL CASO QUE MOTIVÓ BAJAR EL UMBRAL. Una palabra corta da ~250 ms de voz
+  // contada (las consonantes no cruzan el umbral). Con los 400 ms de antes el
+  // turno no cerraba NUNCA y había que decir "hola, hola, hola" para acumular.
+  const corte = correr([[18, 250], [1, 3000]]);
+  assert.ok(corte !== null, "decir 'hola' una vez tiene que alcanzar");
+  assert.ok(corte < 250 + SILENCE_MS + 200, `tardó de más: ${corte} ms`);
+});
+
+test("dos palabras separadas por una respiración siguen siendo un turno", () => {
+  // "hola… ¿estás?" — la pausa corta no cierra nada.
+  const corte = correr([[18, 250], [1, 500], [18, 300], [1, 3000]]);
+  assert.ok(corte !== null && corte > 1050, `cortó a los ${corte} ms, en la respiración`);
+});
+
 test("una frase corta pero real sí cierra", () => {
   const corte = correr([[20, 600], [0, 2500]]);
   assert.ok(corte !== null && corte > 600 + SILENCE_MS - 100 && corte < 600 + SILENCE_MS + 200,
