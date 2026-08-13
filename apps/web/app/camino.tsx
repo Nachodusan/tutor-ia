@@ -77,12 +77,28 @@ export function CaminoView({
     }
   });
 
-  const alto = paradas.length * PASO + NODO;
+  // +1 parada visual: LA META. No es una lección — es el lugar al que se llega,
+  // y verla desde el arranque es lo que convierte la lista en un recorrido.
+  const alto = (paradas.length + 1) * PASO + NODO;
   const centro = (k: number) => ({ x: posX(k), y: k * PASO + NODO / 2 });
+  const completo = items.length > 0 && done.length >= items.length;
+  const pct = items.length ? Math.round((done.length / items.length) * 100) : 0;
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
+      {/* Animaciones del camino. `prefers-reduced-motion` las apaga enteras. */}
+      <style>{`
+        @keyframes caminoPulso {
+          0%, 100% { box-shadow: 4px 4px 0 0 ${C.ink}, 0 0 0 0 rgba(43,68,255,.35); }
+          50%      { box-shadow: 4px 4px 0 0 ${C.ink}, 0 0 0 14px rgba(43,68,255,0); }
+        }
+        @keyframes caminoFlota { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-5px) } }
+        @media (prefers-reduced-motion: reduce) {
+          .camino-actual, .camino-meta-viva { animation: none !important; }
+        }
+      `}</style>
+
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
         <div>
           <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 21 }}>Tu camino</div>
           <div style={{ color: C.dim, fontSize: 13.5 }}>{area} · {done.length} de {items.length} lecciones</div>
@@ -93,14 +109,38 @@ export function CaminoView({
         </button>
       </div>
 
-      <div style={{ position: "relative", height: alto, width: "100%" }}>
-        {/* El sendero, detrás de todo. Se dibuja de una sola pieza: dos tramos
-            sueltos entre nodos se ven como escalones, no como un camino. */}
+      {/* EL AVANCE, GRANDE Y PRIMERO (mundo Bloques: borde tinta, sombra dura).
+          El número es el protagonista: es lo que el chico vino a mirar. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
+        <div style={{ flex: 1, height: 22, background: C.panel2, border: `2px solid ${C.ink}`, borderRadius: 999, boxShadow: HARD(C.ink), overflow: "hidden" }}>
+          <div style={{
+            width: `${Math.max(pct, 4)}%`, height: "100%", borderRadius: 999,
+            background: completo ? C.sun : `linear-gradient(90deg, ${C.ok}, #35C579)`,
+            transition: "width .6s cubic-bezier(.2,.8,.2,1)",
+          }} />
+        </div>
+        <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 22, flexShrink: 0, color: completo ? C.warnTx : C.okTx, fontVariantNumeric: "tabular-nums" }}>
+          {pct}%
+        </div>
+      </div>
+
+      <div style={{
+        position: "relative", height: alto, width: "100%",
+        // Papel cuadriculado de puntos: el fondo dice "mapa" sin gritar. Los
+        // puntos son del color del borde y quedan DETRÁS del sendero.
+        backgroundImage: `radial-gradient(${C.border} 1.5px, transparent 1.5px)`,
+        backgroundSize: "26px 26px", borderRadius: 18,
+      }}>
+        {/* El sendero, detrás de todo y de una sola pieza: dos tramos sueltos
+            entre nodos se ven como escalones, no como un camino.
+            LO QUE FALTA va PUNTEADO —huellas por pisar— y lo recorrido lo tapa
+            en color sólido: el avance se ve de lejos, sin contar nodos. */}
         <svg width={AMP * 2 + NODO} height={alto} viewBox={`${-(AMP + NODO / 2)} 0 ${AMP * 2 + NODO} ${alto}`}
           style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", pointerEvents: "none" }} aria-hidden="true">
-          <path d={sendero(paradas.length)} fill="none" stroke={C.border} strokeWidth={14} strokeLinecap="round" />
-          {/* Lo recorrido, encima y en color: el avance se ve sin contar nodos. */}
-          <path d={sendero(hechasSeguidas(paradas, done))} fill="none" stroke={C.ok} strokeWidth={14} strokeLinecap="round" />
+          <path d={sendero(paradas.length + 1)} fill="none" stroke={C.border} strokeWidth={11}
+            strokeLinecap="round" strokeDasharray="0.1 22" />
+          <path d={sendero(completo ? paradas.length + 1 : hechasSeguidas(paradas, done))}
+            fill="none" stroke={C.ok} strokeWidth={14} strokeLinecap="round" />
         </svg>
 
         {paradas.map((p, k) => {
@@ -175,12 +215,17 @@ export function CaminoView({
           const sc = scores[p.item.key];
           const bien = sc ? aprobado(sc.score, sc.total) : false;
           const esActual = p.item.key === actual;
+          // TRES PESOS VISUALES, no uno: lo hecho en color pleno, lo ACTUAL más
+          // grande y latiendo, y lo por venir en borde fino y tinta apagada —
+          // sigue siendo tocable (acá no se bloquea a nadie), pero se lee como
+          // "todavía no llegaste" de un vistazo.
+          const futuro = !hecho && !esActual;
           const fondo = hecho ? (bien ? C.ok : C.warn) : esActual ? C.accent : C.panel;
           const tinta = hecho || esActual ? "#fff" : C.dim;
           return (
             <div key={p.item.key}>
               <div style={etiquetaPos}>
-                <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, lineHeight: 1.25, color: hecho && !esActual ? C.dim : C.text }}>
+                <span style={{ fontFamily: FONT.round, fontWeight: esActual ? 800 : 700, fontSize: esActual ? 13.5 : 12.5, lineHeight: 1.25, color: futuro || (hecho && !esActual) ? C.dim : C.text }}>
                   {p.item.title}
                 </span>
                 {/* Chapa y nota van con el título, no sueltas junto al nodo:
@@ -198,13 +243,19 @@ export function CaminoView({
               </div>
 
               <button onClick={() => onAbrir(p.item)} title={p.item.title}
+                className={esActual ? "camino-actual" : undefined}
                 style={{
                   ...nodoPos,
-                  width: NODO, height: NODO, borderRadius: "50%", border: `3px solid ${C.ink}`,
+                  width: NODO, height: NODO, borderRadius: "50%",
+                  border: futuro ? `2px solid ${C.border}` : `3px solid ${C.ink}`,
                   background: fondo, color: tinta, fontFamily: FONT.round, fontWeight: 800, fontSize: 21,
                   display: "grid", placeItems: "center", cursor: "pointer",
                   boxShadow: esActual ? HARD(C.ink) : "none",
-                  transform: nodoPos.transform,
+                  // El latido del actual es la señal de "seguí por acá". Se
+                  // compone con el translate del posicionamiento — reemplazarlo
+                  // ya movió nodos de lugar una vez.
+                  transform: `${nodoPos.transform}${esActual ? " scale(1.12)" : ""}`,
+                  animation: esActual ? "caminoPulso 2.2s ease-out infinite" : undefined,
                   transition: "transform .12s, box-shadow .12s",
                 }}>
                 {hecho ? <IconCheck size={26} /> : p.i + 1}
@@ -212,6 +263,44 @@ export function CaminoView({
             </div>
           );
         })}
+
+        {/* LA META. Existe desde el primer día, apagada, al final del sendero
+            punteado: el chico ve a dónde va. Al completar el camino se enciende
+            en sol, flota, y la etiqueta lo dice con todas las letras. */}
+        {(() => {
+          const k = paradas.length;
+          const { x, y } = centro(k);
+          const aLaIzquierda = x > 0 || (x === 0 && posX(k + 1) >= 0);
+          const etiquetaMeta: React.CSSProperties = aLaIzquierda
+            ? { position: "absolute", top: y, transform: "translateY(-50%)", right: `calc(50% - ${x - NODO / 2 - 14}px)`, width: `calc(50% + ${x - NODO / 2 - 18}px)`, textAlign: "right" }
+            : { position: "absolute", top: y, transform: "translateY(-50%)", left: `calc(50% + ${x + NODO / 2 + 14}px)`, width: `calc(50% - ${x + NODO / 2 + 18}px)`, textAlign: "left" };
+          return (
+            <div>
+              <div style={etiquetaMeta}>
+                <span style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: completo ? 13.5 : 12, color: completo ? C.warnTx : C.dim, lineHeight: 1.3 }}>
+                  {completo ? "¡Completaste el camino!" : "La meta"}
+                </span>
+              </div>
+              <div className={completo ? "camino-meta-viva" : undefined} aria-hidden
+                style={{
+                  position: "absolute", left: "50%", top: y,
+                  width: NODO, height: NODO, borderRadius: "50%",
+                  // TODO el posicionamiento por margen, nada por transform: la
+                  // animación de flote anima `transform` y pisaría cualquier
+                  // translate que pongamos acá (ya pasó con el rombo del examen).
+                  marginLeft: -NODO / 2 + x, marginTop: -NODO / 2,
+                  border: completo ? `3px solid ${C.ink}` : `2px dashed ${C.border}`,
+                  background: completo ? C.sun : C.panel,
+                  color: completo ? C.ink : C.border,
+                  display: "grid", placeItems: "center",
+                  boxShadow: completo ? HARD(C.ink) : "none",
+                  animation: completo ? "caminoFlota 2.6s ease-in-out infinite" : undefined,
+                }}>
+                <IconStar size={28} />
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
     </div>
