@@ -15,4 +15,5 @@ export * from "./nli";
 export * from "./answerability";
 export * from "./text-match";
 export * from "./book-index";
+export * from "./unidades";
 export * from "./sections";

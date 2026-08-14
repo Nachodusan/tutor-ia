@@ -1,6 +1,6 @@
 # HANDOFF — Tutor IA (para retomar en un chat nuevo)
 
-> Estado al **2026-08-05**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
+> Estado al **2026-08-13**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
 > Proyecto en `/Users/dusan/Documents/ia`. Rama `feat/bloques-aurora-plan-prueba`.
 > **Leé también la memoria del proyecto** (`tutor-ia-estado.md` y las notas por feature).
 
@@ -443,9 +443,12 @@ psql "$DATABASE_URL" -f packages/db/repair_jsonb_double_encoded.sql
 El smoke imprime `REASON` (tokens de razonamiento) y `LEAK` (si hubo que filtrar) — es la
 única forma de detectar que el switch de thinking no llegó.
 
-Libros: `/Users/dusan/Documents/libros/{basica,media}/<grado>/<materia>/*.pdf`. Clasificación
-por nombre: texto_del_estudiante/leo_primero/student's_book → content; guía_didáctica/
-teacher's_guide → pedagogy; cuaderno/láminas/activity → descarta.
+Libros: `/Users/dusan/Documents/libros/{basica,media}/<grado>/<materia>/*.pdf`. La
+clasificación la fija `packages/eval/corpus-manifest.csv` (columnas `tipo` e `indexado`):
+285 filas = 93 contenido + 125 pedagogía (los 218 que se ingieren) + 67 ejercicios
+(`indexado=no`, no entran). Disco y manifiesto tienen que coincidir o la ingesta aborta.
+El regex por nombre de archivo que había acá lo reemplazó el manifiesto en el commit
+26cbf28: metía cuadernos como contenido citable y perdía 4 teacher's_book.
 
 ---
 
@@ -956,8 +959,157 @@ matchearía miles de chunks, y el síntoma se leería como MEJORA (`nLexical` su
 
 ---
 
+## 6.d EL CAMINO POR UNIDADES (2026-08-13) — qué cambió
+
+El camino del alumno pasó de ser una lista de **lecciones** a ser un recorrido de
+**unidades con las lecciones adentro** como puntos de control. La razón es de producto:
+la unidad engloba más y cada nodo da para enseñar de verdad, en vez de ser un título
+suelto.
+
+**Los índices NO se tocaron.** Las 1696 lecciones siguen en `book_sections` nivel 2,
+intactas, porque son la granularidad fina que después se cruza con las bases curriculares
+del estado. Todo lo nuevo se agregó en nivel 1.
+
+### Cómo se arma una unidad
+
+`buildUnitsForDocument` (`packages/rag/src/sections.ts`) calcula las DOS vías y se queda
+con la que produce más unidades:
+
+1. **Con índice** — a cada lección se le asigna su unidad por mayoría de `chunks.unit` en
+   su rango de páginas, y se agrupan las **corridas consecutivas**. Por corridas y no por
+   número: Biología es un tomo de 1º Y 2º medio y numera `1,2,3,1,2,3`. Cobertura completa
+   por construcción.
+2. **Sin índice** — `rangosDeUnidades` (`packages/rag/src/unidades.ts`) recorta de los
+   chunks: cada página se la queda la unidad con más chunks ahí, y cada unidad se queda con
+   su corrida contigua dominante. Rechaza el libro si los rangos se solapan o si la
+   numeración no avanza con las páginas.
+
+Elegir la mejor de las dos importa: Historia 1º básico tiene un índice de 3 lecciones que
+al agruparse daba UNA unidad, mientras sus chunks traen las 4 bien separadas.
+
+**Por qué NO se recortan rangos de página y después se ve qué lección cae adentro**: esa
+fue la primera versión y perdía 107 páginas en Biología (entre la unidad 1 y la 2). Medido
+después del cambio, sobre 40 libros comparables: las unidades cubren MÁS que el índice en
+15, igual en 25, y **menos en ninguno**.
+
+### El título de la unidad — tres fuentes, en orden
+
+Medido sobre 259 unidades: **49% del encabezado corriente** (`Unidad 3 • Los ecosistemas`),
+**42% de la primera lección del índice** dentro del rango, **9% queda como "Unidad N"**.
+El paso 2 es la razón por la que conservar el índice paga solo.
+
+`tituloDeUnidad` toma el **prefijo común por MAYORÍA** (dos tercios), no la variante
+repetida: el encabezado se repite en cada página pero la cola de cuerpo cambia siempre, así
+que no hay dos capturas iguales y votar no juntaba nunca dos votos.
+
+### `ord` de las unidades
+
+`book_sections` tiene un `unique (document_id, ord)`: unidades y lecciones comparten
+numeración dentro de un libro. Las unidades arrancan en `ORD_UNIDADES = 1000` para no
+chocar con los 0..N del índice.
+
+### El progreso del alumno NO se perdió
+
+`claveTema(documentId, ord, title)` de cada lección no cambió, así que las marcas siguen
+válidas: el alumno las ve dentro de su unidad. La unidad está hecha cuando lo están todas
+sus lecciones. En el camino, el "X de N" cuenta unidades enteras y la **barra cuenta
+fracciones** — con 2 de 4 lecciones dice "0 de 6 unidades · 8%".
+
+### Dos bugs del panel que estaban tapando esto
+
+- `/api/progress` contaba solo `book_sections level=2 having count(*) >= 3` y devolvía
+  NADA para las materias sin índice — pero `getPlanTopics` cae al fallback legacy y sí
+  devuelve lecciones. El panel leía `planTotal = 0`, marcaba `sinCamino` y **apagaba el
+  botón "Camino"** de materias que tenían siete lecciones. La regla vive ahora en
+  `planSizes()` (`sections.ts`), en un solo lugar. Verificado: 67/67 materias coinciden
+  con `getPlanTopics`.
+- La pantalla del camino sin plan cacheado decía *"su libro no trae un índice que se pueda
+  leer"* y **escondía el botón que lo armaba** (`generarPlan` vivía dentro de `CaminoView`,
+  que solo se renderiza si YA hay plan). `GET /api/plan` devuelve ahora `puedeArmarse`,
+  que distingue "todavía no está armado" de "este libro no da".
+
+### Estado del corpus (2026-08-13)
+
+| | materias |
+|---|---:|
+| camino por **unidades** | 53 |
+| camino por **lecciones** | 4 |
+| **sin camino** | 10 |
+
+De las 53 con unidades, **41 fusionan** (unidad + lecciones adentro) y **12 tienen solo
+unidades** porque su libro no tiene índice legible: Cs. Naturales 1º-4º, Lenguaje 1º y 2º,
+Matemática 2º, 3º y 7º, Historia 2º, y Ciencias para la Ciudadanía 3º y 4º medio (que son
+el MISMO libro cargado dos veces).
+
+**Bloqueos vigentes** (`subjects.disabled_at`): los 12 de Inglés y **todo 1º a 5º básico**
+(25 materias, decisión de producto: chicos muy chicos, a revisar con un profesional).
+
+### Divisores de unidad que el extractor no reconocía
+
+`extract_curriculum.py` busca `Unidad` y DESPUÉS el número. Hay libros que lo escriben al
+revés. La regla medida que funciona:
+
+```
+^[ \t]*(\d{1,2})[ \t]*\n[ \t]*UNIDAD\b     (multilínea, SIN ignorecase)
+```
+
+más el filtro **una unidad por página** (si nombra dos o más, es el índice). Da secuencia
+1..N limpia en **7 libros** y ruido en cero. Con eso se hizo backfill de `chunks.unit` en
+Historia 1º y 2º básico, que estaban sin camino.
+
+**El orden de lectura del índice no es único**: en Ciencias Naturales 3º, 5º y 6º hay que
+ordenar los bloques **por columna**; en Ciencias Naturales 4º y Lenguaje 2º, **por `y`**.
+Probar los tres órdenes (lectura, columna, `y`) y quedarse con el de mejor monotonía mejora
+20 de 45 libros y no empeora ninguno — **está medido pero NO implementado**.
+
+---
+
 ## 7. Deuda conocida / próximos pasos
 
+- 🔴 **Los puntos de control se aprietan cuando la unidad tiene muchas lecciones.** El paso
+  vertical entre unidades es fijo (`PASO = 164`) y una unidad con 5 lecciones no entra:
+  medido en Lengua y Literatura 2º medio, 21 pares de circulitos se superponen. El arreglo
+  no es achicarlos más (a 14px ya son casi intocables) sino que **el tramo crezca con la
+  cantidad de lecciones**, lo que toca `centro`, `sendero` y el alto del tablero.
+- 🔴 **Una unidad sin puntos de control se ve idéntica a una rota.** Los 12 libros sin
+  índice muestran el nodo pelado, sin el contador "0 de N", y esa ausencia se lee como
+  error. Falta decirlo en la interfaz ("unidad completa" / "sin desglose") o darle al nodo
+  una forma distinta.
+- 🔴 **Títulos de portadilla invertida sin resolver.** Lenguaje 2º básico escribe
+  *"¿Para qué sirve la imaginación? 1 Unidad"* — título ANTES del número — y muestra
+  "Unidad 1..4". El patrón está escrito en `tituloDeUnidad` y compila, pero no dispara
+  sobre el texto real. Los 4 títulos correctos están medidos del índice (folios 8, 60, 98,
+  136; PDF 10, 62, 100, 138).
+- 🔴 **6 pares de libros traen DOS cursos en un tomo y la numeración reinicia.** Verificado
+  con el texto de los propios libros: Matemática 3M pág. 110 dice *"Unidad 1 · Texto del
+  estudiante · 4° medio"*; el solucionario de Biología dice *"Unidad 1 – 2º Medio"*. Son 9
+  pares byte-idénticos cargados bajo dos grados; en 6 de ellos hay reinicio. **El camino de
+  1º medio muestra unidades de 2º medio.** No es regresión (el camino por lecciones ya lo
+  hacía) pero ahora se nota más. Hay que partir por grado antes de armar los nodos.
+- 🟡 **`Leo Primero` (14 tomos, Lenguaje 1º-4º) no usa unidades sino `Clase N`** — 136
+  clases por año, contiguas y con numeración corrida entre tomos. La regla (línea suelta
+  `^Clase N$` en el 1-3% superior de la página) da 544 encabezados con **0 falsos positivos**
+  en todo el corpus. PERO esas materias tienen ADEMÁS `texto_del_estudiante` con 4-5
+  unidades, y las `book_sections` actuales salen de ese libro. Es elegir entre dos libros de
+  contenido paralelos con estructuras incompatibles (136 clases vs 4 unidades), no concatenar.
+- 🟡 **"Lengua 8vo" es una materia fantasma**: 0 documentos, 0 chunks. Cuenta como agujero
+  en todos los inventarios. Borrarla (con respaldo).
+- 🔵 **Pomodoro — pedido, no empezado.** El alumno define bloque de foco y descanso y a qué
+  hora estudia. Va en `student_profiles` junto a `tts_voice`/`tts_on`, se guarda con
+  `PUT /api/me/profile`. Dos decisiones de producto abiertas: ¿el temporizador corre dentro
+  del camino o es pantalla aparte?, ¿el descanso es sugerencia o el tutor deja de responder?
+- 🔵 **El cruce con las bases curriculares del estado NO está empezado.** El documento
+  (`/Users/dusan/Documents/libros/WEB_bbcc EPJA_v16_0.pdf`) está analizado pero **no hay
+  nada en la base**: no existen tablas de currículo, ni `extract_bases.py`, ni archivos
+  extraídos. Lo medido: **29 páginas** de asignatura × nivel (57-61, 71-75, 82-85, 92-95,
+  103-106, 115, 118, 122, 126, 131, 134, 137 — ojo, p.36/38/40 son ejemplos que reimprimen
+  contenido y hay que descartarlas), **tres listas** por página (~115 Grandes Ideas, ~156 OA
+  de habilidad, **~195 Conocimientos esenciales**, que es la lista del contenido real y la
+  que hay que mapear), y el mapeo nivel→grado declarado en la p.46. Las páginas son a dos
+  columnas y en orden plano las tres listas se entreveran: hay que segmentar por quiebre de
+  columna. **`concepts`/`chunk_concepts` NO sirven para esto**: `concepts.subject_id` es un
+  FK simple y un ítem curricular pertenece a muchas materias; además chocan con
+  `questions`/`attempt_items`/`misconceptions`, que ya usan `concept_id` con otra semántica.
 - 🟢 **RESUELTA — latencia local de ~2 min por turno.** Venía de `keep_alive:0`
   recargando el 7B en cada llamada; era el peor problema de experiencia. Se fue al
   eliminar el motor local (medido en su momento: 1,4s remoto vs 8,3s local).

@@ -20,7 +20,10 @@ export interface Subject { id: string; name: string; grade: string | null; subje
 export interface Profile { username: string; grade: string }
 /** `points` puede faltar: los planes cacheados antes de que existieran los
  *  puntos clave siguen siendo válidos y se muestran sin ellos. */
-export interface PlanItem { n: number; key: string; title: string; focus: string; points?: string[]; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
+export interface PlanItem { n: number; key: string; title: string; focus: string; points?: string[]; unit: number | null; lesson: number | null; p0: number | null; p1: number | null;
+  /** Los puntos de control de la unidad. Vacío cuando el libro no tiene índice
+   *  y la unidad no se desglosa, o cuando el ítem ya es una lección. */
+  lecciones?: { key: string; title: string; p0: number; p1: number; unit: number | null; lesson: number | null }[] }
 /** `correct`/`explain` NO llegan con la prueba: la clave vive en el servidor y
  *  se revela recién en la respuesta del submit (antes viajaba en el payload y
  *  cualquiera la veía en la pestaña Red). */

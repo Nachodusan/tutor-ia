@@ -235,7 +235,11 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
           <span style={{ display: "block", position: "relative" }}>
             <span style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
               <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, color: C.text }}>
-                {done} de {total} {total === 1 ? "lección" : "lecciones"}
+                {/* "temas" y no "lecciones": el camino es por unidades en 50 de
+                    las 55 materias con camino, y en las otras 5 por lecciones.
+                    Un solo sustantivo que es cierto en los dos casos evita que
+                    la tarjeta prometa una granularidad que después no aparece. */}
+                {done} de {total} {total === 1 ? "tema" : "temas"}
               </span>
               <span style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 12.5, color: done === total ? C.okTx : C.dim }}>
                 {done === total ? "¡Completo!" : `${pct}%`}

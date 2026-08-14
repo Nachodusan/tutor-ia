@@ -12,7 +12,7 @@
  * qué hacer con ellos (la ruta cachea y responde; el CLI cachea y sigue).
  */
 import { chatJSON } from "./client";
-import { getPlanTopics, getPlanTopicsForQuery, type PlanTopic } from "@tutor-ia/rag";
+import { getPlanTopics, getPlanTopicsForQuery, getPlanUnits, type PlanTopic } from "@tutor-ia/rag";
 
 /** Lecciones que entran en un plan. Igual que el límite de `getPlanTopics`. */
 export const PLAN_LIMIT = 14;
@@ -51,6 +51,16 @@ export interface PlanItem {
   /** Retrocompatibles: el estudio dirigido sigue usando unit/lesson y p0/p1. */
   p0: number;
   p1: number;
+  /**
+   * Los puntos de control de una UNIDAD: las lecciones del índice que caen
+   * adentro. Vacío o ausente cuando el ítem ya es una lección (materias sin
+   * unidades) o cuando el libro no tiene índice y la unidad no se desglosa.
+   *
+   * Van con su `key` propia — la misma que ya tenían como lecciones sueltas —
+   * así que el avance que el alumno traía NO se pierde al pasar el camino a
+   * unidades: sigue marcado en la lección, y la unidad se pinta a partir de eso.
+   */
+  lecciones?: { key: string; title: string; p0: number; p1: number; unit: number | null; lesson: number | null }[];
 }
 
 /** Sin acentos, sin puntuación y en minúsculas: para comparar, no para mostrar. */
@@ -155,6 +165,27 @@ export async function buildStudyPlan(
   subjectId: string,
   subjectName?: string | null,
 ): Promise<PlanItem[]> {
+  // EL CAMINO ES POR UNIDADES. La unidad engloba más, así que cada nodo da para
+  // enseñar de verdad en vez de ser un título suelto; las lecciones del índice
+  // quedan adentro como puntos de control. Cuando el libro no tiene índice la
+  // unidad no se desglosa y el nodo es la unidad entera.
+  //
+  // El LLM redacta el título de la UNIDAD nada más. Las lecciones conservan el
+  // título que les puso el autor del libro, que ya es bueno — y son 4 a 8
+  // unidades por materia en vez de 14 lecciones, así que además sale más barato
+  // que antes.
+  const unidades = await getPlanUnits(subjectId);
+  if (unidades.length >= 2) {
+    const items = await redactarPlan(unidades, subjectName);
+    return items.map((it, i) => ({
+      ...it,
+      lecciones: (unidades[i]?.lecciones ?? []).map((l) => ({
+        key: l.key, title: l.title, p0: l.pageStart, p1: l.pageEnd,
+        unit: l.unitNo, lesson: l.lessonNo,
+      })),
+    }));
+  }
+  // Sin unidades creíbles: el camino por lecciones de siempre.
   const temas: PlanTopic[] = await getPlanTopics(subjectId, { limit: PLAN_LIMIT });
   return redactarPlan(temas, subjectName);
 }

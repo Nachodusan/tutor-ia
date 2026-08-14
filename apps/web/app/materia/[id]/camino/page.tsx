@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CaminoView } from "../../../camino";
-import { C, Dots, subjectLabel } from "../../../ui";
+import { C, Dots, FONT, HARD, IconSpark, subjectLabel } from "../../../ui";
 import { traerMateria } from "../../../datos";
 import type { PlanItem, Subject } from "../../../tipos";
 
@@ -22,6 +22,9 @@ export default function CaminoPage() {
   const [scores, setScores] = useState<Record<string, { score: number; total: number }>>({});
   const [cargando, setCargando] = useState(true);
   const [planLoading, setPlanLoading] = useState(false);
+  // "No hay plan todavía" y "este libro no da para un plan" NO son lo mismo. El
+  // servidor las distingue; antes acá se mostraba siempre el segundo mensaje.
+  const [puedeArmarse, setPuedeArmarse] = useState(false);
 
 
   useEffect(() => {
@@ -33,6 +36,7 @@ export default function CaminoPage() {
     fetch(`/api/plan?subjectId=${id}`).then((r) => r.json())
       .then((j) => {
         setPlan(j.items?.length ? j.items : null);
+        setPuedeArmarse(!!j.puedeArmarse);
         setDone(j.doneKeys ?? []);
         setScores(j.scores ?? {});
       })
@@ -61,6 +65,27 @@ export default function CaminoPage() {
     return <div style={{ display: "grid", placeItems: "center", padding: 48, color: C.dim }}><Dots /></div>;
   }
   if (!plan) {
+    // Se puede armar y todavía nadie lo armó: eso es un botón, no una disculpa.
+    if (puedeArmarse) {
+      return (
+        <div style={{ padding: "40px 20px", textAlign: "center", maxWidth: 420, margin: "0 auto" }}>
+          <p style={{ fontSize: 16, lineHeight: 1.6, color: C.text, fontFamily: FONT.round, fontWeight: 700 }}>
+            Tu camino todavía no está armado.
+          </p>
+          <p style={{ fontSize: 14.5, lineHeight: 1.6, color: C.dim, marginBottom: 22 }}>
+            Lo armamos con las lecciones de tu libro y te lo dejamos listo para empezar.
+          </p>
+          <button onClick={generarPlan} disabled={planLoading}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 8, background: C.ok, color: "#fff",
+              border: `2px solid ${C.ink}`, borderRadius: 999, padding: "11px 22px", boxShadow: HARD(C.ink),
+              cursor: planLoading ? "default" : "pointer", fontFamily: FONT.round, fontWeight: 800, fontSize: 15,
+            }}>
+            {planLoading ? <Dots /> : <><IconSpark size={16} /> Armar mi camino</>}
+          </button>
+        </div>
+      );
+    }
     return (
       <div style={{ padding: "28px 20px", textAlign: "center", color: C.dim, maxWidth: 420, margin: "0 auto" }}>
         <p style={{ fontSize: 15, lineHeight: 1.6 }}>

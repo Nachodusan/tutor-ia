@@ -9,7 +9,8 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx test/unidades.test.mjs"
   },
   "dependencies": {
     "@tutor-ia/db": "workspace:*",
@@ -18,6 +19,7 @@
   "devDependencies": {
     "@types/node": "^22.9.0",
     "@types/pdf-parse": "^1.1.4",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.2"
   }
 }

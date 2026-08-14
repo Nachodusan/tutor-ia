@@ -119,8 +119,30 @@ export function CaminoView({
   // y verla desde el arranque es lo que convierte la lista en un recorrido.
   const alto = (paradas.length + 1) * PASO + NODO + MARGEN_V * 2;
   const centro = (k: number) => ({ x: posX(k, amp), y: MARGEN_V + k * PASO + NODO / 2 });
-  const completo = items.length > 0 && done.length >= items.length;
-  const pct = items.length ? Math.round((done.length / items.length) * 100) : 0;
+  // El avance se cuenta en NODOS del camino, no en marcas sueltas. Cuando el
+  // nodo es una unidad con lecciones adentro, está hecho cuando lo están todas:
+  // contar `done.length` contra `items.length` mezclaba lecciones hechas con
+  // unidades totales y decía "4 de 6 lecciones · 67%" con dos unidades a medias.
+  const nodoHecho = (it: PlanItem) => {
+    const ls = it.lecciones ?? [];
+    return ls.length > 0 ? ls.every((l) => done.includes(l.key)) : done.includes(it.key);
+  };
+  const hechos = items.filter(nodoHecho).length;
+  // `lecciones` definido —aunque venga vacío— significa que el nodo es una
+  // UNIDAD. Vacío es el caso legítimo del libro sin índice: la unidad no se
+  // desglosa, pero sigue siendo una unidad y llamarla "lección" es mentir.
+  const hayUnidades = items.some((it) => it.lecciones !== undefined);
+  const unidad = hayUnidades ? (items.length === 1 ? "unidad" : "unidades") : (items.length === 1 ? "lección" : "lecciones");
+  const completo = items.length > 0 && hechos >= items.length;
+  // La BARRA cuenta fracciones de unidad; el "X de N" cuenta unidades enteras.
+  // Con dos lecciones hechas de cuatro, la unidad no está terminada —y decir que
+  // sí sería mentira— pero poner 0% le borra al chico un trabajo que hizo.
+  const avance = items.reduce((a, it) => {
+    const ls = it.lecciones ?? [];
+    if (ls.length === 0) return a + (done.includes(it.key) ? 1 : 0);
+    return a + ls.filter((l) => done.includes(l.key)).length / ls.length;
+  }, 0);
+  const pct = items.length ? Math.round((avance / items.length) * 100) : 0;
 
   return (
     <div>
@@ -139,7 +161,7 @@ export function CaminoView({
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
         <div>
           <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 24, letterSpacing: -0.3 }}>Tu camino</div>
-          <div style={{ color: C.dim, fontSize: 13.5 }}>{area} · {done.length} de {items.length} lecciones</div>
+          <div style={{ color: C.dim, fontSize: 13.5 }}>{area} · {hechos} de {items.length} {unidad}</div>
         </div>
         <button onClick={onRegen} disabled={loading} title="Armar otro plan"
           style={{ display: "inline-flex", alignItems: "center", gap: 6, background: C.panel, color: C.text, border: `1.5px solid ${C.ink}`, borderRadius: 999, padding: "7px 13px", cursor: loading ? "default" : "pointer", fontFamily: FONT.round, fontWeight: 600, fontSize: 13, flexShrink: 0 }}>
@@ -279,7 +301,14 @@ export function CaminoView({
               </div>
             );
           }
-          const hecho = done.includes(p.item.key);
+          // PUNTOS DE CONTROL. Cuando el libro tiene índice, la unidad se
+          // desglosa en sus lecciones y el avance se cuenta ahí: la unidad está
+          // hecha cuando lo están todas. Esto es lo que hace que pasar el camino
+          // a unidades NO borre el avance que el chico traía — su marca sigue
+          // siendo la de la lección, con la misma clave de siempre.
+          const lecciones = p.item.lecciones ?? [];
+          const hechas = lecciones.filter((l) => done.includes(l.key)).length;
+          const hecho = lecciones.length > 0 ? hechas === lecciones.length : done.includes(p.item.key);
           const sc = scores[p.item.key];
           const bien = sc ? aprobado(sc.score, sc.total) : false;
           const esActual = p.item.key === actual;
@@ -308,6 +337,15 @@ export function CaminoView({
                     {sc.score}/{sc.total}
                   </span>
                 )}
+
+                {/* Cuántos puntos de control lleva hechos. El detalle de cada uno
+                    vive en el circulito sobre el sendero, no acá: en una materia
+                    de 19 unidades los títulos tapaban el camino entero. */}
+                {lecciones.length > 0 && (
+                  <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 11, color: hechas === lecciones.length ? C.okTx : C.dim }}>
+                    {hechas} de {lecciones.length}
+                  </span>
+                )}
               </div>
 
               <button onClick={() => onAbrir(p.item)} title={p.item.title}
@@ -328,6 +366,38 @@ export function CaminoView({
                 }}>
                 {hecho ? <IconCheck size={26} /> : p.i + 1}
               </button>
+
+              {/* LOS PUNTOS DE CONTROL, SOBRE EL SENDERO. Repartidos a lo largo
+                  del tramo que sale de esta unidad hacia la siguiente: se leen
+                  como "lo que falta para completar la unidad" en vez de como una
+                  lista al costado. Chicos a propósito — el protagonista sigue
+                  siendo el nodo grande. */}
+              {lecciones.map((l, j) => {
+                // Los puntos se reparten en el TRAMO LIBRE, no de nodo a nodo:
+                // el nodo mide 64 y el punto 20, así que hace falta apartarse
+                // ~42px de cada centro para no pisarlo. Sobre un paso de 164 eso
+                // es 0,26 — con 0,28 queda aire.
+                const MARGEN_NODO = 0.25;
+                const t = MARGEN_NODO + ((j + 1) / (lecciones.length + 1)) * (1 - 2 * MARGEN_NODO);
+                const q = puntoEnTramo(p.i, t, amp);
+                const lh = done.includes(l.key);
+                return (
+                  <button key={l.key} title={l.title}
+                    onClick={() => onAbrir({ ...p.item, key: l.key, title: l.title, p0: l.p0, p1: l.p1, unit: l.unit, lesson: l.lesson, lecciones: undefined })}
+                    style={{
+                      position: "absolute", top: q.y, left: `calc(50% + ${q.x}px)`,
+                      transform: "translate(-50%,-50%)",
+                      width: PUNTO, height: PUNTO, borderRadius: "50%", padding: 0,
+                      background: lh ? C.ok : C.panel,
+                      border: `2px solid ${lh ? C.ink : C.dim}`,
+                      color: "#fff", display: "grid", placeItems: "center", cursor: "pointer",
+                      boxShadow: lh ? HARD_CHICO(C.ink) : "none",
+                      transition: "transform .12s",
+                    }}>
+                    {lh && <IconCheck size={10} />}
+                  </button>
+                );
+              })}
             </div>
           );
         })}
@@ -376,6 +446,32 @@ export function CaminoView({
 }
 
 /** Curva que pasa por los centros de las primeras `n` paradas. */
+/**
+ * Un punto SOBRE el tramo que va del nodo `k` al `k+1`, con `t` de 0 a 1.
+ *
+ * Es la misma Bézier cúbica que dibuja `sendero`, evaluada en vez de dibujada.
+ * Sirve para poner los puntos de control de una unidad ENCIMA del sendero, que
+ * es donde el chico los espera: antes eran chips de texto al costado y en una
+ * materia con 19 unidades tapaban el camino entero.
+ */
+/** Diámetro del punto de control. Chico frente a los 64 del nodo: es un hito
+ *  dentro de la unidad, no una parada del camino. */
+const PUNTO = 14;
+/** La sombra dura del mundo Bloques, a escala del punto. */
+const HARD_CHICO = (c: string) => `2px 2px 0 0 ${c}`;
+
+function puntoEnTramo(k: number, t: number, amp: number): { x: number; y: number } {
+  const pt = (i: number) => ({ x: posX(i, amp), y: MARGEN_V + i * PASO + NODO / 2 });
+  const p0 = pt(k), p3 = pt(k + 1);
+  const p1 = { x: p0.x, y: p0.y + PASO / 2 };
+  const p2 = { x: p3.x, y: p3.y - PASO / 2 };
+  const u = 1 - t;
+  return {
+    x: u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x,
+    y: u * u * u * p0.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y,
+  };
+}
+
 function sendero(n: number, amp: number): string {
   if (n <= 0) return "";
   const pt = (k: number) => ({ x: posX(k, amp), y: MARGEN_V + k * PASO + NODO / 2 });

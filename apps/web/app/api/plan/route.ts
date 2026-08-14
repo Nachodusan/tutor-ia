@@ -1,4 +1,5 @@
 import { buildStudyPlan, SinEstructura, logDecision } from "@tutor-ia/core";
+import { planSizes } from "@tutor-ia/rag";
 import { getSql, toJson } from "@tutor-ia/db";
 import { requireUser, unauthorized } from "@/lib/auth";
 
@@ -35,8 +36,18 @@ export async function GET(req: Request) {
     select topic_key, score, total from lesson_quiz_attempts
     where user_id = ${auth.userId}::uuid and subject_id = ${subjectId}::uuid`;
 
+  // ¿SE PUEDE armar, aunque todavía no esté armado? Son dos cosas distintas y la
+  // pantalla las confundía: sin plan cacheado mostraba "su libro no trae un
+  // índice que se pueda leer" —culpando al libro— y escondía el botón de armarlo.
+  // Ciencias Naturales 4º tiene siete lecciones y quedaba en ese callejón.
+  // Solo se calcula cuando no hay cache: si el plan existe, la pregunta sobra.
+  const puedeArmarse = cache?.items?.length
+    ? true
+    : ((await planSizes([subjectId]))[subjectId] ?? 0) > 0;
+
   return Response.json({
     items: cache?.items ?? [],
+    puedeArmarse,
     doneKeys: hechos.map((r) => r.topic_key),
     scores: Object.fromEntries(intentos.map((i) => [i.topic_key, { score: i.score, total: i.total }])),
   });

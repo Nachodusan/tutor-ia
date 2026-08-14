@@ -40,7 +40,9 @@ export interface BookSection {
   folio: number | null;
   pageStart: number;
   pageEnd: number;
-  method: "index_folio" | "index_locate" | "index_interp";
+  /** `unidad_chunks`: la sección salió del encabezado corriente de las páginas
+   *  (`chunks.unit`), no del índice impreso. Es el nivel 1 del camino. */
+  method: "index_folio" | "index_locate" | "index_interp" | "unidad_chunks";
   confidence: number;
 }
 

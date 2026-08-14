@@ -1,4 +1,5 @@
 import { getSql } from "@tutor-ia/db";
+import { planSizes } from "@tutor-ia/rag";
 import { requireUser, unauthorized } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -32,12 +33,13 @@ export async function GET(req: Request) {
     // panel decía "Material disponible" y escondía la barra aunque el alumno ya
     // tuviera lecciones marcadas — y el panel del docente, que sí calcula el
     // total desde el índice del libro, mostraba "13 de 14" para ese mismo chico.
-    // El mismo hecho contado de dos maneras. Esta es la cuenta de getPlanTopics:
-    // lecciones del índice, tope 14, y nada si hay menos de 3 (ahí cae al legacy).
-    sql<{ subject_id: string; n: string }[]>`
-      select subject_id, least(count(*), 14)::text as n
-      from book_sections where level = 2
-      group by subject_id having count(*) >= 3`,
+    //
+    // Antes esto era una query inline que contaba SOLO `book_sections level = 2`.
+    // Le faltaba la mitad de la regla: `getPlanTopics` cae al fallback legacy
+    // cuando el índice no da 3 secciones, así que las materias sin índice legible
+    // quedaban en planTotal = 0 y el panel les apagaba el botón "Camino" aunque
+    // tuvieran lecciones. `planSizes()` es esa regla completa, en un solo lugar.
+    planSizes(),
     // Con la cache ya escrita, ella manda: es el plan exacto que vio el alumno.
     sql<{ subject_id: string; n: string }[]>`
       select subject_id, jsonb_array_length(items)::text as n from subject_plans`,
@@ -62,7 +64,7 @@ export async function GET(req: Request) {
     (out[sid] ??= { planDone: 0, planTotal: 0, weak: [], lastScore: null });
 
   // Orden deliberado: primero el estimado del índice, después la cache, que lo pisa.
-  for (const r of secciones) de(r.subject_id).planTotal = Number(r.n);
+  for (const [sid, n] of Object.entries(secciones)) de(sid).planTotal = n;
   for (const r of totales) de(r.subject_id).planTotal = Number(r.n);
   for (const r of hechos) de(r.subject_id).planDone = Number(r.n);
   for (const r of debiles) {

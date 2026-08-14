@@ -9,6 +9,7 @@
  */
 import { getSql, toJson } from "@tutor-ia/db";
 import { buildBookIndex, type BookSection, type IndexChunk } from "./book-index";
+import { agruparEnUnidades, rangosDeUnidades, tituloDeUnidad } from "./unidades";
 import { rerank } from "./rerank";
 
 export interface PlanTopic {
@@ -100,6 +101,143 @@ export async function buildSectionsForDocument(
   return out;
 }
 
+/**
+ * Dónde empiezan a numerarse las unidades. El índice más largo del corpus tiene
+ * 115 entradas, así que 1000 deja margen de sobra y hace evidente, mirando la
+ * fila, que ese `ord` es de una unidad y no de una lección.
+ */
+const ORD_UNIDADES = 1000;
+
+/**
+ * Las UNIDADES de un documento, escritas como `book_sections` de nivel 1.
+ *
+ * NO toca el nivel 2. Las lecciones del índice se quedan donde están, enteras:
+ * son la granularidad fina que después se cruza con las bases curriculares del
+ * estado, y perderlas costaría volver a parsear 93 libros. Acá solo se agrega
+ * una capa por encima, y el borrado previo está acotado a lo que este mismo job
+ * escribió (`method = 'unidad_chunks'`), para poder re-correrlo sin miedo.
+ *
+ * El título se busca en tres lugares, en este orden (medido sobre 176 unidades):
+ *   1. el encabezado corriente "Unidad N • Título"      → 56%
+ *   2. la primera sección del índice dentro del rango   → 34%
+ *   3. "Unidad N" a secas                               → 10%
+ * El paso 2 es la razón por la que conservar el índice paga solo: la lección
+ * "¿Qué es la sexualidad y cuáles son sus dimensiones?" nombra la unidad 2 de
+ * Biología, que en el texto no tiene encabezado.
+ */
+export async function buildUnitsForDocument(
+  documentId: string,
+  opts: { dryRun?: boolean } = {},
+): Promise<{ documentId: string; documentTitle: string; sections: BookSection[]; motivo?: string }> {
+  const sql = getSql();
+  const [doc] = await sql<{ id: string; title: string; subject_id: string }[]>`
+    select id, title, subject_id from documents where id = ${documentId}`;
+  if (!doc) throw new Error(`documento inexistente: ${documentId}`);
+
+  // CON ÍNDICE: la unidad se deriva DE las lecciones — a cada una se le asigna
+  // la unidad que más chunks tiene en su rango de páginas, y se agrupan las
+  // corridas consecutivas. Así la cobertura es completa por construcción. La
+  // otra vía (recortar rangos de páginas y ver qué lección cae adentro) dejaba
+  // agujeros: en Biología se perdían 107 páginas entre la unidad 1 y la 2.
+  const indice = await sql<{ ord: number; title: string; page_start: number; page_end: number; unit: number | null }[]>`
+    select bs.ord, bs.title, bs.page_start, bs.page_end,
+           (select ch.unit
+              from chunks ch
+             where ch.document_id = bs.document_id and ch.corpus_role = 'content'
+               and ch.page between bs.page_start and bs.page_end and ch.unit is not null
+             group by ch.unit
+             order by count(*) desc, ch.unit
+             limit 1) as unit
+    from book_sections bs
+    where bs.document_id = ${documentId} and bs.level = 2
+    order by bs.ord`;
+
+  // SIN ÍNDICE: la unidad se recorta de los chunks y el camino no se desglosa.
+  const paginas = await sql<{ page: number; unit: number; chunks: number }[]>`
+    select page, unit, count(*)::int as chunks
+    from chunks
+    where document_id = ${documentId} and corpus_role = 'content'
+      and unit is not null and page is not null
+    group by page, unit`;
+  const porChunks = rangosDeUnidades(paginas);
+  const porIndice = indice.length >= 3
+    ? agruparEnUnidades(indice.map((l) => ({
+        ord: l.ord, unit: l.unit, pageStart: l.page_start, pageEnd: l.page_end,
+      })))
+    : [];
+
+  // Se elige la vía que produce MÁS unidades, no la primera que devuelve algo.
+  // Historia 1º básico tiene un índice de apenas 3 lecciones: agruparlas daba
+  // una sola unidad y el libro se quedaba sin camino, cuando sus chunks traen
+  // las 4 unidades bien separadas. El índice gana los empates porque además
+  // aporta las lecciones como puntos de control.
+  const rangos = porIndice.length >= porChunks.length ? porIndice : porChunks;
+  if (rangos.length < 2) {
+    return {
+      documentId, documentTitle: doc.title, sections: [],
+      motivo: paginas.length === 0 && indice.length === 0 ? "sin unidad en los chunks"
+            : rangos.length === 1 ? "una sola unidad"
+            : "rangos no creíbles",
+    };
+  }
+
+  const sections: BookSection[] = [];
+  for (const [i, r] of rangos.entries()) {
+    const contenidos = await sql<{ content: string }[]>`
+      select content from chunks
+      where document_id = ${documentId} and corpus_role = 'content'
+        and page between ${r.pageStart} and ${r.pageEnd}
+      order by page, chunk_index`;
+    const delEncabezado = tituloDeUnidad(r.unit, contenidos.map((c) => c.content));
+    // La primera lección del índice dentro del rango nombra la unidad cuando el
+    // encabezado corriente no está en el texto. Medido: recupera el 34% de los
+    // títulos, y por eso conservar el índice paga solo — "¿Qué es la sexualidad
+    // y cuáles son sus dimensiones?" nombra una unidad que si no sería "Unidad 2".
+    const delIndice = indice.find((s) => s.page_start >= r.pageStart && s.page_start <= r.pageEnd);
+    const title = delEncabezado ?? delIndice?.title ?? `Unidad ${r.unit}`;
+    sections.push({
+      // `book_sections` tiene un unique (document_id, ord): unidades y lecciones
+      // comparten el mismo espacio de numeración dentro de un libro. Las unidades
+      // arrancan en ORD_UNIDADES para no chocar con los 0..N del índice, que ya
+      // están escritos y no se tocan.
+      ord: ORD_UNIDADES + i,
+      level: 1,
+      parentOrd: null,
+      title,
+      unitNo: r.unit,
+      lessonNo: null,
+      folio: null,
+      pageStart: r.pageStart,
+      pageEnd: r.pageEnd,
+      method: "unidad_chunks",
+      // La confianza dice de dónde salió el nombre, que es lo único incierto:
+      // el rango ya pasó el saneado o no estaríamos acá.
+      confidence: delEncabezado ? 0.9 : delIndice ? 0.7 : 0.5,
+    });
+  }
+
+  if (opts.dryRun) return { documentId, documentTitle: doc.title, sections };
+
+  await sql.begin(async (tx) => {
+    // ACOTADO A PROPÓSITO: solo lo que escribió este job. Un `delete ... where
+    // document_id = X` se llevaría puesto el índice, que es justamente lo que
+    // no se puede perder.
+    await tx`delete from book_sections
+             where document_id = ${documentId} and level = 1 and method = 'unidad_chunks'`;
+    for (const s of sections) {
+      await tx`
+        insert into book_sections
+          (document_id, subject_id, ord, level, parent_ord, title, unit_no, lesson_no,
+           folio, page_start, page_end, method, confidence)
+        values
+          (${documentId}, ${doc.subject_id}, ${s.ord}, ${s.level}, ${s.parentOrd},
+           ${s.title}, ${s.unitNo}, ${s.lessonNo}, ${s.folio},
+           ${s.pageStart}, ${s.pageEnd}, ${s.method}, ${s.confidence})`;
+    }
+  });
+  return { documentId, documentTitle: doc.title, sections };
+}
+
 /** Identidad estable de un tema: no depende del uuid de la fila (que cambia en
  *  cada rebuild) ni de la posición en la lista. */
 function claveTema(documentId: string, ord: number, title: string): string {
@@ -130,6 +268,98 @@ function muestreoRepartido<T>(xs: T[], k: number): T[] {
     out.push(xs[j]!);
   }
   return out;
+}
+
+/** Una unidad del camino, con sus lecciones adentro. */
+export interface PlanUnit extends PlanTopic {
+  /** Los puntos de control de la unidad. Vacío cuando el libro no tiene índice:
+   *  ahí la unidad es el nodo y no se desglosa. */
+  lecciones: PlanTopic[];
+}
+
+/**
+ * EL CAMINO: las unidades de una materia, cada una con sus lecciones adentro.
+ *
+ * Separado de `getPlanTopics` a propósito. El camino quiere nodos grandes —una
+ * unidad engloba más y da para enseñar de verdad— pero la PRUEBA quiere
+ * lecciones: un test sobre "toda la unidad 3" son cuarenta páginas y seis
+ * preguntas no las cubren. Son dos granularidades para dos cosas distintas, y
+ * meterlas en la misma función terminaba en un parámetro que nadie sabía cómo
+ * pasar.
+ *
+ * La lección pertenece a la unidad cuyo rango de páginas la contiene. Se resuelve
+ * al LEER y no escribiendo `parent_ord`, para no tocar una sola fila del índice:
+ * son las que después se cruzan con las bases curriculares del estado.
+ *
+ * Devuelve vacío si la materia no tiene unidades — quien llama cae a
+ * `getPlanTopics` y arma el camino por lecciones, como antes.
+ */
+export async function getPlanUnits(subjectId: string): Promise<PlanUnit[]> {
+  const sql = getSql();
+  // `unidad_chunks` primero: seis libros tienen unidades viejas sacadas del
+  // índice y algunas están rotas (Matemática 2º Medio: cuatro unidades que
+  // abarcan cuatro páginas). No se borran —son parte del índice— pero pierden.
+  const unidades = await sql<{
+    document_id: string; subject_id: string; doc_title: string; ord: number; title: string;
+    unit_no: number | null; page_start: number; page_end: number;
+  }[]>`
+    select bs.document_id, bs.subject_id, d.title as doc_title, bs.ord, bs.title,
+           bs.unit_no, bs.page_start, bs.page_end
+    from book_sections bs
+    join documents d on d.id = bs.document_id
+    where bs.subject_id = ${subjectId} and bs.level = 1
+      and (bs.method = 'unidad_chunks'
+           or not exists (select 1 from book_sections o
+                           where o.document_id = bs.document_id and o.level = 1
+                             and o.method = 'unidad_chunks'))
+    order by d.title, bs.page_start`;
+  if (unidades.length < 2) return [];
+
+  const lecciones = await sql<{
+    document_id: string; subject_id: string; doc_title: string; ord: number; title: string;
+    unit_no: number | null; lesson_no: number | null; page_start: number; page_end: number;
+  }[]>`
+    select bs.document_id, bs.subject_id, d.title as doc_title, bs.ord, bs.title,
+           bs.unit_no, bs.lesson_no, bs.page_start, bs.page_end
+    from book_sections bs
+    join documents d on d.id = bs.document_id
+    where bs.subject_id = ${subjectId} and bs.level = 2
+    order by bs.page_start`;
+
+  const variosTomos = new Set(unidades.map((u) => u.document_id)).size > 1;
+  const muestras = await muestrasDeRango(unidades.map((u) => ({
+    documentId: u.document_id, pageStart: u.page_start, pageEnd: u.page_end,
+  })));
+
+  return unidades.map((u, i) => ({
+    key: claveTema(u.document_id, u.ord, u.title),
+    title: variosTomos ? `${tomo(u.doc_title)}${u.title}` : u.title,
+    documentId: u.document_id,
+    subjectId: u.subject_id,
+    documentTitle: u.doc_title,
+    pageStart: u.page_start,
+    pageEnd: u.page_end,
+    unitNo: u.unit_no,
+    lessonNo: null,
+    sample: muestras[i] ?? "",
+    source: "index" as const,
+    lecciones: lecciones
+      .filter((l) => l.document_id === u.document_id
+                  && l.page_start >= u.page_start && l.page_start <= u.page_end)
+      .map((l) => ({
+        key: claveTema(l.document_id, l.ord, l.title),
+        title: l.title,
+        documentId: l.document_id,
+        subjectId: l.subject_id,
+        documentTitle: l.doc_title,
+        pageStart: l.page_start,
+        pageEnd: l.page_end,
+        unitNo: l.unit_no,
+        lessonNo: l.lesson_no,
+        sample: "",
+        source: "index" as const,
+      })),
+  }));
 }
 
 export async function getPlanTopics(
@@ -207,6 +437,70 @@ export async function getPlanTopics(
   const filtradas = legacy.filter((t) => pedidas.has(t.key));
   return filtradas.length > limit ? muestreoRepartido(filtradas, limit) : filtradas;
 }
+
+/**
+ * CUÁNTAS lecciones tendría el plan de cada materia, sin armarlo.
+ *
+ * Existe porque el panel contaba el plan por su cuenta y le salía distinto.
+ * `/api/progress` hacía `from book_sections where level = 2 having count(*) >= 3`
+ * y devolvía NADA para las materias sin índice legible — pero `getPlanTopics`,
+ * en ese mismo caso, cae al fallback legacy y devuelve lecciones igual. El panel
+ * leía `planTotal = 0`, marcaba `sinCamino` y APAGABA el botón "Camino" de una
+ * materia que sí tenía siete lecciones. Ciencias Naturales 4º básico decía
+ * "Con guía docente" y no se podía abrir.
+ *
+ * La regla es la de `getPlanTopics` y ahora vive en un solo lado: índice si hay
+ * al menos 3 secciones, si no el legacy con su filtro de sanidad, si no nada.
+ * Cambiar el criterio acá lo cambia en los dos lugares a la vez, que es
+ * exactamente lo que no pasaba antes.
+ */
+export async function planSizes(subjectIds?: string[]): Promise<Record<string, number>> {
+  const sql = getSql();
+  // Con filtro, la consulta de UNA materia no recorre los 29.000 chunks del
+  // corpus entero. El panel las pide todas de una; el camino, la suya.
+  const soloEstas = subjectIds?.length ? subjectIds : null;
+  const filas = await sql<{ subject_id: string; n: number }[]>`
+    with uni as (
+      -- Las UNIDADES mandan: son los nodos del camino. Si el panel contara las
+      -- lecciones diría "0 de 14" mientras el camino muestra 6 unidades, que es
+      -- exactamente el desfase que ya nos costó una vez.
+      select bs.subject_id, count(*)::int as n
+      from book_sections bs
+      where bs.level = 1 and bs.method = 'unidad_chunks'
+        ${soloEstas ? sql`and bs.subject_id = any(${soloEstas}::uuid[])` : sql``}
+      group by bs.subject_id having count(*) >= 2
+    ), idx as (
+      select bs.subject_id, count(*)::int as n
+      from book_sections bs where bs.level = 2
+        ${soloEstas ? sql`and bs.subject_id = any(${soloEstas}::uuid[])` : sql``}
+      group by bs.subject_id having count(*) >= 3
+    ), leg as (
+      select subject_id, count(*)::int as n from (
+        select d.subject_id
+        from chunks ch
+        join documents d on d.id = ch.document_id
+        where ch.corpus_role = 'content'
+          and ch.unit is not null and ch.lesson is not null and ch.page is not null
+          ${soloEstas ? sql`and d.subject_id = any(${soloEstas}::uuid[])` : sql``}
+        group by d.subject_id, ch.document_id, ch.unit, ch.lesson
+        having count(distinct ch.page)::float / (max(ch.page) - min(ch.page) + 1) >= 0.5
+           and (max(ch.page) - min(ch.page)) <= 60
+      ) g group by subject_id having count(*) >= 3
+    )
+    select s.id as subject_id, least(coalesce(uni.n, idx.n, leg.n), ${PLAN_TOPE})::int as n
+    from subjects s
+    left join uni on uni.subject_id = s.id
+    left join idx on idx.subject_id = s.id
+    left join leg on leg.subject_id = s.id
+    where (uni.n is not null or idx.n is not null or leg.n is not null)
+      ${soloEstas ? sql`and s.id = any(${soloEstas}::uuid[])` : sql``}`;
+  const out: Record<string, number> = {};
+  for (const f of filas) out[f.subject_id] = f.n;
+  return out;
+}
+
+/** Tope de lecciones de un plan. El mismo `limit` por defecto de `getPlanTopics`. */
+const PLAN_TOPE = 14;
 
 /**
  * Temas para un plan A MEDIDA: las lecciones REALES que hablan de lo que el
