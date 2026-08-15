@@ -33,9 +33,40 @@ export default function LeccionPage() {
   /** Índice de la pregunta que se está mostrando. */
   const [paso, setPaso] = useState(0);
 
-  const item = useMemo(() => plan.find((p) => p.key === tema), [plan, tema]);
-  const idx = useMemo(() => plan.findIndex((p) => p.key === tema), [plan, tema]);
-  const siguiente = idx >= 0 ? plan[idx + 1] : undefined;
+  /**
+   * EL PLAN, APLANADO A PASOS ABRIBLES. Desde que el camino es de UNIDADES,
+   * las claves de lección viven ANIDADAS en `item.lecciones` — y esta página
+   * buscaba solo en el nivel de arriba: tocar cualquier moneda de lección del
+   * camino terminaba en "No encontré esa lección". Cada lección anidada se
+   * aplana con la MISMA forma que arma el camino al abrirla, y "la siguiente"
+   * pasa a ser la próxima lección real (la que sigue dentro de la unidad, o la
+   * primera de la unidad que viene), no el próximo nodo gordo.
+   */
+  const pasos = useMemo(() => plan.flatMap((p) =>
+    p.lecciones?.length
+      ? p.lecciones.map((l) => ({ ...p, key: l.key, title: l.title, p0: l.p0, p1: l.p1, unit: l.unit, lesson: l.lesson, lecciones: undefined }))
+      : [p]
+  ), [plan]);
+  // Primero el nivel de arriba (el nodo grande de una unidad también se abre,
+  // con su propia clave); si no está ahí, es una lección anidada.
+  const item = useMemo(
+    () => plan.find((p) => p.key === tema) ?? pasos.find((p) => p.key === tema),
+    [plan, pasos, tema],
+  );
+  const idx = useMemo(() => pasos.findIndex((p) => p.key === tema), [pasos, tema]);
+  // Para una clave de UNIDAD (nodo grande) el índice no está en `pasos` — la
+  // lista aplanada la reemplazó por sus lecciones. Sin el segundo caso,
+  // `siguiente` quedaba undefined y el final del quiz de la unidad 2 de 10
+  // decía "Era la última lección del camino 🎉": mentira, y un callejón sin
+  // salida justo en el botón que existe para seguir de corrido. Después del
+  // quiz de la unidad, lo que sigue es SU primera lección.
+  const siguiente = useMemo(() => {
+    if (idx >= 0) return pasos[idx + 1];
+    const u = plan.find((p) => p.key === tema);
+    return u?.lecciones?.length
+      ? pasos.find((p) => p.key === u.lecciones![0]!.key)
+      : undefined;
+  }, [idx, pasos, plan, tema]);
 
   useEffect(() => { void traerMateria(id).then(setSubject); }, [id]);
 
@@ -223,7 +254,10 @@ export default function LeccionPage() {
               <button onClick={() => router.push(`/materia/${id}/camino/${siguiente.key}`)}
                 style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, textAlign: "left", background: C.accent, color: "#fff", border: `2px solid ${C.ink}`, borderRadius: 14, boxShadow: HARD(C.ink), padding: "14px 15px", cursor: "pointer" }}>
                 <span style={{ minWidth: 0 }}>
-                  <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 15 }}>Seguir con la {siguiente.n}</span>
+                  {/* "la siguiente" y no "la {n}": con lecciones anidadas, dos
+                      seguidas comparten el número de SU unidad y "Seguir con la
+                      2" dos veces al hilo parecía un botón trabado. */}
+                  <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 15 }}>Seguir con la siguiente</span>
                   <span style={{ display: "block", fontSize: 13, opacity: .85, marginTop: 1, lineHeight: 1.3 }}>{siguiente.title}</span>
                 </span>
                 <IconArrow size={20} />

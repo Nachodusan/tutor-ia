@@ -49,6 +49,9 @@ psql "$DB_URL" -f packages/db/schema_book_sections.sql
 # Login del alumno (anónimo), estado persistido y conversaciones. Va ANTES del
 # seed, que ya inserta el usuario dev con su username.
 psql "$DB_URL" -f packages/db/schema_auth.sql
+# Reloj de estudio (pomodoro): columnas del perfil. Va DESPUÉS de schema_auth,
+# que es el que crea student_profiles.
+psql "$DB_URL" -f packages/db/schema_pomodoro.sql
 psql "$DB_URL" -f packages/db/seed.sql
 
 echo "==> 4/4 Listo. Ahora: pnpm install && pnpm dev"

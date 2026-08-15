@@ -66,7 +66,15 @@ export function CaminoView({
   onExamen: () => void; onRegen: () => void; testLoading: boolean;
 }) {
   const area = subject ? subjectLabel(subject) : "";
-  const actual = items.find((it) => !done.includes(it.key))?.key ?? "";
+  // "Hecho" se decide con la MISMA regla en todos lados. Antes esto miraba
+  // `done.includes(it.key)` directo, y para una UNIDAD esa clave no se marca
+  // nunca (el progreso se guarda por lección): el "Estás acá" se quedaba
+  // clavado en la primera unidad aunque el chico la hubiera terminado entera.
+  const nodoHecho = (it: PlanItem) => {
+    const ls = it.lecciones ?? [];
+    return ls.length > 0 ? ls.every((l) => done.includes(l.key)) : done.includes(it.key);
+  };
+  const actual = items.find((it) => !nodoHecho(it))?.key ?? "";
   // AMPLITUD ELÁSTICA: el serpenteo usa el ancho que el contenedor tenga de
   // verdad. Se mide con ResizeObserver (cubre el resize de la ventana Y el
   // cambio de contenedor); hasta la primera medición vale el mínimo, así el
@@ -110,23 +118,38 @@ export function CaminoView({
         tipo: "examen",
         desde: Math.max(1, i + 2 - CADA),
         hasta: i + 1,
-        listo: bloque.every((b) => done.includes(b.key)),
+        // La MISMA regla de "hecho" que todo lo demás. Con la clave cruda
+        // (`done.includes(b.key)`), en un plan por unidades el candado no se
+        // abría NUNCA: la clave de una unidad no se marca — se marcan sus
+        // lecciones. El `||` deja valer también el quiz de la unidad entera
+        // (nodo grande), que sí escribe la clave de la unidad.
+        listo: bloque.every((b) => nodoHecho(b) || done.includes(b.key)),
       });
     }
   });
 
-  // +1 parada visual: LA META. No es una lección — es el lugar al que se llega,
-  // y verla desde el arranque es lo que convierte la lista en un recorrido.
-  const alto = (paradas.length + 1) * PASO + NODO + MARGEN_V * 2;
-  const centro = (k: number) => ({ x: posX(k, amp), y: MARGEN_V + k * PASO + NODO / 2 });
+  // EL PASO YA NO ES FIJO: el tramo que sale de una unidad lleva ENCIMA sus
+  // puntos de lección, y con puntos de 24 px una unidad de 6 lecciones no entra
+  // en 164 de alto — los puntos se pisaban entre sí y con los nodos, que es la
+  // mitad de por qué se confundían con la textura del fondo. Cada tramo mide lo
+  // que su carga pide: los dos nodos de las puntas, y un lugar por punto.
+  const largoTramo = (lecciones: number) =>
+    lecciones === 0
+      ? PASO
+      : Math.max(PASO, NODO + PUNTO + AIRE_PUNTO * 2 + (lecciones + 1) * (PUNTO + GAP_PUNTO));
+  // El centro vertical de cada parada, acumulando tramos. La última entrada es
+  // LA META (+1 parada visual: no es una lección — es el lugar al que se llega,
+  // y verla desde el arranque es lo que convierte la lista en un recorrido).
+  const ys: number[] = [MARGEN_V + NODO / 2];
+  for (const p of paradas) {
+    ys.push(ys[ys.length - 1]! + largoTramo(p.tipo === "leccion" ? (p.item.lecciones?.length ?? 0) : 0));
+  }
+  const alto = ys[ys.length - 1]! + NODO / 2 + MARGEN_V;
+  const centro = (k: number) => ({ x: posX(k, amp), y: ys[k] ?? 0 });
   // El avance se cuenta en NODOS del camino, no en marcas sueltas. Cuando el
   // nodo es una unidad con lecciones adentro, está hecho cuando lo están todas:
   // contar `done.length` contra `items.length` mezclaba lecciones hechas con
   // unidades totales y decía "4 de 6 lecciones · 67%" con dos unidades a medias.
-  const nodoHecho = (it: PlanItem) => {
-    const ls = it.lecciones ?? [];
-    return ls.length > 0 ? ls.every((l) => done.includes(l.key)) : done.includes(it.key);
-  };
   const hechos = items.filter(nodoHecho).length;
   // `lecciones` definido —aunque venga vacío— significa que el nodo es una
   // UNIDAD. Vacío es el caso legítimo del libro sin índice: la unidad no se
@@ -144,6 +167,56 @@ export function CaminoView({
   }, 0);
   const pct = items.length ? Math.round((avance / items.length) * 100) : 0;
 
+  /**
+   * Dónde cae la moneda `j` de un tramo con `nL` monedas (t de 0 a 1 sobre la
+   * Bézier del tramo `k`). La usan el DIBUJO de las monedas y el PINTADO del
+   * sendero hecho: si cada uno calculara el margen por su cuenta, el día que
+   * uno cambie el sendero pintado dejaría de pasar por las monedas.
+   * El 1.4 es porque la curva arranca casi vertical (velocidad 1.5·alto en las
+   * puntas): a `t` chico ya se recorrió más alto que `t`·alto.
+   */
+  const tMoneda = (k: number, j: number, nL: number) => {
+    const L = (ys[k + 1] ?? (ys[k] ?? 0) + PASO) - (ys[k] ?? 0);
+    const m = Math.min(0.3, (NODO / 2 + PUNTO / 2 + AIRE_PUNTO) / (1.4 * L));
+    return m + ((j + 1) / (nL + 1)) * (1 - 2 * m);
+  };
+
+  /**
+   * EL SENDERO PINTADO, que ahora avanza MONEDA A MONEDA.
+   *
+   * Con unidades, el tramo pintado cubre los tramos de las unidades completas
+   * (las monedas de una unidad viven en el tramo que SALE de su nodo, así que
+   * completarla es haber caminado ese tramo) y sigue en PARCIAL hasta la última
+   * moneda hecha de corrido de la unidad actual. Antes se pintaba por paradas
+   * enteras con `done.includes(item.key)` — clave que para una unidad no se
+   * marca nunca, así que el sendero se quedaba en cero aunque el chico llevara
+   * dos unidades terminadas.
+   *
+   * El parcial se aproxima con una polilínea muestreada sobre la MISMA Bézier
+   * (16 puntos): con puntas redondas y 18-24 px de trazo es indistinguible de
+   * la curva, y evita partir la cúbica con De Casteljau.
+   */
+  const senderoHecho = (): string => {
+    if (completo) return sendero(paradas.length + 1, amp, ys);
+    const nSeg = hechasSeguidas(paradas, done);
+    if (!hayUnidades) return sendero(nSeg, amp, ys);
+    let d = sendero(nSeg + 1, amp, ys);
+    const prox = paradas[nSeg];
+    if (prox?.tipo === "leccion") {
+      const ls = prox.item.lecciones ?? [];
+      const sinHacer = ls.findIndex((l) => !done.includes(l.key));
+      const monedas = sinHacer === -1 ? ls.length : sinHacer;
+      if (monedas > 0) {
+        const tFin = tMoneda(nSeg, monedas - 1, ls.length);
+        for (let s = 1; s <= 16; s++) {
+          const q = puntoEnTramo(nSeg, (tFin * s) / 16, amp, ys);
+          d += ` L ${q.x.toFixed(1)} ${q.y.toFixed(1)}`;
+        }
+      }
+    }
+    return d;
+  };
+
   return (
     <div>
       {/* Animaciones del camino. `prefers-reduced-motion` las apaga enteras. */}
@@ -153,8 +226,16 @@ export function CaminoView({
           50%      { box-shadow: 4px 4px 0 0 ${C.ink}, 0 0 0 14px rgba(43,68,255,0); }
         }
         @keyframes caminoFlota { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-5px) } }
+        /* El latido de la PRÓXIMA lección: mismo lenguaje que el nodo actual,
+           a escala de moneda. El aro blanco va DENTRO del keyframe — la
+           animación pisa el box-shadow del estilo, y sin repetirlo acá la
+           moneda que late perdía el aro que la despega del sendero. */
+        @keyframes caminoPulsoChico {
+          0%, 100% { box-shadow: 0 0 0 3px ${C.panel}, 0 0 0 4px rgba(43,68,255,.4); }
+          50%      { box-shadow: 0 0 0 3px ${C.panel}, 0 0 0 12px rgba(43,68,255,0); }
+        }
         @media (prefers-reduced-motion: reduce) {
-          .camino-actual, .camino-meta-viva { animation: none !important; }
+          .camino-actual, .camino-meta-viva, .camino-sig { animation: none !important; }
         }
       `}</style>
 
@@ -202,18 +283,21 @@ export function CaminoView({
         <svg width={amp * 2 + NODO} height={alto} viewBox={`${-(amp + NODO / 2)} 0 ${amp * 2 + NODO} ${alto}`}
           style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", pointerEvents: "none" }} aria-hidden="true">
           {(() => {
-            const todo = sendero(paradas.length + 1, amp);
-            const hecho = sendero(completo ? paradas.length + 1 : hechasSeguidas(paradas, done), amp);
+            const todo = sendero(paradas.length + 1, amp, ys);
+            const hecho = senderoHecho();
             return (
               <>
-                {/* LO QUE FALTA: huellas. Van MÁS OSCURAS que los puntos del
-                    papel —eran del mismo `C.border` y se confundían con el
-                    fondo— y con contorno propio, para que se lean como camino
-                    por pisar y no como textura. */}
-                <path d={todo} fill="none" stroke={C.ink} strokeWidth={17} strokeLinecap="round"
-                  strokeDasharray="0.1 27" opacity={0.12} />
-                <path d={todo} fill="none" stroke={C.dim} strokeWidth={10} strokeLinecap="round"
-                  strokeDasharray="0.1 27" opacity={0.38} />
+                {/* LO QUE FALTA: huellas. Más oscuras que los puntos del papel
+                    —eran del mismo `C.border` y se confundían con el fondo—
+                    pero CHICAS: medían 10-17 px, lo mismo que los puntos de
+                    lección de entonces, y las dos cosas se leían como la misma
+                    textura. La huella es piso, no botón; achicarla es lo que le
+                    devuelve al punto de lección el lugar de único tocable sobre
+                    el sendero. */}
+                <path d={todo} fill="none" stroke={C.ink} strokeWidth={11} strokeLinecap="round"
+                  strokeDasharray="0.1 22" opacity={0.1} />
+                <path d={todo} fill="none" stroke={C.dim} strokeWidth={6} strokeLinecap="round"
+                  strokeDasharray="0.1 22" opacity={0.35} />
 
                 {/* LO RECORRIDO: una RUTA. Casco de tinta como todo lo demás del
                     mundo Bloques —el sendero era la única pieza del dibujo sin
@@ -239,10 +323,18 @@ export function CaminoView({
           // no entra: con el paso vertical que pide la curva, un título de dos
           // líneas se mete sobre el nodo siguiente y el trazo lo cruza. Al
           // costado usa el ancho que el serpenteo deja libre.
-          const alaDerecha = x <= 0;
+          // ⚠️ La X del nodo va en `left`, NUNCA adentro del `transform`. Antes
+          // era `translate(calc(-50% + Xpx))` y el nodo tiene una transición de
+          // transform: cuando la amplitud elástica cambia tras medir el ancho,
+          // Chromium no sabe interpolar entre dos calc() con % y px mezclados y
+          // DEJA EL VALOR VIEJO para siempre. Resultado real: el sendero y las
+          // monedas se estiraban a la amplitud nueva y los nodos de unidad
+          // quedaban clavados en la vieja — el camino pasaba lejos de sus
+          // propios círculos. `left` no está en la transición y se aplica al
+          // instante.
           const nodoPos: React.CSSProperties = {
-            position: "absolute", left: "50%", top: y,
-            transform: `translate(calc(-50% + ${x}px), -50%)`,
+            position: "absolute", left: `calc(50% + ${x}px)`, top: y,
+            transform: "translate(-50%, -50%)",
           };
           // La etiqueta va DEBAJO del nodo y centrada. Con el paso corto de
           // antes (112 px) esto no entraba: un título de dos líneas se metía
@@ -281,11 +373,16 @@ export function CaminoView({
               <div key={`ex-${k}`}>
                 <div style={etiquetaPos}>
                   <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12, color: p.listo ? C.text : C.dim, lineHeight: 1.25 }}>
-                    Prueba · lecciones {p.desde} a {p.hasta}
+                    {/* El sustantivo sigue al del camino: los números 1 a 5 de
+                        al lado son UNIDADES cuando el plan es por unidades, y
+                        el encabezado de arriba ya lo dice así — que el rombo
+                        los llame "lecciones" era nombrar mal las mismas
+                        paradas que el chico está mirando. */}
+                    Prueba · {hayUnidades ? "unidades" : "lecciones"} {p.desde} a {p.hasta}
                   </span>
                 </div>
                 <button onClick={() => p.listo && onExamen()} disabled={!p.listo || testLoading}
-                  title={p.listo ? `Prueba de las lecciones ${p.desde} a ${p.hasta}` : `Se abre al terminar la ${p.hasta}`}
+                  title={p.listo ? `Prueba de las ${hayUnidades ? "unidades" : "lecciones"} ${p.desde} a ${p.hasta}` : `Se abre al terminar la ${p.hasta}`}
                   style={{
                     ...nodoPos,
                     transform: `${nodoPos.transform} rotate(45deg)`,
@@ -309,7 +406,21 @@ export function CaminoView({
           const lecciones = p.item.lecciones ?? [];
           const hechas = lecciones.filter((l) => done.includes(l.key)).length;
           const hecho = lecciones.length > 0 ? hechas === lecciones.length : done.includes(p.item.key);
-          const sc = scores[p.item.key];
+          // La NOTA de una unidad es la suma de las notas de sus lecciones.
+          // Buscarla con la clave de la unidad (`scores[p.item.key]`) devolvía
+          // siempre undefined —las notas se guardan por lección— y el nodo de
+          // toda unidad terminada caía en el ámbar de "le fue mal", aunque el
+          // chico hubiera acertado todo.
+          const sc = lecciones.length === 0
+            ? scores[p.item.key]
+            : (() => {
+                let s = 0, t = 0;
+                for (const l of lecciones) {
+                  const v = scores[l.key];
+                  if (v) { s += v.score; t += v.total; }
+                }
+                return t > 0 ? { score: s, total: t } : undefined;
+              })();
           const bien = sc ? aprobado(sc.score, sc.total) : false;
           const esActual = p.item.key === actual;
           // TRES PESOS VISUALES, no uno: lo hecho en color pleno, lo ACTUAL más
@@ -338,12 +449,15 @@ export function CaminoView({
                   </span>
                 )}
 
-                {/* Cuántos puntos de control lleva hechos. El detalle de cada uno
-                    vive en el circulito sobre el sendero, no acá: en una materia
+                {/* Cuántas lecciones lleva hechas. CON LA PALABRA "lecciones":
+                    el "0 de 4" pelado no decía de qué eran los cuatro, y los
+                    cuatro puntos sobre el sendero quedaban sin nombre — decirlo
+                    acá es lo que ata la cuenta con los puntos de abajo. El
+                    detalle de cada una vive en su punto, no acá: en una materia
                     de 19 unidades los títulos tapaban el camino entero. */}
                 {lecciones.length > 0 && (
                   <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 11, color: hechas === lecciones.length ? C.okTx : C.dim }}>
-                    {hechas} de {lecciones.length}
+                    {hechas} de {lecciones.length} {lecciones.length === 1 ? "lección" : "lecciones"}
                   </span>
                 )}
               </div>
@@ -367,34 +481,51 @@ export function CaminoView({
                 {hecho ? <IconCheck size={26} /> : p.i + 1}
               </button>
 
-              {/* LOS PUNTOS DE CONTROL, SOBRE EL SENDERO. Repartidos a lo largo
-                  del tramo que sale de esta unidad hacia la siguiente: se leen
-                  como "lo que falta para completar la unidad" en vez de como una
-                  lista al costado. Chicos a propósito — el protagonista sigue
-                  siendo el nodo grande. */}
+              {/* LAS LECCIONES DE LA UNIDAD, SOBRE EL SENDERO. Repartidas a lo
+                  largo del tramo que sale de esta unidad hacia la siguiente: se
+                  leen como "lo que falta para completar la unidad" en vez de
+                  como una lista al costado.
+
+                  Son MONEDAS, no puntitos: numeradas, con borde de tinta y un
+                  aro blanco que las despega de las huellas y del papel de
+                  puntos. Con 14 px lisos eran del mismo tamaño que las huellas
+                  del sendero y un alumno no tenía forma de saber cuál de todos
+                  los círculos se tocaba. El número además las ata al "2 de 4
+                  lecciones" de la etiqueta: son ESTAS cuatro. */}
               {lecciones.map((l, j) => {
-                // Los puntos se reparten en el TRAMO LIBRE, no de nodo a nodo:
-                // el nodo mide 64 y el punto 20, así que hace falta apartarse
-                // ~42px de cada centro para no pisarlo. Sobre un paso de 164 eso
-                // es 0,26 — con 0,28 queda aire.
-                const MARGEN_NODO = 0.25;
-                const t = MARGEN_NODO + ((j + 1) / (lecciones.length + 1)) * (1 - 2 * MARGEN_NODO);
-                const q = puntoEnTramo(p.i, t, amp);
+                const t = tMoneda(k, j, lecciones.length);
+                // ⚠️ Índice de PARADA (`k`), no de ítem (`p.i`): con exámenes
+                // intercalados los dos se desfasan, y con `p.i` los puntos de
+                // toda unidad posterior a una prueba caían en el tramo ANTERIOR
+                // al suyo — las lecciones de la unidad 7 aparecían colgadas del
+                // tramo que llega a la 6.
+                const q = puntoEnTramo(k, t, amp, ys);
                 const lh = done.includes(l.key);
+                // La PRÓXIMA lección de la unidad actual late en cobalto, igual
+                // que el nodo grande: es la respuesta a "¿y ahora qué toco?".
+                const sig = esActual && !lh && lecciones.slice(0, j).every((x) => done.includes(x.key));
                 return (
-                  <button key={l.key} title={l.title}
+                  <button key={l.key} title={l.title} aria-label={`Lección ${j + 1}: ${l.title}`}
+                    className={sig ? "camino-sig" : undefined}
                     onClick={() => onAbrir({ ...p.item, key: l.key, title: l.title, p0: l.p0, p1: l.p1, unit: l.unit, lesson: l.lesson, lecciones: undefined })}
                     style={{
                       position: "absolute", top: q.y, left: `calc(50% + ${q.x}px)`,
                       transform: "translate(-50%,-50%)",
                       width: PUNTO, height: PUNTO, borderRadius: "50%", padding: 0,
-                      background: lh ? C.ok : C.panel,
-                      border: `2px solid ${lh ? C.ink : C.dim}`,
-                      color: "#fff", display: "grid", placeItems: "center", cursor: "pointer",
-                      boxShadow: lh ? HARD_CHICO(C.ink) : "none",
+                      background: lh ? C.ok : sig ? C.accent : C.panel,
+                      border: `2.5px solid ${futuro ? C.dim : C.ink}`,
+                      color: lh || sig ? "#fff" : futuro ? C.dim : C.text,
+                      fontFamily: FONT.round, fontWeight: 800, fontSize: 11.5,
+                      display: "grid", placeItems: "center", cursor: "pointer",
+                      // El aro: separa la moneda de las huellas que pasan por
+                      // debajo. Sin él, punto y huella comparten fondo y borde.
+                      boxShadow: `0 0 0 3px ${C.panel}`,
+                      animation: sig ? "caminoPulsoChico 2.2s ease-out infinite" : undefined,
                       transition: "transform .12s",
-                    }}>
-                    {lh && <IconCheck size={10} />}
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = "translate(-50%,-50%) scale(1.22)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = "translate(-50%,-50%)"; }}>
+                    {lh ? <IconCheck size={13} /> : j + 1}
                   </button>
                 );
               })}
@@ -445,26 +576,32 @@ export function CaminoView({
   );
 }
 
-/** Curva que pasa por los centros de las primeras `n` paradas. */
 /**
- * Un punto SOBRE el tramo que va del nodo `k` al `k+1`, con `t` de 0 a 1.
+ * Diámetro de la MONEDA de lección. 24 y no 14: con 14 medía lo mismo que las
+ * huellas del sendero y no se distinguía qué se tocaba. 24 le da lugar al
+ * número adentro — y el número es la diferencia más fuerte contra cualquier
+ * círculo decorativo, porque la textura no tiene números.
+ */
+const PUNTO = 24;
+/** Aire entre monedas vecinas sobre el tramo. */
+const GAP_PUNTO = 8;
+/** Aire entre una moneda y el nodo de la punta del tramo. */
+const AIRE_PUNTO = 7;
+
+/**
+ * Un punto SOBRE el tramo que va de la parada `k` a la `k+1`, con `t` de 0 a 1.
  *
  * Es la misma Bézier cúbica que dibuja `sendero`, evaluada en vez de dibujada.
- * Sirve para poner los puntos de control de una unidad ENCIMA del sendero, que
- * es donde el chico los espera: antes eran chips de texto al costado y en una
- * materia con 19 unidades tapaban el camino entero.
+ * Sirve para poner las monedas de lección ENCIMA del sendero, que es donde el
+ * chico las espera: antes eran chips de texto al costado y en una materia con
+ * 19 unidades tapaban el camino entero.
  */
-/** Diámetro del punto de control. Chico frente a los 64 del nodo: es un hito
- *  dentro de la unidad, no una parada del camino. */
-const PUNTO = 14;
-/** La sombra dura del mundo Bloques, a escala del punto. */
-const HARD_CHICO = (c: string) => `2px 2px 0 0 ${c}`;
-
-function puntoEnTramo(k: number, t: number, amp: number): { x: number; y: number } {
-  const pt = (i: number) => ({ x: posX(i, amp), y: MARGEN_V + i * PASO + NODO / 2 });
-  const p0 = pt(k), p3 = pt(k + 1);
-  const p1 = { x: p0.x, y: p0.y + PASO / 2 };
-  const p2 = { x: p3.x, y: p3.y - PASO / 2 };
+function puntoEnTramo(k: number, t: number, amp: number, ys: number[]): { x: number; y: number } {
+  const p0 = { x: posX(k, amp), y: ys[k] ?? 0 };
+  const p3 = { x: posX(k + 1, amp), y: ys[k + 1] ?? (ys[k] ?? 0) + PASO };
+  const h = (p3.y - p0.y) / 2;
+  const p1 = { x: p0.x, y: p0.y + h };
+  const p2 = { x: p3.x, y: p3.y - h };
   const u = 1 - t;
   return {
     x: u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x,
@@ -472,24 +609,29 @@ function puntoEnTramo(k: number, t: number, amp: number): { x: number; y: number
   };
 }
 
-function sendero(n: number, amp: number): string {
+/** Curva que pasa por los centros de las primeras `n` paradas. Los altos vienen
+ *  en `ys` porque el paso dejó de ser fijo: cada tramo mide según su carga. */
+function sendero(n: number, amp: number, ys: number[]): string {
   if (n <= 0) return "";
-  const pt = (k: number) => ({ x: posX(k, amp), y: MARGEN_V + k * PASO + NODO / 2 });
   let d = "";
   for (let k = 0; k < n; k++) {
-    const p = pt(k);
-    if (k === 0) { d += `M ${p.x} ${p.y}`; continue; }
-    const a = pt(k - 1);
-    // Curva suave: los puntos de control a media altura dan la ondulación sin
-    // que el trazo se despegue de los nodos.
-    d += ` C ${a.x} ${a.y + PASO / 2}, ${p.x} ${p.y - PASO / 2}, ${p.x} ${p.y}`;
+    const x = posX(k, amp), y = ys[k] ?? 0;
+    if (k === 0) { d += `M ${x} ${y}`; continue; }
+    const xa = posX(k - 1, amp), ya = ys[k - 1] ?? 0;
+    // Curva suave: los puntos de control a media altura DEL TRAMO dan la
+    // ondulación sin que el trazo se despegue de los nodos.
+    const h = (y - ya) / 2;
+    d += ` C ${xa} ${ya + h}, ${x} ${y - h}, ${x} ${y}`;
   }
   return d;
 }
 
 /** Cuántas paradas seguidas van completas desde el arranque. El tramo en color
  *  llega HASTA ahí: pintar lecciones sueltas más adelante daría la idea de que
- *  el camino ya está recorrido cuando no lo está. */
+ *  el camino ya está recorrido cuando no lo está.
+ *  Una UNIDAD está completa cuando lo están todas sus lecciones — la clave de
+ *  la unidad misma no se marca nunca en `done` (el progreso se guarda por
+ *  lección), y mirarla directo dejaba el sendero pintado en cero para siempre. */
 function hechasSeguidas(
   paradas: ({ tipo: "leccion"; item: PlanItem } | { tipo: "examen" })[],
   done: string[],
@@ -497,7 +639,9 @@ function hechasSeguidas(
   let n = 0;
   for (const p of paradas) {
     if (p.tipo === "examen") { n++; continue; }
-    if (!done.includes(p.item.key)) break;
+    const ls = p.item.lecciones ?? [];
+    const hecho = ls.length > 0 ? ls.every((l) => done.includes(l.key)) : done.includes(p.item.key);
+    if (!hecho) break;
     n++;
   }
   return n;

@@ -294,6 +294,112 @@ cuántos alumnos distintos los fallaron), avance por materia, y la fila de cada 
 **Perfil del alumno** (`student_profiles`) — grado → materias prioritarias → panel
 personal. El paso del NOMBRE se eliminó: las cuentas son anónimas.
 
+**CURSOS CERRADOS: de 1º a 5º básico (2026-08-14)** — decisión de producto, no técnica:
+la herramienta pide leer una respuesta larga y juzgarla, y eso a los 6-10 años no se da por
+supuesto. Se abre cuando lo revise alguien que sepa de desarrollo infantil.
+- La lista vive en **un solo lugar**: `apps/web/lib/cursos.ts` (`CURSOS_BLOQUEADOS`).
+  Para abrir un curso se lo saca de ahí y listo; los alumnos que ya lo tengan en el perfil
+  vuelven a entrar solos. El módulo es plano (sin `"use client"`, sin imports) justamente
+  para que lo lean las dos mitades: la pantalla que dibuja el candado y la ruta que lo hace
+  cumplir.
+- **El corpus NO se toca.** Los libros de 1º a 5º siguen ingestados y siguen apareciendo en
+  la cascada de alcance: que un chico de 8º reciba la explicación de fracciones del libro de
+  5º es una función, no una fuga. Lo cerrado son los CURSOS (los alumnos), no el material.
+- Tres capas, y las tres hacen falta: el onboarding muestra esos cursos **con candado**
+  (esconderlos haría que un chico de 3º eligiera 6º y estudiara del libro equivocado),
+  `PUT /api/me/profile` responde **403** si el curso llega igual, y
+  `requireCursoAbierto()` (`lib/auth.ts`) cierra las rutas que sirven material: `/api/chat`,
+  `/api/plan` (GET y POST), `/api/plan/custom` (GET y POST), `/api/test`,
+  `/api/lesson/quiz`. Las de CORRECCIÓN no se tocaron: corrigen algo que la generación ya
+  tuvo que entregar. Docente y admin pasan siempre — revisan, no estudian.
+- Quien ya tenía uno de esos cursos (perfil viejo o puesto por el CLI) ve la pantalla
+  `CursoCerrado` con las dos salidas honestas —cambiar de curso o salir— en vez de un panel
+  vacío que dice "no hay material cargado", que además sería falso.
+- El selector del panel del docente tampoco los ofrece: "3º Básico · 0 alumnos" solo se
+  puede leer como "el colegio no lo inscribió".
+
+**PANEL DEL ALUMNO: NAV LATERAL + "PARA REFORZAR" POR MATERIA (2026-08-14)**
+- El panel pasó a `nav` a la izquierda + contenido a la derecha (`panel.tsx`, `NAV_CSS`).
+  Es el único lugar del panel con CSS de verdad y no estilos en línea, porque la misma
+  barra es **columna** en el computador y **tira horizontal** en el teléfono (≤880 px), y
+  eso es una media query: medir la ventana en JS pinta primero el layout equivocado.
+- El nav lleva **tres entradas**, no las materias una por una: `Tus materias`, `Reforzar`
+  (con la cuenta de temas pendientes al costado) y `Repasá con tus apuntes`. Listar cada
+  materia repetía lo que ya está en las tarjetas, tres centímetros a la derecha. Los apuntes
+  van últimos: las dos primeras trabajan sobre el libro del curso —lo que el alumno tiene
+  siempre—, esta arranca cuando él trae algo suyo.
+- ⚠️ **`/apuntes` es una MAQUETA declarada**, no una pantalla a medio conectar: escanear la
+  página y las tres salidas (mapa conceptual · fichas de memoria · **entrenar con la IA**)
+  están dibujadas, con chapa "Maqueta" arriba y un aviso al tocar los botones. Se hizo así a
+  propósito: una pantalla que se ve terminada y calla que es un dibujo termina con un chico
+  subiendo la foto de su cuaderno y esperando un mapa que no va a llegar. Las vistas previas
+  son dibujos (SVG/CSS), no datos de nadie. **Lo que falta no es "llamar a una API que ya
+  está"**: el corpus no admite material del alumno —la ingesta es del libro del colegio—, así
+  que esto necesita tubería nueva (foto → OCR → chunks propios). `/api/plan/custom` arma
+  planes a medida, pero sobre el material del colegio, no sobre el cuaderno.
+- **`/reforzar` es una PANTALLA propia** (`app/reforzar/page.tsx`), no una sección al pie del
+  panel: mezclada ahí abajo, el que venía a reforzar tenía que pasar por arriba de todo lo
+  demás para llegar. Sin ruta de API nueva — los temas débiles ya vienen en `/api/progress`.
+- Los temas van **por materia y completos**. Antes era una lista plana ordenada por fallos, con
+  tope de 6: Biología y Matemática se intercalaban, así que para saber qué pasaba en una materia
+  había que saltear renglones ajenos, y el tope escondía justo lo que el alumno entra a buscar.
+  Se murió `REVIEW_MAX`.
+- Están **TODAS las materias del curso**, no solo las que tienen algo fallado. Con la lista
+  filtrada, el chico que rindió una sola prueba veía una sola materia y no podía distinguir
+  "las otras están bien" de "el tutor no las conoce". Las que no tienen nada dicen **"Al día"**,
+  que es una respuesta. Lo fallado en materias de OTRO curso no se tira: va aparte, bajo "De
+  otros cursos", en vez de desaparecer sin aviso.
+- Es un **acordeón, una materia abierta por vez**, y abre sola la primera que tiene temas. Todo
+  desplegado son treinta renglones iguales; todo cerrado, una pantalla muda. Solo se abre lo que
+  tiene algo adentro — un acordeón que se despliega vacío enseña que abrir no sirve.
+- Arriba, el resumen en número grande (`🎯 9 temas para afirmar`). El consejo "empezá por la de
+  más arriba" **solo aparece cuando es cierto**: si lo único fallado está en otro curso, la de
+  más arriba está al día y el consejo manda al chico al lugar equivocado.
+- ⚠️ El contador del nav va como **hermano** de la etiqueta, no adentro del `span` del texto:
+  ahí adentro su `margin-left: auto` no hacía nada y se leía "Reforzar(9)", pegado.
+- Con el nav en dos pantallas aparecieron tres piezas compartidas en `panel.tsx`: `PanelShell`
+  (el marco), `PanelNav` (que sabe sola dónde está parada con `usePathname`, así que sumar una
+  pantalla no obliga a pasarle un `activo` desde cada una) y `agruparReforzar`. La carga de
+  datos del alumno salió a `useAlumno()` (`app/usar-alumno.ts`): copiar ese bloque cuesta que
+  la copia se olvide del 401 y deje a alguien sin sesión mirando una pantalla vacía.
+- "Mi curso" desde otra pantalla entra por `/?editar=1` (el panel lo lee del `location` y
+  limpia la URL: si queda, el "atrás" del navegador vuelve a preguntarle el curso).
+
+**RELOJ DE ESTUDIO / POMODORO** (`schema_pomodoro.sql`, `app/pomodoro.tsx`,
+`lib/pomodoro.ts`) — el alumno elige cuánto estudia de corrido, cuánto descansa y a qué
+hora se sienta; el panel le recuerda y el reloj lo corta.
+- **Montado en el layout RAÍZ** (`PomodoroProvider`), no en el panel: se arranca el bloque
+  en el panel y a los diez segundos el chico está en el chat de Biología. Colgado de una
+  página, el descanso se perdería en la primera navegación.
+- El tiempo se calcula con **marcas de fin** (`finEn`, epoch ms) en `localStorage`, no
+  restando un contador por tick: el navegador ralentiza los `setInterval` de las pestañas en
+  segundo plano —que es exactamente donde está la pestaña cuando el chico fue a buscar
+  agua— y un contador propio atrasaría minutos.
+- Lo que SÍ va a la base es la **configuración** (`pomo_estudio_min`, `pomo_descanso_min`,
+  `pomo_hora`, `pomo_dias`) y `pomo_last_at`. La config va al perfil por lo mismo que
+  `tts_voice`: en una sala de computación treinta chicos comparten el navegador. El
+  segundero no va: serían 3.600 escrituras por hora por alumno.
+- `pomo_hora` es **texto "HH:MM"**, no `time`: es hora de reloj de pared en la casa del
+  chico, y la comparación con "ahora" la hace el navegador, no el servidor (que puede estar
+  en otra zona). `pomo_dias` son dígitos ISO pegados (`"12345"` = L a V).
+- El estudio pasa **solo** al descanso; el descanso **no** pasa solo al estudio (el que
+  vuelve del baño se encontraría con el descanso ya gastado). El aviso de fase es un modal
+  a propósito: interrumpir es lo que se le pidió al reloj.
+- **El reloj flota arriba a la derecha, en TODAS las pantallas del alumno** (`RelojFlotante`,
+  dentro del provider). Antes era un chip en dos encabezados más una tarjeta en el panel:
+  tres piezas para una idea, y el reloj desaparecía justo donde más falta hace —adentro de
+  la prueba, que no tenía ni chip ni tarjeta—. Cerrado es un anillo SVG que se vacía (el
+  tiempo se lee sin leer números); abierto es el tablero: arrancar, pausar, saltar de fase,
+  terminar y ajustar la rutina. En el login y en `/docente` no aparece.
+- ⚠️ Un elemento `fixed` **no empuja a nadie**: los encabezados que tienen algo propio arriba
+  a la derecha le reservan el lugar con la clase `CLASE_HUECO_RELOJ`. Y ese padding tiene que
+  ir en **longhand** (`paddingLeft`, no el atajo `padding`), porque el estilo en línea le gana
+  a la hoja de estilos — con el atajo, el reloj se sentaba encima del botón de "Prueba" en el
+  teléfono. Bajo 560 px el reloj se queda **solo con el anillo**: en el encabezado de la
+  materia, el mm:ss dejaba el título del libro en "Ciencia…".
+- Migración: `psql "$DATABASE_URL" -f packages/db/schema_pomodoro.sql` (idempotente; ya
+  está en `scripts/setup-local.sh`).
+
 **Plan de estudio** — se arma desde el **ÍNDICE REAL del libro**; el LLM solo redacta.
 La lógica vive en `packages/core/src/study-plan.ts` (`buildStudyPlan`), que usan tanto
 `/api/plan` como el CLI: dos copias del prompt darían planes distintos según quién lo
@@ -958,6 +1064,67 @@ matchearía miles de chunks, y el síntoma se leería como MEJORA (`nLexical` su
 `lexEmpty` baja). Va en columna aparte o en tiempo de consulta.
 
 ---
+
+## 6.d.1 EL CAMINO: MONEDAS + seis bugs de la era unidades (2026-08-14)
+
+Rediseño de los puntos de lección y, al tirar del hilo, SEIS BUGS reales de la
+transición a unidades que estaban tapándose entre sí (los tres primeros aparecieron
+al implementar; los tres últimos los encontró una revisión adversarial multi-agente
+del diff y se verificaron contra el código antes de arreglarlos):
+
+1. **Tocar un punto de lección daba "No encontré esa lección"** — SIEMPRE. La página
+   `materia/[id]/camino/[tema]` buscaba la clave solo en el nivel de arriba del plan, y
+   con unidades las claves de lección viven anidadas en `item.lecciones`. Ahora aplana
+   (`pasos`) con la misma forma que arma el camino al abrir una moneda, y "Seguir con la
+   siguiente" recorre la lista aplanada (la próxima lección real, no el próximo nodo).
+2. **"Estás acá" y el sendero pintado se quedaban clavados en cero** aunque el chico
+   terminara unidades: `actual` y `hechasSeguidas` miraban `done.includes(unit.key)`, y
+   la clave de una UNIDAD no se marca nunca (el progreso se guarda por lección). Los dos
+   usan ahora la regla `nodoHecho` (unidad hecha = todas sus lecciones hechas).
+3. **Los nodos de unidad quedaban DESPEGADOS del sendero** (el camino pasaba lejos de sus
+   círculos): la X del nodo iba dentro de `transform: translate(calc(-50% + Xpx))` y el
+   nodo tiene `transition: transform` — Chromium no interpola entre dos `calc()` con % y
+   px mezclados y **deja el valor viejo para siempre**, así que al crecer la amplitud
+   elástica (ResizeObserver) el sendero/monedas se estiraban y los nodos no. La X vive
+   ahora en `left:`, que no está en la transición. ⚠️ Regla para el futuro: nada elástico
+   adentro de un `transform` que tenga transición.
+4. **El rombo de examen no se desbloqueaba NUNCA en planes por unidades**: `listo` miraba
+   `done.includes(unidad.key)`, clave que no se marca. Ahora usa `nodoHecho(b) ||
+   done.includes(b.key)` — la regla de lecciones, más el quiz de la unidad entera (nodo
+   grande), que sí escribe la clave de la unidad. Verificado en vivo: con las 5 primeras
+   unidades completas el rombo se enciende.
+5. **Toda unidad terminada se pintaba ÁMBAR** ("le fue mal") aunque el chico acertara
+   todo: la nota se buscaba con la clave de la unidad (`scores[item.key]`) y las notas
+   viven por lección. La nota de una unidad es ahora la SUMA de las de sus lecciones, y
+   la chapa muestra el agregado ("15/15").
+6. **Rendir el quiz del nodo grande decía "Era la última lección del camino 🎉" en
+   plena unidad 2 de 10**: la clave de la unidad no está en la lista aplanada `pasos`,
+   así que `siguiente` quedaba undefined. Para una clave de unidad, `siguiente` es su
+   primera lección. (Ojo con el arreglo obvio: devolver `j - 1` como índice rompe en la
+   PRIMERA unidad, donde `j = 0` y `-1` es el centinela de "no está".)
+
+También del sweep: el rombo decía "Prueba · lecciones 1 a 5" cuando las paradas
+numeradas son UNIDADES — el sustantivo ahora sigue a `hayUnidades`, igual que el
+encabezado.
+
+El rediseño en sí (`camino.tsx`):
+- Los puntos de lección son **MONEDAS de 24 px, numeradas**, con borde de tinta y un aro
+  blanco (`box-shadow`) que las despega de las huellas. Con 14 px lisos medían lo mismo
+  que las huellas del sendero y no se distinguía qué se tocaba. El número las ata al
+  "2 de 4 **lecciones**" de la etiqueta (antes decía "2 de 4" pelado).
+- La **próxima lección late en cobalto** (`caminoPulsoChico`), mismo lenguaje que el nodo
+  actual. El aro va repetido DENTRO del keyframe: la animación pisa el box-shadow.
+- **El paso vertical dejó de ser fijo**: cada tramo mide lo que su carga pide
+  (`largoTramo`; una unidad de 9 lecciones estira su tramo). Todo el posicionamiento
+  sale del arreglo `ys[]`; `sendero` y `puntoEnTramo` lo reciben.
+- `tMoneda()` es LA ÚNICA fuente de dónde cae cada moneda: la usan el dibujo y el
+  **sendero pintado**, que ahora avanza **moneda a moneda** (`senderoHecho`: tramos de
+  las unidades completas + parcial hasta la última moneda hecha de corrido, muestreado
+  como polilínea de 16 puntos sobre la misma Bézier).
+- Las monedas se ubican por **índice de parada (`k`), no de ítem (`p.i`)**: con exámenes
+  intercalados se desfasan y las unidades post-examen colgaban sus monedas del tramo
+  equivocado.
+- Las huellas del sendero por venir se achicaron (17/10 → 11/6): son piso, no botones.
 
 ## 6.d EL CAMINO POR UNIDADES (2026-08-13) — qué cambió
 

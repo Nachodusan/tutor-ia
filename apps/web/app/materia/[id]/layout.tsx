@@ -15,6 +15,7 @@
 import { useRouter, usePathname, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { C, FONT, AuroraDot, IconBack, IconList, IconClipboard, gradeLabel, subjectLabel } from "../../ui";
+import { CLASE_HUECO_RELOJ } from "../../pomodoro";
 import { traerMateria } from "../../datos";
 import type { Subject } from "../../tipos";
 
@@ -52,7 +53,15 @@ export default function MateriaLayout({ children }: { children: React.ReactNode 
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: C.bg, color: C.text, fontFamily: FONT.sans }}>
       <header style={{ borderBottom: `1px solid ${C.border}`, background: C.bg, flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px" }}>
+        {/* El `paddingRight` es el hueco del RELOJ FLOTANTE (esquina superior
+            derecha, en todas las pantallas). Un elemento `fixed` no empuja a
+            nadie: si este encabezado no le reserva el lugar, el reloj se sienta
+            encima de los botones de las otras dos actividades. */}
+        {/* El padding va en LONGHAND (sin el atajo `padding`) porque el hueco
+            del reloj lo pone una clase, y un `padding: "10px 12px"` en línea le
+            gana a la hoja de estilos: con el atajo, el reloj quedaba sentado
+            justo encima del botón de "Prueba" en el teléfono. */}
+        <div className={CLASE_HUECO_RELOJ} style={{ display: "flex", alignItems: "center", gap: 9, paddingTop: 10, paddingBottom: 10, paddingLeft: 12 }}>
           <button onClick={() => router.push("/")} title="Volver al panel"
             style={{ display: "flex", alignItems: "center", gap: 9, background: "none", border: "none", color: C.text, cursor: "pointer", padding: "5px 7px", borderRadius: 12, minWidth: 0, flex: 1 }}>
             <span style={{ color: C.dim, display: "flex", flexShrink: 0 }}><IconBack size={20} /></span>

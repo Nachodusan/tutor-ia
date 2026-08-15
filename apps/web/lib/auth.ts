@@ -12,7 +12,9 @@
  * y el fallo habría sido silencioso. Al borrarlo, el typecheck marca cada sitio
  * que falta migrar.
  */
+import { getSql } from "@tutor-ia/db";
 import { readSessionCookie, resolveSession, type SessionInfo } from "./session";
+import { cursoBloqueado, MENSAJE_CURSO_BLOQUEADO } from "./cursos";
 
 export type Auth = SessionInfo;
 
@@ -33,6 +35,39 @@ export function unauthorized(): Response {
 /** 403 para lo que exige rol de administrador (subir material, por ejemplo). */
 export function forbidden(msg = "No tenés permiso para esto"): Response {
   return Response.json({ error: msg }, { status: 403 });
+}
+
+/**
+ * Sesión de un alumno cuyo CURSO está abierto, o la respuesta a devolver.
+ *
+ *     const auth = await requireCursoAbierto(req);
+ *     if (auth instanceof Response) return auth;
+ *
+ * Va en las rutas que GENERAN o SIRVEN material (chat, plan, prueba, quiz). Sin
+ * esto el bloqueo de 1º a 5º sería solo un candado dibujado: el curso vive en el
+ * perfil, y un perfil se puede haber quedado en 3º de antes o haberlo puesto el
+ * CLI. El que no puedan elegirlo (`PUT /api/me/profile`) tapa la puerta de
+ * entrada; esto tapa la ventana.
+ *
+ * NO se pone en las rutas de CORRECCIÓN (`/api/test/submit`,
+ * `/api/lesson/quiz/submit`): esas corrigen algo que la ruta de generación ya
+ * tuvo que entregar, así que cerrar la generación las deja sin insumo. Una
+ * consulta más por corrección no compraría nada.
+ *
+ * Devuelve la Response y no `null` por lo mismo que `requireTeacher`: 401 y 403
+ * no son lo mismo, y contestarle 401 a un alumno logueado lo mandaría al login
+ * en un bucle.
+ */
+export async function requireCursoAbierto(req: Request): Promise<Auth | Response> {
+  const auth = await requireUser(req);
+  if (!auth) return unauthorized();
+  // El docente y el admin entran siempre: no estudian con esto, lo revisan.
+  if (auth.role === "teacher" || auth.role === "admin") return auth;
+
+  const [p] = await getSql()<{ grade: string | null }[]>`
+    select grade from student_profiles where user_id = ${auth.userId}::uuid`;
+  if (cursoBloqueado(p?.grade)) return forbidden(MENSAJE_CURSO_BLOQUEADO);
+  return auth;
 }
 
 /**

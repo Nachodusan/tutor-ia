@@ -24,6 +24,18 @@
       "port": 3002
     },
     {
+      "name": "web-3003",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@tutor-ia/web",
+        "dev",
+        "--port",
+        "3003"
+      ],
+      "port": 3003
+    },
+    {
       "name": "auditoria-web",
       "runtimeExecutable": "python3",
       "runtimeArgs": [

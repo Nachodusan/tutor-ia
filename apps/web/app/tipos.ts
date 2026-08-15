@@ -43,9 +43,11 @@ export interface SubjectProgress { weak: WeakTopic[]; lastScore?: { score: numbe
 /** Lo que el panel muestra de cada materia. Se arma leyendo las dos claves. */
 export interface SubjectStats { planDone: number; planTotal: number; weak: WeakTopic[]; lastScore?: { score: number; total: number; at: string } | null }
 
-/** Tope de temas a reforzar en el panel: una lista larga desmotiva y empuja el
- *  resto del panel fuera de pantalla. Los que sobran se cuentan abajo. */
-export const REVIEW_MAX = 6;
+// Acá vivía REVIEW_MAX = 6, el tope de temas a reforzar en el panel. Se fue
+// cuando "Para reforzar" pasó a ser una sección propia agrupada por materia: el
+// tope existía porque la lista era plana y le comía la pantalla al resto del
+// panel, y en una sección a la que el alumno ENTRA a propósito, esconderle la
+// mitad de lo que falló es esconderle justo lo que vino a ver.
 
 /** Estado de la llamada de voz. */
 export type CallState = "idle" | "listening" | "thinking" | "speaking";

@@ -4,15 +4,17 @@
  *
  * Antes este archivo tenía 1.585 líneas y hacía TODO: panel, chat, camino,
  * prueba y la llamada de voz, con vistas condicionales sobre el mismo estado.
- * Ahora la materia vive en `/materia/[id]` con sus tres páginas, y acá queda lo
- * que de verdad es el panel: quién sos, qué materias tenés y qué te falta.
+ * Ahora la materia vive en `/materia/[id]` con sus tres páginas, "Para reforzar"
+ * en `/reforzar`, y acá queda lo que de verdad es el panel: quién sos, qué
+ * materias tenés y cómo vas.
  */
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Dashboard, Onboarding, Centered, type Actividad } from "./panel";
+import { Dashboard, Onboarding, Centered, CursoCerrado, type Actividad } from "./panel";
 import { C, Dots } from "./ui";
-import { traerMaterias } from "./datos";
-import type { Profile, Subject, SubjectStats, WeakTopic } from "./tipos";
+import { cursoBloqueado } from "@/lib/cursos";
+import { useAlumno, cerrarSesion } from "./usar-alumno";
+import type { Profile } from "./tipos";
 
 /** Claves del esquema VIEJO. Se borran al entrar: el perfil guardaba el NOMBRE
  *  del alumno —justo lo que se elimina por privacidad— y el plan/progreso
@@ -31,36 +33,28 @@ function limpiarLocalStorageViejo() {
 
 export default function Home() {
   const router = useRouter();
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [stats, setStats] = useState<Record<string, SubjectStats>>({});
-  const [role, setRole] = useState("student");
-  const [loaded, setLoaded] = useState(false);
+  const { loaded, profile, setProfile, subjects, stats, role } = useAlumno();
   const [editing, setEditing] = useState(false);
 
-  useEffect(() => {
-    limpiarLocalStorageViejo();
-    void traerMaterias().then(setSubjects);
-    fetch("/api/me")
-      .then((r) => { if (r.status === 401) { router.replace("/login"); return null; } return r.json(); })
-      .then((j) => {
-        if (!j) return;
-        setRole(j.user?.role ?? "student");
-        if (j.profile?.grade) setProfile({ username: j.user?.username ?? "", grade: j.profile.grade });
-      })
-      .catch(() => { /* sin red: se queda en el onboarding */ })
-      .finally(() => setLoaded(true));
-  }, [router]);
+  useEffect(() => { limpiarLocalStorageViejo(); }, []);
 
-  // El avance se relee al volver al panel: el alumno pudo hacer lecciones o
-  // rendir una prueba en otra página y espera verlo reflejado acá.
+  // `?editar=1` abre directo la elección de curso. Lo usa "Mi curso" desde otra
+  // pantalla del nav, que no puede prender un estado que vive acá. Se lee del
+  // `location` y no con `useSearchParams` a propósito: ese hook obliga a
+  // envolver la página en un <Suspense> para el prerender, y esto es un flag.
   useEffect(() => {
-    if (!subjects.length) return;
-    fetch("/api/progress").then((r) => r.json()).then((j) => setStats(j.progress ?? {}))
-      .catch(() => { /* el panel muestra ceros */ });
-  }, [subjects]);
+    if (new URLSearchParams(window.location.search).get("editar") === "1") {
+      setEditing(true);
+      // Se limpia la URL: si queda, el "atrás" del navegador vuelve a abrir el
+      // editor y el alumno no entiende por qué le repreguntan el curso.
+      window.history.replaceState(null, "", "/");
+    }
+  }, []);
 
   async function saveProfile(p: Profile) {
+    // Un curso cerrado no se guarda ni se pinta: la pantalla de elección ya no
+    // lo ofrece, pero el estado local no tiene por qué confiar en eso.
+    if (cursoBloqueado(p.grade)) return;
     setProfile(p);
     try {
       // `POST /api/me` devolvía 405 —esa ruta solo tiene GET— y el `catch` de
@@ -74,19 +68,17 @@ export default function Home() {
   }
 
   async function logout() {
-    try { await fetch("/api/auth/logout", { method: "POST" }); } catch { /* igual salimos */ }
+    await cerrarSesion();
     router.replace("/login");
   }
 
-  /** "Reforzar": abre la materia Y arranca el estudio dirigido, mandando la
-   *  pregunta por la URL para que el chat la dispare al montar. */
-  function reinforce(id: string, w: WeakTopic) {
-    const q = `Quiero repasar: ${w.topic}. Explicámelo simple, desde el principio y con un ejemplo.`;
-    const p = new URLSearchParams({ q, unit: String(w.unit ?? ""), lesson: String(w.lesson ?? "") });
-    router.push(`/materia/${id}/chat?${p}`);
-  }
-
   if (!loaded) return <Centered><span style={{ color: C.dim }}><Dots /></span></Centered>;
+  // Curso cerrado (1º a 5º básico): el perfil pudo quedar de antes o haberlo
+  // puesto el CLI. Se le explica en vez de mostrarle un panel vacío. `editing`
+  // manda: es la salida — cambiar de curso.
+  if (profile && !editing && cursoBloqueado(profile.grade)) {
+    return <CursoCerrado grade={profile.grade} onEdit={() => setEditing(true)} onLogout={logout} />;
+  }
   if (!profile || editing) {
     return (
       <Onboarding
@@ -106,7 +98,6 @@ export default function Home() {
       // Directo a la actividad: la pantalla intermedia le preguntaba al alumno
       // algo que ya había contestado al elegir el ícono.
       onAbrir={(id, a: Actividad) => router.push(`/materia/${id}/${a}`)}
-      onReinforce={reinforce}
       onEdit={() => setEditing(true)}
       onLogout={logout}
     />

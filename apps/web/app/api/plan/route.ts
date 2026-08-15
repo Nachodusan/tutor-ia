@@ -1,7 +1,7 @@
 import { buildStudyPlan, SinEstructura, logDecision } from "@tutor-ia/core";
 import { planSizes } from "@tutor-ia/rag";
 import { getSql, toJson } from "@tutor-ia/db";
-import { requireUser, unauthorized } from "@/lib/auth";
+import { requireCursoAbierto } from "@/lib/auth";
 
 export const runtime = "nodejs";
 // Titular el plan con el 7B (con recarga por keep_alive:0) puede tardar, y ahora
@@ -17,8 +17,8 @@ export const maxDuration = 300;
  * libro es el mismo para todo el curso; lo que es de cada alumno es el avance.
  */
 export async function GET(req: Request) {
-  const auth = await requireUser(req);
-  if (!auth) return unauthorized();
+  const auth = await requireCursoAbierto(req);
+  if (auth instanceof Response) return auth;
   const subjectId = new URL(req.url).searchParams.get("subjectId");
   if (!subjectId) return Response.json({ error: "Falta subjectId" }, { status: 400 });
 
@@ -69,8 +69,8 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   const t0 = Date.now();
-  const auth = await requireUser(req);
-  if (!auth) return unauthorized();
+  const auth = await requireCursoAbierto(req);
+  if (auth instanceof Response) return auth;
   const body = (await req.json()) as { subjectId?: string; subjectName?: string };
   const subjectId = body.subjectId;
   if (!subjectId) {

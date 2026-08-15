@@ -1,7 +1,7 @@
 import { generarPreguntas, SinPreguntas, type QuizItem } from "@tutor-ia/core";
 import { getSql, toJson } from "@tutor-ia/db";
 import { getPlanTopics, type PlanTopic } from "@tutor-ia/rag";
-import { requireUser, unauthorized } from "@/lib/auth";
+import { requireCursoAbierto } from "@/lib/auth";
 import { repartoPrueba, TOPE_TEMAS } from "../../reparto-prueba";
 
 export const runtime = "nodejs";
@@ -57,8 +57,8 @@ interface ItemPersistido {
 }
 
 export async function POST(req: Request) {
-  const auth = await requireUser(req);
-  if (!auth) return unauthorized();
+  const auth = await requireCursoAbierto(req);
+  if (auth instanceof Response) return auth;
   const body = (await req.json()) as {
     subjectId?: string;
     subjectName?: string;

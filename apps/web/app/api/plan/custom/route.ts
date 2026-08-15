@@ -1,7 +1,7 @@
 import { buildCustomPlan, SinEstructura, logDecision, normalizeStudentQuery } from "@tutor-ia/core";
 import { retrieveHybrid } from "@tutor-ia/rag";
 import { getSql, toJson } from "@tutor-ia/db";
-import { requireUser, unauthorized } from "@/lib/auth";
+import { requireCursoAbierto, requireUser, unauthorized } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -23,8 +23,8 @@ const MAX_PLANES = 12;
  * pide los contenidos que quiere.
  */
 export async function GET(req: Request) {
-  const auth = await requireUser(req);
-  if (!auth) return unauthorized();
+  const auth = await requireCursoAbierto(req);
+  if (auth instanceof Response) return auth;
   const sql = getSql();
   const id = new URL(req.url).searchParams.get("id");
 
@@ -66,8 +66,8 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   const t0 = Date.now();
-  const auth = await requireUser(req);
-  if (!auth) return unauthorized();
+  const auth = await requireCursoAbierto(req);
+  if (auth instanceof Response) return auth;
   const body = (await req.json().catch(() => ({}))) as { query?: string; subjectId?: string | null };
   const query = (body.query ?? "").trim();
   if (query.length < 3) {

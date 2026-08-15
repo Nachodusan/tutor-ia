@@ -1,5 +1,6 @@
 import { getSql } from "@tutor-ia/db";
 import { requireTeacher } from "@/lib/auth";
+import { cursoBloqueado } from "@/lib/cursos";
 
 export const runtime = "nodejs";
 
@@ -105,6 +106,10 @@ export async function GET(req: Request) {
       ...conteo.keys(),
     ]),
   ]
+    // Los cursos cerrados (1º a 5º básico) no entran al selector: ningún alumno
+    // puede estar en ellos, así que la única lectura posible de un "3º Básico:
+    // 0 alumnos" es que el colegio no lo inscribió — y eso sería falso.
+    .filter((g) => !cursoBloqueado(g))
     .map((g) => ({ grade: g, students: conteo.get(g) ?? 0 }))
     .sort((a, b) => gradeSort(a.grade) - gradeSort(b.grade));
 

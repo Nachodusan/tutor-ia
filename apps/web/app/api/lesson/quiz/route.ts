@@ -1,7 +1,7 @@
 import { generarPreguntas, SinPreguntas, type QuizItem } from "@tutor-ia/core";
 import { getSql, toJson } from "@tutor-ia/db";
 import { fetchLessonMaterial } from "@tutor-ia/rag";
-import { requireUser, unauthorized } from "@/lib/auth";
+import { requireCursoAbierto } from "@/lib/auth";
 
 export const runtime = "nodejs";
 // Generar + verificar la clave son dos llamadas al modelo remoto.
@@ -23,8 +23,8 @@ export const maxDuration = 180;
  * parte donde una divergencia castiga al alumno que estudió.
  */
 export async function POST(req: Request) {
-  const auth = await requireUser(req);
-  if (!auth) return unauthorized();
+  const auth = await requireCursoAbierto(req);
+  if (auth instanceof Response) return auth;
   const body = (await req.json().catch(() => ({}))) as {
     subjectId?: string;
     topicKey?: string;

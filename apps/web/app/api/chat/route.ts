@@ -14,7 +14,7 @@ import {
   looksLikeSelfAbstention,
 } from "@tutor-ia/core";
 import { getSql } from "@tutor-ia/db";
-import { requireUser, unauthorized } from "@/lib/auth";
+import { requireCursoAbierto } from "@/lib/auth";
 import { ensureSession, insertMessage } from "@/lib/conversations";
 import { randomUUID } from "node:crypto";
 
@@ -83,8 +83,8 @@ async function primerTemaPendiente(subjectId: string | null, userId: string): Pr
  */
 export async function POST(req: Request) {
   const t0 = Date.now();
-  const auth = await requireUser(req);
-  if (!auth) return unauthorized();
+  const auth = await requireCursoAbierto(req);
+  if (auth instanceof Response) return auth;
   const userId = auth.userId;
   const body = (await req.json()) as {
     question?: string;
