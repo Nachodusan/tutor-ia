@@ -90,6 +90,30 @@ Reglas:
 - Nombrá el método como lo nombra un libro escolar chileno.`;
 
 /**
+ * Derivar e integrar se enseñan TÉRMINO A TÉRMINO, y ahí está todo el trabajo.
+ *
+ * Con el prompt general el modelo saltaba del enunciado a la respuesta en un
+ * solo renglón —"5x⁴ - 3x + 2" y abajo "20x³ - 3"— que es mostrar el resultado
+ * dos veces, no enseñar. Lo que hay que ver es qué le pasa a CADA término: el
+ * exponente que baja, la constante que se hace cero.
+ *
+ * Se puede pedir así porque estas dos NO se verifican en cadena (f y f' no son
+ * equivalentes): se comprueba el destino contra el CAS, así que el renglón del
+ * medio puede traer varias cuentitas juntas.
+ */
+const SISTEMA_TRANSFORMA = `Sos un profesor de matemática de secundaria en Chile. Te dan una función Y SU DERIVADA (o integral) YA CALCULADA, y escribís cómo se llega.
+
+Exactamente TRES pasos:
+1. La regla que se usa, nombrada como en un libro escolar. En "expr" va la función original.
+2. EL TRABAJO TÉRMINO A TÉRMINO, todo junto en "expr", separado por punto y coma. Así:
+   "5*4x^3 = 20x^3; la derivada de -3x es -3; la constante 2 da 0"
+   Es el paso que enseña: mostrá qué le pasa a cada término, con la cuenta hecha.
+3. El resultado final, solo la expresión.
+
+- Escribí la matemática como se teclea: * para multiplicar, ^ para potencias, sqrt() para raíces. NADA de LaTeX.
+- En "porque" va una frase corta que acompañe ese renglón.`;
+
+/**
  * Arma la tarjeta. `null` = no se pudo, y el chat contesta como siempre.
  * Nunca lanza: el modo ejercicio no puede dejar a un chico sin respuesta.
  */
@@ -131,11 +155,12 @@ export async function armarTarjeta(texto: string): Promise<TarjetaEjercicio | nu
     };
   }
 
+  const transforma = det.op === "diff" || det.op === "integrate";
   let pasos: PasoExplicado[] = [];
   try {
     const out = await chatJSON<{ pasos: PasoExplicado[] }>(
       [
-        { role: "system", content: SISTEMA },
+        { role: "system", content: transforma ? SISTEMA_TRANSFORMA : SISTEMA },
         {
           role: "user",
           content: `Ejercicio: ${det.expr}\nOperación: ${det.op}\nResultado correcto: ${r.valor}`,
@@ -145,6 +170,12 @@ export async function armarTarjeta(texto: string): Promise<TarjetaEjercicio | nu
       { temperature: 0.1, maxTokens: 700 },
     );
     pasos = (out.pasos ?? []).filter((p) => p?.expr?.trim()).slice(0, 8);
+    // La constante de integración también en el ÚLTIMO RENGLÓN: el resultado
+    // decía "x² + C" y el paso final "x²", y esa diferencia un profesor la marca.
+    const ult = pasos[pasos.length - 1];
+    if (det.op === "integrate" && ult && !/\+\s*C\b/.test(ult.expr)) {
+      ult.expr = `${ult.expr.trim()} + C`;
+    }
   } catch (err) {
     // Sin pasos igual se muestra el resultado: es mejor que nada. Pero el error
     // SE REGISTRA — este catch mudo ya escondió un schema inválido, y la tarjeta
@@ -163,7 +194,7 @@ export async function armarTarjeta(texto: string): Promise<TarjetaEjercicio | nu
   // cortaba entero SIEMPRE. En una transformación lo que se puede comprobar es
   // el destino: que el último renglón coincida con lo que dio el CAS.
   let aviso: string | undefined;
-  const enCadena = det.op !== "diff" && det.op !== "integrate";
+  const enCadena = !transforma;
   if (!enCadena && pasos.length >= 1) {
     const ultimo = pasos[pasos.length - 1]!.expr;
     const igual = await mismoValor(ultimo, r.valor);

@@ -30,6 +30,10 @@ export interface Tarjeta {
   aviso?: string;
   titulo?: string;
   sinSolucionReal?: boolean;
+  /** Qué función se dibuja. NO siempre es el resultado: al derivar se grafica la
+   *  función ORIGINAL, y sin decirlo el chico puede leer el dibujo como la
+   *  respuesta. */
+  grafico?: { expr: string; variable: string };
   curva?: { puntos: Punto[]; desde: number; hasta: number };
 }
 
@@ -214,7 +218,7 @@ export function TarjetaEjercicioView({ t }: { t: Tarjeta }) {
         <div style={{ borderTop: `1.5px solid ${C.border}`, padding: "10px 12px 6px", background: C.panel2 }}>
           <div style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 11, letterSpacing: 0.5,
             textTransform: "uppercase", color: C.dim, marginBottom: 4 }}>
-            En el plano
+            {t.grafico ? `En el plano · y = ${comoSeLee(t.grafico.expr)}` : "En el plano"}
           </div>
           <Plano curva={t.curva} raices={t.raices} />
         </div>
