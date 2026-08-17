@@ -130,6 +130,12 @@ export function aSintaxisSympy(entrada: string): string {
   s = s.replace(/\s*\bd\s*([a-z])\s*$/i, "");
   s = s.replace(/^∫\s*/, "");
 
+  // ⚠️ LOS SIGNOS DE PREGUNTA NUNCA SON MATEMÁTICA, y quedan PEGADOS al último
+  // número: "¿cómo se resuelve x² - 5x + 6 = 0?" terminaba en "0?", el token se
+  // daba por matemático (trae un dígito) y el allowlist del puente rechazaba la
+  // expresión entera. El ejercicio se iba al chat sin que nada lo explicara.
+  s = s.replace(/[¿?¡!]/g, "");
+
   return s.replace(/\s+/g, " ").trim();
 }
 
@@ -261,7 +267,39 @@ export function operacionPedida(texto: string, tieneEcuacion: boolean): Operacio
  * ejercicio antes de mandar al chat normal — si arrastrara `child_process`, el
  * bundle del cliente no compilaría.
  */
+/**
+ * Preguntas que piden ENTENDER, aunque traigan una ecuación adentro.
+ *
+ * ⚠️ Este es el borde que más importa del modo ejercicio. "¿por qué x² - 5x + 6 = 0
+ * tiene dos soluciones?" trae una ecuación, así que se detectaba como ejercicio y
+ * el chico —que preguntó POR QUÉ— recibía una ficha con "2, 3" y ninguna
+ * explicación. La respuesta correcta a un "por qué" no es un número.
+ *
+ * Ojo con "cómo": "¿cómo se resuelve x² - 5x + 6 = 0?" SÍ es un pedido de
+ * resolución. Lo que delata la pregunta conceptual es el por qué, el qué
+ * significa, el de dónde sale — no el cómo.
+ */
+// ⚠️ SIN ACENTOS, y no es cosmética: `\b` en JavaScript es ASCII, así que
+// después de una "é" NO hay límite de palabra y `qu[ée]\b` no matchea nunca.
+// La primera versión de esta guarda no filtraba absolutamente nada.
+const CONCEPTUAL = new RegExp(
+  [
+    "\\bpor\\s*que\\b", "\\bporque\\b",
+    "\\bque\\s+significa\\b", "\\bque\\s+quiere\\s+decir\\b",
+    "\\bpara\\s+que\\s+(sirve|se\\s+usa)\\b",
+    "\\bque\\s+es\\s+(un|una|el|la)\\b",
+    "\\bcual\\s+es\\s+la\\s+diferencia\\b", "\\ben\\s+que\\s+se\\s+diferencia\\b",
+    "\\bde\\s+donde\\s+(sale|viene|sac)", "\\bcuando\\b",
+    "\\bque\\s+pasa\\s+si\\b", "\\bcomo\\s+se\\s+sabe\\b",
+  ].join("|"),
+  "i",
+);
+
+const sinAcentos = (s: string): string =>
+  s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+
 export function esEjercicio(texto: string): { op: Operacion; expr: string } | null {
+  if (CONCEPTUAL.test(sinAcentos(texto))) return null;
   const e = leerEjercicio(texto);
   if (!e.expr) return null;
   const op = operacionPedida(texto, Boolean(e.ecuacion));

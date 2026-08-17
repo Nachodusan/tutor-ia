@@ -170,12 +170,6 @@ export async function armarTarjeta(texto: string): Promise<TarjetaEjercicio | nu
       { temperature: 0.1, maxTokens: 700 },
     );
     pasos = (out.pasos ?? []).filter((p) => p?.expr?.trim()).slice(0, 8);
-    // La constante de integración también en el ÚLTIMO RENGLÓN: el resultado
-    // decía "x² + C" y el paso final "x²", y esa diferencia un profesor la marca.
-    const ult = pasos[pasos.length - 1];
-    if (det.op === "integrate" && ult && !/\+\s*C\b/.test(ult.expr)) {
-      ult.expr = `${ult.expr.trim()} + C`;
-    }
   } catch (err) {
     // Sin pasos igual se muestra el resultado: es mejor que nada. Pero el error
     // SE REGISTRA — este catch mudo ya escondió un schema inválido, y la tarjeta
@@ -217,6 +211,15 @@ export async function armarTarjeta(texto: string): Promise<TarjetaEjercicio | nu
         aviso = "Te muestro hasta acá: el resto del procedimiento no me cerró y prefiero no enseñarte algo mal.";
       }
     }
+  }
+
+  // ⚠️ LA "+ C" VA DESPUÉS DE VERIFICAR, no antes. Pegada al último renglón
+  // primero, la comprobación contra el CAS comparaba "x² + C" con "x²" —que no
+  // son iguales, C es un símbolo libre— daba por malo el procedimiento y la
+  // ficha se quedaba sin pasos. El arreglo cosmético rompía la verificación.
+  const ultimo = pasos[pasos.length - 1];
+  if (det.op === "integrate" && ultimo && !/\+\s*C\b/.test(ultimo.expr)) {
+    ultimo.expr = `${ultimo.expr.trim()} + C`;
   }
 
   return {

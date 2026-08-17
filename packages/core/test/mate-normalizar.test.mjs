@@ -13,7 +13,7 @@
  */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { aSintaxisSympy, leerEjercicio, operacionPedida, extraerExpresion } from "../src/mate-normalizar.ts";
+import { aSintaxisSympy, leerEjercicio, operacionPedida, extraerExpresion, esEjercicio } from "../src/mate-normalizar.ts";
 
 test("⚠️ la prosa NO puede entrar en la fórmula", () => {
   // Sin esto, "resolvé 3x + 5 = 20" llegaba al CAS como
@@ -144,6 +144,29 @@ test("el verbo del alumno decide la operación", () => {
   assert.equal(operacionPedida("factorizá x² - 5x + 6", false), "factor");
   assert.equal(operacionPedida("¿cuánto da la integral de 2x?", false), "integrate");
   assert.equal(operacionPedida("simplificá esta fracción", false), "simplify");
+});
+
+test("⚠️ una pregunta de POR QUÉ no es un ejercicio, aunque traiga la ecuación", () => {
+  // El chico pregunta por qué y recibía una ficha con "2, 3" y ninguna
+  // explicación. La respuesta a un "por qué" no es un número.
+  for (const q of [
+    "¿por qué x² - 5x + 6 = 0 tiene dos soluciones?",
+    "¿qué significa que el discriminante sea negativo?",
+    "¿cuándo una ecuación no tiene solución?",
+    "explicame de dónde sale la fórmula general",
+    "¿en qué se diferencia resolver de factorizar?",
+    "¿para qué sirve factorizar?",
+    "¿qué pasa si a = 0 en ax² + bx + c = 0?",
+  ]) {
+    assert.equal(esEjercicio(q), null, `interceptó una duda conceptual: ${q}`);
+  }
+});
+
+test("pero un pedido de resolver SÍ es un ejercicio, aunque sea pregunta", () => {
+  // "cómo" no delata nada: acá sí quiere el procedimiento.
+  assert.ok(esEjercicio("¿cómo se resuelve x² - 5x + 6 = 0?"));
+  assert.ok(esEjercicio("resolvé 3x + 5 = 20"));
+  assert.ok(esEjercicio("derivá f(x) = 5x⁴ - 3x + 2"));
 });
 
 test("una ecuación sin verbo se asume que hay que resolverla", () => {
