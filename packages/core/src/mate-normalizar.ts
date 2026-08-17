@@ -246,3 +246,21 @@ export function operacionPedida(texto: string, tieneEcuacion: boolean): Operacio
   for (const [re, op] of VERBOS) if (re.test(texto)) return op;
   return tieneEcuacion ? "solve" : null;
 }
+
+/**
+ * ¿Este turno es un ejercicio? Determinista, sin llamadas y SIN dependencias de
+ * Node: por eso vive acá y no en `mate-ejercicio.ts`, que importa el puente a
+ * Python. El chat lo usa en el NAVEGADOR para decidir si consultar el modo
+ * ejercicio antes de mandar al chat normal — si arrastrara `child_process`, el
+ * bundle del cliente no compilaría.
+ */
+export function esEjercicio(texto: string): { op: Operacion; expr: string } | null {
+  const e = leerEjercicio(texto);
+  if (!e.expr) return null;
+  const op = operacionPedida(texto, Boolean(e.ecuacion));
+  if (!op) return null;
+  // Que tenga forma de matemática y no solo un verbo suelto: "resolvelo" a secas
+  // no es un ejercicio, es un pedido sobre algo que ya está en pantalla.
+  if (!/[0-9]/.test(e.expr) && !/[a-z]\s*[\^*/+=-]/i.test(e.expr)) return null;
+  return { op, expr: e.expr };
+}

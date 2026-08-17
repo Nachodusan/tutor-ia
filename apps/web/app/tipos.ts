@@ -11,7 +11,9 @@ export interface Verification { grounded: boolean; contradicted: string[]; unsup
 
 export type AnswerMode = "libro" | "apoyado" | "general";
 export type AnswerScope = "curso" | "otro_curso" | "otra_materia" | "ninguno";
-export interface Msg { role: "user" | "assistant"; content: string; citations?: Citation[]; verification?: Verification | null; grounded?: boolean; mode?: AnswerMode; scope?: AnswerScope; streaming?: boolean }
+/** `tarjeta` = el turno se resolvió por el MODO EJERCICIO y se pinta como ficha
+ *  (enunciado, resultado verificado, pasos y plano) en vez de burbuja de chat. */
+export interface Msg { role: "user" | "assistant"; content: string; citations?: Citation[]; verification?: Verification | null; grounded?: boolean; mode?: AnswerMode; scope?: AnswerScope; streaming?: boolean; tarjeta?: import("./tarjeta-ejercicio").Tarjeta | null }
 /** `disabled` = materia sacada de circulación. Se sigue mostrando (si no,
  *  no hay forma de saber que existe) pero no se puede abrir. */
 export interface Subject { id: string; name: string; grade: string | null; subject_area: string | null; content_chunks: string; pedagogy_chunks: string; disabled?: boolean }

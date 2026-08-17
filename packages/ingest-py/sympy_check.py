@@ -12,6 +12,7 @@ Protocolo (stdin/stdout JSON, una llamada por invocación):
 Todo error se reporta como {"ok":false,"error":...} sin tirar la corrida.
 """
 import json
+import re
 import sys
 
 import sympy as sp
@@ -210,6 +211,30 @@ def _satisface(ec, raiz) -> bool:
         return False
 
 
+def _ramas(paso: str) -> list:
+    """Un renglón puede traer VARIAS ecuaciones, y así se escribe en un libro.
+
+    Resolver una cuadrática termina en "x = 2 o x = 3", y ese renglón NO es una
+    ecuación sola: es la unión de dos. Sin esto, el verificador comparaba
+    "(x-2)(x-3) = 0" contra "x = 2" y marcaba PIERDE — tiene razón en teoría de
+    conjuntos y está equivocado sobre lo que el alumno escribió. El paso a paso
+    se cortaba justo antes de la respuesta.
+    """
+    partes = re.split(r"\s+o\s+|\s*;\s*|\s*,\s*(?![^()]*\))", paso, flags=re.IGNORECASE)
+    return [p.strip() for p in partes if p.strip() and "=" in p]
+
+
+def _conjunto(paso: str, v):
+    """El conjunto solución del renglón: la UNIÓN de sus ramas."""
+    total = sp.S.EmptySet
+    for r in _ramas(paso) or [paso]:
+        s = sp.solveset(_como_ecuacion(r), v, domain=sp.S.Reals)
+        if s.has(sp.ConditionSet):
+            return None
+        total = sp.Union(total, s)
+    return total
+
+
 def _paso_ecuacion(antes: str, despues: str) -> dict:
     """¿El paso conserva el conjunto solución?
 
@@ -217,13 +242,14 @@ def _paso_ecuacion(antes: str, despues: str) -> dict:
     de solo marcar en rojo: "pierde" es haber dividido por x y comerse x=0;
     "agrega" es haber elevado al cuadrado y traerse una raíz extraña.
     """
-    ea, eb = _como_ecuacion(antes), _como_ecuacion(despues)
+    ea, eb = _como_ecuacion(_ramas(antes)[0] if _ramas(antes) else antes), _como_ecuacion(_ramas(despues)[0] if _ramas(despues) else despues)
     v = _incognita(ea)
-    # 1) por conjuntos, cuando SymPy los sabe comparar.
+    # 1) por conjuntos, cuando SymPy los sabe comparar. Cada renglón puede traer
+    #    varias ramas ("x = 2 o x = 3") y se compara la unión.
     try:
-        A = sp.solveset(ea, v, domain=sp.S.Reals)
-        B = sp.solveset(eb, v, domain=sp.S.Reals)
-        if not A.has(sp.ConditionSet) and not B.has(sp.ConditionSet):
+        A = _conjunto(antes, v)
+        B = _conjunto(despues, v)
+        if A is not None and B is not None:
             falta, sobra = sp.simplify(A - B), sp.simplify(B - A)
             vacio = sp.S.EmptySet
             if falta == vacio and sobra == vacio:
@@ -304,6 +330,12 @@ _AUTOTEST = [
     ("multiplicar ambos lados", "ecuacion", ["x/3 + 1 = 4", "x + 3 = 12", "x = 9"], None),
     ("denominador variable", "ecuacion", ["1/(x - 1) = 2", "1 = 2*(x - 1)", "x = 3/2"], None),
     ("cuadrática por fórmula", "ecuacion", ["x**2 - 5*x + 6 = 0", "(x - 2)*(x - 3) = 0"], None),
+    # Así termina una cuadrática en un libro: el renglón final trae las dos ramas.
+    ("cuadrática con las dos ramas", "ecuacion",
+     ["x**2 - 5*x + 6 = 0", "(x - 2)*(x - 3) = 0", "x = 2 o x = 3"], None),
+    # Y una rama sola SÍ tiene que marcarse: deja afuera la otra respuesta.
+    ("una rama sola pierde la otra", "ecuacion",
+     ["(x - 2)*(x - 3) = 0", "x = 2"], 1),
     ("binomio al cuadrado", "expresion", ["(x + 5)**2", "x**2 + 10*x + 25"], None),
     # El error más clásico del colegio. Por conjunto solución PASARÍA —tiene el
     # mismo {0} que "x = 0"—; solo lo agarra la diferencia simbólica.
@@ -323,6 +355,32 @@ def do_autotest() -> dict:
             "fallas": fallas} if fallas else {"ok": True, "corridos": len(_AUTOTEST)}
 
 
+def do_puntos(expr: str, variable: str, desde: float, hasta: float, n: int) -> dict:
+    """Muestrea la función para dibujarla.
+
+    Se evalúa acá y no en el navegador porque la expresión ya está parseada y
+    porque una raíz de un negativo o una división por cero tienen que salir como
+    HUECO en la curva, no como un punto en cualquier lado: `1/x` no se dibuja
+    cruzando el cero. Los no-finitos se devuelven como `null` y el que dibuja
+    corta el trazo ahí.
+    """
+    e = _a_reales(_parse(expr))
+    libres = [s for s in e.free_symbols if s.name == variable]
+    v = libres[0] if libres else sp.Symbol(variable, real=True)
+    f = sp.lambdify(v, e, "math")
+    paso = (hasta - desde) / max(1, n - 1)
+    pts = []
+    for i in range(n):
+        x = desde + i * paso
+        try:
+            y = f(x)
+            y = float(y)
+            pts.append([round(x, 6), round(y, 6)] if y == y and abs(y) != float("inf") else [round(x, 6), None])
+        except Exception:  # noqa: BLE001  fuera del dominio: hueco
+            pts.append([round(x, 6), None])
+    return {"ok": True, "puntos": pts}
+
+
 def main():
     try:
         # JSON por argv[1] (lo usa el eval) o por stdin (uso manual).
@@ -333,6 +391,10 @@ def main():
             print(json.dumps(do_eval(req["expr"])))
         elif mode == "equiv":
             print(json.dumps(do_equiv(req["a"], req["b"])))
+        elif mode == "puntos":
+            print(json.dumps(do_puntos(req["expr"], req.get("variable", "x"),
+                                       float(req.get("desde", -10)), float(req.get("hasta", 10)),
+                                       int(req.get("n", 120)))))
         elif mode == "autotest":
             print(json.dumps(do_autotest()))
         elif mode == "cadena":

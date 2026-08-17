@@ -17,6 +17,8 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Bubble, VozLuces, estadoVoz } from "../../../chat-ui";
 import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, IconCalculadora, subjectLabel } from "../../../ui";
 import { TecladoMate, esMatematica } from "../../../teclado-mate";
+import { esEjercicio } from "@tutor-ia/core/mate";
+import { TarjetaEjercicioView, type Tarjeta } from "../../../tarjeta-ejercicio";
 import { traerMateria } from "../../../datos";
 import { turnoNuevo, turnoPaso, turnoTermino, interrupcionPaso, hayInterrupcion } from "../../../voz-turno";
 import { cleanTutorText } from "../../../limpiar-texto";
@@ -155,6 +157,27 @@ export default function ChatPage() {
     setMessages((m) => [...m, { role: "user", content: q }, { role: "assistant", content: "", grounded: true, streaming: true }]);
     const patch = (p: Partial<Msg>) => setMessages((m) => { const c = [...m]; c[c.length - 1] = { ...c[c.length - 1], ...p } as Msg; return c; });
     let displayed = "";
+
+    // MODO EJERCICIO PRIMERO, y solo si el turno tiene forma de ejercicio: la
+    // detección es local y determinista (`esEjercicio`, sin llamadas), así que
+    // una duda de materia no paga ni un milisegundo de más. El endpoint devuelve
+    // 204 cuando no puede armar la tarjeta —un problema con enunciado, una
+    // expresión que el CAS no parsea— y ahí seguimos por el chat de siempre.
+    if (esMatematica(subj?.name) && esEjercicio(q)) {
+      try {
+        const re = await fetch("/api/ejercicio", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: q }),
+        });
+        if (re.ok && re.status !== 204) {
+          const t = (await re.json()) as Tarjeta;
+          patch({ tarjeta: t, content: "", streaming: false });
+          setLoading(false);
+          return "";
+        }
+      } catch { /* el chat de abajo se encarga */ }
+    }
+
     try {
       const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, subjectId: sid || null, subjectName: subj ? subjectLabel(subj) : null, history, ...(topic ? { unit: topic.unit, lesson: topic.lesson } : {}),
         sessionId: sessionRef.current }) });
@@ -426,7 +449,10 @@ export default function ChatPage() {
               Si algo no está en tu libro, te lo avisa.
             </div>
           )}
-          {messages.map((m, i) => <Bubble key={i} m={m} />)}
+          {messages.map((m, i) =>
+            m.tarjeta
+              ? <TarjetaEjercicioView key={i} t={m.tarjeta} />
+              : <Bubble key={i} m={m} />)}
           {/* LO QUE EL CHICO ESTÁ DICIENDO, mientras lo dice. Va del lado del
               alumno y con el mismo color de sus burbujas, pero a media tinta y
               con borde punteado: todavía no es un mensaje, es lo que se oyó

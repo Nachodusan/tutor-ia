@@ -18,3 +18,4 @@ export * from "./study-plan";
 export * from "./quiz";
 export * from "./mate-normalizar";
 export * from "./mate-sympy";
+export * from "./mate-ejercicio";

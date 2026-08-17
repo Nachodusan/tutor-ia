@@ -130,6 +130,36 @@ export async function verificarPasos(
   return { valida: r.valida, primerError: r.primerError, pasos: r.pasos };
 }
 
+/** Un punto de la curva. `y === null` = fuera del dominio: el trazo se CORTA ahí. */
+export type Punto = [number, number | null];
+
+/**
+ * Muestrea la función para dibujarla.
+ *
+ * El rango se centra en las raíces cuando las hay: una parábola cuyas soluciones
+ * son 2 y 3 dibujada de -10 a 10 se ve como una pared, y lo que el chico tiene
+ * que ver es dónde cruza el eje.
+ */
+export async function puntos(
+  expr: string,
+  variable: string,
+  raices?: number[],
+): Promise<{ puntos: Punto[]; desde: number; hasta: number } | null> {
+  let desde = -10;
+  let hasta = 10;
+  if (raices?.length) {
+    const min = Math.min(...raices);
+    const max = Math.max(...raices);
+    const margen = Math.max(2, (max - min) * 0.8);
+    desde = Math.floor(min - margen);
+    hasta = Math.ceil(max + margen);
+  }
+  const r = await llamar<{ ok: boolean; puntos: Punto[] }>(
+    { mode: "puntos", expr, variable, desde, hasta, n: 160 },
+  );
+  return r?.ok ? { puntos: r.puntos, desde, hasta } : null;
+}
+
 /** ¿El puente está vivo? Corre la autoprueba del lado Python. */
 export async function sympySano(): Promise<boolean> {
   const r = await llamar<{ ok: boolean }>({ mode: "autotest" });
