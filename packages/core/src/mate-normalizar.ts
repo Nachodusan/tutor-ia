@@ -261,13 +261,20 @@ export type Operacion = "solve" | "diff" | "integrate" | "factor" | "simplify" |
  * segunda vez que este mismo detalle deja una regla muerta en este archivo —
  * escribir los patrones en ASCII y normalizar la entrada lo cierra de una vez.
  */
+/**
+ * ⚠️ SIN `\b` AL FINAL DE LA RAÍZ, y esto ya falló: `integr(a|ar|…)\b` no
+ * reconoce "integrame" —después de la "a" viene una "m", las dos son letras y no
+ * hay límite de palabra— así que el chico que escribía "integrame esto" no
+ * recibía la ficha. El límite va solo ADELANTE, que es lo que evita enganchar
+ * pedazos de otra palabra.
+ */
 const VERBOS: [RegExp, Operacion][] = [
-  [/\bderiv(a|ar|ame|emos)|\bderivada\b|\bf\s*'\s*\(/i, "diff"],
-  [/\bintegr(a|ar|al|ales|emos)\b|\bantiderivada\b|\bprimitiva\b/i, "integrate"],
-  [/\bfactoriz(a|ar|ame|emos)|\bfactorizacion\b|\bfactores\b|\bdescompon(e|er)\b/i, "factor"],
-  [/\bdesarroll(a|ar)|\bexpandir?\b|\bmultiplic(a|ar)\s+los\s+parentesis/i, "expand"],
-  [/\bsimplific(a|ar|ame)|\breducir?\b|\bracionaliz(a|ar)/i, "simplify"],
-  [/\bresolv(e|er|elo|amos)|\bresuelv|\bcalcul(a|ar|emos)|\bdespej(a|ar)|\bhall(a|ar)|\bencontr(a|ar)\s+(el\s+)?valor|\bhac(e|er)\b|\bcomo\s+hago\b/i, "solve"],
+  [/\bderiv(a|ar|e)|\bderivada|\bf\s*'\s*\(/i, "diff"],
+  [/\bintegr(a|ar|al|e)|\bantiderivada|\bprimitiva|∫/i, "integrate"],
+  [/\bfactoriz(a|ar|e)|\bfactores\b|\bdescompon(e|er)|\bfactor\s+comun/i, "factor"],
+  [/\bdesarroll(a|ar|e)|\bexpand(i|e|ir)|\b(saca|sacar|multiplica|multiplicar)\s+(los\s+)?parentesis/i, "expand"],
+  [/\bsimplific(a|ar|e)|\breducir?\b|\bracionaliz(a|ar)|\bachic(a|ar)/i, "simplify"],
+  [/\bresolv(e|er|elo|amos)|\bresuelv|\bcalcul(a|ar|emos)|\bdespej(a|ar)|\bhall(a|ar)|\bencontr(a|ar)\s+(el\s+)?valor|\bhac(e|er)\b|\bcomo\s+hago\b|\bcuanto\s+vale\b|\bvalor\s+de\s+[a-z]\b/i, "solve"],
 ];
 
 /**

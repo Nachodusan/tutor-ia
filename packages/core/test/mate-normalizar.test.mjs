@@ -159,6 +159,41 @@ test("⚠️ EL ACENTO NO PUEDE DECIDIR SI ANDA O NO", () => {
   assert.equal(esEjercicio("reducí (x^2 - 4)/(x - 2)")?.op, "simplify");
 });
 
+test("⚠️ alcanza con LA PALABRA, escrita como salga", () => {
+  // El alumno no tiene que adivinar la forma exacta. `integr(a|ar|…)\b` no
+  // reconocía "integrame" —después de la "a" viene una "m" y no hay límite de
+  // palabra— así que quien escribía "integrame esto" se quedaba sin ficha.
+  const familias = [
+    ["integrate", ["integra 2x", "integrá 2x", "integrar 2x", "integrame 2x",
+      "la integral de 2x", "antiderivada de 2x", "primitiva de 2x", "∫ 2x dx"]],
+    ["diff", ["deriva 3x^2", "derivá 3x^2", "derivar 3x^2", "derivame 3x^2",
+      "la derivada de 3x^2", "sacá la derivada de 3x^2"]],
+    ["factor", ["factoriza x^2 - 9", "factorizame x^2 - 9", "descomponé x^2 - 9",
+      "sacá factor común de 2x + 4"]],
+    ["expand", ["desarrolla (x+5)^2", "expandí (x+5)^2", "sacá los paréntesis (x+5)^2"]],
+    ["simplify", ["simplifica (x^2-4)/(x-2)", "reducí (x^2-4)/(x-2)", "achicá (x^2-4)/(x-2)"]],
+    ["solve", ["resolvé 3x + 5 = 20", "despejá x de 3x + 5 = 20",
+      "cuánto vale x en 3x + 5 = 20"]],
+  ];
+  for (const [op, frases] of familias) {
+    for (const f of frases) {
+      assert.equal(esEjercicio(f)?.op, op, `no detectó ${op} en: ${f}`);
+    }
+  }
+});
+
+test("⚠️ …pero aflojar los verbos no puede agarrar lo que NO es ejercicio", () => {
+  // El riesgo de sacar el límite de palabra: enganchar pedazos de otras palabras
+  // o dudas conceptuales. Es el control de la regla de arriba.
+  for (const f of [
+    "¿qué es una integral?", "¿para qué sirve derivar?", "no entiendo las derivadas",
+    "la integridad de los datos importa", "me cuesta integrar, no entiendo nada",
+    "¿en qué se diferencia derivar de integrar?", "resolvelo", "dame otro ejemplo",
+  ]) {
+    assert.equal(esEjercicio(f), null, `lo tomó por ejercicio: ${f}`);
+  }
+});
+
 test("el verbo del alumno decide la operación", () => {
   assert.equal(operacionPedida("ayudame a derivar este problema", false), "diff");
   assert.equal(operacionPedida("resolvé x² - 5x + 6 = 0", true), "solve");
