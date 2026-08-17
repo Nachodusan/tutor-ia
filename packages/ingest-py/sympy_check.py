@@ -137,6 +137,173 @@ def do_equiv(a: str, b: str) -> dict:
     return {"equal": False}
 
 
+_XR = sp.Symbol("x", real=True)
+_TOL = 1e-9
+
+
+def _a_reales(e):
+    """Reemplaza los símbolos por versiones con `real=True`.
+
+    ⚠️ SIN ESTO EL VERIFICADOR APRUEBA TODO, y en silencio. `_parse` arma la `x`
+    del espacio de nombres general, que NO tiene la asunción de realidad; si
+    después se resuelve con un `Symbol("x", real=True)`, SymPy está resolviendo
+    para una incógnita QUE NO APARECE en la ecuación. Devuelve lo mismo para
+    todos los pasos y la cadena entera sale "válida" — incluida una con un error
+    deliberado en el medio. Es el peor modo de fallar que puede tener un
+    verificador: decir que sí siempre.
+    """
+    return e.subs({s: sp.Symbol(s.name, real=True) for s in e.free_symbols})
+
+
+def _como_ecuacion(s: str):
+    izq, der = s.split("=", 1)
+    return _a_reales(sp.Eq(_parse(izq), _parse(der)))
+
+
+def _incognita(ec):
+    """La incógnita del paso: `x` si está, si no la única que haya."""
+    libres = sorted(ec.free_symbols, key=lambda s: s.name)
+    for s in libres:
+        if s.name == "x":
+            return s
+    return libres[0] if libres else _XR
+
+
+def _satisface(ec, raiz) -> bool:
+    """¿La raíz satisface la ecuación Y está definida en ella?
+
+    Lo segundo importa tanto como lo primero: una raíz que hace aparecer un
+    log(0) o una división por cero NO es solución, aunque la cuenta “dé”.
+    """
+    try:
+        inc = _incognita(ec)
+        v = (ec.lhs - ec.rhs).subs(inc, raiz)
+        if v.has(sp.zoo, sp.nan, sp.oo):
+            return False
+        vs = sp.simplify(v)
+        if vs == 0:
+            return True
+        n = complex(sp.N(vs, 30))
+        if abs(n.imag) > 1e-12:      # se fue de los reales: fuera del dominio
+            return False
+        return abs(n.real) < _TOL
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _paso_ecuacion(antes: str, despues: str) -> dict:
+    """¿El paso conserva el conjunto solución?
+
+    Devuelve ok / pierde / agrega / mal, y eso es lo que permite EXPLICAR en vez
+    de solo marcar en rojo: "pierde" es haber dividido por x y comerse x=0;
+    "agrega" es haber elevado al cuadrado y traerse una raíz extraña.
+    """
+    ea, eb = _como_ecuacion(antes), _como_ecuacion(despues)
+    v = _incognita(ea)
+    # 1) por conjuntos, cuando SymPy los sabe comparar.
+    try:
+        A = sp.solveset(ea, v, domain=sp.S.Reals)
+        B = sp.solveset(eb, v, domain=sp.S.Reals)
+        if not A.has(sp.ConditionSet) and not B.has(sp.ConditionSet):
+            falta, sobra = sp.simplify(A - B), sp.simplify(B - A)
+            vacio = sp.S.EmptySet
+            if falta == vacio and sobra == vacio:
+                return {"veredicto": "ok", "como": "conjuntos"}
+            if sobra == vacio:
+                return {"veredicto": "pierde", "como": "conjuntos"}
+            if falta == vacio:
+                return {"veredicto": "agrega", "como": "conjuntos"}
+            return {"veredicto": "mal", "como": "conjuntos"}
+    except Exception:  # noqa: BLE001
+        pass
+    # 2) FALLBACK por pertenencia de raíces. Sin esto, las ecuaciones
+    #    trascendentes (la logarítmica típica) devuelven ConditionSet y el
+    #    veredicto sale mal: un paso legítimo se marcaba como error.
+    try:
+        ra = [sp.nsimplify(r) for r in sp.solve(ea, v)]
+        rb = [sp.nsimplify(r) for r in sp.solve(eb, v)]
+    except Exception:  # noqa: BLE001
+        return {"veredicto": "indeciso", "como": "sin método"}
+    falta = [str(r) for r in ra if not _satisface(eb, r)]
+    sobra = [str(r) for r in rb if not _satisface(ea, r)]
+    if not falta and not sobra:
+        return {"veredicto": "ok", "como": "raíces"}
+    if falta and sobra:
+        return {"veredicto": "mal", "como": "raíces", "perdidas": falta, "extranas": sobra}
+    if falta:
+        return {"veredicto": "pierde", "como": "raíces", "perdidas": falta}
+    return {"veredicto": "agrega", "como": "raíces", "extranas": sobra}
+
+
+def _paso_expresion(antes: str, despues: str) -> dict:
+    """Dos expresiones son el mismo paso si su diferencia se anula.
+
+    ⚠️ ESTE ES OTRO VERIFICADOR, no una variante del de arriba, y usar el
+    equivocado deja pasar el error más clásico del colegio: (x+5)² = x²+25 tiene
+    el MISMO conjunto solución que x = 0, así que por conjuntos da "ok". Por
+    diferencia simbólica se detecta al toque.
+    """
+    d = do_equiv(antes, despues)
+    return {"veredicto": "ok" if d.get("equal") else "mal", "como": d.get("how", "diferencia")}
+
+
+def do_cadena(pasos: list, tipo: str) -> dict:
+    """Verifica la cadena renglón por renglón y dice DÓNDE se rompió.
+
+    Localizar importa más que detectar: el paso siguiente a un error suele dar
+    "ok" —es correcto respecto del renglón equivocado— y eso permite decirle al
+    alumno "hasta acá venías bien, el error está en este renglón".
+    """
+    if not isinstance(pasos, list) or len(pasos) < 2:
+        return {"ok": False, "error": "se necesitan al menos 2 pasos"}
+    paso = _paso_expresion if tipo == "expresion" else _paso_ecuacion
+    detalle, primer_error = [], None
+    for i in range(1, len(pasos)):
+        try:
+            r = paso(str(pasos[i - 1]), str(pasos[i]))
+        except Exception as e:  # noqa: BLE001
+            r = {"veredicto": "indeciso", "como": "error", "detalle": str(e)}
+        r["paso"] = i
+        r["de"], r["a"] = str(pasos[i - 1]), str(pasos[i])
+        detalle.append(r)
+        if primer_error is None and r["veredicto"] not in ("ok", "indeciso"):
+            primer_error = i
+    return {"ok": True, "valida": primer_error is None,
+            "primerError": primer_error, "pasos": detalle}
+
+
+# Casos con veredicto conocido. Existen porque este verificador YA falló del peor
+# modo posible: aprobando todo. Un `x` sin asunción de realidad en el parseo hacía
+# que SymPy resolviera para una incógnita ausente, y la cadena con un error
+# deliberado en el medio salía "válida". Un verificador que dice que sí siempre es
+# peor que no tenerlo: da confianza donde no hay.
+_AUTOTEST = [
+    ("lineal correcta", "ecuacion", ["3*x + 5 = 20", "3*x = 15", "x = 5"], None),
+    ("error en el medio", "ecuacion", ["3*x + 5 = 20", "3*x = 25", "x = 25/3"], 1),
+    ("dividir por x pierde x=0", "ecuacion", ["x**2 = 3*x", "x = 3"], 1),
+    ("elevar al cuadrado agrega", "ecuacion", ["sqrt(x + 2) = x", "x + 2 = x**2"], 1),
+    ("multiplicar ambos lados", "ecuacion", ["x/3 + 1 = 4", "x + 3 = 12", "x = 9"], None),
+    ("denominador variable", "ecuacion", ["1/(x - 1) = 2", "1 = 2*(x - 1)", "x = 3/2"], None),
+    ("cuadrática por fórmula", "ecuacion", ["x**2 - 5*x + 6 = 0", "(x - 2)*(x - 3) = 0"], None),
+    ("binomio al cuadrado", "expresion", ["(x + 5)**2", "x**2 + 10*x + 25"], None),
+    # El error más clásico del colegio. Por conjunto solución PASARÍA —tiene el
+    # mismo {0} que "x = 0"—; solo lo agarra la diferencia simbólica.
+    ("olvidar el doble producto", "expresion", ["(x + 5)**2", "x**2 + 25"], 1),
+    ("factorizar bien", "expresion", ["x**2 - 5*x + 6", "(x - 2)*(x - 3)"], None),
+]
+
+
+def do_autotest() -> dict:
+    fallas = []
+    for nombre, tipo, pasos, esperado in _AUTOTEST:
+        r = do_cadena(pasos, tipo)
+        got = r.get("primerError")
+        if got != esperado:
+            fallas.append({"caso": nombre, "esperaba": esperado, "dio": got})
+    return {"ok": not fallas, "corridos": len(_AUTOTEST),
+            "fallas": fallas} if fallas else {"ok": True, "corridos": len(_AUTOTEST)}
+
+
 def main():
     try:
         # JSON por argv[1] (lo usa el eval) o por stdin (uso manual).
@@ -147,6 +314,11 @@ def main():
             print(json.dumps(do_eval(req["expr"])))
         elif mode == "equiv":
             print(json.dumps(do_equiv(req["a"], req["b"])))
+        elif mode == "autotest":
+            print(json.dumps(do_autotest()))
+        elif mode == "cadena":
+            # tipo: "ecuacion" (conjunto solución) | "expresion" (diferencia).
+            print(json.dumps(do_cadena(req["pasos"], req.get("tipo", "ecuacion"))))
         else:
             print(json.dumps({"ok": False, "error": f"modo desconocido: {mode}"}))
     except Exception as e:  # noqa: BLE001 — nunca tirar la corrida del eval
