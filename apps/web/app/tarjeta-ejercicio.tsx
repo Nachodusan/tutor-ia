@@ -28,6 +28,8 @@ export interface Tarjeta {
   pasos: PasoExplicado[];
   raices?: number[];
   aviso?: string;
+  titulo?: string;
+  sinSolucionReal?: boolean;
   curva?: { puntos: Punto[]; desde: number; hasta: number };
 }
 
@@ -140,7 +142,7 @@ export function TarjetaEjercicioView({ t }: { t: Tarjeta }) {
       <div style={{ padding: "12px 15px", borderBottom: `1.5px solid ${C.border}` }}>
         <div style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 11, letterSpacing: 0.5,
           textTransform: "uppercase", color: C.dim, marginBottom: 5 }}>
-          {TITULO[t.operacion] ?? "Ejercicio"}
+          {t.titulo ?? TITULO[t.operacion] ?? "Ejercicio"}
         </div>
         <div style={{ fontFamily: FONT.mono, fontSize: 17, color: C.text, wordBreak: "break-word" }}>
           {comoSeLee(t.enunciado)}
@@ -157,6 +159,15 @@ export function TarjetaEjercicioView({ t }: { t: Tarjeta }) {
           </div>
         </div>
       </div>
+
+      {t.sinSolucionReal && (
+        <div style={{ padding: "11px 15px", borderTop: `1.5px solid ${C.border}`,
+          fontSize: 13.5, color: C.text, lineHeight: 1.55 }}>
+          Su gráfica <strong>nunca cruza el eje x</strong>: no hay ningún número real
+          que haga cero esta expresión. Mirá el dibujo de abajo y vas a ver que la
+          curva pasa entera por arriba (o entera por abajo) del eje.
+        </div>
+      )}
 
       {t.pasos.length > 0 && (
         <>

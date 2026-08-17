@@ -93,6 +93,36 @@ def _simplificar(v):
         return v
 
 
+def _es_real(v) -> bool:
+    """¿Este número es real? Se evalúa, no se pregunta (ver el aviso en do_eval)."""
+    try:
+        if v.is_real is True:
+            return True
+        return abs(complex(sp.N(v, 25)).imag) < 1e-9
+    except Exception:  # noqa: BLE001
+        return False
+
+
+# Una raíz exacta más larga que esto no se le muestra a un chico: se le da el
+# decimal, que es lo que va a usar y lo que su calculadora le va a mostrar.
+_LARGO_MAXIMO = 40
+
+
+def _legible(v) -> str:
+    """La forma exacta si se puede leer; si no, el decimal.
+
+    La cuártica del reclamo daba raíces de 280 caracteres cada una. Un tutor que
+    contesta eso no está enseñando: está volcando la salida de un CAS.
+    """
+    exacto = _bonito(v)
+    if len(exacto) <= _LARGO_MAXIMO:
+        return exacto
+    try:
+        return f"≈ {float(sp.N(v, 10)):.4g}"
+    except Exception:  # noqa: BLE001
+        return exacto
+
+
 def _bonito(v) -> str:
     """Cómo se escribe un número en un cuaderno.
 
@@ -125,15 +155,21 @@ def do_eval(expr: str, simplificar: bool = True) -> dict:
     # Las soluciones se devuelven como LISTA de strings además del `value` plano:
     # el que llama necesita las raíces por separado para marcarlas en el gráfico.
     if isinstance(val, list):
-        # Las raíces complejas no existen para un alumno de Media: el libro dice
-        # "no tiene solución en los reales", no "-I, I".
-        reales = [x for x in val if not getattr(x, "is_real", True) is False]
+        # ⚠️ LA REALIDAD SE DECIDE NUMÉRICAMENTE, NO PREGUNTANDO `is_real`.
+        #
+        # En las raíces de una cuártica SymPy no puede decidirlo simbólicamente y
+        # `is_real` devuelve None, que en Python NO es False: el filtro las daba
+        # por reales a las cuatro. Resultado en pantalla, medido con
+        # 5x**4 - 3x + 2 = 0 (que NO tiene ninguna raíz real): media pantalla de
+        # radicales anidados con I adentro, presentada como "Resultado" con un
+        # tilde verde al lado.
+        reales = [x for x in val if _es_real(x)]
         if val and not reales:
             return {"ok": True, "value": "sin solución real", "soluciones": [],
                     "sinSolucionReal": True}
         val = reales or val
-        out = {"ok": True, "value": ", ".join(_bonito(x) for x in val),
-               "soluciones": [_bonito(x) for x in val]}
+        out = {"ok": True, "value": ", ".join(_legible(x) for x in val),
+               "soluciones": [_legible(x) for x in val]}
         nums = []
         for x in val:
             try:

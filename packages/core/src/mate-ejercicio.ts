@@ -39,6 +39,12 @@ export interface TarjetaEjercicio {
   grafico?: { expr: string; variable: string };
   /** Un renglón no validó: se avisa en vez de mostrarlo como si estuviera bien. */
   aviso?: string;
+  /** Título de la ficha. Lo decide el servidor porque depende de cómo se leyó el
+   *  enunciado: "resolver" sobre una FUNCIÓN es buscar dónde corta el eje, y
+   *  llamarlo "resolver la ecuación" es contarle otra cosa al alumno. */
+  titulo?: string;
+  /** No hay raíces reales. La ficha lo explica en vez de mostrar un renglón seco. */
+  sinSolucionReal?: boolean;
 }
 
 // ⚠️ MODO ESTRICTO: `additionalProperties: false` en CADA objeto, todas las
@@ -97,6 +103,34 @@ export async function armarTarjeta(texto: string): Promise<TarjetaEjercicio | nu
   if (!r) return null;
 
   const e = leerEjercicio(texto);
+  // Sin raíces reales no hay procedimiento que redactar, y pedirle pasos al
+  // modelo produce un desarrollo que termina en la nada. La explicación la da la
+  // ficha, con el gráfico al lado mostrando que la curva nunca cruza el eje.
+  if (r.sinSolucionReal) {
+    return {
+      enunciado: det.expr, operacion: det.op, resultado: r.valor, pasos: [],
+      titulo: e.esDefinicion ? "Dónde corta el eje x" : undefined,
+      sinSolucionReal: true,
+      grafico: graficable(e.expr, e.variable, det.op),
+    };
+  }
+  // RESULTADO APROXIMADO = no hay procedimiento de colegio que mostrar.
+  //
+  // Una cúbica como x³ - 2x - 5 = 0 no se factoriza ni sale con fórmula: su raíz
+  // es 2,0945… y SymPy la devuelve así. Cualquier cadena de pasos que el modelo
+  // escriba va a fallar la verificación en el último renglón —porque un decimal
+  // redondeado NO es exactamente la raíz— y la ficha quedaba con un paso suelto y
+  // nada más. Es más honesto decir por qué.
+  if (r.valor.startsWith("≈")) {
+    return {
+      enunciado: det.expr, operacion: det.op, resultado: r.valor, pasos: [],
+      titulo: e.esDefinicion ? "Dónde corta el eje x" : undefined,
+      raices: r.nums,
+      grafico: graficable(e.expr, e.variable, det.op),
+      aviso: "Esta no sale con los métodos que se ven en el colegio (factorizar o la fórmula general): su solución no es un número exacto. Te muestro el valor aproximado y dónde corta el eje.",
+    };
+  }
+
   let pasos: PasoExplicado[] = [];
   try {
     const out = await chatJSON<{ pasos: PasoExplicado[] }>(
@@ -157,6 +191,8 @@ export async function armarTarjeta(texto: string): Promise<TarjetaEjercicio | nu
   return {
     enunciado: det.expr,
     operacion: det.op,
+    titulo: e.esDefinicion && det.op === "solve" ? "Dónde corta el eje x" : undefined,
+    sinSolucionReal: r.sinSolucionReal,
     // La constante de integración la pone la tarjeta: SymPy nunca la devuelve, y
     // sin ella la respuesta está incompleta para cualquier profesor.
     resultado: det.op === "integrate" ? `${r.valor} + C` : r.valor,

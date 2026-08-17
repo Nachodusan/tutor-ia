@@ -174,6 +174,37 @@ export async function puntos(
     const margen = Math.max(2, (max - min) * 0.8);
     desde = Math.floor(min - margen);
     hasta = Math.ceil(max + margen);
+  } else {
+    // SIN RAÍCES HAY QUE BUSCAR DÓNDE PASA ALGO, y no es un lujo: en
+    // 5x⁴ - 3x + 2 dibujado de -10 a 10 mandan las paredes del x⁴ y la curva
+    // queda APLASTADA contra el eje. La ficha dice "nunca cruza el eje" y el
+    // dibujo parece mostrar que lo toca: el gráfico desmintiendo al texto.
+    // Una pasada gruesa encuentra el tramo donde la función se acerca a cero, y
+    // la segunda dibuja ahí.
+    const grueso = await llamar<{ ok: boolean; puntos: Punto[] }>(
+      { mode: "puntos", expr, variable, desde: -10, hasta: 10, n: 81 },
+    );
+    const validos = (grueso?.puntos ?? []).filter((p): p is [number, number] => p[1] != null);
+    if (validos.length > 2) {
+      let i = 0;
+      for (let k = 0; k < validos.length; k++) {
+        if (Math.abs(validos[k]![1]) < Math.abs(validos[i]![1])) i = k;
+      }
+      // La ventana se abre desde el mínimo hasta donde la función SE DISPARA. Un
+      // ancho fijo no alcanza: con ±4 el x⁴ llega a 3112 y, a esa escala, el
+      // mínimo de 0,81 se dibuja indistinguible de cero — la curva se ve apoyada
+      // sobre el eje justo cuando la ficha explica que nunca lo toca.
+      const piso = Math.abs(validos[i]![1]);
+      const techo = Math.max(piso * 10, piso + 10);
+      let a = i;
+      let b = i;
+      while (a > 0 && Math.abs(validos[a - 1]![1]) <= techo) a--;
+      while (b < validos.length - 1 && Math.abs(validos[b + 1]![1]) <= techo) b++;
+      const ancho = Math.max(1.5, (validos[b]![0] - validos[a]![0]) / 2);
+      const centro = validos[i]![0];
+      desde = Math.round((centro - ancho) * 10) / 10;
+      hasta = Math.round((centro + ancho) * 10) / 10;
+    }
   }
   const r = await llamar<{ ok: boolean; puntos: Punto[] }>(
     { mode: "puntos", expr, variable, desde, hasta, n: 160 },
