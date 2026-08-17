@@ -138,6 +138,27 @@ test("la incógnita sale del texto, con x por defecto", () => {
   assert.equal(leerEjercicio("5 + 3 = 8").variable, "x");
 });
 
+test("⚠️ EL ACENTO NO PUEDE DECIDIR SI ANDA O NO", () => {
+  // Reportado desde la pantalla: "parece que sin acento no funciona". No era el
+  // acento —era otro bug— pero al medirlo apareció que `reducí` SÍ fallaba, por
+  // el mismo motivo de siempre: `\b` es ASCII y después de una "í" no hay límite
+  // de palabra, así que `reduc(i|í)r?\b` no matcheaba nunca. Ahora el texto se
+  // normaliza antes de comparar y las dos formas valen.
+  for (const [a, b] of [
+    ["deriva f(x) = 3x^2", "derivá f(x) = 3x^2"],
+    ["factoriza x^2 - 9", "factorizá x^2 - 9"],
+    ["desarrolla (x + 5)^2", "desarrollá (x + 5)^2"],
+    ["simplifica (x^2 - 4)/(x - 2)", "simplificá (x^2 - 4)/(x - 2)"],
+    ["resuelve 3x + 5 = 20", "resolvé 3x + 5 = 20"],
+  ]) {
+    assert.ok(esEjercicio(a), `sin acento no anduvo: ${a}`);
+    assert.ok(esEjercicio(b), `con acento no anduvo: ${b}`);
+    assert.equal(esEjercicio(a)?.op, esEjercicio(b)?.op, `distinta operación: ${a} vs ${b}`);
+  }
+  // El que estaba muerto:
+  assert.equal(esEjercicio("reducí (x^2 - 4)/(x - 2)")?.op, "simplify");
+});
+
 test("el verbo del alumno decide la operación", () => {
   assert.equal(operacionPedida("ayudame a derivar este problema", false), "diff");
   assert.equal(operacionPedida("resolvé x² - 5x + 6 = 0", true), "solve");

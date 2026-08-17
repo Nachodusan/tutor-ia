@@ -246,16 +246,28 @@ function detectarVariable(s: string): string {
   return letras[0]!.toLowerCase();
 }
 
+/** Saca los acentos para comparar. Ver el aviso de VERBOS: `\b` es ASCII. */
+const sinAcentos = (s: string): string =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
 /** Qué operación pide el turno. `null` → no es un pedido de ejercicio. */
 export type Operacion = "solve" | "diff" | "integrate" | "factor" | "simplify" | "expand";
 
+/**
+ * ⚠️ TODOS SIN ACENTOS: el texto se normaliza antes de compararlo.
+ *
+ * En JavaScript `\b` es ASCII, así que después de una vocal acentuada NO hay
+ * límite de palabra y un patrón como `reduc(i|í)r?\b` NO MATCHEA NUNCA. Es la
+ * segunda vez que este mismo detalle deja una regla muerta en este archivo —
+ * escribir los patrones en ASCII y normalizar la entrada lo cierra de una vez.
+ */
 const VERBOS: [RegExp, Operacion][] = [
-  [/\bderiv(a|á|ar|ame|emos)|\bderivada\b|\bf\s*'\s*\(/i, "diff"],
-  [/\bintegr(a|á|ar|al|ales|emos)\b|\bantiderivada\b|\bprimitiva\b/i, "integrate"],
-  [/\bfactoriz(a|á|ar|ame|emos)|\bfactorizaci[óo]n\b|\bfactores\b/i, "factor"],
-  [/\bdesarroll(a|á|ar)|\bexpand(i|í)r?\b|\bmultiplic(a|á|ar)\s+los\s+par[ée]ntesis/i, "expand"],
-  [/\bsimplific(a|á|ar|ame)|\breduc(i|í)r?\b|\bracionaliz(a|á|ar)/i, "simplify"],
-  [/\bresolv(e|é|er|ELO|elo|amos)|\bresuelv|\bcalcul(a|á|ar|emos)|\bdespej(a|á|ar)|\bhall(a|á|ar)|\bencontr(a|á|ar)\s+(el\s+)?valor/i, "solve"],
+  [/\bderiv(a|ar|ame|emos)|\bderivada\b|\bf\s*'\s*\(/i, "diff"],
+  [/\bintegr(a|ar|al|ales|emos)\b|\bantiderivada\b|\bprimitiva\b/i, "integrate"],
+  [/\bfactoriz(a|ar|ame|emos)|\bfactorizacion\b|\bfactores\b|\bdescompon(e|er)\b/i, "factor"],
+  [/\bdesarroll(a|ar)|\bexpandir?\b|\bmultiplic(a|ar)\s+los\s+parentesis/i, "expand"],
+  [/\bsimplific(a|ar|ame)|\breducir?\b|\bracionaliz(a|ar)/i, "simplify"],
+  [/\bresolv(e|er|elo|amos)|\bresuelv|\bcalcul(a|ar|emos)|\bdespej(a|ar)|\bhall(a|ar)|\bencontr(a|ar)\s+(el\s+)?valor|\bhac(e|er)\b|\bcomo\s+hago\b/i, "solve"],
 ];
 
 /**
@@ -264,7 +276,8 @@ const VERBOS: [RegExp, Operacion][] = [
  * escribe "x² - 5x + 6 = 0" y nada más.
  */
 export function operacionPedida(texto: string, tieneEcuacion: boolean): Operacion | null {
-  for (const [re, op] of VERBOS) if (re.test(texto)) return op;
+  const t = sinAcentos(texto);
+  for (const [re, op] of VERBOS) if (re.test(t)) return op;
   return tieneEcuacion ? "solve" : null;
 }
 
@@ -302,9 +315,6 @@ const CONCEPTUAL = new RegExp(
   ].join("|"),
   "i",
 );
-
-const sinAcentos = (s: string): string =>
-  s.normalize("NFD").replace(/[̀-ͯ]/g, "");
 
 export function esEjercicio(texto: string): { op: Operacion; expr: string } | null {
   if (CONCEPTUAL.test(sinAcentos(texto))) return null;
