@@ -1,6 +1,8 @@
 import { getSql, toJson } from "@tutor-ia/db";
 import { requireUser, unauthorized } from "@/lib/auth";
 import type { QuizItem } from "@tutor-ia/core";
+import { aprobado } from "../../../../nota";
+import { marcarRepaso } from "@/lib/repaso";
 
 export const runtime = "nodejs";
 
@@ -76,11 +78,21 @@ export async function POST(req: Request) {
     values (${auth.userId}::uuid, ${subjectId}::uuid, ${topicKey})
     on conflict (user_id, topic_key) do nothing`;
 
-  // Solo lo fallado va a reforzar. Si acertó todo, además se LIMPIA: un tema
-  // que ya dominó no debería seguir apareciendo en "Para reforzar" ni en el
-  // panel del profe — ese era el bug de identidad que ya se arregló una vez
-  // cuando los temas se buscaban por su TEXTO.
-  if (wrong.length > 0) {
+  // APROBAR SACA EL TEMA DE REFUERZO. Dos tercios, la misma regla que usa la
+  // prueba grande (`/api/test/submit`) y la que pinta verde el nodo del camino.
+  //
+  // ⚠️ Acá decía `if (wrong.length > 0)`: o sea que hacía falta el PUNTAJE
+  // PERFECTO. Y el chequeo no son tres preguntas sino DIEZ, así que 9 de 10
+  // dejaba el tema en la lista y encima le sumaba un fallo: repasar y casi
+  // acertar EMPUJABA el tema más arriba en el ranking de débiles. Peor todavía,
+  // el mismo 9 de 10 pintaba el nodo verde en el camino — el tema quedaba
+  // aprobado y "para reforzar" al mismo tiempo, según qué pantalla mirara el
+  // chico.
+  // "Repaso de hoy" se entera acá: es el único lugar que sabe si el chico rindió
+  // y cómo le fue. Va antes del if para que cuente el INTENTO aunque no apruebe.
+  await marcarRepaso(auth.userId, topicKey, aprobado(score, total));
+
+  if (!aprobado(score, total)) {
     // `misses` se ACUMULA: el ranking del panel del docente ordena por cuántas
     // veces se falló, así que pisarlo con 1 en cada reintento borraría la señal
     // de "este tema le cuesta de verdad".

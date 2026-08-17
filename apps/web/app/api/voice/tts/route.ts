@@ -88,22 +88,30 @@ async function hablarRemoto(
 }
 
 /**
- * POST /api/voice/tts — body: { text } → audio.
+ * POST /api/voice/tts — body: { text, probar? } → audio.
  *
- * LA VOZ SALE DEL PERFIL, no del cuerpo del pedido. Antes la mandaba el
- * navegador y acá se validaba contra el catálogo; ahora directamente no hay
- * entrada del cliente que llegue a un argumento de `say` ni a una URL de
- * inferencia. Y como es del alumno y no del aparato, lo sigue al teléfono.
+ * LA VOZ SALE DEL PERFIL, no del cuerpo del pedido. Es lo que hace que ninguna
+ * cadena escrita por el navegador termine en un argumento de `say` ni en una URL
+ * de inferencia. Y como es del alumno y no del aparato, lo sigue al teléfono.
+ *
+ * `probar` ES LA ÚNICA EXCEPCIÓN, y existe porque sin ella el probador de voces
+ * era mentira: los cinco botones "Probar" del panel sonaban todos con la voz YA
+ * guardada, así que elegir a ciegas —justo lo que ese botón vino a evitar—.
+ *
+ * No rompe la propiedad de arriba: `probar` es una CLAVE en la lista blanca, no
+ * un valor. `buscarVoz` la resuelve contra el catálogo y lo desconocido cae en
+ * la voz por defecto; lo que llega a `say` o a la URL sale siempre de
+ * `voces.ts`, nunca del pedido. Y no toca el perfil: probar no es elegir.
  */
 export async function POST(req: Request) {
   const auth = await requireUser(req);
   if (!auth) return unauthorized();
-  const { text } = (await req.json()) as { text?: string };
+  const { text, probar } = (await req.json()) as { text?: string; probar?: string };
 
   const sql = getSql();
   const [perfil] = await sql<{ tts_voice: string | null }[]>`
     select tts_voice from student_profiles where user_id = ${auth.userId}::uuid`;
-  const voz = buscarVoz(perfil?.tts_voice);
+  const voz = buscarVoz(typeof probar === "string" ? probar : perfil?.tts_voice);
 
   // Se corta el texto CRUDO y se normaliza después: al revés, el corte podría
   // caer dentro de un `[[slnc …]]` nuestro y `say` leería el comando a medias.

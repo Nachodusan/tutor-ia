@@ -124,6 +124,18 @@ export const IconChat = ({ size, color, stroke }: IconProps) => (<svg {...svg(si
 export const IconChevron = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="m9 18 6-6-6-6" /></svg>);
 export const IconLock = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>);
 export const IconClock = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>);
+/**
+ * PUERTA CON FLECHA — salir.
+ *
+ * Antes acá iba `IconSwap` (dos flechas en círculo), que significaba "cambiar de
+ * alumno" cuando la app se usaba en una sala compartida. Se leía como
+ * "recargar" o "intercambiar", no como salir. Una puerta con una flecha que se
+ * va no necesita que nadie la explique.
+ */
+export const IconPuerta = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></svg>);
+/** Calculadora — el teclado de símbolos del chat de Matemática. La pantalla
+ *  arriba y las teclas abajo: se reconoce por la silueta, sin leer nada. */
+export const IconCalculadora = ({ size, color, stroke }: IconProps) => (<svg {...svg(size, color, stroke)}><rect x="4" y="2" width="16" height="20" rx="2.5" /><path d="M8 6h8" /><path d="M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h3.51" /></svg>);
 
 // ── Piezas compartidas ──────────────────────────────────────────────────────
 

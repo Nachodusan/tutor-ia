@@ -2,8 +2,10 @@
 /**
  * REPASÁ CON TUS APUNTES — **MAQUETA**.
  *
- * El alumno escanea su cuaderno y el tutor se lo devuelve en tres formas de
- * repasar: mapa conceptual, fichas de memoria y entrenar con la IA.
+ * El alumno escanea su cuaderno y el tutor se lo devuelve en cuatro formas de
+ * repasar: mapa conceptual, fichas de memoria, entrenar con la IA y una
+ * grabación de repaso — la única que no pide ojos, para escuchar en el camino
+ * al colegio.
  *
  * ⚠️ NADA DE ESTO PROCESA TODAVÍA, y la pantalla lo dice en la cara —chapa
  * "Maqueta" arriba y aviso al tocar los botones—. Es deliberado: una pantalla
@@ -52,7 +54,7 @@ export default function ApuntesPage() {
           </span>
         </div>
         <p style={{ color: C.dim, fontSize: 14, lineHeight: 1.55, margin: "4px 0 0", maxWidth: 620 }}>
-          Sacale una foto a tu cuaderno y te lo devuelvo en tres formas de repasar. Así se
+          Sacale una foto a tu cuaderno y te lo devuelvo en cuatro formas de repasar. Así se
           va a ver: todavía no procesa nada.
         </p>
       </header>
@@ -87,13 +89,23 @@ export default function ApuntesPage() {
         )}
       </div>
 
-      {/* ── LAS TRES FORMAS ───────────────────────────────────────────────── */}
+      {/* ── LAS CUATRO FORMAS ─────────────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
         <span style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 17 }}>Y con eso te armo</span>
-        <span style={{ color: C.dim, fontSize: 13 }}>tres formas de repasar lo mismo</span>
+        <span style={{ color: C.dim, fontSize: 13 }}>cuatro formas de repasar lo mismo</span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 40 }}>
+      {/* CUATRO O DOS COLUMNAS, NUNCA TRES. Con `auto-fit` el ancho del panel
+          (~900) da para tres tarjetas y deja la cuarta huérfana abajo, que se
+          lee como "esta última es otra cosa" — y son cuatro hermanas. El número
+          de columnas se fija a mano por eso; es la misma razón por la que el nav
+          del panel tiene CSS de verdad y no estilos en línea. */}
+      <style>{`
+        .apuntes-formas { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @media (min-width: 1120px) { .apuntes-formas { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+        @media (max-width: 520px)  { .apuntes-formas { grid-template-columns: minmax(0, 1fr); } }
+      `}</style>
+      <div className="apuntes-formas" style={{ marginBottom: 40 }}>
         <Forma
           color={C.accent}
           titulo="Mapa conceptual"
@@ -113,15 +125,24 @@ export default function ApuntesPage() {
           vista={<VistaEntrenar />}
           icono={<AuroraDot size={20} />}
         />
+        {/* La cuarta es la única que NO pide ojos: se escucha yendo al colegio o
+            antes de dormir. Por eso dice cuánto dura — en audio, el largo es la
+            primera pregunta, y un repaso de 40 minutos no se escucha nunca. */}
+        <Forma
+          color={C.sun}
+          titulo="Grabación de repaso"
+          bajada="Tus apuntes contados en voz alta, de corrido. Para escuchar mientras vas al colegio, sin tener que mirar la pantalla."
+          vista={<VistaGrabacion />}
+        />
       </div>
     </PanelShell>
   );
 }
 
 /**
- * Una de las tres formas. Con VISTA PREVIA dibujada y no solo un título: la
- * pregunta que esta pantalla tiene que contestar es "¿qué me va a dar?", y tres
- * cajas con un nombre adentro no la contestan.
+ * Una de las cuatro formas. Con VISTA PREVIA dibujada y no solo un título: la
+ * pregunta que esta pantalla tiene que contestar es "¿qué me va a dar?", y
+ * cuatro cajas con un nombre adentro no la contestan.
  */
 function Forma({ color, titulo, bajada, vista, icono }: {
   color: string; titulo: string; bajada: string; vista: React.ReactNode; icono?: React.ReactNode;
@@ -194,6 +215,44 @@ function VistaEntrenar() {
         {[0, 1, 2].map((i) => (
           <span key={i} style={{ flex: 1, height: 14, borderRadius: 7, background: i === 1 ? C.accentSoft : C.panel, border: `1.5px solid ${i === 1 ? C.accentSoft : C.border}` }} />
         ))}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * Un reproductor: play, la onda del audio y cuánto dura.
+ *
+ * La onda va con alturas FIJAS y no aleatorias: `Math.random()` en el render
+ * daría una forma distinta en el servidor y en el cliente, y React protesta por
+ * la hidratación. Además, una maqueta que cambia de dibujo en cada recarga se
+ * lee como un gráfico de datos reales que no lo son.
+ */
+const ONDA = [7, 13, 22, 16, 28, 19, 34, 24, 30, 15, 25, 11, 20, 26, 14, 8];
+
+function VistaGrabacion() {
+  return (
+    <span style={{ width: 150, display: "flex", flexDirection: "column", gap: 8 }}>
+      <span style={{ display: "flex", alignItems: "center", gap: 9 }}>
+        <span style={{ width: 30, height: 30, flexShrink: 0, borderRadius: "50%", background: C.sun, border: `2px solid ${C.ink}`, display: "grid", placeItems: "center" }}>
+          {/* El triángulo corrido 1px a la derecha: centrado de verdad se ve
+              descentrado, porque el peso visual de un play cae a la izquierda. */}
+          <span style={{ marginLeft: 2, width: 0, height: 0, borderLeft: `9px solid ${C.ink}`, borderTop: "6px solid transparent", borderBottom: "6px solid transparent" }} />
+        </span>
+        <span style={{ flex: 1, display: "flex", alignItems: "center", gap: 2, height: 36 }}>
+          {ONDA.map((h, i) => (
+            <span key={i} style={{
+              flex: 1, height: h, borderRadius: 2,
+              // La primera parte, "ya escuchada": el mismo truco que el sendero
+              // del camino — el avance se ve sin leer un número.
+              background: i < 6 ? C.ink : C.border,
+            }} />
+          ))}
+        </span>
+      </span>
+      <span style={{ display: "flex", justifyContent: "space-between", fontFamily: FONT.mono, fontSize: 10.5, color: C.dim }}>
+        <span>2:41</span>
+        <span>8:12</span>
       </span>
     </span>
   );

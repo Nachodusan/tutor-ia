@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types test/voz-turno.test.mjs"
+    "test": "node --experimental-strip-types test/voz-turno.test.mjs && node --experimental-strip-types test/limpiar-texto.test.mjs"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",

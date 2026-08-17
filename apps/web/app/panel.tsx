@@ -1,11 +1,44 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, scoreTone, IconList, IconClipboard, IconVolume, IconCheck, IconSpark } from "./ui";
+import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, scoreTone, IconList, IconClipboard, IconVolume, IconCheck, IconSpark, IconPuerta } from "./ui";
 import { VOCES, VOZ_POR_DEFECTO, CLAVE_VOZ, type Voz } from "./voces";
+import { buscarAvatar } from "./avatares";
 import { CLASE_HUECO_RELOJ } from "./pomodoro";
 import { cursoBloqueado, MOTIVO_CURSO_BLOQUEADO } from "@/lib/cursos";
 import type { Profile, Subject, SubjectStats, WeakTopic } from "./tipos";
+
+/**
+ * EL AVATAR: el bicho que eligió, o el orbe de Aurora si todavía no eligió.
+ *
+ * Es lo único que un alumno puede cambiarle a su cuenta —no hay nombre ni foto,
+ * son anónimas— así que también es lo único que hace que la cuenta se sienta
+ * suya. Se dibuja igual en el nav, en el perfil y donde haga falta.
+ */
+export function Avatar({ id, size = 38, ink = true }: { id?: string | null; size?: number; ink?: boolean }) {
+  const a = buscarAvatar(id);
+  if (!a) return <AuroraDot size={size} square ink={ink} />;
+  return (
+    // DECORATIVO: sin `title` ni `aria-label` propios. Va siempre adentro de
+    // algo que ya se nombra solo —el botón "Tu perfil" del nav, el encabezado
+    // del perfil con el usuario al lado— y un `title` anidado le gana al del
+    // botón: al pasar el mouse por la esquina salía "Pulpo" en vez de decir a
+    // dónde lleva. El nombre del bicho vive en el selector del perfil, que es
+    // donde hace falta.
+    <span aria-hidden
+      style={{
+        width: size, height: size, flexShrink: 0, borderRadius: size * 0.28,
+        background: a.color, border: ink ? `2px solid ${C.ink}` : undefined,
+        display: "grid", placeItems: "center",
+        // El emoji se escala con la chapa: a 38 px de caja, 21 de letra deja el
+        // aire que necesita el borde para no verse apretado.
+        fontSize: Math.round(size * 0.55), lineHeight: 1, userSelect: "none",
+      }}>
+      {a.emoji}
+    </span>
+  );
+}
 
 export function Centered({ children }: { children: React.ReactNode }) {
   return <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", background: C.bg, color: C.text, fontFamily: FONT.sans, padding: 20 }}>{children}</div>;
@@ -186,22 +219,35 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [vozAbierta, setVozAbierta] = useState(false);
+  const [configAbierta, setConfigAbierta] = useState(false);
   const enPanel = pathname === "/";
   const enReforzar = pathname === "/reforzar";
   const enApuntes = pathname === "/apuntes";
+  const enPerfil = pathname === "/perfil";
+  const enResumen = pathname === "/resumen";
 
   return (
     <aside className="pnl-aside">
-      <div className="pnl-yo">
-        <AuroraDot size={38} square ink />
-        <div className="pnl-solo-ancho" style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: FONT.round, fontSize: 15.5, fontWeight: 800, letterSpacing: -0.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      {/* LA IDENTIDAD ES UN BOTÓN: lleva al perfil, que es donde viven los
+          logros y la elección del avatar. Y es el ÚNICO lugar donde se dicen el
+          usuario y el curso — el saludo del panel ya no los repite. */}
+      <button onClick={() => router.push("/perfil")} title="Tu perfil"
+        className="pnl-yo" aria-current={enPerfil ? "page" : undefined}
+        style={{
+          background: enPerfil ? C.panel : "none",
+          border: `1.5px solid ${enPerfil ? C.border : "transparent"}`,
+          borderRadius: 12, cursor: "pointer", font: "inherit", color: C.text, textAlign: "left",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = C.panel; e.currentTarget.style.borderColor = C.border; }}
+        onMouseLeave={(e) => { if (enPerfil) return; e.currentTarget.style.background = "none"; e.currentTarget.style.borderColor = "transparent"; }}>
+        <Avatar id={profile.avatar} size={38} />
+        <span className="pnl-solo-ancho" style={{ minWidth: 0 }}>
+          <span style={{ display: "block", fontFamily: FONT.round, fontSize: 15.5, fontWeight: 800, letterSpacing: -0.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {profile.username || "Hola"}
-          </div>
-          <div style={{ color: C.dim, fontSize: 12.5 }}>{gradeLabel(profile.grade)}</div>
-        </div>
-      </div>
+          </span>
+          <span style={{ display: "block", color: C.dim, fontSize: 12.5 }}>{gradeLabel(profile.grade)}</span>
+        </span>
+      </button>
 
       <div className="pnl-grupo">
         <NavItem activo={enPanel} icono={<IconBook size={15} />}
@@ -210,6 +256,14 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
             ? document.getElementById("mis-materias")?.scrollIntoView({ behavior: "smooth", block: "start" })
             : router.push("/"))}>
           Tus materias
+        </NavItem>
+        {/* Va ENTRE materias y reforzar a propósito: es el paso del medio —qué
+            llevo hecho y qué me sale— entre "dónde estudio" y "qué me falta".
+            Con el tiempo se va a comer a Reforzar: fortalezas y debilidades del
+            mismo alumno son una sola pregunta. */}
+        <NavItem activo={enResumen} icono={<IconStar size={15} />}
+          onClick={() => router.push("/resumen")}>
+          Tu resumen
         </NavItem>
         {/* El número al costado y no adentro de la pantalla: si hay nueve temas
             fallados, que se vean desde acá es la mitad del motivo para entrar.
@@ -243,12 +297,22 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
             Panel del curso
           </NavItem>
         )}
-        <NavItem onClick={() => setVozAbierta(true)} icono={<IconVolume size={15} />}>Voz del tutor</NavItem>
-        <NavItem onClick={onEdit} icono={<IconSettings size={15} />}>Mi curso</NavItem>
-        <NavItem onClick={onLogout} icono={<IconSwap size={15} />}>Salir</NavItem>
+        {/* UNA sola entrada de ajustes. Antes eran dos renglones —"Voz del
+            tutor" y "Mi curso"— que son la misma cosa: preferencias de la
+            cuenta. El pie del nav es lo último que uno quiere leer, y tres
+            renglones ahí compiten con las tres pantallas de arriba, que son a lo
+            que el chico viene. */}
+        <NavItem onClick={() => setConfigAbierta(true)} icono={<IconSettings size={15} />}>
+          Configuración
+        </NavItem>
+        <NavItem onClick={onLogout} icono={<IconPuerta size={15} />}>Salir</NavItem>
       </div>
 
-      {vozAbierta && <ElegirVoz onCerrar={() => setVozAbierta(false)} />}
+      {configAbierta && (
+        <Configuracion grade={profile.grade}
+          onEditarCurso={() => { setConfigAbierta(false); onEdit(); }}
+          onCerrar={() => setConfigAbierta(false)} />
+      )}
     </aside>
   );
 }
@@ -295,14 +359,23 @@ export function Dashboard({ profile, subjects, stats, teacher, onAbrir, onEdit, 
 
   return (
     <PanelShell nav={<PanelNav profile={profile} pendientes={contarReforzar(subjects, stats)} teacher={teacher} onEdit={onEdit} onLogout={onLogout} />}>
-      {/* Le deja el hombro derecho libre al reloj flotante: el saludo es corto,
-          pero "7° Básico · 4 materias · 1 en pausa" llegaba justo abajo de la
-          esquina donde vive el reloj. */}
+      {/* CADA COSA SE DICE UNA VEZ. Acá decía "Hola, 7b-01 👋" y abajo "2° Medio
+          · 6 materias · 1 en pausa", con el nav mostrando "7b-01 / 2° Medio" a
+          tres centímetros: el usuario y el curso repetidos, uno al lado del
+          otro. La identidad vive en el nav (que además es el botón al perfil);
+          este encabezado saluda y cuenta lo que hay EN ESTA pantalla.
+          El `hueco` es para el reloj flotante de la esquina. */}
       <header className={CLASE_HUECO_RELOJ} style={{ marginBottom: 26 }}>
-        <div style={{ fontFamily: FONT.round, fontSize: 24, fontWeight: 800, letterSpacing: -0.3 }}>Hola, {profile.username || "que bueno verte"} 👋</div>
+        <div style={{ fontFamily: FONT.round, fontSize: 24, fontWeight: 800, letterSpacing: -0.3 }}>¡Hola! 👋</div>
+        {/* ⚠️ Las EN PAUSA se nombran en las dos ramas. Con la rama vacía muda,
+            un curso con todas las materias pausadas decía "Todavía no tenés
+            materias para estudiar" con las cuatro tarjetas dibujadas justo
+            abajo: el encabezado contradiciendo a la pantalla. */}
         <div style={{ color: C.dim, fontSize: 14 }}>
-          {gradeLabel(profile.grade)} · {misSubjects.length - apagadas} {misSubjects.length - apagadas === 1 ? "materia" : "materias"}
-          {apagadas > 0 && ` · ${apagadas} en pausa`}
+          {misSubjects.length - apagadas === 0
+            ? <>Todavía no tenés materias para estudiar{apagadas > 0 && ` · ${apagadas} en pausa`}</>
+            : <>Tenés {misSubjects.length - apagadas} {misSubjects.length - apagadas === 1 ? "materia" : "materias"} para estudiar
+                {apagadas > 0 && ` · ${apagadas} en pausa`}</>}
         </div>
       </header>
 
@@ -359,7 +432,8 @@ const NAV_CSS = `
   height: 100dvh; overflow-y: auto; padding: 20px 14px;
   background: ${C.panel2}; border-right: 1.5px solid ${C.border};
 }
-.pnl-yo { display: flex; align-items: center; gap: 10px; padding: 0 4px; }
+.pnl-yo { display: flex; align-items: center; gap: 10px; padding: 6px 8px; flex-shrink: 0; width: 100%; }
+@media (max-width: 880px) { .pnl-yo { width: auto; } }
 .pnl-grupo { display: flex; flex-direction: column; gap: 3px; }
 .pnl-rotulo {
   color: ${C.dim}; font-family: ${FONT.round}; font-weight: 700; font-size: 11px;
@@ -430,42 +504,47 @@ function NavItem({ children, icono, chip, onClick, disabled, title, activo }: {
  * El candado dice que es temporal; el 404 de /api/plan y /api/test es lo que
  * realmente impide usarla.
  */
-/** Las tres actividades de una materia, tal como se ofrecen desde el panel. */
-const ACTIVIDADES = [
-  { clave: "camino", label: "Camino", icono: (n: number) => <IconList size={n} /> },
-  // El orbe de Aurora en vez de un globo genérico: es la identidad de la IA en
-  // el resto de la app (el encabezado, la llamada de voz, el avatar). PERO CON
-  // SU ETIQUETA, igual que las otras dos: se probó dejarlo solo y la fila queda
-  // con dos botones nombrados y uno mudo, que se lee como si al del medio le
-  // faltara algo. Que el símbolo se entienda no vuelve al texto redundante
-  // cuando sus vecinos lo llevan.
-  { clave: "chat", label: "Preguntar", icono: (n: number) => <AuroraDot size={n + 2} /> },
-  { clave: "prueba", label: "Prueba", icono: (n: number) => <IconClipboard size={n} /> },
-] as const;
-export type Actividad = (typeof ACTIVIDADES)[number]["clave"];
+/** Las tres actividades de una materia. Siguen siendo tres rutas: lo que cambió
+ *  es por dónde se entra a cada una desde el panel. */
+export type Actividad = "camino" | "chat" | "prueba";
 
 /**
- * La tarjeta de una materia, con SUS TRES ACCIONES abajo.
+ * LOS DOS BOTONES DEL PIE. "Preguntar" ya no está acá: ES LA TARJETA.
  *
- * Antes la tarjeta entera era un botón que llevaba a una pantalla intermedia
- * ("¿qué querés hacer?"). Esa pantalla no aportaba: el alumno ya sabía a qué
- * venía cuando tocó la materia, y le cobraba un toque y un cambio de página
- * para volver a preguntárselo. Ahora las tres opciones están acá y se va
- * directo.
+ * Eran tres botones abajo y el cuerpo de la tarjeta llevaba al camino, o sea que
+ * el camino tenía dos entradas y preguntar una. Ahora hay tres accesos y cada
+ * uno abre una cosa distinta: la tarjeta abre el chat, y los dos botones del pie
+ * abren el camino y la prueba. Menos botones y ninguna repetida.
+ */
+const ACCIONES = [
+  { clave: "camino", label: "Camino", icono: (n: number) => <IconList size={n} /> },
+  { clave: "prueba", label: "Prueba", icono: (n: number) => <IconClipboard size={n} /> },
+] as const;
+
+/**
+ * La tarjeta de una materia: TRES ACCESOS, uno por actividad.
+ *
+ *   el cuerpo  → preguntarle al tutor        (lo más frecuente: una duda)
+ *   Camino     → el recorrido de la materia
+ *   Prueba     → la simulación de prueba
+ *
+ * Antes eran tres botones abajo Y el cuerpo llevaba al camino: el camino tenía
+ * dos puertas y preguntar una, escondida entre las tres chiquitas del pie. Que
+ * la tarjeta misma abra el chat es lo que hace que la fila de abajo tenga solo
+ * lo que no es obvio.
  *
  * ⚠️ Por eso la tarjeta es un `div` y no un `button`: un botón adentro de otro
  * botón es HTML inválido, y el navegador lo "arregla" sacando el de adentro —
- * las acciones dejarían de existir sin que nada avise. El cuerpo (nombre y
- * avance) es su propio botón e igual lleva al camino, que es lo más probable.
+ * las acciones dejarían de existir sin que nada avise. El cuerpo es su propio
+ * botón, hermano de los otros dos.
  */
 export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats; onAbrir: (a: Actividad) => void }) {
-  const hasGuide = Number(s.pedagogy_chunks) > 0;
   const off = !!s.disabled;
   const col = off ? C.border : subjectColor(s);
   const onCol = isLight(col) ? C.ink : "#fff";
+  // `total` ya NO se dibuja —la barra de avance se fue de la tarjeta— pero
+  // sigue decidiendo si hay camino que abrir.
   const total = st?.planTotal ?? 0;
-  const done = st?.planDone ?? 0;
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const weak = st?.weak.length ?? 0;
   // Sin lecciones no hay camino que recorrer: el libro de esa materia no dio un
   // índice legible. Se apaga la acción en vez de llevar a una pantalla vacía.
@@ -478,8 +557,19 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
       onMouseLeave={(e) => { if (off) return; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = HARD(col); }}>
       {!off && <div style={{ position: "absolute", top: -14, right: -14, width: 34, height: 34, borderRadius: "50%", background: col }} />}
 
-      <button onClick={off ? undefined : () => onAbrir(sinCamino ? "chat" : "camino")} disabled={off}
-        title={off ? "Esta materia está en pausa" : undefined}
+      {/* EL CUERPO ABRE EL CHAT, y hoy no lo dice NADA a la vista: la línea con
+          el orbe que lo anunciaba se sacó a pedido, junto con la barra de
+          avance. Queda como deuda conocida — en el teléfono, que es donde no
+          hay `title` que valga, el gesto se descubre tocando.
+
+          El `aria-label` NO es decoración: sin él el botón se anuncia
+          "Biología" a secas —el nombre accesible sale del contenido— y quien
+          navega con lector de pantalla o con teclado escucha tres botones por
+          tarjeta, el primero sin propósito. Es la mitad del problema que se
+          puede arreglar sin volver a poner nada en pantalla. */}
+      <button onClick={off ? undefined : () => onAbrir("chat")} disabled={off}
+        aria-label={off ? `${subjectLabel(s)}: en pausa` : `${subjectLabel(s)}: preguntarle al tutor`}
+        title={off ? "Esta materia está en pausa" : `Preguntale al tutor sobre ${subjectLabel(s)}`}
         // `flex: 1` para que el cuerpo se coma el alto sobrante y EMPUJE las
         // acciones al fondo. Las tarjetas se estiran a la altura de la más alta
         // (grid), pero sin esto el bloque de acciones queda pegado al contenido:
@@ -503,32 +593,17 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
           </>
         )}
 
-        {/* Nada de avance ni notas en una materia en pausa: no se puede actuar
-            sobre eso, y compite con lo que el alumno sí puede abrir. */}
-        {!off && (total > 0 ? (
-          <span style={{ display: "block", position: "relative" }}>
-            <span style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-              <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, color: C.text }}>
-                {/* "temas" y no "lecciones": el camino es por unidades en 50 de
-                    las 55 materias con camino, y en las otras 5 por lecciones.
-                    Un solo sustantivo que es cierto en los dos casos evita que
-                    la tarjeta prometa una granularidad que después no aparece. */}
-                {done} de {total} {total === 1 ? "tema" : "temas"}
-              </span>
-              <span style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 12.5, color: done === total ? C.okTx : C.dim }}>
-                {done === total ? "¡Completo!" : `${pct}%`}
-              </span>
-            </span>
-            <span style={{ display: "block", height: 9, borderRadius: 999, background: C.panel2, border: `1.5px solid ${C.ink}`, overflow: "hidden" }}>
-              <span style={{ display: "block", width: `${pct}%`, height: "100%", background: done === total ? C.ok : col, transition: "width .25s" }} />
-            </span>
-          </span>
-        ) : (
-          <span style={{ color: C.dim, fontSize: 12.5 }}>{hasGuide ? "Con guía docente" : "Material disponible"}</span>
-        ))}
+        {/* Acá vivían la BARRA DE AVANCE ("3 de 6 temas · 50% · ¡Completo!") y la
+            línea con el orbe que decía "Preguntale lo que quieras". Las dos se
+            fueron: la tarjeta es un ACCESO, no un tablero. El avance sigue vivo
+            donde se puede hacer algo con él —adentro del camino, que lo muestra
+            grande y arriba de todo— y en el panel del docente.
 
+            `margin-top: auto` en lo que sigue, para que las chapas queden al pie
+            del cuerpo y todas las tarjetas de la fila las alineen a la misma
+            altura aunque el título ocupe una o dos líneas. */}
         {!off && (weak > 0 || st?.lastScore) && (
-          <span style={{ display: "flex", flexWrap: "wrap", gap: 6, position: "relative" }}>
+          <span style={{ marginTop: "auto", paddingTop: 4, display: "flex", flexWrap: "wrap", gap: 6, position: "relative" }}>
             {weak > 0 && (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: C.badBg, color: C.badTx, border: `1.5px solid ${C.badTx}`, borderRadius: 999, padding: "2px 8px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
                 <IconAlert size={11} /> {weak} para reforzar
@@ -547,11 +622,11 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
         )}
       </button>
 
-      {/* LAS TRES ACCIONES. Con etiqueta y no solo el ícono: un chico de 13 no
-          tiene por qué saber que un portapapeles significa "prueba". */}
+      {/* LOS DOS ACCESOS RESTANTES. Con etiqueta y no solo el ícono: un chico de
+          13 no tiene por qué saber que un portapapeles significa "prueba". */}
       {!off && (
         <div style={{ display: "flex", flexShrink: 0, borderTop: `1.5px solid ${C.border}`, position: "relative" }}>
-          {ACTIVIDADES.map((a, i) => {
+          {ACCIONES.map((a, i) => {
             const apagada = a.clave === "camino" && sinCamino;
             return (
               <button key={a.clave} onClick={() => !apagada && onAbrir(a.clave)} disabled={apagada}
@@ -576,46 +651,27 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
   );
 }
 
-export function WeakCard({ s, w, onClick }: { s: Subject; w: WeakTopic; onClick: () => void }) {
-  const col = subjectColor(s);
-  return (
-    <button onClick={onClick}
-      style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", width: "100%", background: C.panel, color: C.text, border: `2px solid ${C.ink}`, borderRadius: 14, padding: "12px 14px", cursor: "pointer", transition: "transform .13s, box-shadow .13s" }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = "translate(-2px,-2px)"; e.currentTarget.style.boxShadow = HARD(col); }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
-      <span style={{ width: 10, height: 34, flexShrink: 0, borderRadius: 4, background: col }} />
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 700, fontSize: 15, lineHeight: 1.3 }}>{w.topic}</span>
-        {/* Ya NO dice de qué materia es: la tarjeta vive adentro del grupo de su
-            materia, y repetir "Biología" en cada renglón de la lista de Biología
-            es ruido que empuja lo único que cambia —cuántas veces lo falló— a
-            competir con lo que ya se sabe. */}
-        <span style={{ display: "block", color: C.dim, fontSize: 12.5, marginTop: 2 }}>
-          {w.misses > 1 ? `Lo fallaste ${w.misses} veces` : "Lo fallaste una vez"}
-        </span>
-      </span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0, background: CTA, color: "#fff", border: `2px solid ${C.ink}`, borderRadius: 999, padding: "6px 12px", fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5 }}>
-        Reforzar <IconArrow size={13} />
-      </span>
-    </button>
-  );
-}
+// Acá vivía WeakCard, el renglón de un tema fallado. Murió con el rediseño de
+// /reforzar: los temas ahora viven ADENTRO de la tarjeta de su materia, y el
+// renglón entero es el botón — una chapa "Reforzar" adentro de otro botón
+// invitaba a apuntarle a la chapa.
 
 // --- Simulación de prueba (mundo Panel · bloques) ---
 
 /**
- * ELEGIR LA VOZ DEL TUTOR.
+ * CONFIGURACIÓN — lo único que el alumno puede ajustar de su cuenta.
  *
- * Con un botón de PROBAR adentro: elegir una voz sin escucharla es elegir a
- * ciegas, y salir del panel, entrar a una materia y abrir el chat solo para oír
- * una frase hace que nadie las compare nunca. Acá se prueban las cinco seguidas.
+ * Junta lo que antes eran dos renglones sueltos al pie del nav ("Voz del tutor"
+ * y "Mi curso"): las dos son preferencias, y el pie del nav tiene que competir
+ * lo menos posible con las pantallas de arriba, que son a lo que el chico viene.
  *
- * La elección vive en el navegador (localStorage) y viaja en cada pedido de
- * audio. No va al perfil del alumno a propósito: es preferencia de ESTE aparato
- * —los parlantes del computador de la casa no son los del teléfono— y no algo
- * que valga la pena migrar en la base.
+ * El AVATAR no está acá: vive en el perfil, con los logros, porque no es un
+ * ajuste — es su cara. Y no hay nada más para configurar a propósito: las
+ * cuentas son anónimas y no hay datos que editar.
  */
-function ElegirVoz({ onCerrar }: { onCerrar: () => void }) {
+function Configuracion({ grade, onEditarCurso, onCerrar }: {
+  grade: string; onEditarCurso: () => void; onCerrar: () => void;
+}) {
   const [elegida, setElegida] = useState<string>(VOZ_POR_DEFECTO);
   const [probando, setProbando] = useState<string | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
@@ -643,9 +699,13 @@ function ElegirVoz({ onCerrar }: { onCerrar: () => void }) {
     audio.current?.pause();
     setProbando(v.id);
     try {
+      // `probar` y no `voz`: el servidor usa la voz del PERFIL salvo que le
+      // pidan explícitamente una prueba. El campo se llamaba `voz` y la ruta lo
+      // ignoraba en silencio desde que la voz se mudó al perfil — los cinco
+      // botones sonaban con la misma, que es lo contrario de un probador.
       const r = await fetch("/api/voice/tts", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: MUESTRA, voz: v.id }),
+        body: JSON.stringify({ text: MUESTRA, probar: v.id }),
       });
       if (!r.ok) return;
       const a = new Audio(URL.createObjectURL(await r.blob()));
@@ -656,13 +716,48 @@ function ElegirVoz({ onCerrar }: { onCerrar: () => void }) {
     finally { setProbando((p) => (p === v.id ? null : p)); }
   }
 
-  return (
+  /**
+   * ⚠️ VA EN UN PORTAL AL `body`, y no donde está escrito.
+   *
+   * Este modal lo abre el nav, que vive adentro de `.pnl-aside` — y ese aside es
+   * `position: sticky`. Sticky CREA UN CONTEXTO DE APILAMIENTO aunque su
+   * `z-index` sea `auto`, así que el `z-index: 60` de acá abajo solo competía
+   * DENTRO del aside: las tarjetas de materia, que vienen después en el DOM y
+   * son `position: relative`, le pintaban encima. Se veía el modal con Biología
+   * y Matemática flotando arriba, ilegible.
+   *
+   * Subir el z-index no arregla nada —el techo lo pone el ancestro— y sacarle el
+   * sticky al nav costaría la barra fija. El portal lo saca del contexto: un
+   * modal no tiene por qué depender de en qué rincón del árbol lo montaron.
+   */
+  const modal = (
     <div onClick={onCerrar}
       style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(25,22,33,.45)", display: "grid", placeItems: "center", padding: 18 }}>
       <div onClick={(e) => e.stopPropagation()}
         style={{ background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 18, boxShadow: HARD(C.ink), padding: 20, width: "min(520px, 100%)", maxHeight: "86dvh", overflowY: "auto" }}>
-        <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 19 }}>La voz del tutor</div>
-        <div style={{ color: C.dim, fontSize: 13.5, marginTop: 3, marginBottom: 16, lineHeight: 1.45 }}>
+        <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 19, marginBottom: 18 }}>Configuración</div>
+
+        {/* TU CURSO. Es lo que decide qué material se le sirve, así que va
+            primero y dice en qué curso está — cambiarlo a ciegas desde un
+            renglón que solo decía "Mi curso" era fácil de hacer sin querer. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: C.panel2, border: `1.5px solid ${C.border}`, borderRadius: 13, padding: "12px 14px", marginBottom: 20 }}>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 700, fontSize: 14.5 }}>Tu curso</span>
+            <span style={{ display: "block", color: C.dim, fontSize: 12.5, marginTop: 1 }}>
+              Estás en {gradeLabel(grade)}
+            </span>
+          </span>
+          <button onClick={onEditarCurso}
+            style={{ flexShrink: 0, background: C.panel, color: C.text, border: `1.5px solid ${C.ink}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5 }}>
+            Cambiar
+          </button>
+        </div>
+
+        {/* LA VOZ, con su botón de PROBAR: elegir una voz sin escucharla es
+            elegir a ciegas, y entrar a una materia solo para oír una frase hace
+            que nadie las compare nunca. Acá se prueban las cinco seguidas. */}
+        <div style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 14.5 }}>La voz del tutor</div>
+        <div style={{ color: C.dim, fontSize: 12.5, marginTop: 2, marginBottom: 12, lineHeight: 1.45 }}>
           Probá y elegí. El tiempo es lo que tarda en empezar a hablar.
         </div>
 
@@ -697,6 +792,11 @@ function ElegirVoz({ onCerrar }: { onCerrar: () => void }) {
       </div>
     </div>
   );
+
+  // El guard es por el prerender: `document` no existe del lado del servidor.
+  // En la práctica este componente solo se monta tras un clic, pero un `null`
+  // barato vale más que confiar en que eso no cambie nunca.
+  return typeof document === "undefined" ? null : createPortal(modal, document.body);
 }
 
 /** Frase de prueba: la que diría el tutor de verdad, con pregunta al final. */

@@ -9,6 +9,8 @@ export interface MeResponse {
   /** null hasta que el alumno elige su curso la primera vez. */
   profile: {
     grade: string | null; ttsOn: boolean; ttsVoice: string | null;
+    /** Id del catálogo de avatares. null = el orbe de Aurora. */
+    avatar: string | null;
     /** Siempre viene, con los valores clásicos si el alumno nunca lo tocó: el
      *  reloj del panel tiene que poder dibujarse sin preguntar dos veces. */
     pomodoro: PomodoroConfig;
@@ -30,11 +32,11 @@ export async function GET(req: Request) {
   const [u] = await sql<{ username: string | null; role: string }[]>`
     select username, role from users where id = ${auth.userId}::uuid`;
   const [p] = await sql<{
-    grade: string | null; tts_on: boolean; tts_voice: string | null;
+    grade: string | null; tts_on: boolean; tts_voice: string | null; avatar: string | null;
     pomo_estudio_min: number; pomo_descanso_min: number;
     pomo_hora: string | null; pomo_dias: string; pomo_last_at: Date | null;
   }[]>`
-    select grade, tts_on, tts_voice,
+    select grade, tts_on, tts_voice, avatar,
            pomo_estudio_min, pomo_descanso_min, pomo_hora, pomo_dias, pomo_last_at
     from student_profiles where user_id = ${auth.userId}::uuid`;
 
@@ -46,6 +48,7 @@ export async function GET(req: Request) {
     user: { id: auth.userId, username: u?.username ?? "", role: u?.role ?? "student" },
     profile: {
       grade: p?.grade ?? null, ttsOn: p?.tts_on ?? false, ttsVoice: p?.tts_voice ?? null,
+      avatar: p?.avatar ?? null,
       // Sin fila de perfil (alumno que todavía no eligió curso) el reloj sale
       // con los valores clásicos, no vacío: la pantalla no tiene que saber
       // distinguir "no configuró" de "no existe".

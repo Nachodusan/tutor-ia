@@ -12,11 +12,18 @@ Tutor de estudio para el material oficial del alumno. **Facilitador del aprendiz
 conceptual**: explica los temas con sus propias palabras y ejemplos, **cita la fuente o
 lo dice**, verifica comprensión y **se adapta** si el alumno no entiende.
 
-**NO resuelve ejercicios ni matemática/cálculo** — FUERA DE SCOPE. Medido en su momento
-(`exp5`, con el 7B local): lo tenía topado (grading ~78%, math ~75%) y el scaffolding no
-lo rescata. SymPy quedó solo como verificación opcional (`grading.ts`/`sympy_check.py`
-parkeados). El script `exp5` se borró junto con el proveedor local; la decisión de scope
-sigue en pie.
+**SÍ resuelve ejercicios, paso a paso y terminando la cuenta** (desde 2026-08-16).
+Antes no: `exp5` lo había medido topado con el **7B local** (grading ~78%, math ~75%) y el
+scaffolding no lo rescataba. Esa medición murió con el proveedor local — hoy corre
+Qwen3.6-35B, que resuelve la batería de la escuela bien y verificada. La regla vieja
+sobrevivía en la primera línea de `TEACHING_SYSTEM` ("No resuelves ejercicios por él ni
+haces cálculos") y producía la falla que el alumno vive como "no me sirve": el tutor
+planteaba el método y **se guardaba el resultado** (en `x²-5x+6=0`, 2 de 2 corridas
+recitaban la fórmula general y nunca entregaban x=2 y x=3).
+
+⚠️ **Falta la verificación.** El modelo resuelve bien la batería probada, pero nada
+comprueba la aritmética: si se equivoca, el error sale con el mismo tono seguro. SymPy
+sigue parkeado (`grading.ts`/`sympy_check.py`) y es el próximo paso (opción C).
 
 **Arquitectura clave — RAG de DOBLE CORPUS TIPADO:** el material viene en pares por
 materia/grado: **Texto del Estudiante** (`corpus_role='content'`, el "qué" citable) +
@@ -329,14 +336,23 @@ supuesto. Se abre cuando lo revise alguien que sepa de desarrollo infantil.
   van últimos: las dos primeras trabajan sobre el libro del curso —lo que el alumno tiene
   siempre—, esta arranca cuando él trae algo suyo.
 - ⚠️ **`/apuntes` es una MAQUETA declarada**, no una pantalla a medio conectar: escanear la
-  página y las tres salidas (mapa conceptual · fichas de memoria · **entrenar con la IA**)
-  están dibujadas, con chapa "Maqueta" arriba y un aviso al tocar los botones. Se hizo así a
-  propósito: una pantalla que se ve terminada y calla que es un dibujo termina con un chico
-  subiendo la foto de su cuaderno y esperando un mapa que no va a llegar. Las vistas previas
-  son dibujos (SVG/CSS), no datos de nadie. **Lo que falta no es "llamar a una API que ya
-  está"**: el corpus no admite material del alumno —la ingesta es del libro del colegio—, así
-  que esto necesita tubería nueva (foto → OCR → chunks propios). `/api/plan/custom` arma
-  planes a medida, pero sobre el material del colegio, no sobre el cuaderno.
+  página y las CUATRO salidas (mapa conceptual · fichas de memoria · **entrenar con la IA** ·
+  **grabación de repaso**) están dibujadas, con chapa "Maqueta" arriba y un aviso al tocar los
+  botones. Se hizo así a propósito: una pantalla que se ve terminada y calla que es un dibujo
+  termina con un chico subiendo la foto de su cuaderno y esperando un mapa que no va a llegar.
+  Las vistas previas son dibujos (SVG/CSS), no datos de nadie. **Lo que falta no es "llamar a
+  una API que ya está"**: el corpus no admite material del alumno —la ingesta es del libro del
+  colegio—, así que esto necesita tubería nueva (foto → OCR → chunks propios).
+  `/api/plan/custom` arma planes a medida, pero sobre el material del colegio, no sobre el
+  cuaderno.
+- La **grabación de repaso** es la única de las cuatro que no pide ojos (se escucha yendo al
+  colegio), y la que menos infraestructura nueva necesita: el TTS ya existe y ya tiene catálogo
+  de voces (`/api/voice/tts`, `voces.ts`). Lo que falta es el GUION —un resumen hablado, que no
+  es el texto del apunte leído en voz alta— y guardar el audio en algún lado. La maqueta muestra
+  la duración a propósito: en audio el largo es la primera pregunta, y un repaso de 40 minutos
+  no se escucha nunca.
+- Las tarjetas van en **4 o 2 columnas, nunca 3**: con `auto-fit` el ancho del panel da para
+  tres y deja la cuarta huérfana abajo, que se lee como "esta última es otra cosa".
 - **`/reforzar` es una PANTALLA propia** (`app/reforzar/page.tsx`), no una sección al pie del
   panel: mezclada ahí abajo, el que venía a reforzar tenía que pasar por arriba de todo lo
   demás para llegar. Sin ruta de API nueva — los temas débiles ya vienen en `/api/progress`.
@@ -344,19 +360,56 @@ supuesto. Se abre cuando lo revise alguien que sepa de desarrollo infantil.
   tope de 6: Biología y Matemática se intercalaban, así que para saber qué pasaba en una materia
   había que saltear renglones ajenos, y el tope escondía justo lo que el alumno entra a buscar.
   Se murió `REVIEW_MAX`.
-- Están **TODAS las materias del curso**, no solo las que tienen algo fallado. Con la lista
-  filtrada, el chico que rindió una sola prueba veía una sola materia y no podía distinguir
-  "las otras están bien" de "el tutor no las conoce". Las que no tienen nada dicen **"Al día"**,
-  que es una respuesta. Lo fallado en materias de OTRO curso no se tira: va aparte, bajo "De
-  otros cursos", en vez de desaparecer sin aviso.
-- Es un **acordeón, una materia abierta por vez**, y abre sola la primera que tiene temas. Todo
-  desplegado son treinta renglones iguales; todo cerrado, una pantalla muda. Solo se abre lo que
-  tiene algo adentro — un acordeón que se despliega vacío enseña que abrir no sirve.
-- Arriba, el resumen en número grande (`🎯 9 temas para afirmar`). El consejo "empezá por la de
-  más arriba" **solo aparece cuando es cierto**: si lo único fallado está en otro curso, la de
-  más arriba está al día y el consejo manda al chico al lugar equivocado.
+- **La pantalla contesta cuatro preguntas, en orden** (rediseño 2026-08-15, porque la versión
+  acordeón "estaba muy fea y mal organizada" y un chico se perdía): *¿cuánto me falta?* → el
+  número grande arriba; *¿por dónde empiezo?* → UNA tarjeta con el tema más fallado y su botón;
+  *¿qué más?* → el resto agrupado en tarjetas por materia, con la cabecera pintada de su color;
+  *¿y lo que no aparece?* → las materias al día, en chips verdes al pie.
+- **Murió el acordeón.** Las cinco materias se veían iguales —cuatro decían "Al día" y no se
+  abrían, una sí— y había que adivinar dónde tocar; además escondía justo lo que el chico venía
+  a buscar. Ahora no hay nada plegado. El renglón ENTERO es el botón: una chapa "Reforzar"
+  adentro de otro botón invita a apuntarle a la chapa (con eso murió `WeakCard`).
+- Están **TODAS las materias del curso**: las que no tienen nada aparecen como chips "al día",
+  porque si la materia desaparece no se puede distinguir "está bien" de "el tutor no la conoce"
+  — pero como chip y no como fila, que no compiten con lo que sí hay que hacer.
+- ⚠️ **Dos bugs del probador de voces (2026-08-15), los dos de la misma familia: algo que se
+  ve pero no funciona.**
+  1. **Los cinco botones "Probar" sonaban con la MISMA voz** — la guardada en el perfil. La
+     ruta dejó de leer `voz` del cuerpo cuando la voz se mudó al perfil (bien: así ninguna
+     cadena del navegador llega a un argumento de `say` ni a una URL de inferencia), pero el
+     cliente siguió mandando el campo y nadie se enteró de que lo ignoraban. Un probador que
+     suena siempre igual es peor que ninguno: hace elegir a ciegas creyendo que no. Ahora la
+     ruta acepta `probar`, que es una **clave en la lista blanca** (`buscarVoz`), no un valor:
+     lo desconocido cae en la voz por defecto y no toca el perfil. Verificado con ids basura
+     (`"; touch /tmp/pwned; #`) — caen en la de defecto y nada llega al shell.
+  2. **El modal de voces quedaba DEBAJO de las tarjetas de materia.** Lo abre el nav, que vive
+     dentro de `.pnl-aside`, y ese aside es `position: sticky` — **sticky crea un contexto de
+     apilamiento aunque su `z-index` sea `auto`**, así que el `z-index: 60` del modal solo
+     competía adentro del aside y las tarjetas (posteriores en el DOM y `position: relative`)
+     le pintaban encima. Subir el z-index no arregla nada: el techo lo pone el ancestro. Va en
+     un **portal al `body`**. Regla para el próximo modal que cuelgue del nav: portal, o se
+     repite.
+     ⚠️ Ojo al medir esto: el TTS remoto **no es determinista** —dos llamadas idénticas
+     devuelven bytes distintos—, así que comparar md5 no prueba nada. Lo que sí distingue es
+     el MOTOR: las voces del catálogo devuelven `audio/mpeg` y la del sistema, WAV.
+- ⚠️ **EL NOMBRE LLEVA SU CURSO CUANDO NO ES EL DEL ALUMNO.** `subjectLabel()` le corta el curso
+  al nombre ("Biología 1º Medio" → "Biología"), así que un alumno de 2º Medio veía **"Biología ·
+  Al día"** arriba (la suya) y **"Biología · 9 temas"** abajo (la de 1º, donde había rendido):
+  la misma palabra diciendo dos cosas opuestas en la misma pantalla. Son dos materias distintas
+  y ahora se ve. Por lo mismo el resumen ya NO dice "y las otras N están al día": las que tienen
+  temas pueden ser de otro curso, y esa suma no cerraba con ninguna lista de la pantalla.
 - ⚠️ El contador del nav va como **hermano** de la etiqueta, no adentro del `span` del texto:
   ahí adentro su `margin-left: auto` no hacía nada y se leía "Reforzar(9)", pegado.
+- **El pie del nav son DOS renglones: `Configuración` y `Salir`** (2026-08-16). Antes eran tres
+  —"Voz del tutor", "Mi curso", "Salir"— y los dos primeros son la misma cosa: preferencias de
+  la cuenta. Ahora viven adentro de un modal (`Configuracion`), con el curso arriba diciendo en
+  cuál está (cambiarlo a ciegas desde un renglón que solo decía "Mi curso" era fácil de hacer
+  sin querer) y la voz con su botón de Probar debajo. El AVATAR no está ahí: vive en el perfil,
+  con los logros, porque no es un ajuste — es su cara.
+- **"Salir" usa una PUERTA** (`IconPuerta`), no las dos flechas en círculo (`IconSwap`). Ese
+  ícono venía de cuando la acción era "cambiar de alumno" en una sala compartida, y se leía
+  como "recargar" o "intercambiar". `IconSwap` sigue vivo en la pantalla de curso cerrado, que
+  sí ofrece cambiar.
 - Con el nav en dos pantallas aparecieron tres piezas compartidas en `panel.tsx`: `PanelShell`
   (el marco), `PanelNav` (que sabe sola dónde está parada con `usePathname`, así que sumar una
   pantalla no obliga a pasarle un `activo` desde cada una) y `agruparReforzar`. La carga de
@@ -364,6 +417,106 @@ supuesto. Se abre cuando lo revise alguien que sepa de desarrollo infantil.
   la copia se olvide del 401 y deje a alguien sin sesión mirando una pantalla vacía.
 - "Mi curso" desde otra pantalla entra por `/?editar=1` (el panel lo lee del `location` y
   limpia la URL: si queda, el "atrás" del navegador vuelve a preguntarle el curso).
+
+**TECLADO DE MATEMÁTICA en el chat (2026-08-16)** (`app/teclado-mate.tsx`) — un botón de
+calculadora **a la izquierda del campo** (es parte de escribir, no de mandar), **solo en
+Matemática** (`esMatematica()`, por nombre y no por id: hay una materia de matemática por
+curso). Adentro: el visor y una grilla de símbolos (√, x², xⁿ, a/b, π, ÷, ≤…).
+- **VISOR arriba de las pestañas**, estilo Mathway: dibuja la expresión con los exponentes en
+  alto (`x^2` → x²) y el cursor a la vista, para revisar los paréntesis antes de mandar. Es
+  DIBUJO, no interpretación: no evalúa ni reordena, y el texto que viaja es el que se ve.
+- **Se puede corregir**: todo se inserta EN EL CURSOR, no al final, así que tocar entre dos
+  caracteres del campo y seguir escribiendo alcanza para cambiar un `x^3` por `x^2` sin borrar
+  lo de atrás. Hubo una fila de controles (◀ ▶ ⌫ · Borrar todo) y se sacó a pedido: duplicaba
+  lo que el teclado del aparato ya hace. ⚠️ En el teléfono eso implica abrir el teclado nativo
+  para borrar, que puede tapar el panel — si molesta, el candidato a volver es solo el ⌫.
+- Se sacó también una pestaña "Cómo preguntar" con arranques de pregunta: escribía la oración
+  por el chico y convertía un teclado en un formulario.
+- ⚠️ El cursor se aplica en un `useEffect` tras el render, con una marca (`cursorPendiente`).
+  Con `requestAnimationFrame` desde el handler el rAF podía correr ANTES de que React
+  confirmara el value: el `setSelectionRange` caía sobre el texto viejo y el navegador mandaba
+  el cursor al final — tocabas √ y quedaba FUERA del paréntesis, justo lo contrario de lo que
+  la tecla quiere. Se aplica solo lo que pidió el teclado, para no pisar al chico cuando
+  selecciona texto con el mouse.
+- ⚠️ **NO CALCULA, y hay que mantenerlo así — pero por UNA razón, no dos.** No tiene "=" que
+  resuelva ni muestra resultado. La razón vieja ("el tutor no resuelve cálculo, es scope
+  declarado") **caducó**: desde 2026-08-16 el tutor sí resuelve (§1). La que queda es la
+  buena: un número que aparece solo en el visor, sin procedimiento y sin nadie que lo
+  explique, es justo lo que el chico no necesita — el resultado se lo da el TUTOR al final de
+  una explicación. El teclado ataca el problema de ENTRADA —escribir matemática en un teléfono
+  es un castigo y el retrieval recibe "raiz de x al cuadrado mas 9"—, no el de resolución.
+
+**REPASO DE HOY — /reforzar es una SESIÓN, no un inventario (2026-08-16)**
+(`schema_repaso.sql`, `lib/repaso.ts`, `/api/reforzar/hoy`, `app/reforzar/page.tsx`)
+- Tres temas por día en vez de la deuda entera. El diseño salió de cuatro propuestas y se
+  resolvió con seis agentes en paralelo; tres de sus respuestas corrigieron la versión inicial.
+- ⚠️ **PREREQUISITO QUE ERA UN BUG SERIO.** `/api/lesson/quiz/submit` sacaba el tema de refuerzo
+  solo con `wrong.length === 0`, o sea PUNTAJE PERFECTO — y el chequeo **no son 3 preguntas sino
+  10** (el comentario que decía tres quedó viejo). Un 9 de 10 dejaba el tema en la lista Y le
+  sumaba un `misses`: repasar y casi acertar EMPUJABA el tema arriba del ranking. Encima ese
+  mismo 9 de 10 pintaba el nodo VERDE en el camino — el tema quedaba aprobado y "para reforzar"
+  a la vez. Ahora usa `aprobado()` (dos tercios), igual que `/api/test/submit`. Verificado de
+  punta a punta: 9/10 cierra el tema.
+- **El medidor cuenta lo INTENTADO, no lo aprobado** (`done_at` vs `passed`, dos columnas). Si
+  contara aciertos, el chico que estudia media hora y no aprueba mira "0 de 3" — el "estudié y
+  no me sirvió" que la pantalla existe para matar. Verificado: con un tema aprobado y otro
+  fallado dice **2 de 3**.
+- **Los tres huecos, con criterios distintos**: CERRABLE (menos fallos) · TRABADO (más fallos) ·
+  FRESCO (más reciente), tope de 2 por materia. ⚠️ NO es "los tres más fallados": medido, 25 de
+  38 filas de `student_weak_topics` tienen 1 solo fallo y todos los temas de cada alumno nacen
+  la misma tarde — ordenar por `misses`/`last_at` es azar disfrazado de prioridad.
+- **Se guarda, no se deriva**: aprobar BORRA la fila de `student_weak_topics`, así que "cuáles
+  eran los tres de hoy" sería irreconstruible apenas cierra el primero y el medidor diría
+  "1 de 3" para siempre. El día va en zona `America/Santiago`: en UTC rotaría a las 21:00 de
+  Chile, en pleno horario de estudio.
+- **Solo se ofrecen temas CERRABLES**: el candidato tiene que existir en el plan actual. Al
+  regenerar el camino cambian las claves y quedan temas huérfanos que no se pueden cerrar ni
+  haciendo todo bien (2 de 9 en esta base, y uno era el MÁS fallado). Siguen visibles en "ver
+  todo lo que te falta", donde el chat igual los explica.
+- Sin rachas, sin días seguidos, y **el contador de fallos no se le muestra al chico**: se usa
+  para elegir, no para exhibir.
+
+**LA TARJETA DE MATERIA: TRES ACCESOS Y NADA MÁS (2026-08-15)** — el cuerpo abre el **chat**,
+y abajo quedan **Camino** y **Prueba**. Antes eran tres botones al pie *más* el cuerpo llevando
+al camino: el camino tenía dos puertas y preguntar una, escondida entre las tres chiquitas.
+Preguntar es lo más frecuente (una duda), así que se lleva el gesto más grande.
+- Se fueron de la tarjeta la **barra de avance** ("3 de 6 temas · 50% · ¡Completo!") y la línea
+  con el orbe que decía "Preguntale lo que quieras". La tarjeta es un ACCESO, no un tablero: el
+  avance sigue donde se puede hacer algo con él —adentro del camino, grande y arriba de todo— y
+  en el panel del docente. Quedan el nombre, las chapas que piden acción ("2 para reforzar", la
+  última nota) y los dos botones.
+- `planTotal` se sigue leyendo aunque ya no se dibuje: es lo que apaga "Camino" cuando el libro
+  no dio un índice legible.
+- Las chapas van con `margin-top: auto`, así se alinean al pie del cuerpo y los botones de toda
+  la fila quedan a la misma altura aunque un título ocupe dos líneas.
+⚠️ El encabezado DENTRO de una materia (`materia/[id]/layout.tsx`) conserva las tres
+actividades: ahí sí hace falta, o desde el camino no habría forma de llegar al chat.
+
+**PERFIL DEL ALUMNO** (`/perfil`, `schema_avatar.sql`, `avatares.ts`, `logros.ts`) — se entra
+tocando la identidad del nav, y tiene DOS cosas: sus logros y su avatar.
+- **El avatar es lo único personalizable de la cuenta, y eso es el diseño, no una carencia.**
+  Las cuentas son de menores y son anónimas: no hay nombre, no hay foto, y no las va a haber
+  (una foto es el dato personal más obvio que existe). Pero una cuenta que no se puede tocar en
+  nada tampoco se siente propia a los 12 años. Un bicho elegido a mano alcanza.
+- Se guarda un **ID DEL CATÁLOGO**, igual que las voces y por lo mismo: es la lista blanca. Lo
+  que no está en `avatares.ts` se ignora en silencio (probado con `<img src=x onerror=…>`, un
+  emoji fuera del catálogo y un id inventado: los tres dejan el avatar anterior). Sin caras
+  humanas ni banderas en el catálogo — nada que se parezca a decir quién sos o de dónde.
+- **Los logros salen de datos REALES** (`/api/progress` + el perfil), no de una tabla nueva ni
+  de un mockup: lecciones hechas, materia al 50%/100%, primera prueba, prueba perfecta, sin
+  pendientes y primer bloque de reloj. Si mañana se quiere una racha de días, hay que EMPEZAR a
+  guardar los días — un trofeo que se desbloquea solo, o que nunca se desbloquea porque nadie
+  mide lo que promete, enseña que los trofeos no significan nada. Los que faltan se muestran
+  apagados y con la condición escrita: el que no se ve no motiva a nadie.
+  ⚠️ "Sin pendientes" exige **una prueba rendida** además de cero temas débiles; sin eso sería
+  un trofeo por no haber hecho nunca nada.
+- Las **lecciones hechas** del encabezado se cuentan sobre TODAS las materias, igual que los
+  logros. Contándolas solo del curso, un alumno que rindió en otro curso veía "0 lecciones" al
+  lado de un "Primer paso ✓" ganado — dos números de la misma pantalla contradiciéndose.
+- ⚠️ **Cada cosa se dice UNA vez.** El nav (que es el botón al perfil) tiene el usuario y el
+  curso; el saludo del panel dejó de repetirlos y pasó a ser "¡Hola! 👋 · Tenés N materias para
+  estudiar". Antes decía "Hola, 7b-01 👋 / 2° Medio · 6 materias" con el nav mostrando "7b-01 /
+  2° Medio" tres centímetros a la izquierda.
 
 **RELOJ DE ESTUDIO / POMODORO** (`schema_pomodoro.sql`, `app/pomodoro.tsx`,
 `lib/pomodoro.ts`) — el alumno elige cuánto estudia de corrido, cuánto descansa y a qué

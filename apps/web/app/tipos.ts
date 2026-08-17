@@ -16,8 +16,10 @@ export interface Msg { role: "user" | "assistant"; content: string; citations?: 
  *  no hay forma de saber que existe) pero no se puede abrir. */
 export interface Subject { id: string; name: string; grade: string | null; subject_area: string | null; content_chunks: string; pedagogy_chunks: string; disabled?: boolean }
 /** El perfil NO tiene nombre: las cuentas son anónimas (los usuarios son
- *  menores). El username lo devuelve /api/me y solo sirve para saludar. */
-export interface Profile { username: string; grade: string }
+ *  menores). El username lo devuelve /api/me y solo sirve para saludar.
+ *  `avatar` es un id del catálogo (`avatares.ts`), nunca una imagen: es lo
+ *  único que el alumno puede cambiar, y no dice quién es. */
+export interface Profile { username: string; grade: string; avatar?: string | null }
 /** `points` puede faltar: los planes cacheados antes de que existieran los
  *  puntos clave siguen siendo válidos y se muestran sin ellos. */
 export interface PlanItem { n: number; key: string; title: string; focus: string; points?: string[]; unit: number | null; lesson: number | null; p0: number | null; p1: number | null;

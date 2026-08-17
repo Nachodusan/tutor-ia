@@ -52,6 +52,10 @@ psql "$DB_URL" -f packages/db/schema_auth.sql
 # Reloj de estudio (pomodoro): columnas del perfil. Va DESPUÉS de schema_auth,
 # que es el que crea student_profiles.
 psql "$DB_URL" -f packages/db/schema_pomodoro.sql
+# El avatar del alumno: lo ÚNICO personalizable de una cuenta anónima.
+psql "$DB_URL" -f packages/db/schema_avatar.sql
+# "Repaso de hoy": la sesión diaria de refuerzo (tres temas por día).
+psql "$DB_URL" -f packages/db/schema_repaso.sql
 psql "$DB_URL" -f packages/db/seed.sql
 
 echo "==> 4/4 Listo. Ahora: pnpm install && pnpm dev"

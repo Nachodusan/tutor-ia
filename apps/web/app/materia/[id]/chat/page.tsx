@@ -15,21 +15,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Bubble, VozLuces, estadoVoz } from "../../../chat-ui";
-import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, subjectLabel } from "../../../ui";
+import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, IconCalculadora, subjectLabel } from "../../../ui";
+import { TecladoMate, esMatematica } from "../../../teclado-mate";
 import { traerMateria } from "../../../datos";
 import { turnoNuevo, turnoPaso, turnoTermino, interrupcionPaso, hayInterrupcion } from "../../../voz-turno";
+import { cleanTutorText } from "../../../limpiar-texto";
 import type { CallState, Msg, Subject } from "../../../tipos";
-
-function cleanTutorText(t: string): string {
-  return t
-    .replace(/\s*\((?:p[áa]gs?\.?|p\.)\s*\d+(?:\s*[-–—]\s*\d+)?\)/gi, "") // (pág. 8) (págs. 8-9)
-    .replace(/\bseg[úu]n\s+(el|tu|los|la|las)\s+(material|fragmento|apunte|texto|gu[íi]a)s?\b[,:]?\s*/gi, "")
-    .replace(/\(\s*\)/g, "")
-    .replace(/[ \t]{2,}/g, " ")
-    .replace(/[ \t]+([.,;:!?…])/g, "$1")
-    // re-capitaliza inicio de oración (por si quedó minúscula al sacar "Según…,")
-    .replace(/(^|[.!?¡¿]\s+)([a-záéíóúüñ])/g, (_m, p: string, c: string) => p + c.toUpperCase());
-}
 
 /**
  * Cuándo termina un turno y cuándo te están interrumpiendo: en `voz-turno.ts`,
@@ -48,6 +39,35 @@ export default function ChatPage() {
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [foco, setFoco] = useState(false);   // el compositor se ilumina al escribir
+  /** El teclado de símbolos. Solo existe en Matemática (ver `esMatematica`). */
+  const [teclado, setTeclado] = useState(false);
+  /** Dónde está el cursor dentro del campo. Lo necesita el visor del teclado
+   *  para dibujar la barrita y para insertar EN EL MEDIO, que es lo que permite
+   *  corregir un exponente sin borrar todo lo de atrás. */
+  const [cursor, setCursor] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  /** Dónde dejar el cursor DESPUÉS de que React pinte el valor nuevo.
+   *
+   * ⚠️ No alcanza con `requestAnimationFrame` desde el handler: el rAF puede
+   * correr ANTES de que React confirme el value, así que el `setSelectionRange`
+   * se aplicaba sobre el texto viejo y después el navegador mandaba el cursor
+   * al final. Resultado: tocabas √ y el cursor quedaba FUERA del paréntesis,
+   * justo lo que la tecla quería evitar.
+   *
+   * Es una marca y no un efecto sobre `cursor` a secas para no pisar al chico
+   * cuando selecciona texto con el mouse: solo se aplica lo que pidió el teclado. */
+  const cursorPendiente = useRef<number | null>(null);
+  const mate = esMatematica(subject?.name);
+
+  useEffect(() => {
+    const pos = cursorPendiente.current;
+    if (pos == null) return;
+    cursorPendiente.current = null;
+    const el = inputRef.current;
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(pos, pos);
+  }, [question]);
   const sessionRef = useRef<string | null>(null);
   const messagesRef = useRef<Msg[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -434,18 +454,58 @@ export default function ChatPage() {
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "0 16px 20px", pointerEvents: "none" }}>
         <div aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, top: -48, background: `linear-gradient(to top, ${C.bg} 58%, rgba(255,255,255,0))` }} />
         <div style={{ position: "relative", maxWidth: 720, margin: "0 auto", pointerEvents: "auto" }}>
+          {/* EL TECLADO DE MATEMÁTICA, arriba del compositor. Se abre desde el
+              botón de la calculadora y solo existe en esa materia: en Lengua un
+              teclado de símbolos es ruido. */}
+          {teclado && callState === "idle" && (
+            <TecladoMate
+              valor={question} cursor={cursor}
+              onCambiar={(texto, pos) => {
+                setCursor(pos);
+                cursorPendiente.current = pos;
+                if (texto === question) {
+                  // Mover el cursor sin tocar el texto (las flechas): no hay
+                  // re-render por `question`, así que el efecto no corre y hay
+                  // que aplicarlo acá.
+                  cursorPendiente.current = null;
+                  inputRef.current?.focus();
+                  inputRef.current?.setSelectionRange(pos, pos);
+                }
+                setQuestion(texto);
+              }}
+              onCerrar={() => setTeclado(false)}
+            />
+          )}
           <div style={{ display: "flex", gap: 8, alignItems: "center", background: C.panel, border: `1px solid ${foco ? C.accentSoft : C.border}`, borderRadius: 27, padding: 7, boxShadow: foco ? `${FLOAT}, 0 0 0 3px rgba(108,92,231,.14)` : FLOAT, transition: "border-color .15s, box-shadow .15s" }}>
             {/* Durante la llamada el compositor no escribe: dice cómo salir. Si
                 se dejara el campo, se podría mandar una pregunta escrita en el
                 medio del turno de voz y las dos respuestas se pisarían. */}
             {callState === "idle" ? (
               <>
+                {/* LA CALCULADORA, a la IZQUIERDA del campo y solo en
+                    Matemática: es parte de escribir, no de mandar. Del lado de
+                    la flecha se leía como una acción de envío más, y quedaba
+                    peleando con los dos botones que sí terminan el mensaje. */}
+                {mate && (
+                  <button onClick={() => setTeclado((v) => !v)}
+                    title={teclado ? "Cerrar el teclado" : "Teclado de matemática"}
+                    aria-pressed={teclado}
+                    style={{ flexShrink: 0, marginLeft: 3, width: 40, height: 40, display: "grid", placeItems: "center", borderRadius: "50%", border: teclado ? "none" : `1.5px solid ${C.border}`, background: teclado ? "rgba(43,68,255,.12)" : C.panel, color: teclado ? C.accent : C.dim, cursor: "pointer", transition: "background .15s, color .15s" }}>
+                    <IconCalculadora size={19} />
+                  </button>
+                )}
                 <input
-                  value={question} onChange={(e) => setQuestion(e.target.value)}
+                  ref={inputRef}
+                  value={question}
+                  onChange={(e) => { setQuestion(e.target.value); setCursor(e.target.selectionStart ?? e.target.value.length); }}
+                  // El visor del teclado dibuja el cursor donde está de verdad,
+                  // así que hay que seguirlo también cuando lo mueve el chico
+                  // (flechas, clic, selección) y no solo cuando escribe.
+                  onSelect={(e) => setCursor((e.target as HTMLInputElement).selectionStart ?? 0)}
                   onFocus={() => setFoco(true)} onBlur={() => setFoco(false)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
-                  placeholder="¿Qué querés que te explique?"
-                  style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", borderRadius: 20, padding: "11px 8px 11px 16px", fontSize: 15.5, fontFamily: FONT.sans, color: C.text, outline: "none" }} />
+                  placeholder={mate ? "Escribí el ejercicio o preguntá" : "¿Qué querés que te explique?"}
+                  style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", borderRadius: 20, padding: mate ? "11px 8px" : "11px 8px 11px 16px", fontSize: 15.5, fontFamily: FONT.sans, color: C.text, outline: "none" }} />
                 <button onClick={() => void send()} disabled={loading || !question.trim()} title="Enviar"
                   style={{ flexShrink: 0, width: 42, height: 42, display: "grid", placeItems: "center", borderRadius: "50%", border: "none", background: loading || !question.trim() ? C.panel2 : CTA, color: loading || !question.trim() ? C.dim : "#fff", cursor: loading || !question.trim() ? "default" : "pointer", boxShadow: loading || !question.trim() ? "none" : "0 8px 18px -7px rgba(108,92,231,.75)", transition: "background .15s, box-shadow .15s" }}>
                   {loading ? <Dots /> : <IconSend size={18} />}

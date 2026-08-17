@@ -1,8 +1,9 @@
 # Tutor IA — facilitador de aprendizaje
 
-Un tutor que ayuda al estudiante a **comprender** los temas de su material
-oficial. No resuelve ejercicios ni hace cálculos por él: **explica conceptos con
-ejemplos, cita la fuente, verifica que entienda y se adapta** si no comprende.
+Un tutor que ayuda al estudiante a **aprender** con su material oficial: enseña
+**como enseña su libro** —con el mismo método y los mismos ejemplos—, **resuelve
+ejercicios paso a paso**, cita la fuente, verifica que entienda y **se adapta** si
+no comprende.
 
 - 🧠 **Facilitador conceptual** — explica el tema con analogías y ejemplos; **cita página/sección** o **se abstiene** si no está en el material.
 - 🔁 **Enseñanza adaptativa** — si el estudiante no entiende, **cambia de método** (otra explicación, otro ejemplo, otra actividad), no repite lo mismo.

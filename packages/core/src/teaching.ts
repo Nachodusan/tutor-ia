@@ -49,7 +49,14 @@ const TYPE_LABEL: Record<string, string> = {
   habilidad: "Habilidad a desarrollar",
   errores_frecuentes: "Errores frecuentes del alumno (anticipalos)",
   evaluacion: "Qué se evalúa en la prueba (foco de evaluación)",
-  solucionario: "Respuesta esperada (solucionario)",
+  // "Respuesta esperada" hacía que el modelo lo leyera como un anexo de
+  // respuestas —algo que mirar, no algo que usar— y el prompt encima le decía
+  // que la guía "no es contenido para afirmar". Con ese par, el solucionario
+  // llegaba a la ventana y no servía para nada: en una corrida el tutor tenía
+  // seis fragmentos del solucionario delante y contestó que el ejercicio no
+  // estaba en el material. Lo que el chico necesita de acá no es la respuesta:
+  // es el PROCEDIMIENTO con el que su libro la obtiene.
+  solucionario: "Ejercicio resuelto del libro (el MÉTODO que se usa acá — imitalo)",
 };
 
 /** Formatea el material citable (el "qué") como fragmentos numerados. */

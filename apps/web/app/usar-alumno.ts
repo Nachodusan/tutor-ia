@@ -21,6 +21,9 @@ export interface Alumno {
   subjects: Subject[];
   stats: Record<string, SubjectStats>;
   role: string;
+  /** ISO del último bloque de estudio que arrancó, o null. Lo usa el perfil
+   *  para el logro del reloj; el resto de las pantallas lo ignora. */
+  pomodoroLastAt: string | null;
 }
 
 export function useAlumno(): Alumno {
@@ -30,6 +33,7 @@ export function useAlumno(): Alumno {
   const [stats, setStats] = useState<Record<string, SubjectStats>>({});
   const [role, setRole] = useState("student");
   const [loaded, setLoaded] = useState(false);
+  const [pomodoroLastAt, setPomodoroLastAt] = useState<string | null>(null);
 
   useEffect(() => {
     void traerMaterias().then(setSubjects);
@@ -38,7 +42,14 @@ export function useAlumno(): Alumno {
       .then((j) => {
         if (!j) return;
         setRole(j.user?.role ?? "student");
-        if (j.profile?.grade) setProfile({ username: j.user?.username ?? "", grade: j.profile.grade });
+        setPomodoroLastAt(j.profile?.pomodoroLastAt ?? null);
+        if (j.profile?.grade) {
+          setProfile({
+            username: j.user?.username ?? "",
+            grade: j.profile.grade,
+            avatar: j.profile.avatar ?? null,
+          });
+        }
       })
       .catch(() => { /* sin red: la pantalla decide qué hacer con profile null */ })
       .finally(() => setLoaded(true));
@@ -52,7 +63,7 @@ export function useAlumno(): Alumno {
       .catch(() => { /* la pantalla muestra ceros */ });
   }, [subjects]);
 
-  return { loaded, profile, setProfile, subjects, stats, role };
+  return { loaded, profile, setProfile, subjects, stats, role, pomodoroLastAt };
 }
 
 /** Cerrar sesión. Devuelve siempre: si el servidor no contesta, igual se sale. */

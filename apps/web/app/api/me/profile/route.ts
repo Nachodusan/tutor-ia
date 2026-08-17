@@ -2,14 +2,18 @@ import { getSql } from "@tutor-ia/db";
 import { requireUser, unauthorized } from "@/lib/auth";
 import { cursoBloqueado, MENSAJE_CURSO_BLOQUEADO } from "@/lib/cursos";
 import { HORA_RE, limpiarDias, POMO_TOPES, type PomodoroConfig } from "@/lib/pomodoro";
+import { avatarValido } from "@/app/avatares";
 
 export const runtime = "nodejs";
 
 /**
- * PUT /api/me/profile — body: { grade?, ttsOn?, ttsVoice?, pomodoro?, pomodoroIniciado? }
+ * PUT /api/me/profile — body: { grade?, ttsOn?, ttsVoice?, pomodoro?,
+ *                               pomodoroIniciado?, avatar? }
  *
  * Reemplaza `saveProfile()` de localStorage. NO acepta un nombre: la columna no
- * existe y no debe volver a existir — las cuentas son anónimas por diseño.
+ * existe y no debe volver a existir — las cuentas son anónimas por diseño. El
+ * `avatar` es la única personalización que hay, y es un id del catálogo: un
+ * dibujito no dice quién sos, una foto sí.
  *
  * Tampoco acepta ya `priority`: el panel muestra TODAS las materias del curso
  * con el mismo peso, así que no hay nada que priorizar. Se dejó de aceptar en
@@ -27,6 +31,8 @@ export async function PUT(req: Request) {
     pomodoro?: Partial<PomodoroConfig>;
     /** El alumno acaba de arrancar un bloque: sella `pomo_last_at`. */
     pomodoroIniciado?: boolean;
+    /** Id del catálogo de avatares. Lo que no esté en el catálogo se ignora. */
+    avatar?: string | null;
   };
   const sql = getSql();
 
@@ -59,6 +65,14 @@ export async function PUT(req: Request) {
   }
   const dias = typeof p?.dias === "string" ? limpiarDias(p.dias) : null;
 
+  // EL AVATAR SE VALIDA CONTRA EL CATÁLOGO, no se guarda lo que venga. Lo que
+  // llega es una CLAVE de la lista blanca: sin eso, cualquiera podría dejar el
+  // texto que quisiera pintado en su fila del panel del docente. Un id
+  // desconocido se ignora en silencio —no es un error del alumno, es un cliente
+  // viejo— y `null` explícito vuelve al orbe de Aurora.
+  const tocaAvatar = "avatar" in body && (body.avatar === null || avatarValido(body.avatar));
+  const avatar = avatarValido(body.avatar) ? body.avatar : null;
+
   // CADA CAMPO SE ACTUALIZA SOLO SI VINO. Antes `tts_on` era
   // `excluded.tts_on` con `body.ttsOn ?? false` detrás: guardar el CURSO
   // apagaba la lectura en voz alta, porque el cuerpo no traía `ttsOn` y el
@@ -68,7 +82,7 @@ export async function PUT(req: Request) {
   await sql`
     insert into student_profiles (
       user_id, grade, grade_set_at, tts_on, tts_voice,
-      pomo_estudio_min, pomo_descanso_min, pomo_hora, pomo_dias, pomo_last_at
+      pomo_estudio_min, pomo_descanso_min, pomo_hora, pomo_dias, pomo_last_at, avatar
     )
     values (
       ${auth.userId}::uuid,
@@ -80,7 +94,8 @@ export async function PUT(req: Request) {
       coalesce(${descanso}::smallint, 5),
       ${hora},
       coalesce(${dias}::text, '12345'),
-      ${body.pomodoroIniciado ? new Date() : null}
+      ${body.pomodoroIniciado ? new Date() : null},
+      ${avatar}
     )
     on conflict (user_id) do update set
       grade        = coalesce(excluded.grade, student_profiles.grade),
@@ -93,6 +108,7 @@ export async function PUT(req: Request) {
       pomo_hora    = case when ${tocaHora}::boolean then ${hora}::text else student_profiles.pomo_hora end,
       pomo_dias    = coalesce(${dias}::text, student_profiles.pomo_dias),
       pomo_last_at = coalesce(excluded.pomo_last_at, student_profiles.pomo_last_at),
+      avatar       = case when ${tocaAvatar}::boolean then ${avatar}::text else student_profiles.avatar end,
       updated_at   = now()`;
 
   return Response.json({ ok: true });
