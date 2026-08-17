@@ -162,6 +162,32 @@ test("⚠️ una pregunta de POR QUÉ no es un ejercicio, aunque traiga la ecuac
   }
 });
 
+test("⚠️ una función con NOMBRE no puede cortar la expresión", () => {
+  // Llegó desde la pantalla: "deriva f(x) = √x = x^(1/2)" caía al chat. Al pelar
+  // los bordes, `sqrt(x)` quedaba en `sqrt(x` y dejaba de ser matemática, así que
+  // la tira se cortaba ahí y la expresión terminaba siendo "= x^(1/2)".
+  assert.equal(leerEjercicio("deriva f(x) = √x = x^(1/2)").expr, "sqrt(x)");
+  assert.equal(leerEjercicio("derivá f(x) = √x").expr, "sqrt(x)");
+  assert.ok(esEjercicio("deriva f(x) = √x = x^(1/2)"), "tiene que armar tarjeta");
+  // Y `sqrt(x)` sola cuenta como matemática aunque no traiga ni un dígito ni una
+  // letra pegada a un operador.
+  assert.ok(esEjercicio("derivá f(x) = sqrt(x)"));
+});
+
+test("una cadena de igualdades es la MISMA función escrita de dos formas", () => {
+  // "f(x) = √x = x^(1/2)" no es una ecuación con dos lados.
+  const e = leerEjercicio("deriva f(x) = √x = x^(1/2)");
+  assert.equal(e.esDefinicion, true);
+  assert.equal(e.ecuacion, undefined);
+});
+
+test("una expresión CORTADA no arma tarjeta: mejor el chat", () => {
+  // Llegar al CAS como "= x^(1/2)" y mostrar una ficha sobre un pedazo es peor
+  // que contestar por el camino normal.
+  assert.equal(esEjercicio("resolvé = 5"), null);
+  assert.equal(esEjercicio("calculá 3 +"), null);
+});
+
 test("pero un pedido de resolver SÍ es un ejercicio, aunque sea pregunta", () => {
   // "cómo" no delata nada: acá sí quiere el procedimiento.
   assert.ok(esEjercicio("¿cómo se resuelve x² - 5x + 6 = 0?"));

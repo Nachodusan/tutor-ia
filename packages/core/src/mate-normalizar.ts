@@ -174,6 +174,10 @@ function esToken(t: string): boolean {
   // La función aplicada se mira ENTERA y antes de pelar: `f(x)` pierde su
   // paréntesis de cierre al recortar los bordes y deja de reconocerse.
   if (/^[a-z]\s*\([a-z]\)$/i.test(t)) return true;
+  // Y las funciones CON NOMBRE, por lo mismo: `sqrt(x)` quedaba en `sqrt(x` al
+  // pelar el paréntesis y dejaba de ser matemática, así que "deriva f(x) = √x =
+  // x^(1/2)" se cortaba ahí y la expresión terminaba siendo "= x^(1/2)".
+  if (/^(?:sqrt|sin|cos|tan|cot|log|ln|exp|abs)\s*\(/i.test(t)) return true;
   const nucleo = t.replace(/^[+\-*/^=()<>,]+|[+\-*/^=()<>,]+$/g, "");
   if (nucleo === "") return true;             // era solo signos
   if (/\d/.test(nucleo)) return true;
@@ -212,7 +216,11 @@ export function extraerExpresion(s: string): string {
 export function leerEjercicio(entrada: string): Ejercicio {
   const s = extraerExpresion(aSintaxisSympy(entrada));
   const esDefinicion = DEFINICION.test(s);
-  const cuerpo = esDefinicion ? s.replace(DEFINICION, "") : s;
+  let cuerpo = esDefinicion ? s.replace(DEFINICION, "") : s;
+  // CADENA DE IGUALDADES: "f(x) = √x = x^(1/2)" es la MISMA función escrita de
+  // dos formas, no una ecuación con dos lados. Sacada la definición quedan dos
+  // expresiones equivalentes; se usa la primera, que es como el chico la pensó.
+  if (esDefinicion && cuerpo.includes("=")) cuerpo = cuerpo.split("=")[0]!.trim();
   const variable = detectarVariable(cuerpo);
 
   if (!esDefinicion) {
@@ -302,10 +310,21 @@ export function esEjercicio(texto: string): { op: Operacion; expr: string } | nu
   if (CONCEPTUAL.test(sinAcentos(texto))) return null;
   const e = leerEjercicio(texto);
   if (!e.expr) return null;
+  // Una expresión que arranca o termina en un operador quedó CORTADA: llega al
+  // CAS como "= x^(1/2)" y lo que se muestre después no es lo que el chico
+  // escribió. Mejor caer al chat que armar una ficha sobre un pedazo.
+  if (/^[=+*/^]|[=+\-*/^]$/.test(e.expr.trim())) return null;
   const op = operacionPedida(texto, Boolean(e.ecuacion));
   if (!op) return null;
   // Que tenga forma de matemática y no solo un verbo suelto: "resolvelo" a secas
   // no es un ejercicio, es un pedido sobre algo que ya está en pantalla.
-  if (!/[0-9]/.test(e.expr) && !/[a-z]\s*[\^*/+=-]/i.test(e.expr)) return null;
+  //
+  // Una FUNCIÓN CON NOMBRE cuenta por sí sola: "sqrt(x)" no trae ningún dígito
+  // ni una letra pegada a un operador, así que "deriva f(x) = √x" se rechazaba
+  // acá aunque la expresión estuviera perfecta.
+  const pareceMate = /[0-9]/.test(e.expr)
+    || /[a-z]\s*[\^*/+=-]/i.test(e.expr)
+    || /\b(?:sqrt|sin|cos|tan|cot|log|ln|exp|abs)\s*\(/i.test(e.expr);
+  if (!pareceMate) return null;
   return { op, expr: e.expr };
 }
