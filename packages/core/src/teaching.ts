@@ -14,7 +14,7 @@ import {
 } from "@tutor-ia/rag";
 import { chatStream, type ChatMsg } from "./client";
 import { config } from "./config";
-import { limpiarMuletillas, normalizeStudentQuery } from "./query-normalize";
+import { limpiarMuletillas, puenteDeVocabulario } from "./query-normalize";
 import { TEACHING_SYSTEM, buildTeachingTurn } from "./prompts";
 import { validarPreguntaFinal } from "./closing-question";
 import type { ChatMessage } from "./types";
@@ -33,6 +33,11 @@ export interface TeachRequest {
    *  cliente: define el nivel de lenguaje con que se le habla a un menor, y eso
    *  no puede depender de lo que mande el navegador. */
   studentGrade?: string | null;
+  /** Nombre de la materia ("Matemática 2º Medio"). Solo lo usa el puente de
+   *  vocabulario, para saber en qué libro traducir la palabra del alumno: la
+   *  misma "célula" se nombra distinto en Biología que en Ciencias Naturales.
+   *  Igual que `studentGrade`, la ruta lo lee DE LA BASE y no del cliente. */
+  subjectName?: string | null;
   /** Materias de la MISMA asignatura en todos los cursos (etapa 1 de la
    *  cascada de alcance). Las resuelve la ruta con `subjects.family`. */
   familyIds?: string[] | null;
@@ -237,15 +242,26 @@ export async function getTeachingContext(req: TeachRequest): Promise<TeachingRes
     if (vague || !config.queryNormalize) {
       return { ctx, grounded: ctx.grounded, qNorm: false, qNormMs: 0 };
     }
-    // El gate cortó con la cruda: reintento con la pregunta normalizada.
-    const n = await normalizeStudentQuery(req.question);
-    if (!n.changed) {
-      return { ctx, grounded: ctx.grounded, qNorm: false, qNormMs: n.ms };
+    // EL GATE CORTÓ CON LA CRUDA: se reintenta con las palabras del LIBRO.
+    //
+    // Antes acá corría `normalizeStudentQuery`, que arregla ortografía y
+    // registro. Sobre el caso que motivó esto no hacía nada: "¿Cómo se factoriza
+    // un trinomio? Explicame el método" salía "…Explique el método." —le corrigió
+    // la conjugación a una pregunta que estaba perfecta— y seguía abstiniéndose,
+    // porque el problema nunca fue cómo estaba escrita sino QUÉ PALABRA usaba.
+    //
+    // ⚠️ SE REEMPLAZA LA CONSULTA ENTERA, sin `prevUser` y sin la pregunta
+    // original. Los dos arrastran las palabras que el libro no tiene, y medido
+    // eso no solo puntúa peor: convierte abstenciones correctas en respuestas
+    // inventadas con página. Ver `puenteDeVocabulario` para los números.
+    const puente = await puenteDeVocabulario(req.question, req.subjectName, req.studentGrade);
+    if (!puente) {
+      return { ctx, grounded: ctx.grounded, qNorm: false, qNormMs: 0 };
     }
-    const ctx2 = await retrieveForTeaching(`${prevUser} ${n.query}`.trim(), opts);
+    const ctx2 = await retrieveForTeaching(puente.query, opts);
     return ctx2.grounded
-      ? { ctx: ctx2, grounded: true, qNorm: true, qNormMs: n.ms }
-      : { ctx, grounded: false, qNorm: false, qNormMs: n.ms };
+      ? { ctx: ctx2, grounded: true, qNorm: true, qNormMs: puente.ms }
+      : { ctx, grounded: false, qNorm: false, qNormMs: puente.ms };
   } catch (err) {
     if (!(await rerankHealthy())) {
       return { ctx: null as unknown as TeachingContext, grounded: false, rerankerDown: true };

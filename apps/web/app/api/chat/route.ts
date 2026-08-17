@@ -154,6 +154,15 @@ export async function POST(req: Request) {
   const perfil = getSql()<{ grade: string | null }[]>`
     select grade from student_profiles where user_id = ${userId}::uuid`;
 
+  // El NOMBRE de la materia, de la base y no de `body.subjectName`. Lo usa el
+  // puente de vocabulario para saber en qué libro traducir la palabra del
+  // alumno, y vale el mismo criterio que el curso: lo que decide con qué
+  // material se le responde a un menor no lo manda el navegador.
+  const materia = body.subjectId
+    ? getSql()<{ name: string }[]>`
+        select name from subjects where id = ${body.subjectId}::uuid`
+    : Promise.resolve([] as { name: string }[]);
+
   // Las materias de la MISMA asignatura en todos los cursos (etapa 1 de la
   // cascada de alcance). Se resuelve por `subjects.family`, que es explícito y
   // materializado — NO por `documents.subject_area`, que tiene la misma materia
@@ -179,6 +188,7 @@ export async function POST(req: Request) {
     unit: body.unit ?? null,
     lesson: body.lesson ?? null,
     studentGrade: null as string | null,
+    subjectName: null as string | null,
     familyIds: null as string[] | null,
     primerTema,
   };
@@ -188,12 +198,14 @@ export async function POST(req: Request) {
     // El perfil y la familia se resuelven ANTES del retrieval porque los dos
     // entran en él (nivel de lectura y etapa 1 de la cascada). Son dos lookups
     // por índice: ~1 ms contra un retrieval de segundos.
-    const [filas, fam] = await Promise.all([
+    const [filas, fam, mat] = await Promise.all([
       perfil.catch(() => [] as { grade: string | null }[]),
       familia.catch(() => [] as { id: string }[]),
+      materia.catch(() => [] as { name: string }[]),
     ]);
     teachReq.studentGrade = filas[0]?.grade ?? null;
     teachReq.familyIds = fam.length ? fam.map((r) => r.id) : null;
+    teachReq.subjectName = mat[0]?.name ?? null;
     res = await getTeachingContext(teachReq);
   } catch {
     // Fallo de retrieval (p. ej. reranker ocupado/timeout): NO dejamos la
