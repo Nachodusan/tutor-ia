@@ -10,7 +10,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "tsx test/query-normalize.test.mjs && tsx test/puente-vocabulario.test.mjs"
+    "test": "tsx test/query-normalize.test.mjs && tsx test/puente-vocabulario.test.mjs && tsx test/tema-propio.test.mjs"
   },
   "dependencies": {
     "@tutor-ia/rag": "workspace:*",

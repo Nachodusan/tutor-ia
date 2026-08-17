@@ -148,7 +148,24 @@ function retrievalQuery(req: TeachRequest): {
   // célula?"), meter el tema propuesto le ensucia SU pregunta con un tema que
   // decidió no estudiar.
   const actualSinTema = sinTema(req.question);
-  const prevUser = ventana || (actualSinTema ? temaPropuesto(req.history ?? []) : "");
+  // ⚠️ EL TEMA ARRASTRADO NO PUEDE TAPAR AL TURNO DE AHORA.
+  //
+  // Antes esto era `ventana || (…)`: mientras hubiera charla previa, los dos
+  // últimos turnos del alumno se le pegaban ADELANTE a la consulta, aunque la
+  // pregunta de ahora trajera su propio tema completo. Con eso, un chico que
+  // venía viendo funciones inversas escribió "ayudame a derivar este problema" y
+  // el tutor le contestó "me parece que hubo una confusión con el término, el
+  // tema que estamos viendo es funciones inversas, no derivadas" — y no derivó
+  // nada. El material que llegaba seguía siendo el de inversas, porque la
+  // búsqueda seguía preguntando por inversas.
+  //
+  // El arrastre sigue existiendo para lo que fue diseñado: los turnos que NO
+  // traen tema ("no entendí", "dame otro ejemplo", "¿y en las plantas?"), donde
+  // sin el tema previo la búsqueda no tiene de qué agarrarse. Lo que cambia es
+  // que un turno que se sostiene solo ya no lo arrastra.
+  const prevUser = seSostieneSolo(req.question)
+    ? ""
+    : ventana || (actualSinTema ? temaPropuesto(req.history ?? []) : "");
   // Un pedido vago ("dame otro ejemplo", "no entendí") NO aporta tema y diluye el
   // retrieval; si ya hay tema en la charla, dejá que ése mande.
   const vague = Boolean(prevUser) && actualSinTema;
@@ -163,6 +180,46 @@ function retrievalQuery(req: TeachRequest): {
  * aceptaciones. Antes solo se filtraban los vagos, así que un "Hola Hola" se
  * quedaba en la ventana y se usaba como consulta de búsqueda.
  */
+/** Palabras que no aportan tema a una búsqueda. Corta y en español de acá. */
+const VACIAS = new Set([
+  "ayudame", "ayudarme", "ayuda", "este", "esta", "esto", "eso", "esos", "estas",
+  "para", "pero", "como", "cual", "cuales", "donde", "cuando", "porque", "por",
+  "que", "los", "las", "una", "uno", "del", "con", "sin", "mas", "muy", "sobre",
+  "problema", "porblema", "ejercicio", "pregunta", "tarea", "favor", "puedes",
+  "podes", "quiero", "necesito", "decime", "explicame", "hacelo", "hacer",
+]);
+
+/** Arranques que declaran CONTINUACIÓN: lo que sigue cuelga del turno anterior. */
+const CONECTOR_INICIAL = /^\s*[¿¡"']*\s*(?:y|o|pero|entonces|ahora|adem[áa]s|igual|tambi[ée]n|as[íi]\s+que)\b/i;
+
+/**
+ * ¿El turno se sostiene solo como consulta, sin el tema de la charla?
+ *
+ * NO se mide por cantidad de palabras — lo probé y es el criterio equivocado:
+ * "¿qué es la fotosíntesis?" tiene UNA sola palabra con contenido y se sostiene
+ * perfecto, mientras "dame otro ejemplo" tiene dos y no se sostiene nada.
+ *
+ * Lo que separa es cómo ARRANCA el turno. Un turno que empieza con un conector
+ * ("¿y en las plantas?") está colgado del anterior por construcción. Y los
+ * pedidos vagos ya los reconoce `sinTema`, que está calibrado para eso.
+ *
+ * Los símbolos matemáticos alcanzan solos: "f(x) = 5x⁴ − 3x + 2" no tiene una
+ * palabra larga y es un turno perfectamente autosuficiente.
+ */
+export function seSostieneSolo(texto: string): boolean {
+  const t = texto.trim();
+  if (t.length === 0) return false;
+  if (CONECTOR_INICIAL.test(t)) return false;
+  if (/[=+×÷^√∫]|\d\s*[a-z]|[a-z]\s*\(\s*[a-z]\s*\)/i.test(t)) return true;
+  if (sinTema(t)) return false;
+  const palabras = t
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .split(/[^a-zñ0-9]+/)
+    .filter((w) => w.length >= 4 && !VACIAS.has(w));
+  return palabras.length >= 1;
+}
+
 function sinTema(texto: string): boolean {
   const t = texto.trim();
   return VAGUE_RE.test(t) || GREETING_RE.test(t) || GRACIAS_RE.test(t) ||
