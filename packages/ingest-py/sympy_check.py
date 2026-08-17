@@ -38,13 +38,80 @@ _TRANS = standard_transformations + (
 )
 
 
+# Lo único que puede llegar acá. TODO lo demás es un error ruidoso.
+#
+# ⚠️ ESTA ES LA GUARDA MÁS IMPORTANTE DEL PUENTE. `implicit_multiplication_application`
+# convierte cualquier carácter que no conozca en un SÍMBOLO LIBRE y lo multiplica,
+# así que la entrada sucia no falla: devuelve `ok: true` con otra cosa. Medido
+# sobre 21 ejercicios escolares, 12 devolvían un número plausible y equivocado:
+#
+#     "√(50) + √(8)"   -> ok: true, value "58*√"     (concatena y multiplica por √)
+#     "2(x − 3)"       -> ok: true, value "6*x*−"    (el menos U+2212 como variable)
+#     "racionalizar …" -> ok: true, value "15*a**3*c*i**2*l*n*o*r**2*z/√"
+#
+# Un tutor que muestra el paso a paso de "58*√" es peor que uno que no contesta.
+# El normalizador (core/mate-normalizar.ts) tiene que dejar la expresión limpia
+# ANTES; esto es la red por si se le escapa algo.
+_PERMITIDO = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                 "0123456789"
+                 "+-*/()[]^., =<>_")
+
+
 def _parse(s: str):
+    malos = sorted({c for c in s if c not in _PERMITIDO})
+    if malos:
+        detalle = ", ".join(f"{c!r} (U+{ord(c):04X})" for c in malos)
+        raise ValueError(
+            f"caracteres sin normalizar: {detalle}. "
+            "Pasá la expresión por aSintaxisSympy() antes de llamar al puente."
+        )
     return parse_expr(s, local_dict=_NS, transformations=_TRANS, evaluate=True)
 
 
+def _simplificar(v):
+    """Simplifica sin romperse con lo que devuelven `solve` y compañía.
+
+    ⚠️ `solve` NO devuelve una expresión: devuelve una LISTA de soluciones (o un
+    dict cuando hay varias incógnitas, o un FiniteSet). `sp.simplify` sobre una
+    lista tira "'list' object has no attribute 'replace'", así que el modo `eval`
+    reventaba con el caso más común de la escuela — resolver una ecuación. La
+    derivada y la integral andaban porque devuelven expresión.
+    """
+    if isinstance(v, (list, tuple)):
+        return [_simplificar(x) for x in v]
+    if isinstance(v, dict):
+        return {str(k): _simplificar(x) for k, x in v.items()}
+    if isinstance(v, sp.Set):
+        try:
+            return [_simplificar(x) for x in v]
+        except TypeError:      # conjuntos infinitos: no se enumeran
+            return v
+    try:
+        return sp.simplify(v)
+    except (TypeError, ValueError, AttributeError):
+        return v
+
+
 def do_eval(expr: str) -> dict:
-    val = _parse(expr)
-    val = sp.simplify(val)
+    val = _simplificar(_parse(expr))
+    # Las soluciones se devuelven como LISTA de strings además del `value` plano:
+    # el que llama necesita las raíces por separado para marcarlas en el gráfico.
+    if isinstance(val, list):
+        out = {"ok": True, "value": ", ".join(str(x) for x in val),
+               "soluciones": [str(x) for x in val]}
+        nums = []
+        for x in val:
+            try:
+                nums.append(float(x))
+            except (TypeError, ValueError):
+                nums = []
+                break
+        if nums:
+            out["nums"] = nums
+        return out
+    if isinstance(val, dict):
+        return {"ok": True, "value": ", ".join(f"{k} = {v}" for k, v in val.items()),
+                "asignaciones": {k: str(v) for k, v in val.items()}}
     out = {"ok": True, "value": str(val)}
     try:
         out["num"] = float(val)  # si es numérico cerrado

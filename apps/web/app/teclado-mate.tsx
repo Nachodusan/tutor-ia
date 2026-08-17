@@ -44,7 +44,14 @@ const FILAS: Tecla[][] = [
     { ver: "×", pone: " × ", titulo: "Multiplicar" },
   ],
   [
-    { ver: "a/b", pone: "( / )", cursor: 4, titulo: "Fracción — escribí arriba y con ▶ pasás abajo" },
+    // ⚠️ DOS PARÉNTESIS, UNO POR TÉRMINO. Antes ponía `( / )`, un solo grupo con
+    // la barra adentro, y eso produce una fracción AMBIGUA que nadie puede
+    // desambiguar después: "(2x − 1)/5" se escribía "(2x − 1 / 5)", que por
+    // precedencia es "2x − 1/5". Medido: la intención da x = 8 y la lectura
+    // literal da x = 8/5 — dos números plausibles y ningún síntoma. Con
+    // "()/()" el numerador y el denominador quedan cerrados por separado y la
+    // expresión significa una sola cosa.
+    { ver: "a/b", pone: "()/()", cursor: 5, titulo: "Fracción — el de arriba, y tocá abajo para el denominador" },
     { ver: "x²", pone: "²", titulo: "Al cuadrado" },
     { ver: "xⁿ", pone: "^", titulo: "Elevado a — lo que escribas después queda arriba" },
     { ver: "√", pone: "√()", cursor: 1, titulo: "Raíz cuadrada" },
