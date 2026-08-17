@@ -13,7 +13,10 @@
  */
 import { chatJSON } from "./client";
 import { leerEjercicio, esEjercicio, type Operacion } from "./mate-normalizar";
-import { resolver, verificarPasos, type PasoVerificado } from "./mate-sympy";
+import { resolver, verificarPasos, equivalentes, type PasoVerificado } from "./mate-sympy";
+
+/** ¿El último renglón dice lo mismo que el resultado del CAS? */
+const mismoValor = (a: string, b: string) => equivalentes(a.includes("=") ? a.split("=").pop()!.trim() : a, b);
 
 export interface PasoExplicado {
   /** La expresión de este renglón, en texto plano. */
@@ -119,8 +122,23 @@ export async function armarTarjeta(texto: string): Promise<TarjetaEjercicio | nu
 
   // 2) CADA RENGLÓN CONTRA EL ANTERIOR. Lo que el modelo escribió es una
   //    hipótesis hasta que SymPy la confirma.
+  //
+  // ⚠️ DERIVAR E INTEGRAR NO SON EQUIVALENCIAS, y por eso quedan afuera de la
+  // verificación en cadena. f(x) y f'(x) NO son iguales, así que el verificador
+  // de expresiones marcaba "mal" en el paso 1 —con razón— y el procedimiento se
+  // cortaba entero SIEMPRE. En una transformación lo que se puede comprobar es
+  // el destino: que el último renglón coincida con lo que dio el CAS.
   let aviso: string | undefined;
-  if (pasos.length >= 2) {
+  const enCadena = det.op !== "diff" && det.op !== "integrate";
+  if (!enCadena && pasos.length >= 1) {
+    const ultimo = pasos[pasos.length - 1]!.expr;
+    const igual = await mismoValor(ultimo, r.valor);
+    if (igual === false) {
+      pasos = [];
+      aviso = "Preferí no mostrarte el procedimiento: no me terminó de cerrar con el resultado.";
+    }
+  }
+  if (enCadena && pasos.length >= 2) {
     const c = await verificarPasos(pasos.map((p) => p.expr), det.op);
     if (c) {
       c.pasos.forEach((v) => {
@@ -139,7 +157,9 @@ export async function armarTarjeta(texto: string): Promise<TarjetaEjercicio | nu
   return {
     enunciado: det.expr,
     operacion: det.op,
-    resultado: r.valor,
+    // La constante de integración la pone la tarjeta: SymPy nunca la devuelve, y
+    // sin ella la respuesta está incompleta para cualquier profesor.
+    resultado: det.op === "integrate" ? `${r.valor} + C` : r.valor,
     pasos,
     raices: r.nums,
     grafico: graficable(e.expr, e.variable, det.op),

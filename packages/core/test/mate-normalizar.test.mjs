@@ -32,6 +32,14 @@ test("una expresión sola pasa entera", () => {
   assert.equal(extraerExpresion("x^2 - 5x + 6 = 0"), "x^2 - 5x + 6 = 0");
 });
 
+test("⚠️ un paréntesis no puede cortar la expresión", () => {
+  // "(x" no traía dígito ni era una letra suelta, así que la tira se cortaba ahí
+  // y "desarrollá (x + 5)^2" se iba al chat en vez de armar tarjeta.
+  assert.equal(extraerExpresion("desarrollá (x + 5)^2"), "(x + 5)^2");
+  assert.equal(extraerExpresion("factorizá (x + 1)(x - 3)"), "(x + 1)(x - 3)");
+  assert.equal(extraerExpresion("simplificá (x^2 - 4)/(x - 2)"), "(x^2 - 4)/(x - 2)");
+});
+
 test("superíndices Unicode → exponente", () => {
   assert.equal(aSintaxisSympy("5x⁴ − 3x + 2"), "5x^4 - 3x + 2");
   assert.equal(aSintaxisSympy("x² - 5x + 6 = 0"), "x^2 - 5x + 6 = 0");

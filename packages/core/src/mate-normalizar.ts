@@ -162,11 +162,18 @@ export interface Ejercicio {
  */
 function esToken(t: string): boolean {
   if (!t) return false;
-  if (/^[+\-*/^=()<>,]+$/.test(t)) return true;
-  if (/\d/.test(t)) return true;
-  if (/^[a-z]$/i.test(t)) return true;
+  // Los paréntesis y operadores de los bordes se sacan ANTES de mirar el núcleo:
+  // sin esto "(x" no era matemática y "desarrollá (x + 5)^2" se cortaba en el
+  // paréntesis, así que el ejercicio se iba al chat en vez de armar tarjeta.
+  // La función aplicada se mira ENTERA y antes de pelar: `f(x)` pierde su
+  // paréntesis de cierre al recortar los bordes y deja de reconocerse.
   if (/^[a-z]\s*\([a-z]\)$/i.test(t)) return true;
-  return /^(?:sqrt|sin|cos|tan|log|ln|exp|pi)\b/i.test(t);
+  const nucleo = t.replace(/^[+\-*/^=()<>,]+|[+\-*/^=()<>,]+$/g, "");
+  if (nucleo === "") return true;             // era solo signos
+  if (/\d/.test(nucleo)) return true;
+  if (/^[a-z]$/i.test(nucleo)) return true;
+  if (/^[a-z]\s*\([a-z]\)$/i.test(nucleo)) return true;
+  return /^(?:sqrt|sin|cos|tan|log|ln|exp|pi)$/i.test(nucleo);
 }
 
 /**

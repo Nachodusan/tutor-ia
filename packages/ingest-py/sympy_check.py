@@ -112,11 +112,26 @@ def _bonito(v) -> str:
     return str(v)
 
 
-def do_eval(expr: str) -> dict:
-    val = _simplificar(_parse(expr))
+def do_eval(expr: str, simplificar: bool = True) -> dict:
+    """`simplificar=False` para factor/expand.
+
+    ⚠️ `simplify` DESHACE lo que acaba de hacer `factor`: factor(x**2 - 9) da
+    (x-3)*(x+3) y simplify lo devuelve a x**2 - 9. O sea que "factorizá x² - 9"
+    contestaba con el enunciado y la función parecía andar. Cuando la operación
+    YA produce la forma canónica que se quiere mostrar, no hay que tocarla.
+    """
+    crudo = _parse(expr)
+    val = _simplificar(crudo) if simplificar else crudo
     # Las soluciones se devuelven como LISTA de strings además del `value` plano:
     # el que llama necesita las raíces por separado para marcarlas en el gráfico.
     if isinstance(val, list):
+        # Las raíces complejas no existen para un alumno de Media: el libro dice
+        # "no tiene solución en los reales", no "-I, I".
+        reales = [x for x in val if not getattr(x, "is_real", True) is False]
+        if val and not reales:
+            return {"ok": True, "value": "sin solución real", "soluciones": [],
+                    "sinSolucionReal": True}
+        val = reales or val
         out = {"ok": True, "value": ", ".join(_bonito(x) for x in val),
                "soluciones": [_bonito(x) for x in val]}
         nums = []
@@ -388,7 +403,7 @@ def main():
         req = json.loads(payload or "{}")
         mode = req.get("mode")
         if mode == "eval":
-            print(json.dumps(do_eval(req["expr"])))
+            print(json.dumps(do_eval(req["expr"], req.get("simplificar", True))))
         elif mode == "equiv":
             print(json.dumps(do_equiv(req["a"], req["b"])))
         elif mode == "puntos":

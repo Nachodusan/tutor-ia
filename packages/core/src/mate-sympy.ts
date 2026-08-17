@@ -46,6 +46,8 @@ async function llamar<T>(payload: unknown): Promise<T | null> {
 export interface Resultado {
   /** Lo que hay que mostrar como respuesta final. */
   valor: string;
+  /** La ecuación no tiene raíces reales: en Media eso NO se muestra con `i`. */
+  sinSolucionReal?: boolean;
   /** Las raíces por separado, para marcarlas en el plano cartesiano. */
   soluciones?: string[];
   nums?: number[];
@@ -82,11 +84,14 @@ export function comoLlamada(texto: string, op: Operacion): string | null {
 export async function resolver(texto: string, op: Operacion): Promise<Resultado | null> {
   const expr = comoLlamada(texto, op);
   if (!expr) return null;
-  const r = await llamar<{ ok: boolean; value?: string; soluciones?: string[]; nums?: number[] }>(
-    { mode: "eval", expr },
+  // ⚠️ factor y expand NO se simplifican: `simplify` deshace lo que acaban de
+  // hacer y "factorizá x² - 9" contestaba "x² - 9", o sea el enunciado.
+  const simplificar = op !== "factor" && op !== "expand";
+  const r = await llamar<{ ok: boolean; value?: string; soluciones?: string[]; nums?: number[]; sinSolucionReal?: boolean }>(
+    { mode: "eval", expr, simplificar },
   );
   if (!r?.ok || !r.value) return null;
-  return { valor: r.value, soluciones: r.soluciones, nums: r.nums };
+  return { valor: r.value, soluciones: r.soluciones, nums: r.nums, sinSolucionReal: r.sinSolucionReal };
 }
 
 export type Veredicto = "ok" | "pierde" | "agrega" | "mal" | "indeciso";
@@ -128,6 +133,22 @@ export async function verificarPasos(
   );
   if (!r?.ok) return null;
   return { valida: r.valida, primerError: r.primerError, pasos: r.pasos };
+}
+
+/**
+ * ¿Estas dos expresiones dicen lo mismo?
+ *
+ * `null` = no se pudo decidir, y NO significa "no". Se usa para chequear el
+ * destino de una transformación (derivar, integrar), donde la cadena no sirve
+ * porque f(x) y f'(x) no son equivalentes: lo comprobable es que el último
+ * renglón coincida con lo que dio el CAS.
+ */
+export async function equivalentes(a: string, b: string): Promise<boolean | null> {
+  const r = await llamar<{ equal?: boolean; ok?: boolean }>(
+    { mode: "equiv", a: aSintaxisSympy(a), b: aSintaxisSympy(b) },
+  );
+  if (!r || r.ok === false) return null;
+  return r.equal === true;
 }
 
 /** Un punto de la curva. `y === null` = fuera del dominio: el trazo se CORTA ahí. */
