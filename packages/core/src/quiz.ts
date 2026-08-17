@@ -112,6 +112,15 @@ const SISTEMA =
   "'¿qué te resultó difícil?'). Las opciones son solo el texto, SIN letras ni números al " +
   "inicio (nada de 'A)', '1.'). Basate SOLO en el fragmento; no inventes datos que no " +
   "aparezcan. Lenguaje simple para la edad. Español de Chile.\n" +
+  // Medido: en Matemática, 7 de 10 y 10 de 10 preguntas salían con LaTeX crudo, y
+  // en un caso las CUATRO opciones eran `\sqrt{16 \cdot 4}` — el chico tenía que
+  // elegir entre cuatro strings ilegibles. La pantalla pinta texto plano y encima
+  // el quiz se CACHEA (`on conflict do nothing`), así que una tanda mala queda
+  // congelada para todos. El material no trae LaTeX: lo inventa el modelo.
+  "MATEMÁTICA EN TEXTO PLANO, como se escribe a mano: x² - 5x + 6 = 0, √(16 · 4), " +
+  "(x - 3)(x + 2) = 0, 1/2, 10²³. PROHIBIDO LaTeX y todo signo $ (nada de \\sqrt, " +
+  "\\frac, \\cdot, x^2, $…$) y prohibido markdown (nada de **negrita**, backticks ni " +
+  "###): la app muestra el texto TAL CUAL y el alumno lee esos símbolos en la pantalla.\n" +
   "Que las preguntas NO se contesten reconociendo la frase textual del libro: pedí aplicar, " +
   "comparar, ordenar o elegir el caso que corresponde. Si solo se puede preguntar por una " +
   "definición literal, hacelo con las palabras cambiadas.";

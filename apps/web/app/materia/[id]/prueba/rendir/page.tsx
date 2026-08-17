@@ -15,6 +15,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { TestView } from "../../../../prueba";
 import { subjectLabel } from "../../../../ui";
 import { traerMateria } from "../../../../datos";
+import { limpiarPregunta } from "../../../../limpiar-texto";
 import type { Subject, TestItem } from "../../../../tipos";
 
 export default function RendirPage() {
@@ -58,7 +59,7 @@ export default function RendirPage() {
       // cartel genérico de antes ("no pude armar una prueba todavía") las tapaba
       // a las dos.
       if (!r.ok) setError(typeof j?.error === "string" ? j.error : null);
-      setItems(r.ok ? (j.items ?? []) : []);
+      setItems(r.ok ? (j.items ?? []).map(limpiarPregunta) : []);
       setTestId(r.ok ? (j.testId ?? null) : null);
     } catch {
       setItems([]);

@@ -43,6 +43,14 @@ test("el LaTeX queda como se escribe a mano", () => {
   assert.equal(limpiarMarcas("$2 \\times 3 = 6$"), "2 × 3 = 6");
 });
 
+test("⚠️ la raíz con índice: apareció como opción de un quiz, tal cual", () => {
+  // El chico tenía que elegir entre cuatro strings así. Sin delimitadores `$`:
+  // LaTeX pelado en medio de la opción.
+  assert.equal(limpiarMarcas("\\sqrt[3]{35}"), "³√(35)");
+  assert.equal(limpiarMarcas("$\\sqrt[3]{8} + \\sqrt[3]{27}$"), "³√(8) + ³√(27)");
+  assert.equal(limpiarMarcas("\\sqrt[n]{x}"), "n√(x)");
+});
+
 test("la fórmula general sale legible aunque venga sin delimitadores", () => {
   assert.equal(
     latexAMano("x = (-b \\pm \\sqrt{b^2-4ac}) / 2a"),
@@ -60,6 +68,17 @@ test("⚠️ LOS PRECIOS NO SON LaTeX: dos signos pesos pareados se dejan en paz
     limpiarMarcas("el sueldo va de $500.000 a $700.000"),
     "el sueldo va de $500.000 a $700.000",
   );
+});
+
+test("⚠️ LaTeX SIN barras ni llaves también se limpia", () => {
+  // Este es el que falló en producción: el quiz servía la pregunta con los signos
+  // puestos porque adentro no había ni `\` ni `^` ni llaves. Es LaTeX igual.
+  assert.equal(
+    limpiarMarcas("Si se factoriza como $(x - 3)(x + 2) = 0$, ¿cuál es la solución?"),
+    "Si se factoriza como (x - 3)(x + 2) = 0, ¿cuál es la solución?",
+  );
+  assert.equal(limpiarMarcas("el valor de $x$ es 5"), "el valor de x es 5");
+  assert.equal(limpiarMarcas("reemplazá $5x + 3$ acá"), "reemplazá 5x + 3 acá");
 });
 
 test("⚠️ EL ORDEN: sacar los $ va ANTES de traducir, o los signos sobreviven", () => {
@@ -80,6 +99,15 @@ test("un asterisco suelto puede ser una multiplicación, no una negrita", () => 
 
 test("un exponente con letra se deja: no tiene forma en Unicode", () => {
   assert.equal(limpiarMarcas("3^x crece rápido"), "3^x crece rápido");
+});
+
+test("⚠️ NOTACIÓN CIENTÍFICA: el exponente puede tener más de un dígito", () => {
+  // Se rompió de verdad: con `(\d)` el número de Avogadro salía "10²3" y el chico
+  // lo copiaba mal. Le pegaba a Química y Física enteras.
+  assert.equal(limpiarMarcas("6,02 x 10^23 moléculas"), "6,02 x 10²³ moléculas");
+  assert.equal(limpiarMarcas("1,204 x 10^24"), "1,204 x 10²⁴");
+  assert.equal(limpiarMarcas("la masa es 9,1 x 10^-31 kg"), "la masa es 9,1 x 10^-31 kg");
+  assert.equal(limpiarMarcas("$10^{23}$ átomos"), "10²³ átomos");
 });
 
 test("los pasos numerados sobreviven enteros — son la razón del cambio", () => {

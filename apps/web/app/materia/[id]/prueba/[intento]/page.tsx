@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { C, FONT, HARD, Dots, IconChat, scoreTone } from "../../../../ui";
+import { limpiarPregunta } from "../../../../limpiar-texto";
 
 interface Pregunta {
   n: number; topic: string; question: string; options: string[];
@@ -33,7 +34,9 @@ export default function IntentoPage() {
       .then(async (r) => {
         const j = await r.json();
         if (!r.ok) { setErr(j.error ?? "No pude abrir esta prueba."); return; }
-        setDato(j.intento);
+        // Las pruebas ya rendidas quedan guardadas: si alguna se generó con LaTeX,
+        // solo se arregla acá.
+        setDato({ ...j.intento, preguntas: (j.intento?.preguntas ?? []).map(limpiarPregunta) });
       })
       .catch(() => setErr("No hay conexión con el servidor."));
   }, [intento]);

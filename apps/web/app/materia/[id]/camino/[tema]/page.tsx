@@ -16,6 +16,7 @@ import { useParams, useRouter } from "next/navigation";
 import { traerMateria } from "../../../../datos";
 import { aprobado } from "../../../../camino";
 import { C, FONT, HARD, Dots, IconCheck, IconChat, IconArrow, subjectLabel } from "../../../../ui";
+import { limpiarPregunta } from "../../../../limpiar-texto";
 import type { PlanItem, QuizQ, QuizResult, Subject } from "../../../../tipos";
 
 export default function LeccionPage() {
@@ -91,7 +92,9 @@ export default function LeccionPage() {
         const j = await r.json();
         if (!vivo) return;
         if (!r.ok) { setErr(j.error ?? "No pude armar las preguntas."); return; }
-        setQuiz(j.items ?? []);
+        // Limpio al RECIBIR: lo generado se cachea, así que las tandas viejas con
+        // LaTeX crudo solo se arreglan del lado de la pantalla.
+        setQuiz((j.items ?? []).map(limpiarPregunta));
       })
       .catch(() => { if (vivo) setErr("No hay conexión con el servidor."); })
       .finally(() => { if (vivo) setCargando(false); });
@@ -108,7 +111,9 @@ export default function LeccionPage() {
       });
       const j = await r.json();
       if (!r.ok) { setErr(j.error ?? "No pude corregir."); return; }
-      setRes(j);
+      // La corrección devuelve otra vez pregunta/opciones/explicación: también se
+      // pintan, así que también se limpian.
+      setRes({ ...j, items: (j.items ?? []).map(limpiarPregunta) });
       setDone((d) => (d.includes(tema) ? d : [...d, tema]));
     } catch { setErr("No hay conexión con el servidor."); }
     finally { setEnviando(false); }
