@@ -92,13 +92,32 @@ def _simplificar(v):
         return v
 
 
+def _bonito(v) -> str:
+    """Cómo se escribe un número en un cuaderno.
+
+    SymPy imprime los Float con toda su precisión: resolver "2,5x = 10" devolvía
+    `4.00000000000000`. Eso en la pantalla se lee como un error del programa, no
+    como el cuatro que el chico esperaba. Si el decimal es en realidad un
+    racional exacto, se muestra como tal.
+    """
+    try:
+        if isinstance(v, sp.Float):
+            r = sp.nsimplify(v, rational=True)
+            if sp.simplify(r - v) == 0:
+                return str(r)
+            return str(sp.nsimplify(v, tolerance=1e-10, rational=False))
+    except Exception:  # noqa: BLE001
+        pass
+    return str(v)
+
+
 def do_eval(expr: str) -> dict:
     val = _simplificar(_parse(expr))
     # Las soluciones se devuelven como LISTA de strings además del `value` plano:
     # el que llama necesita las raíces por separado para marcarlas en el gráfico.
     if isinstance(val, list):
-        out = {"ok": True, "value": ", ".join(str(x) for x in val),
-               "soluciones": [str(x) for x in val]}
+        out = {"ok": True, "value": ", ".join(_bonito(x) for x in val),
+               "soluciones": [_bonito(x) for x in val]}
         nums = []
         for x in val:
             try:
@@ -110,9 +129,9 @@ def do_eval(expr: str) -> dict:
             out["nums"] = nums
         return out
     if isinstance(val, dict):
-        return {"ok": True, "value": ", ".join(f"{k} = {v}" for k, v in val.items()),
-                "asignaciones": {k: str(v) for k, v in val.items()}}
-    out = {"ok": True, "value": str(val)}
+        return {"ok": True, "value": ", ".join(f"{k} = {_bonito(v)}" for k, v in val.items()),
+                "asignaciones": {k: _bonito(v) for k, v in val.items()}}
+    out = {"ok": True, "value": _bonito(val)}
     try:
         out["num"] = float(val)  # si es numérico cerrado
     except (TypeError, ValueError):

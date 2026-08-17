@@ -13,7 +13,24 @@
  */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { aSintaxisSympy, leerEjercicio, operacionPedida } from "../src/mate-normalizar.ts";
+import { aSintaxisSympy, leerEjercicio, operacionPedida, extraerExpresion } from "../src/mate-normalizar.ts";
+
+test("⚠️ la prosa NO puede entrar en la fórmula", () => {
+  // Sin esto, "resolvé 3x + 5 = 20" llegaba al CAS como
+  // `solve(Eq(resolvé 3x + 5, 20), x)`: el verbo del alumno viajaba adentro de
+  // la ecuación y no resolvía nada.
+  assert.equal(extraerExpresion("resolvé 3x + 5 = 20"), "3x + 5 = 20");
+  assert.equal(extraerExpresion("factorizá x^2 - 5x + 6"), "x^2 - 5x + 6");
+  assert.equal(extraerExpresion("resolvé 2x^2 - 8 = 0 paso a paso porfa"), "2x^2 - 8 = 0");
+  assert.equal(
+    extraerExpresion("no entiendo cómo se hace este ejercicio: (2x + 1)(x - 3) = 0"),
+    "(2x + 1)(x - 3) = 0",
+  );
+});
+
+test("una expresión sola pasa entera", () => {
+  assert.equal(extraerExpresion("x^2 - 5x + 6 = 0"), "x^2 - 5x + 6 = 0");
+});
 
 test("superíndices Unicode → exponente", () => {
   assert.equal(aSintaxisSympy("5x⁴ − 3x + 2"), "5x^4 - 3x + 2");

@@ -16,3 +16,5 @@ export * from "./exams";
 export * from "./grading";
 export * from "./study-plan";
 export * from "./quiz";
+export * from "./mate-normalizar";
+export * from "./mate-sympy";

@@ -153,8 +153,51 @@ export interface Ejercicio {
  * `3x + 5 = 20` sí es una ecuación. El signo `=` significa cosas distintas en cada
  * una y confundirlas es responder otro ejercicio.
  */
+/**
+ * ¿Este pedazo es matemática o es prosa?
+ *
+ * Un token es matemático si trae un dígito, si es un operador, si es una letra
+ * SUELTA (la incógnita) o si tiene forma de función aplicada (`f(x)`). Las
+ * palabras quedan afuera por tener dos o más letras seguidas.
+ */
+function esToken(t: string): boolean {
+  if (!t) return false;
+  if (/^[+\-*/^=()<>,]+$/.test(t)) return true;
+  if (/\d/.test(t)) return true;
+  if (/^[a-z]$/i.test(t)) return true;
+  if (/^[a-z]\s*\([a-z]\)$/i.test(t)) return true;
+  return /^(?:sqrt|sin|cos|tan|log|ln|exp|pi)\b/i.test(t);
+}
+
+/**
+ * Saca la expresión de adentro de la oración.
+ *
+ * Sin esto, "resolvé 3x + 5 = 20" llegaba al CAS como
+ * `solve(Eq(resolvé 3x + 5, 20), x)` y no resolvía nada: el verbo del alumno
+ * viajaba adentro de la fórmula. Se toma la TIRA CONTIGUA más larga de tokens
+ * matemáticos, que es lo que deja afuera tanto el "resolvé" del principio como
+ * el "¿me explicás?" del final.
+ */
+export function extraerExpresion(s: string): string {
+  const tokens = s.split(/\s+/).filter(Boolean);
+  if (tokens.every(esToken)) return s.trim();
+  let mejor: string[] = [];
+  let actual: string[] = [];
+  const cerrar = () => {
+    const largo = (a: string[]) => a.join(" ").replace(/\s/g, "").length;
+    if (largo(actual) > largo(mejor)) mejor = actual;
+    actual = [];
+  };
+  for (const t of tokens) {
+    if (esToken(t)) actual.push(t);
+    else cerrar();
+  }
+  cerrar();
+  return mejor.join(" ").trim();
+}
+
 export function leerEjercicio(entrada: string): Ejercicio {
-  const s = aSintaxisSympy(entrada);
+  const s = extraerExpresion(aSintaxisSympy(entrada));
   const esDefinicion = DEFINICION.test(s);
   const cuerpo = esDefinicion ? s.replace(DEFINICION, "") : s;
   const variable = detectarVariable(cuerpo);
