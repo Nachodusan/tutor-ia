@@ -17,7 +17,10 @@ import type { Subject, SubjectStats } from "./tipos";
 
 export interface Logro {
   id: string;
-  emoji: string;
+  /** Id del ícono en `iconos-logros.tsx`. Antes era un icono: se veía distinto en
+   *  cada sistema, y un logro pendiente solo se podía apagar con `grayscale` +
+   *  opacidad, que ensucia el dibujo en vez de atenuarlo. */
+  icono: string;
   nombre: string;
   /** Qué hay que hacer. Se muestra siempre, ganado o no. */
   detalle: string;
@@ -47,20 +50,20 @@ export function calcularLogros({ subjects, stats, pomodoroLastAt }: DatosLogros)
   };
   const debiles = propias.reduce((n, s) => n + (st(s)?.weak.length ?? 0), 0);
 
-  const L = (id: string, emoji: string, nombre: string, detalle: string, logrado: boolean): Logro =>
-    ({ id, emoji, nombre, detalle, logrado });
+  const L = (id: string, icono: string, nombre: string, detalle: string, logrado: boolean): Logro =>
+    ({ id, icono, nombre, detalle, logrado });
 
   return [
-    L("primer-paso", "🌱", "Primer paso", "Terminá tu primera lección", lecciones >= 1),
-    L("diez", "📚", "Diez lecciones", "Terminá 10 lecciones en total", lecciones >= 10),
-    L("mitad", "⛰️", "A mitad de camino", "Llegá al 50% de una materia", propias.some((s) => pct(s) >= 0.5)),
-    L("cima", "🏆", "Materia completa", "Terminá el camino entero de una materia", propias.some((s) => pct(s) >= 1)),
-    L("primera-prueba", "📝", "Primera prueba", "Rendí una prueba", pruebas >= 1),
-    L("perfecta", "🎯", "Prueba perfecta", "Sacá todas buenas en una prueba", perfecta),
+    L("primer-paso", "plant", "Primer paso", "Terminá tu primera lección", lecciones >= 1),
+    L("diez", "books", "Diez lecciones", "Terminá 10 lecciones en total", lecciones >= 10),
+    L("mitad", "mountains", "A mitad de camino", "Llegá al 50% de una materia", propias.some((s) => pct(s) >= 0.5)),
+    L("cima", "trophy", "Materia completa", "Terminá el camino entero de una materia", propias.some((s) => pct(s) >= 1)),
+    L("primera-prueba", "exam", "Primera prueba", "Rendí una prueba", pruebas >= 1),
+    L("perfecta", "target", "Prueba perfecta", "Sacá todas buenas en una prueba", perfecta),
     // Pide una prueba rendida a propósito: sin eso, "no tengo nada para
     // reforzar" es cierto para todos los que nunca rindieron, y sería un trofeo
     // por no hacer nada.
-    L("al-dia", "✅", "Sin pendientes", "Reforzá todo lo que fallaste en las pruebas", pruebas >= 1 && debiles === 0),
-    L("bloque", "⏱️", "Primer bloque", "Estudiá un bloque completo con el reloj", !!pomodoroLastAt),
+    L("al-dia", "check-fat", "Sin pendientes", "Reforzá todo lo que fallaste en las pruebas", pruebas >= 1 && debiles === 0),
+    L("bloque", "timer", "Primer bloque", "Estudiá un bloque completo con el reloj", !!pomodoroLastAt),
   ];
 }

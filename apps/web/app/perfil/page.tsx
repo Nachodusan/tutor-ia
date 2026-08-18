@@ -18,6 +18,7 @@ import { PanelShell, PanelNav, Avatar, contarReforzar, Centered } from "../panel
 import { C, FONT, HARD, Dots, IconCheck, IconLock, gradeLabel, subjectLabel } from "../ui";
 import { CLASE_HUECO_RELOJ } from "../pomodoro";
 import { AVATARES } from "../avatares";
+import { IconoLogro } from "../iconos-logros";
 import { calcularLogros } from "../logros";
 import { cursoBloqueado } from "@/lib/cursos";
 import { useAlumno, cerrarSesion } from "../usar-alumno";
@@ -99,8 +100,11 @@ export default function PerfilPage() {
             {/* El que falta va en gris y con candado, no escondido: el logro que
                 no se ve no motiva a nadie, y el chico tiene derecho a saber qué
                 le falta para ganarlo. */}
-            <span style={{ fontSize: 25, lineHeight: 1, flexShrink: 0, filter: l.logrado ? "none" : "grayscale(1)", opacity: l.logrado ? 1 : 0.45 }}>
-              {l.emoji}
+            {/* El pendiente se atenúa por COLOR, no con grayscale + opacidad:
+                el dibujo queda nítido y solo más callado. Con emoji eso no se
+                podía y salía borroso. */}
+            <span style={{ display: "flex", flexShrink: 0, lineHeight: 1 }}>
+              <IconoLogro id={l.icono} size={26} color={l.logrado ? C.ink : "#9B94A6"} />
             </span>
             <span style={{ minWidth: 0, flex: 1 }}>
               <span style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: FONT.round, fontWeight: 800, fontSize: 14.5, color: l.logrado ? C.text : C.dim }}>
