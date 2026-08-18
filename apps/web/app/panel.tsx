@@ -250,20 +250,20 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
       </button>
 
       <div className="pnl-grupo">
+        {/* PRIMERO, arriba de las materias: al entrar, lo que el alumno quiere
+            saber es cómo viene —qué lleva hecho y qué le sale— y recién después
+            elegir dónde ponerse. Antes iba en el medio, como paso entre "dónde
+            estudio" y "qué me falta". */}
+        <NavItem activo={enResumen} icono={<IconStar size={15} />}
+          onClick={() => router.push("/resumen")}>
+          Tu resumen
+        </NavItem>
         <NavItem activo={enPanel} icono={<IconBook size={15} />}
           // Estando en el panel, baja a las tarjetas; desde otra pantalla, vuelve.
           onClick={() => (enPanel
             ? document.getElementById("mis-materias")?.scrollIntoView({ behavior: "smooth", block: "start" })
             : router.push("/"))}>
           Tus materias
-        </NavItem>
-        {/* Va ENTRE materias y reforzar a propósito: es el paso del medio —qué
-            llevo hecho y qué me sale— entre "dónde estudio" y "qué me falta".
-            Con el tiempo se va a comer a Reforzar: fortalezas y debilidades del
-            mismo alumno son una sola pregunta. */}
-        <NavItem activo={enResumen} icono={<IconStar size={15} />}
-          onClick={() => router.push("/resumen")}>
-          Tu resumen
         </NavItem>
         {/* El número al costado y no adentro de la pantalla: si hay nueve temas
             fallados, que se vean desde acá es la mitad del motivo para entrar.
