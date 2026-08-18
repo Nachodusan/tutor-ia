@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconResumen, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, scoreTone, IconCamino, IconPrueba, IconVolume, IconCheck, IconSpark, IconPuerta } from "./ui";
+import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconResumen, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, IconReforzar, scoreTone, IconCamino, IconPrueba, IconVolume, IconCheck, IconSpark, IconPuerta } from "./ui";
 import { VOCES, VOZ_POR_DEFECTO, CLAVE_VOZ, type Voz } from "./voces";
 import { buscarAvatar } from "./avatares";
 import { CLASE_HUECO_RELOJ } from "./pomodoro";
@@ -268,7 +268,7 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
         {/* El número al costado y no adentro de la pantalla: si hay nueve temas
             fallados, que se vean desde acá es la mitad del motivo para entrar.
             Sin nada pendiente no se dibuja: un "0" es ruido. */}
-        <NavItem activo={enReforzar} icono={<IconAlert size={15} />}
+        <NavItem activo={enReforzar} icono={<IconReforzar size={15} />}
           chip={pendientes > 0 ? (
             <span style={{ background: C.badBg, color: C.badTx, borderRadius: 999, minWidth: 21, padding: "1px 7px", textAlign: "center", fontFamily: FONT.round, fontSize: 11.5, fontWeight: 800 }}>
               {pendientes}
@@ -606,7 +606,7 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
           <span style={{ marginTop: "auto", paddingTop: 4, display: "flex", flexWrap: "wrap", gap: 6, position: "relative" }}>
             {weak > 0 && (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: C.badBg, color: C.badTx, border: `1.5px solid ${C.badTx}`, borderRadius: 999, padding: "2px 8px", fontFamily: FONT.round, fontWeight: 700, fontSize: 11.5 }}>
-                <IconAlert size={11} /> {weak} para reforzar
+                <IconReforzar size={11} /> {weak} para reforzar
               </span>
             )}
             {st?.lastScore && (() => {

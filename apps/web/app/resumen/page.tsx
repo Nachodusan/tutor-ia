@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PanelShell, PanelNav, contarReforzar, Centered } from "../panel";
 import {
-  C, FONT, HARD, Dots, IconCheck, IconAlert, IconArrow, IconBook,
+  C, FONT, HARD, Dots, IconCheck, IconAlert, IconReforzar, IconArrow, IconBook,
   subjectColor, subjectLabel, isLight,
 } from "../ui";
 import { CLASE_HUECO_RELOJ } from "../pomodoro";
@@ -203,7 +203,7 @@ function FilaMateria({ m, otro, onReforzar }: { m: ResumenMateria; otro?: boolea
         {m.pendientes > 0 && (
           <button onClick={onReforzar} title="Ver qué te falta reforzar"
             style={{ display: "inline-flex", alignItems: "center", gap: 4, background: C.badBg, color: C.badTx, border: "none", borderRadius: 999, padding: "3px 9px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 800, fontSize: 12 }}>
-            <IconAlert size={11} /> {m.pendientes} <IconArrow size={11} />
+            <IconReforzar size={11} /> {m.pendientes} <IconArrow size={11} />
           </button>
         )}
       </span>

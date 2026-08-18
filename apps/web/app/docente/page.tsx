@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   C, FONT, HARD, gradeLabel, subjectLabel, subjectColor, scoreTone,
   AuroraDot, Pill, IconBtn, BigBtn,
-  IconAlert, IconBook, IconChevron, IconClock, IconLock, IconSwap, IconUsers,
+  IconAlert, IconReforzar, IconBook, IconChevron, IconClock, IconLock, IconSwap, IconUsers,
 } from "../ui";
 import type { TeacherOverview, AlumnoFila } from "../api/teacher/overview/route";
 
@@ -164,7 +164,7 @@ export default function DocentePage() {
             <div className="dc-cols">
               {/* ── Columna principal: lo que hay que hacer algo al respecto ── */}
               <section style={{ minWidth: 0 }}>
-                <Titulo icon={<IconAlert size={14} />} nota={weak.length ? `${weak.length} en total` : undefined}>
+                <Titulo icon={<IconReforzar size={14} />} nota={weak.length ? `${weak.length} en total` : undefined}>
                   Lo que más le cuesta al curso
                 </Titulo>
 
