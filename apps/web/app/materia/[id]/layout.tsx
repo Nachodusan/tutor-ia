@@ -14,7 +14,7 @@
  */
 import { useRouter, usePathname, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { C, FONT, AuroraDot, IconBack, IconList, IconClipboard, gradeLabel, subjectLabel } from "../../ui";
+import { C, FONT, AuroraDot, IconBack, IconCamino, IconPrueba, gradeLabel, subjectLabel } from "../../ui";
 import { CLASE_HUECO_RELOJ } from "../../pomodoro";
 import { traerMateria } from "../../datos";
 import type { Subject } from "../../tipos";
@@ -43,9 +43,9 @@ export default function MateriaLayout({ children }: { children: React.ReactNode 
    * tres, grandes, que es toda la pantalla.
    */
   const ACTIVIDADES = [
-    { href: `${base}/camino`, label: "Tu camino", icono: <IconList size={17} /> },
+    { href: `${base}/camino`, label: "Tu camino", icono: <IconCamino size={17} /> },
     { href: `${base}/chat`, label: "Preguntar", icono: <AuroraDot size={18} /> },
-    { href: `${base}/prueba`, label: "Prueba", icono: <IconClipboard size={17} /> },
+    { href: `${base}/prueba`, label: "Prueba", icono: <IconPrueba size={17} /> },
   ];
   const enElegir = pathname === base;
   const otras = ACTIVIDADES.filter((a) => !pathname.startsWith(a.href));

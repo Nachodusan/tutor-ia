@@ -11,7 +11,7 @@
  */
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { C, FONT, HARD, Dots, IconClipboard, IconChevron, IconArrow, scoreTone } from "../../../ui";
+import { C, FONT, HARD, Dots, IconPrueba, IconChevron, IconArrow, scoreTone } from "../../../ui";
 
 interface Intento { id: string; at: string; score: number; total: number; title?: string }
 /** El título por defecto no aporta nada en una lista que ya se llama así. */
@@ -45,7 +45,7 @@ export default function PruebasPage() {
         style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, width: "100%", textAlign: "left", marginTop: 16, background: C.coral, color: "#fff", border: `2px solid ${C.ink}`, borderRadius: 14, boxShadow: HARD(C.ink), padding: "15px 16px", cursor: "pointer" }}>
         <span style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
           <span style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 11, display: "grid", placeItems: "center", background: "rgba(255,255,255,.22)" }}>
-            <IconClipboard size={20} />
+            <IconPrueba size={20} />
           </span>
           <span style={{ minWidth: 0 }}>
             <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 16 }}>Rendir una prueba nueva</span>

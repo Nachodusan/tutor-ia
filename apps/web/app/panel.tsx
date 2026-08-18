@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, scoreTone, IconList, IconClipboard, IconVolume, IconCheck, IconSpark, IconPuerta } from "./ui";
+import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconResumen, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, scoreTone, IconCamino, IconPrueba, IconVolume, IconCheck, IconSpark, IconPuerta } from "./ui";
 import { VOCES, VOZ_POR_DEFECTO, CLAVE_VOZ, type Voz } from "./voces";
 import { buscarAvatar } from "./avatares";
 import { CLASE_HUECO_RELOJ } from "./pomodoro";
@@ -254,7 +254,7 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
             saber es cómo viene —qué lleva hecho y qué le sale— y recién después
             elegir dónde ponerse. Antes iba en el medio, como paso entre "dónde
             estudio" y "qué me falta". */}
-        <NavItem activo={enResumen} icono={<IconStar size={15} />}
+        <NavItem activo={enResumen} icono={<IconResumen size={15} />}
           onClick={() => router.push("/resumen")}>
           Tu resumen
         </NavItem>
@@ -517,8 +517,8 @@ export type Actividad = "camino" | "chat" | "prueba";
  * abren el camino y la prueba. Menos botones y ninguna repetida.
  */
 const ACCIONES = [
-  { clave: "camino", label: "Camino", icono: (n: number) => <IconList size={n} /> },
-  { clave: "prueba", label: "Prueba", icono: (n: number) => <IconClipboard size={n} /> },
+  { clave: "camino", label: "Camino", icono: (n: number) => <IconCamino size={n} /> },
+  { clave: "prueba", label: "Prueba", icono: (n: number) => <IconPrueba size={n} /> },
 ] as const;
 
 /**

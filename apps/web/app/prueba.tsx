@@ -1,5 +1,5 @@
 "use client";
-import { C, FONT, HARD, Dots, IconCheck, IconX, IconClipboard, IconArrow, subjectLabel, scoreTone, AuroraDot, BigBtn, IconBack, IconSpark } from "./ui";
+import { C, FONT, HARD, Dots, IconCheck, IconX, IconPrueba, IconArrow, subjectLabel, scoreTone, AuroraDot, BigBtn, IconBack, IconSpark } from "./ui";
 import { aprobado } from "./nota";
 import type { Subject, TestItem } from "./tipos";
 
