@@ -1661,3 +1661,26 @@ Probar los tres órdenes (lectura, columna, `y`) y quedarse con el de mejor mono
 Multiusuario real si se apunta a un colegio. El eje "correcto" NO conviene (medido en su
 momento con `exp5`). Historia de fases previas en `docs/` — ojo que varias de esas fases se
 midieron con el motor local, que ya no está en el proyecto.
+
+---
+
+## El currículum oficial (pilar del proyecto)
+
+`docs/epja-objetivos-por-nivel.md` — **qué exige el Estado para que un alumno pase de
+nivel**, textual de las *Bases Curriculares EPJA* (Decreto Supremo N° 10/2022, ed. 2024).
+195 conocimientos esenciales, 112 grandes ideas, 156 OA, por asignatura y nivel.
+`docs/epja-niveles.md` — equivalencia nivel ↔ curso.
+
+La capa que importa es **"Conocimientos esenciales"**: es la única que nombra la materia
+(*productos notables, teorema de Thales*). Los OA describen habilidades ("evaluar modelos"),
+nunca contenido — no sirven solos para casar con los libros ni para generar planes.
+
+Extraído con script desde el PDF; dos trampas si se vuelve a hacer:
+- Las páginas están **rotadas** — las columnas salen como secuencias de x0 que reinician;
+  hay que cortar bloques donde `x0 < anterior − 80`.
+- El **glifo de viñeta es la letra `y`** — partir por "y" destroza el castellano
+  ("teorías asociadas y sus evidencias"). Solo cuenta como viñeta al inicio de bloque, y
+  aun así 9 quedaron mal cortadas y se repegaron a mano.
+
+Pendiente: reorganizarlo por curso (hoy está por nivel) y cruzarlo con el corpus para saber
+qué contenido exigido **no** está cubierto por ningún libro cargado.
