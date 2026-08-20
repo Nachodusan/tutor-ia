@@ -38,7 +38,10 @@
     "backfill-heading-path": "tsx --env-file-if-exists=../../.env src/backfill-heading-path.ts",
     "generar-trafico": "tsx --env-file-if-exists=../../.env src/generar-trafico.ts",
     "auditoria-snapshot": "tsx --env-file-if-exists=../../.env src/auditoria-snapshot.ts",
-    "auditoria-planillas": "tsx --env-file-if-exists=../../.env src/auditoria-planillas.ts"
+    "auditoria-planillas": "tsx --env-file-if-exists=../../.env src/auditoria-planillas.ts",
+    "ubicar": "tsx --env-file-if-exists=../../.env src/ubicar.ts",
+    "cargar-mapa": "tsx --env-file-if-exists=../../.env src/cargar-mapa.ts",
+    "mapa-doc": "tsx --env-file-if-exists=../../.env src/mapa-doc.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",
