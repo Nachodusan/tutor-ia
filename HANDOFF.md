@@ -1684,3 +1684,42 @@ Extraído con script desde el PDF; dos trampas si se vuelve a hacer:
 
 Pendiente: reorganizarlo por curso (hoy está por nivel) y cruzarlo con el corpus para saber
 qué contenido exigido **no** está cubierto por ningún libro cargado.
+
+---
+
+## El mapa curricular (qué página del libro cubre cada exigencia del Estado)
+
+`docs/mapa-curricular.md` + tablas `curriculum_map` y `curriculum_map_tramos`.
+237 puntos, 490 tramos, 116 conocimientos esenciales de Formación General + Filosofía.
+Se regenera con `pnpm --filter @tutor-ia/eval mapa-doc --salida <ruta absoluta>`.
+
+**Alcance** en `docs/materias-por-nivel.md`: solo Formación General + Filosofía en 3º-4º.
+Inglés y las guías del docente quedaron para una segunda pasada.
+
+**El método, y por qué no se puede simplificar.** El buscador solo dio 7 aciertos de 63 con
+mediana de score 0,94 — el score alto no prueba nada ("química orgánica" apuntó a
+fotosíntesis con 0,998, por la palabra "carbono"). Las tres reglas que lo arreglaron:
+sin cita textual no hay ubicación; para declarar un hueco hay que entregar los términos
+probados; y la consulta del currículum se reescribe antes de buscar (el registro normativo
+del decreto no matchea el habla del libro).
+
+**Herramientas** (`packages/eval/src/`): `ubicar.ts` propone candidatos, `cargar-mapa.ts`
+carga (idempotente), `mapa-doc.ts` volcado a markdown. Ninguna tiene tests.
+
+**Los cortes de los tomos combinados** — dato que afecta al tutor, no solo al mapa. El mismo
+PDF cuelga de dos materias y cada mitad es de un año: Biología p.130, Química p.92, Física
+p.107, Matemática 3º-4º p.109, Filosofía p.123. Las filas que caen en la mitad ajena van
+marcadas `verificado = 'otro_año'`.
+
+**Pendiente, en orden de retorno:**
+1. **Nadie lee `curriculum_map`.** Es un dataset sin consumidor: que el plan de estudio y
+   el tutor lo usen es lo que le da valor ("esto lo estudiás en la página 84").
+2. Los 7 huecos reales: cinco de 6º básico, dos de 7º-8º. Ver el doc.
+3. Tests de los tres scripts. `cargar-mapa` casa veredictos por prefijo de 60 chars — si dos
+   conocimientos de una materia comparten el prefijo, se pisan sin avisar.
+4. Los números por nivel NO son comparables entre sí: el prompt del auditor cambió entre
+   bloques, así que `correcto` en 1º-2º Medio no significa lo mismo que en 3º-4º.
+5. 6º básico es el resultado más flojo (9 completos de 27) y merece menos crédito: su índice
+   tiene 7 secciones y casi ningún chunk tiene heading_path.
+6. Quedan 104 filas de `metodo = 'ubicar-v1'` —la corrida del 11% de precisión— como
+   registro histórico. Filtrar siempre por `metodo = 'lector-v1'`.
