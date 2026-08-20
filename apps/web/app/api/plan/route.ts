@@ -1,7 +1,7 @@
 import { buildStudyPlan, SinEstructura, logDecision } from "@tutor-ia/core";
 import { planSizes } from "@tutor-ia/rag";
 import { getSql, toJson } from "@tutor-ia/db";
-import { requireCursoAbierto } from "@/lib/auth";
+import { rechazarMateriaApagada, requireCursoAbierto } from "@/lib/auth";
 
 export const runtime = "nodejs";
 // Titular el plan con el 7B (con recarga por keep_alive:0) puede tardar, y ahora
@@ -21,6 +21,10 @@ export async function GET(req: Request) {
   if (auth instanceof Response) return auth;
   const subjectId = new URL(req.url).searchParams.get("subjectId");
   if (!subjectId) return Response.json({ error: "Falta subjectId" }, { status: 400 });
+  // El POST de esta misma ruta ya validaba; el GET no, y servía el plan cacheado
+  // de cualquier materia apagada con solo pegarle la URL.
+  const apagada = await rechazarMateriaApagada(subjectId, auth);
+  if (apagada) return apagada;
 
   const sql = getSql();
   const [cache] = await sql<{ items: unknown[] }[]>`

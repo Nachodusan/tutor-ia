@@ -1,6 +1,6 @@
 import { generateExam, gradeExam, type Exam, type StudentAnswer } from "@tutor-ia/core";
 import { getSql, toJson } from "@tutor-ia/db";
-import { requireUser, unauthorized } from "@/lib/auth";
+import { rechazarMateriaApagada, requireUser, unauthorized } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -22,6 +22,8 @@ export async function POST(req: Request) {
 
   try {
     if (action === "generate") {
+      const apagada = await rechazarMateriaApagada(body.subjectId as string | null, auth);
+      if (apagada) return apagada;
       const exam = await generateExam({
         userId,
         subjectId: (body.subjectId as string) ?? null,

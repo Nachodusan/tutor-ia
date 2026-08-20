@@ -97,3 +97,44 @@ export async function requireTeacher(req: Request): Promise<Auth | Response> {
   }
   return auth;
 }
+
+/**
+ * Rechaza una materia SACADA DE CIRCULACIÓN, o `null` si se puede seguir.
+ *
+ *     const apagada = await rechazarMateriaApagada(body.subjectId, auth);
+ *     if (apagada) return apagada;
+ *
+ * Va en las rutas que SIRVEN o GENERAN material a partir de una materia: chat,
+ * plan, examen. Hasta ahora no estaba en ninguna, y `subjects.disabled_at` era
+ * un candado dibujado: el panel gris la materia apagada, pero un GET a
+ * `/api/plan?subjectId=…` devolvía el plan cacheado entero y un POST a
+ * `/api/chat` contestaba con el libro. Medido el 2026-08-19: 20 de las 32
+ * materias apagadas tenían plan cacheado servible.
+ *
+ * `requireCursoAbierto` NO cubre esto y es fácil confundirlo: ese mira el curso
+ * del ALUMNO (`student_profiles.grade`), no la materia que pide. Un alumno de 1º
+ * Medio con el curso abierto entra igual a cualquier materia apagada.
+ *
+ * Docente y admin pasan: el admin tiene que poder revisar el material de una
+ * materia apagada —para eso la apagó— y el docente ve avance de materias que
+ * pueden haberse sacado de circulación después.
+ *
+ * `subjectId` nulo o vacío NO es un error: el chat en modo general no lleva
+ * materia, y ahí no hay nada que bloquear.
+ */
+export async function rechazarMateriaApagada(
+  subjectId: string | null | undefined,
+  auth: Auth,
+): Promise<Response | null> {
+  if (!subjectId) return null;
+  if (auth.role === "teacher" || auth.role === "admin") return null;
+  const [m] = await getSql()<{ apagada: boolean }[]>`
+    select (disabled_at is not null) as apagada
+    from subjects where id = ${subjectId}::uuid`;
+  // Materia inexistente: que siga y falle donde corresponda (404 o "sin
+  // material"). Este guard responde por una sola cosa, no por la validación del id.
+  if (!m?.apagada) return null;
+  return forbidden(
+    "Esta materia no está disponible por ahora. Estamos revisando su material.",
+  );
+}

@@ -14,7 +14,7 @@ import {
   looksLikeSelfAbstention,
 } from "@tutor-ia/core";
 import { getSql } from "@tutor-ia/db";
-import { requireCursoAbierto } from "@/lib/auth";
+import { rechazarMateriaApagada, requireCursoAbierto } from "@/lib/auth";
 import { ensureSession, insertMessage } from "@/lib/conversations";
 import { randomUUID } from "node:crypto";
 
@@ -97,6 +97,9 @@ export async function POST(req: Request) {
      *  ruta la genera y la devuelve en el frame de citas. */
     sessionId?: string | null;
   };
+  // La materia la manda el cliente; que esté EN CIRCULACIÓN no puede decidirlo él.
+  const apagada = await rechazarMateriaApagada(body.subjectId, auth);
+  if (apagada) return apagada;
   if (!body.question?.trim()) {
     return new Response("Falta 'question'.", { status: 400 });
   }
