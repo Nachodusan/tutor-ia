@@ -1,6 +1,6 @@
 import { generarPreguntas, SinPreguntas, type QuizItem } from "@tutor-ia/core";
 import { getSql, toJson } from "@tutor-ia/db";
-import { fetchLessonMaterial } from "@tutor-ia/rag";
+import { documentoDeTema, fetchLessonMaterial } from "@tutor-ia/rag";
 import { requireCursoAbierto } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -67,10 +67,22 @@ export async function POST(req: Request) {
       { status: 422 },
     );
   }
+  // De QUÉ LIBRO es esta lección. Se resuelve en el servidor desde `topicKey`:
+  // varias materias tienen más de un libro y sus páginas se pisan, así que sin
+  // esto el material de la lección mezcla tomos y las preguntas salen de un
+  // libro que el alumno no estaba estudiando.
+  const documentId = await documentoDeTema(subjectId, topicKey);
+  if (!documentId) {
+    return Response.json(
+      { error: "No pude identificar de qué libro es esta lección." },
+      { status: 422 },
+    );
+  }
   let fragmentos: { content: string }[] = [];
   try {
     fragmentos = await fetchLessonMaterial({
       subjectId,
+      documentId,
       pageStart: body.p0,
       pageEnd: body.p1,
     });

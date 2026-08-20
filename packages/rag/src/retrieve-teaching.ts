@@ -324,9 +324,23 @@ async function fetchLessonChunks(subjectId: string, unit: number, lesson: number
  *
  * Sin gate: el que pide esto ya sabe qué lección quiere: no hay nada que decidir
  * sobre relevancia.
+ *
+ * ⚠️ `documentId` es OBLIGATORIO, y es el arreglo de un bug real. Una materia
+ * puede tener varios libros y las páginas se pisan entre ellos: Matemática 6º
+ * tiene el texto del estudiante más dos tomos de Sumo Primero, y Lenguaje 1º
+ * tiene ocho documentos. Filtrando solo por materia y rango, la lección "Tema 1
+ * Operaciones, múltiplos y factores" (págs. 15-16) devolvía 2 fragmentos del
+ * libro correcto y 1 de Sumo Primero — medido el 2026-08-20. Eso alimenta las
+ * preguntas del quiz, así que el ruido terminaba en la nota del alumno.
+ *
+ * Va como parámetro requerido y no opcional a propósito: si fuera opcional, el
+ * próximo llamador lo omite y el bug vuelve sin que nadie se entere.
+ * `muestrasDeRango` en sections.ts ya lo hacía bien; esta función no.
  */
 export async function fetchLessonMaterial(opts: {
   subjectId: string;
+  /** El libro del que sale la lección. Resolver con `documentoDeTema()`. */
+  documentId: string;
   pageStart: number;
   pageEnd: number;
   /** Techo de fragmentos. 40 y no 28 (el del estudio dirigido) porque acá la
@@ -341,6 +355,7 @@ export async function fetchLessonMaterial(opts: {
            coalesce(ch.page_start, ch.page) as page
     from chunks ch join documents d on d.id = ch.document_id
     where d.subject_id = ${opts.subjectId}
+      and ch.document_id = ${opts.documentId}
       and ch.corpus_role = 'content'
       and coalesce(ch.page_start, ch.page) between ${desde} and ${hasta}
     order by ch.page nulls last, ch.chunk_index

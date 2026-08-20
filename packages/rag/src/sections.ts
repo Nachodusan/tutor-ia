@@ -238,6 +238,41 @@ export async function buildUnitsForDocument(
   return { documentId, documentTitle: doc.title, sections };
 }
 
+/**
+ * De qué LIBRO es un tema del plan. `null` si la clave no corresponde a esta materia.
+ *
+ * Hace falta porque una materia puede tener varios libros y sus páginas se pisan:
+ * Matemática 6º tiene el texto del estudiante y dos tomos de Sumo Primero, y
+ * Lenguaje 1º tiene ocho documentos. Sin esto, pedir "el material de las páginas
+ * 15 a 16" devuelve fragmentos de todos los libros que tengan esas páginas
+ * —medido: 1 de cada 3 fragmentos de esa lección venía de Sumo Primero—, y ese
+ * material es el que alimenta las preguntas del quiz, o sea la nota del alumno.
+ *
+ * Se resuelve en el SERVIDOR y no se acepta del cliente: el documento decide qué
+ * texto se evalúa, y eso no lo puede elegir el navegador.
+ *
+ * Dos formas de clave, las dos resolubles:
+ *  · `legacy:{documentId}:{unit}-{lesson}` — el documento viene en la clave.
+ *  · `s{hash}` de `claveTema(documentId, ord, title)` — no es reversible, así que
+ *    se recalcula sobre las secciones de la materia y se busca la que coincide.
+ */
+export async function documentoDeTema(
+  subjectId: string,
+  topicKey: string,
+): Promise<string | null> {
+  const legacy = /^legacy:([0-9a-f-]{36}):/i.exec(topicKey);
+  if (legacy) return legacy[1] ?? null;
+
+  const sql = getSql();
+  // Sin filtrar por `level`: la clave puede ser de una unidad o de una lección.
+  const secciones = await sql<{ document_id: string; ord: number; title: string }[]>`
+    select document_id, ord, title from book_sections where subject_id = ${subjectId}`;
+  for (const s of secciones) {
+    if (claveTema(s.document_id, s.ord, s.title) === topicKey) return s.document_id;
+  }
+  return null;
+}
+
 /** Identidad estable de un tema: no depende del uuid de la fila (que cambia en
  *  cada rebuild) ni de la posición en la lista. */
 function claveTema(documentId: string, ord: number, title: string): string {
