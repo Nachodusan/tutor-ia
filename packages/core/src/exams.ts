@@ -39,6 +39,11 @@ export async function generateExam(req: GenerateExamRequest): Promise<Exam> {
     k: 16,
     candidatePool: 40,
     minRerankScore: config.rerankMinScore,
+    // Explícito, y no por omisión: sin esto la prueba se arma sobre TODO el
+    // corpus de la materia, guía del docente y material web incluidos. La guía
+    // trae el solucionario —le daría al alumno las respuestas— y el material
+    // web no es el libro que estudió. Una prueba se toma sobre lo que se leyó.
+    corpusRole: "content",
   });
   if (!ranked.grounded || ranked.chunks.length === 0) {
     throw new Error(

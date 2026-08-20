@@ -11,6 +11,7 @@ import { getSql, toVectorLiteral } from "@tutor-ia/db";
 import { cleanPages } from "./clean";
 import { chunkStructural } from "./chunk-structural";
 import { embed } from "./embeddings";
+import type { CorpusKind } from "./ingest-curriculum";
 
 const execFileAsync = promisify(execFile);
 
@@ -58,6 +59,19 @@ export interface IngestV2Input {
   pdfPath?: string;
   /** ... o un SidecarDoc ya extraído (para reindexar sin re-OCR). */
   doc?: SidecarDoc;
+  /**
+   * De qué corpus es este material. **OBLIGATORIO, y a propósito.**
+   *
+   * `chunks.corpus_role` tiene default `'content'` en la base, así que hasta
+   * ahora todo lo que entraba por acá —incluido el texto plano que sube el
+   * admin por /api/documents— aterrizaba como material del libro del Mineduc,
+   * indistinguible de él para el retrieval y para el sello "De tu libro".
+   *
+   * Se pide en el tipo y no se le pone default para que el compilador rompa en
+   * cada llamador el día que aparezca un corpus nuevo. Un default acá es un
+   * agujero que nadie vuelve a mirar.
+   */
+  corpusRole: CorpusKind;
 }
 
 /**
@@ -107,6 +121,7 @@ export async function ingestDocumentV2(
         heading_path: c.headingPath,
         content_type: c.contentType,
         token_count: c.tokenCount,
+        corpus_role: input.corpusRole,
         embedding: toVectorLiteral(vectors[j]!),
       }));
       await sql`
@@ -121,6 +136,7 @@ export async function ingestDocumentV2(
           "heading_path",
           "content_type",
           "token_count",
+          "corpus_role",
           "embedding",
         )}
         on conflict (document_id, chunk_index) do nothing

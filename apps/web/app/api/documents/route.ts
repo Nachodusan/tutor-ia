@@ -1,4 +1,5 @@
 import { ingestDocumentV2, type SidecarDoc } from "@tutor-ia/rag";
+import type { CorpusKind } from "@tutor-ia/rag";
 import { getSql } from "@tutor-ia/db";
 import { requireUser, unauthorized, forbidden } from "@/lib/auth";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
@@ -62,9 +63,23 @@ export async function POST(req: Request) {
     file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
   const sourceType: "pdf" | "text" = isPdf ? "pdf" : "text";
 
+  // De QUÉ CORPUS es lo que se sube. Antes no se preguntaba y caía al default
+  // 'content' de la base, tanto en `documents.kind` como en `chunks.corpus_role`:
+  // una guía del docente subida por acá quedaba indistinguible del texto del
+  // estudiante y se citaba como "de tu libro". Se pide explícito, con el mismo
+  // default de antes para no cambiarle el comportamiento a nadie.
+  const kindRaw = ((form.get("kind") as string) || "content").trim();
+  if (kindRaw !== "content" && kindRaw !== "pedagogy") {
+    return new Response(
+      "'kind' tiene que ser 'content' (texto del estudiante) o 'pedagogy' (guía del docente).",
+      { status: 400 },
+    );
+  }
+  const kind: CorpusKind = kindRaw;
+
   const [doc] = await sql<{ id: string }[]>`
-    insert into documents (owner_user_id, subject_id, title, source_type, status)
-    values (${userId}, ${subjectId}, ${title}, ${sourceType}, 'pending')
+    insert into documents (owner_user_id, subject_id, title, source_type, kind, status)
+    values (${userId}, ${subjectId}, ${title}, ${sourceType}, ${kind}, 'pending')
     returning id
   `;
   const documentId = doc!.id;
@@ -78,7 +93,7 @@ export async function POST(req: Request) {
       const pdfPath = join(dir, "doc.pdf");
       try {
         await writeFile(pdfPath, buffer);
-        ({ chunks } = await ingestDocumentV2({ documentId, pdfPath }));
+        ({ chunks } = await ingestDocumentV2({ documentId, pdfPath, corpusRole: kind }));
       } finally {
         await rm(dir, { recursive: true, force: true }).catch(() => {});
       }
@@ -92,7 +107,7 @@ export async function POST(req: Request) {
         title,
         pages: [{ page: 1, md: text }],
       };
-      ({ chunks } = await ingestDocumentV2({ documentId, doc }));
+      ({ chunks } = await ingestDocumentV2({ documentId, doc, corpusRole: kind }));
     }
     return Response.json({ documentId, status: "ready", chunks });
   } catch (err) {

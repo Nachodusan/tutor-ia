@@ -28,7 +28,22 @@ const PY_SCRIPT = process.env.CURRICULUM_PY ?? resolve(REPO, "packages/ingest-py
 const EMBED_BATCH = 64;
 const PEDAGOGY_MAX_CHARS = 1400; // partir bloques largos de la GDD
 
-export type CorpusKind = "content" | "pedagogy";
+/**
+ * De qué corpus es un chunk. Es la etiqueta que decide si un fragmento puede
+ * citarse como "de tu libro", y por eso NUNCA debe quedar librada a un default.
+ *
+ *  · `content`  — texto del estudiante. Es lo que el alumno tiene sobre la mesa.
+ *  · `pedagogy` — guía didáctica del docente. Moldea la explicación, no se cita.
+ *  · `web`      — material producido para tapar un hueco declarado del mapa
+ *                 curricular. No sale de ningún libro del alumno y tiene que
+ *                 decirlo.
+ *
+ * La columna `chunks.corpus_role` es `text` con default `'content'`: cualquier
+ * inserción que no la setee se convierte en material de libro del Mineduc sin
+ * que nadie se entere. Por eso `ingestDocumentV2` lo exige y hay un CHECK en
+ * packages/db/schema_corpus_roles.sql.
+ */
+export type CorpusKind = "content" | "pedagogy" | "web";
 
 interface CurriculumBlock {
   page: number;

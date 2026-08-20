@@ -78,6 +78,9 @@ export async function getTutorContext(
       subjectIds: req.subjectId ? [req.subjectId] : null,
       k: 8,
       minRerankScore: config.rerankMinScore,
+      // Camino legacy de un solo corpus: se fija explícito para que no empiece a
+      // ver guía del docente ni material web el día que aparezcan en la materia.
+      corpusRole: "content",
     });
   } catch (err) {
     if (!(await rerankHealthy())) {
