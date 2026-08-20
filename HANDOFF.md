@@ -1723,3 +1723,43 @@ marcadas `verificado = 'otro_año'`.
    tiene 7 secciones y casi ningún chunk tiene heading_path.
 6. Quedan 104 filas de `metodo = 'ubicar-v1'` —la corrida del 11% de precisión— como
    registro histórico. Filtrar siempre por `metodo = 'lector-v1'`.
+
+---
+
+## El curso de cada conocimiento (nivel → grado)
+
+El currículum EPJA define por NIVEL y la app está organizada por CURSO. Esa traducción
+quedó resuelta y escrita en `curriculum_map`: `curso_resuelto`, `curso_origen` y
+`curso_evidencia` (esquema en `packages/db/schema_curriculum_curso.sql`).
+
+**114 conocimientos distintos, 116 pares nivel×conocimiento** — "Estrategias de comprensión
+lectora y de comprensión oral" el currículum lo repite textual en tres niveles. Los 116
+tienen origen; ninguno quedó sin resolver:
+
+| origen | conocimientos | qué significa |
+|---|---|---|
+| `ambos_cursos` | 82 | Los dos libros del nivel lo enseñan. `curso_resuelto` va NULL **a propósito**: es contenido del nivel entero y elegir uno sería inventar una distinción que ni el currículum ni los libros hacen. |
+| `libro` | 29 | Solo uno de los cursos del nivel lo enseña. Es el mejor desempate: lo decide el material que el alumno tiene. |
+| `regular` | 3 | Ningún libro del nivel lo trae; lo desempató el currículum REGULAR (curriculumnacional.cl), que sí asigna cada OA a un año. |
+
+**El hallazgo que explica los `regular`:** EPJA comprime el currículum regular, así que un
+nivel puede exigir contenido que en el sistema regular vive fuera de su equivalencia.
+"Biodiversidad en Chile" y "Sistema solar y estructuras cósmicas" los pide el Nivel 3 Básica
+(7º-8º) y son de 1º MEDIO — la Unidad 4 de Física de 1º medio se llama literalmente
+"Estructuras cósmicas". Los libros de 7º y 8º **no están incompletos**: siguen bien el
+currículum regular. El desajuste es entre los dos currículos.
+
+Y el corolario: **los 5 conocimientos que no estaban en ningún libro de su nivel SÍ están en
+el corpus**, en libros de otro curso (Biología 1º Medio 17 chunks, Física 1º Medio 31,
+Ciencias Naturales 5º 17, Lenguaje 5º 5, Ciencias Naturales 3º 8). Ninguno necesita
+contenido de Internet: necesitan **alcance de búsqueda**. Eso reduce mucho el plan de
+cobertura web que está en `.claude/plans/`.
+
+**Se mapeó 5º básico** (27 pares, 4 materias) para poder desempatar el Nivel 2: antes solo
+se había evaluado 6º porque 5º está cerrado, y eso hacía figurar como "resuelto" lo que
+nunca se había comparado. Dos casos validaron el método cruzado: el currículum regular decía
+5º y el libro de 5º lo confirmó.
+
+Fuera del mapa quedan 79 conocimientos del pilar, todos explicados: 31 de Inglés (decisión
+del usuario), 37 de Instrumental y Diferenciada (fuera de alcance), 11 de 1º-4º básico
+(curso cerrado).
