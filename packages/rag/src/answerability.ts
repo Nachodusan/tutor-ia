@@ -118,13 +118,33 @@ export function answerabilityMinFromEnv(): number {
  *     estricto en q122 y q125. Cuesta una llamada por turno. No se descarta como
  *     idea — se descarta como cambio no evaluable hoy.
  *
- * QUÉ HACE FALTA PARA ARREGLARLO DE VERDAD: un banco etiquetado de tríos
- * (pregunta, material SERVIDO, ¿responde?) grande y con etiquetas defendibles.
- * Hoy no existe: los 6 casos que se usaron acá tienen etiquetas discutibles —en
- * q125 el juez dice NO mirando el fragmento top (un texto sobre eclipses) y
- * tiene razón, mientras que la etiqueta dice "sí" por un pasaje de la Odisea que
- * quedó segundo, a 0,31. Sin ese banco, cualquier cambio acá se calibra contra
- * el ruido.
+ * EL BANCO YA EXISTE: `golden/answerability-banco.jsonl`, 22 tríos etiquetados
+ * LEYENDO el material servido, con una línea de justificación cada uno. Se mide
+ * con `pnpm --filter @tutor-ia/eval eval-answerability`.
+ *
+ * Y su primer veredicto cierra la discusión sobre el umbral:
+ *
+ *   acierto con el umbral actual (0,85)          13/16
+ *   entailment cuando SÍ responde          0,953 – 0,999
+ *   entailment cuando NO responde          0,012 – 0,997
+ *   SEPARACIÓN (mín sí − máx no)                 -0,043
+ *
+ * La separación es NEGATIVA: las dos poblaciones se solapan, así que NINGÚN
+ * umbral las separa. Mover `RAG_ANSWERABILITY_MIN` no puede arreglar esto —
+ * bajarlo aprueba más ruido y subirlo empieza a rechazar material que sí
+ * responde. Está probado, no supuesto.
+ *
+ * Los tres falsos positivos son todos material VECINO:
+ *   b15  0,997  "¿cómo se resuelve una ecuación de segundo grado?" en Matemática
+ *               6º, contra ecuaciones simples por descomposición de 6º básico.
+ *   b17  0,964  "¿qué es el pH?" contra ácidos, bases y neutralización.
+ *   b06  0,949  "¿cómo se amplió el voto?" contra un gráfico de participación
+ *               electoral y la portada de la unidad que lo ANUNCIA.
+ *
+ * El banco es chico (22, de los que 16 miden al discriminador: los otros 6 no
+ * tienen material y ahí el gate ya abstuvo antes). Para crecerlo se agregan
+ * casos a `banco-answerability.ts` y se etiqueta leyendo — no automatizar esa
+ * parte es lo que lo hace servir.
  */
 export function comoAfirmacion(pregunta: string): string {
   const limpia = pregunta

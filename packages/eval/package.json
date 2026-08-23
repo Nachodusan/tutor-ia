@@ -45,7 +45,9 @@
     "ingest-epja": "tsx --env-file-if-exists=../../.env src/ingest-epja.ts",
     "ruteo-area": "tsx --env-file-if-exists=../../.env src/ruteo-area.ts",
     "inspeccionar-golden": "tsx --env-file-if-exists=../../.env src/inspeccionar-golden.ts",
-    "alineacion-peda": "tsx --env-file-if-exists=../../.env src/alineacion-peda.ts"
+    "alineacion-peda": "tsx --env-file-if-exists=../../.env src/alineacion-peda.ts",
+    "banco-answerability": "tsx --env-file-if-exists=../../.env src/banco-answerability.ts",
+    "eval-answerability": "tsx --env-file-if-exists=../../.env src/eval-answerability.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",
