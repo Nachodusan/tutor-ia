@@ -36,43 +36,46 @@ Fuera de alcance por decisión medida: resolver ejercicios y hacer cálculo.
 | Alucinación real | **~2,6%** (auditada a mano sobre 14 afirmaciones con 8 jueces) |
 | Alucinación que reporta el instrumento | 13,3% — el 79% es ruido del NLI |
 | Abstención indebida | 0,0% — el tutor ya no se niega |
-| Encuadre correcto (`correct_mode`) | **21/24 (87,5%)**, con ±1 de ruido — ver abajo |
+| Encuadre correcto (`correct_mode`) | **21/24 (87,5%)** — reproducible desde el 2026-08-23 |
 
 El núcleo pedagógico está sano: el tutor explica bien, cita bien, y **casi no
 inventa**. La brecha entre el 13,3% que reporta la métrica y el ~2,6% real es del
 instrumento, no del producto — está documentada y auditada.
 
-### ⚠️⚠️ `correct_mode` TIENE ±1 DE RUIDO — medido el 2026-08-23
+### La guarda ERA irreproducible — arreglado el 2026-08-23
 
-**Una diferencia de un punto NO prueba nada.** Se corrió la guarda tres veces con
-el MISMO código (diff de solo comentarios) y la misma semilla: **20, 21, 21**.
+**Síntoma:** el mismo código sobre la misma base daba 19, 20 o 21 sobre 24, y no
+siempre fallaba la misma pregunta. Con la máquina quieta seguía variando, así que
+no era contención.
 
-Toda la varianza está en **q034**, cuyo score saltó entre 0,0484, 0,1598 y 0,2331
-en las corridas del día. Vive en el borde del gate, y ahí un lazo de
-realimentación amplifica cualquier temblor del proveedor:
+**Causa:** el **puente de vocabulario** (`puenteDeVocabulario`) es una tarea
+GENERATIVA de salida larga, y eso no es determinista aunque `temperature` sea 0 —
+el proveedor sirve un MoE y el ruteo de expertos hace que dos llamadas idénticas
+devuelvan listas de distinto largo. Medido: **cinco llamadas iguales, tres
+resultados distintos**, uno de ellos `null` (la salida no pasó
+`esListaDeTerminos`).
 
-> El puente de vocabulario (`query-normalize`) se activa **solo cuando el gate
-> corta**. Si el gate corta, la consulta se reescribe y la reescrita busca otro
-> material, con otros scores. O sea que el gate y el normalizador están
-> acoplados: **endurecer el gate no filtra, DESVÍA consultas a otro camino**.
+Eso basta para mover todo, porque **el puente solo corre cuando el gate corta**:
+su resultado cambia la consulta → el material → el encuadre. En una comparación
+q028 saltó de 0,0018 a 0,485 entre dos corridas seguidas.
 
-El origen del temblor es el proveedor: `temperature=0` no da determinismo con
-Qwen3.6-35B-A3B, que es MoE — el ruteo de expertos y el batcheo del servidor
-varían entre llamadas. **`LLM_SEED=7` no lo estabilizó**, así que no alcanza con
-fijar la semilla.
+**Arreglo:** caché de fixtures (`QUERY_NORMALIZE_CACHE`). La primera corrida
+graba lo que el modelo devolvió y las siguientes lo reproducen; el retrieval
+sigue siendo el real y lo único congelado es la pieza que no se puede repetir.
+`retrieval-guard` lo activa solo, contra `golden/puente-fixture.json`. Verificado:
+**tres corridas idénticas hasta el `topScore` de cada pregunta.** En producción no
+hay caché. Con `--sin-fixture` se mide en vivo.
 
-**Cómo medir, entonces:**
-- q120, q123 y q126 dan IDÉNTICO en las tres corridas, hasta el cuarto decimal.
-  Ésos son defectos reales y reproducibles: son el baseline que sirve.
-- Para comparar un cambio, correr la guarda **3 veces** y mirar la mediana, o
-  excluir q034 y comparar sobre 23.
-- Un cambio que mueve un solo punto y no se puede explicar desde el código
-  probablemente no movió nada.
+**Para re-grabar** —tras cambiar el prompt del puente, el modelo o el corpus—
+se borra el archivo y se corre una vez.
 
-⚠️ Las conclusiones de ±1 del 2026-08-22 quedan bajo esta advertencia. Lo que NO
-se ve afectado son los hallazgos que salieron de LEER el material (q120 no
-responde, Sherlock no está en el libro, el Minotauro sí está en tres): esos se
-verificaron a mano, no con el contador.
+⚠️ **21/24 es el valor real.** Las corridas de 19 y 20 del 2026-08-22/23 eran el
+artefacto, no el ruido de fondo: no hace falta correr tres veces ni sacar
+medianas. Y una lectura que el ruido tapaba: en el fixture se ve que a "¿en qué
+año ganó Chile la Copa América?" el puente le devuelve *"Historia de Chile: La
+Independencia y la República"*, o sea que le inventa contexto de historia a una
+pregunta de fútbol y por eso engancha material del libro. Es un defecto real, y
+ahora es reproducible.
 
 ### ⚠️ El baseline de `correct_mode` se rehizo el 2026-08-22
 

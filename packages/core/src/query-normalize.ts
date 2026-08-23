@@ -22,6 +22,7 @@
  *  - FAIL-OPEN estricto: timeout, error, salida vacía o desproporcionada → se
  *    usa la original. La normalización no puede romper un turno jamás.
  */
+import { readFileSync, writeFileSync } from "node:fs";
 import { config } from "./config";
 import { makeProvider } from "./llm";
 import type { LLMProvider } from "./llm/types";
@@ -225,6 +226,59 @@ export const aConsulta = (s: string): string => partirTitulos(s).join(", ");
  * Devuelve los términos del libro para buscar, o `null` si no hay traducción
  * confiable. `null` significa "seguí abstiniéndote", nunca "inventá".
  */
+/**
+ * CACHÉ DE FIXTURES — para que MEDIR sea reproducible.
+ *
+ * El puente de vocabulario es una tarea GENERATIVA de salida larga, y eso no es
+ * determinista aunque `temperature` sea 0: el proveedor sirve un MoE
+ * (Qwen3.6-35B-A3B) y el ruteo de expertos más el batcheo hacen que dos llamadas
+ * idénticas devuelvan listas de distinto largo. Medido el 2026-08-23: cinco
+ * llamadas con la misma pregunta dieron TRES resultados distintos, uno de ellos
+ * `null` (la salida no pasó `esListaDeTerminos`).
+ *
+ * Eso hacía IMPOSIBLE medir. El puente solo corre cuando el gate corta, así que
+ * su resultado cambia la consulta, que cambia el material, que cambia el gate:
+ * dos corridas del mismo código sobre la misma base daban encuadres distintos en
+ * preguntas distintas — verificado con la máquina quieta, no era contención.
+ *
+ * Con `QUERY_NORMALIZE_CACHE=<archivo>` la primera corrida GRABA lo que el
+ * modelo devolvió y las siguientes lo REPRODUCEN. El retrieval sigue siendo el
+ * de verdad; lo único congelado es la única pieza que no se puede repetir. El
+ * archivo es JSON plano a propósito: se abre y se lee qué consulta se usó.
+ *
+ * NO se activa sola. En producción no hay caché y el puente corre como siempre.
+ */
+function cachePath(): string | null {
+  const p = process.env.QUERY_NORMALIZE_CACHE;
+  return p && p.trim() !== "" ? p : null;
+}
+
+let _cache: Record<string, string | null> | null = null;
+
+function leerCache(): Record<string, string | null> {
+  if (_cache) return _cache;
+  const p = cachePath();
+  if (!p) return (_cache = {});
+  try {
+    _cache = JSON.parse(readFileSync(p, "utf8")) as Record<string, string | null>;
+  } catch {
+    _cache = {};
+  }
+  return _cache;
+}
+
+function guardarCache(clave: string, valor: string | null): void {
+  const p = cachePath();
+  if (!p) return;
+  const c = leerCache();
+  c[clave] = valor;
+  try {
+    writeFileSync(p, JSON.stringify(c, null, 1) + "\n");
+  } catch {
+    // Si no se puede escribir, se mide igual — solo se pierde la reproducibilidad.
+  }
+}
+
 export async function puenteDeVocabulario(
   pregunta: string,
   materia?: string | null,
@@ -234,6 +288,17 @@ export async function puenteDeVocabulario(
   const q = pregunta.trim();
   if (!config.queryNormalize || q.length < 8) return null;
   const donde = [materia, curso].filter(Boolean).join(" · ");
+  // Reproducibilidad al medir (ver la caché de fixtures, arriba). El `null` se
+  // guarda igual que un resultado: "el modelo no devolvió una lista usable" es
+  // una respuesta, y omitirla haría que la corrida grabada difiera de la viva.
+  const clave = `puente|${donde}|${q}`;
+  if (cachePath()) {
+    const c = leerCache();
+    if (clave in c) {
+      const v = c[clave];
+      return v == null ? null : { query: v, ms: Date.now() - started };
+    }
+  }
   try {
     const out = await getNormalizer().generate(
       [
@@ -243,8 +308,13 @@ export async function puenteDeVocabulario(
       { temperature: 0, maxTokens: 80, timeoutMs: config.queryNormalizeTimeoutMs },
     );
     const limpio = out.trim().replace(/^["«»']+|["«»']+$/g, "");
-    if (!esListaDeTerminos(limpio)) return null;
-    return { query: aConsulta(limpio), ms: Date.now() - started };
+    if (!esListaDeTerminos(limpio)) {
+      guardarCache(clave, null);
+      return null;
+    }
+    const consulta = aConsulta(limpio);
+    guardarCache(clave, consulta);
+    return { query: consulta, ms: Date.now() - started };
   } catch {
     // Proveedor caído o timeout: el turno sigue abstiniéndose, que es lo seguro.
     return null;

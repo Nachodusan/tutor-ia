@@ -22,6 +22,7 @@
  *   pnpm --filter @tutor-ia/eval retrieval-guard -- --todas         # las 101, no solo las 24
  */
 import { readFile, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { getTeachingContext, isStruggling } from "@tutor-ia/core";
 import { getSql } from "@tutor-ia/db";
 import { recallPorCobertura, resolverAnclas, type ChunkLite, type GoldAnchor } from "./lib/gold-anchors";
@@ -35,6 +36,22 @@ interface Golden {
   q?: string;
   expect_mode?: string;
   expect_scope?: string;
+}
+
+// REPRODUCIBILIDAD: el puente de vocabulario es generativo y NO es determinista
+// —cinco llamadas iguales dieron tres resultados distintos, uno de ellos null—,
+// y como solo corre cuando el gate corta, su variación cambia la consulta, el
+// material y el encuadre. Sin esto, dos corridas del mismo código sobre la misma
+// base daban resultados distintos en preguntas distintas (verificado con la
+// máquina quieta: no era contención).
+//
+// La primera corrida GRABA el fixture; las siguientes lo reproducen. Para
+// re-grabarlo —tras cambiar el prompt del puente o el modelo— se borra el
+// archivo. Con `--sin-fixture` se mide en vivo, aceptando el ruido.
+if (!process.argv.includes("--sin-fixture") && !process.env.QUERY_NORMALIZE_CACHE) {
+  process.env.QUERY_NORMALIZE_CACHE = resolve(
+    new URL("../golden/puente-fixture.json", import.meta.url).pathname,
+  );
 }
 
 const argv = process.argv.slice(2);
