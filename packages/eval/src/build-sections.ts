@@ -7,6 +7,21 @@
  *   pnpm --filter @tutor-ia/eval build-sections --doc "Historia"
  *
  * No toca la ingesta ni los chunks: solo lee `chunks.content` ya ingestado.
+ *
+ * ⚠️ BORRA LAS UNIDADES DE NIVEL 1, QUE LAS HACE OTRO JOB.
+ * Al reescribir las secciones de un documento se lleva puestas las filas de
+ * `level = 1` que produjo `build-units`. Sin ellas `getPlanUnits` devuelve vacío
+ * y `buildStudyPlan` cae al camino plano: el alumno pierde las unidades y las
+ * lecciones dejan de anidar. Pasó el 2026-08-23 — las 34 materias vivas quedaron
+ * con planes de cero lecciones.
+ *
+ * EL ORDEN COMPLETO, y hay que correrlo entero:
+ *   1. pnpm --filter @tutor-ia/eval build-sections --all
+ *   2. pnpm --filter @tutor-ia/eval build-units
+ *   3. psql -f packages/db/schema_book_sections_limpieza.sql   (fin de libro)
+ *   4. psql -f packages/db/schema_book_sections_titulos.sql    (puntos guía)
+ *   5. pnpm --filter @tutor-ia/admin plans generar --forzar    (las claves de
+ *      tema son hash de documento+ord+título: si cambia el índice, cambian)
  */
 import { buildSectionsForDocument } from "@tutor-ia/rag";
 import { getSql } from "@tutor-ia/db";
