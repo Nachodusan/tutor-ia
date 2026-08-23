@@ -67,3 +67,6 @@ packages/eval/golden/*.bak-*
 # Lo que sí se versiona es la decisión, cuando se toma: el sistema de diseño está
 # en el HANDOFF y lo implementado, en los componentes.
 apps/web/public/propuestas/
+
+# Tareas largas en segundo plano (logs y marcadores). Ver scripts/tarea.sh
+.tareas/
