@@ -1,5 +1,5 @@
 import { buildStudyPlan, SinEstructura, logDecision } from "@tutor-ia/core";
-import { planSizes , pilaresDe, tramosCurriculares } from "@tutor-ia/rag";
+import { planSizes , pilaresDe, tramosCurriculares, pendientesDe } from "@tutor-ia/rag";
 import { getSql, toJson } from "@tutor-ia/db";
 import { rechazarMateriaApagada, requireCursoAbierto } from "@/lib/auth";
 
@@ -64,8 +64,15 @@ export async function GET(req: Request) {
       : it.lecciones,
   }));
 
+  // LO QUE FALTA. Va aparte de los pilares y no como uno más: los pilares se
+  // cruzan por rango de páginas y las páginas son de CADA tomo, así que un
+  // conocimiento que vive en el libro hermano no se puede colgar de una lección
+  // de este. Se nombra el libro y listo.
+  const pendientes = await pendientesDe(subjectId);
+
   return Response.json({
     items: conPilares,
+    pendientes,
     puedeArmarse,
     doneKeys: hechos.map((r) => r.topic_key),
     scores: Object.fromEntries(intentos.map((i) => [i.topic_key, { score: i.score, total: i.total }])),

@@ -11,7 +11,7 @@ import { useParams, useRouter } from "next/navigation";
 import { CaminoView } from "../../../camino";
 import { C, Dots, FONT, HARD, IconSpark, subjectLabel } from "../../../ui";
 import { traerMateria } from "../../../datos";
-import type { PlanItem, Subject } from "../../../tipos";
+import type { Pendiente, PlanItem, Subject } from "../../../tipos";
 
 export default function CaminoPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +25,9 @@ export default function CaminoPage() {
   // "No hay plan todavía" y "este libro no da para un plan" NO son lo mismo. El
   // servidor las distingue; antes acá se mostraba siempre el segundo mensaje.
   const [puedeArmarse, setPuedeArmarse] = useState(false);
+  // Lo que el currículum exige y este libro no trae. Viene del GET del plan
+  // (no del cache): es dato derivado del mapa curricular, que se sigue corrigiendo.
+  const [pendientes, setPendientes] = useState<Pendiente[]>([]);
 
 
   useEffect(() => {
@@ -37,6 +40,7 @@ export default function CaminoPage() {
       .then((j) => {
         setPlan(j.items?.length ? j.items : null);
         setPuedeArmarse(!!j.puedeArmarse);
+        setPendientes(j.pendientes ?? []);
         setDone(j.doneKeys ?? []);
         setScores(j.scores ?? {});
       })
@@ -107,6 +111,7 @@ export default function CaminoPage() {
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 20px 40px" }}>
       <CaminoView
         items={plan} done={done} scores={scores} subject={subject} loading={planLoading}
+        pendientes={pendientes}
         onAbrir={(it) => router.push(`/materia/${id}/camino/${it.key}`)}
         onExamen={() => router.push(`/materia/${id}/prueba`)}
         testLoading={false}

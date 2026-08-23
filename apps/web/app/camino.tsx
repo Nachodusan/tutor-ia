@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { C, FONT, HARD, Dots, IconCheck, IconSpark, IconStar, IconLock, subjectLabel } from "./ui";
-import type { PlanItem, Subject } from "./tipos";
+import type { Pendiente, PlanItem, Subject } from "./tipos";
 
 /**
  * ¿Le fue bien en la lección? La regla se mudó a `nota.ts` cuando el servidor
@@ -55,10 +55,12 @@ const VAIVEN = [0, 0.6, 1, 0.6, 0, -0.6, -1, -0.6];
 const posX = (i: number, amp: number) => VAIVEN[i % VAIVEN.length]! * amp;
 
 export function CaminoView({
-  items, done, scores, subject, loading,
+  items, done, scores, subject, loading, pendientes,
   onAbrir, onExamen, onRegen, testLoading,
 }: {
   items: PlanItem[]; done: string[]; scores: Record<string, { score: number; total: number }>;
+  /** Lo que el Estado exige y este libro no trae. Ver `pendientesDe` en el rag. */
+  pendientes?: Pendiente[];
   subject?: Subject; loading: boolean;
   /** Tocar una parada abre SU PÁGINA. Antes desplegaba una hoja acá encima; el
    *  camino no tiene por qué saber nada del cuestionario. */
@@ -596,6 +598,69 @@ export function CaminoView({
           );
         })()}
       </div>
+
+      {/* ── LO QUE EL LIBRO NO TRAE ────────────────────────────────────────
+          Los pilares solo pueden destacar lo que el tomo sí enseña, así que
+          hasta acá el hueco era INVISIBLE: el chico recorría el camino entero
+          sin enterarse de que hay algo que le van a exigir y su libro no cubre.
+          El dato ya estaba en `curriculum_map`; la pantalla lo escondía.
+
+          Va AL FINAL y no intercalado entre las paradas: no es algo que pueda
+          estudiar en este libro, así que meterlo en el sendero prometería una
+          lección que no existe.
+
+          En CORAL y no en el SOL de los pilares: son la misma exigencia
+          curricular, pero opuestas —una es "acá está", la otra "acá no está"—,
+          y pintarlas igual las volvía indistinguibles de un vistazo. */}
+      {(pendientes?.length ?? 0) > 0 && !loading && (
+        <div style={{
+          marginTop: 34, background: C.panel, border: `2px solid ${C.ink}`,
+          borderRadius: 16, padding: "16px 18px", boxShadow: HARD(C.coral),
+        }}>
+          <div style={{
+            fontFamily: FONT.round, fontWeight: 900, fontSize: 15, color: C.ink,
+            display: "flex", alignItems: "center", gap: 7,
+          }}>
+            <IconStar size={15} />
+            Esto te lo van a exigir y tu libro no lo trae
+          </div>
+          <div style={{ color: C.dim, fontSize: 12.5, marginTop: 4, lineHeight: 1.45 }}>
+            {pendientes!.length === 1 ? "Es un tema del" : `Son ${pendientes!.length} temas del`}{" "}
+            programa oficial que tu texto de {area} no desarrolla. No los pierdas de vista.
+          </div>
+          <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "grid", gap: 8 }}>
+            {pendientes!.map((p) => (
+              <li key={p.item} style={{
+                display: "flex", gap: 9, alignItems: "flex-start",
+                background: C.panel2, borderRadius: 10, padding: "9px 11px",
+              }}>
+                <span style={{
+                  flex: "0 0 auto", marginTop: 2, width: 8, height: 8, borderRadius: "50%",
+                  background: p.enHermana ? C.sun : C.coral,
+                }} />
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ fontSize: 13.5, color: C.text, fontWeight: 600, lineHeight: 1.4 }}>
+                    {p.item.replace(/\.$/, "")}
+                  </span>
+                  {/* DÓNDE SÍ ESTÁ. Es la diferencia entre un reproche y algo
+                      accionable: el plan EPJA tiene UN casillero "Ciencias
+                      Naturales" y el sistema regular lo parte en tres tomos, así
+                      que la mitad de estos huecos están en un libro hermano que
+                      el alumno TAMBIÉN tiene. */}
+                  <span style={{ display: "block", fontSize: 12, color: C.dim, marginTop: 3, lineHeight: 1.4 }}>
+                    {p.enHermana
+                      ? <>Está en tu libro de <b style={{ color: C.okTx }}>{p.enHermana.materia}</b>
+                          {p.enHermana.paginaDesde ? `, página ${p.enHermana.paginaDesde}` : ""}.</>
+                      : p.motivo === "otro_año"
+                        ? "Está en tu tomo, pero en la mitad del otro curso."
+                        : "No está en ninguno de tus libros: pedile material a tu profe."}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
     </div>
   );

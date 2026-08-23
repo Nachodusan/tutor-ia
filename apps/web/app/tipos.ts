@@ -27,6 +27,14 @@ export interface Profile { username: string; grade: string; avatar?: string | nu
 /** Un conocimiento esencial del currículum que cae en este tramo del libro.
  *  Lo calcula /api/plan al leer, cruzando las páginas contra `curriculum_map`. */
 export interface Pilar { item: string; asignatura: string; cobertura: string }
+/** Un conocimiento que el Estado exige y este libro no enseña. Ver `pendientesDe`. */
+export interface Pendiente {
+  item: string;
+  asignatura: string;
+  /** 'no_esta' = no está en ningún lado del tomo · 'otro_año' = está, en la mitad del otro curso. */
+  motivo: string;
+  enHermana: { materia: string; paginaDesde: number | null } | null;
+}
 export interface PlanItem { n: number; key: string; title: string; focus: string; points?: string[]; unit: number | null; lesson: number | null; p0: number | null; p1: number | null;
   /** Lo que el Estado exige en este tramo. Vacío = el libro lo trae igual, pero
    *  el currículum no lo pide acá. NO significa "salteable". */

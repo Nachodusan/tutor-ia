@@ -90,3 +90,81 @@ export function pilaresDe(
   }
   return out;
 }
+
+/**
+ * Un conocimiento que el Estado exige y el libro del alumno NO enseña.
+ *
+ * Existe porque `pilaresDe` solo puede destacar lo que el libro sí trae, y así
+ * el hueco es INVISIBLE: el alumno recorre su camino entero sin enterarse de que
+ * hay algo que le van a exigir y que su tomo no cubre. La información ya estaba
+ * en `curriculum_map` (los veredictos `no_esta` y `otro_año`); la pantalla la
+ * escondía.
+ */
+export interface Pendiente {
+  item: string;
+  asignatura: string;
+  /** 'no_esta' | 'otro_año' */
+  motivo: string;
+  /** Dónde SÍ está, si un libro hermano del mismo casillero EPJA lo cubre. */
+  enHermana: { materia: string; paginaDesde: number | null } | null;
+}
+
+/**
+ * Lo que le van a exigir a este alumno y su libro no trae.
+ *
+ * ── Por qué mira a las materias HERMANAS ────────────────────────────────────
+ * El plan EPJA tiene UN casillero "Ciencias Naturales" y el sistema regular lo
+ * parte en tres libros. Por eso la misma exigencia se mapeó contra Biología,
+ * Física y Química, y cada libro cubre su tercio: los otros dos quedan
+ * `no_esta`. Medido el 2026-08-23: de las 5 materias vivas con menos pilares,
+ * las 5 son de ciencias, y Física 1º Medio tiene 1 pilar en 88 lecciones con 4
+ * de sus 5 huecos cubiertos por un tomo hermano que el alumno también tiene.
+ *
+ * Decirle "esto no está" a secas sería falso y desalentador. Decirle "esto está
+ * en tu libro de Química, página 40" es la misma verdad, accionable.
+ *
+ * ── Por qué esto NO es un pilar más ─────────────────────────────────────────
+ * Los pilares se cruzan por RANGO DE PÁGINAS, y las páginas son de CADA tomo: la
+ * página 40 de Química no es la 40 de Física. Meter los tramos de la hermana en
+ * `tramosCurriculares` marcaría lecciones al azar. Por eso esto va aparte, al
+ * final del camino, nombrando el libro.
+ *
+ * `otro_año` se informa pero se distingue: ese contenido está en el tomo del
+ * curso vecino, que es un dato distinto de "no existe en ningún lado".
+ */
+export async function pendientesDe(subjectId: string): Promise<Pendiente[]> {
+  const sql = getSql();
+  return await sql<Pendiente[]>`
+    with yo as (
+      select s.id, s.area, (select max(d.grade) from documents d where d.subject_id = s.id) curso
+      from subjects s where s.id = ${subjectId}::uuid
+    ),
+    -- Lo que ESTA materia declara que no tiene.
+    faltan as (
+      select cm.item, coalesce(cm.asignatura, '') asignatura, cm.verificado motivo
+      from curriculum_map cm
+      where cm.subject_id = ${subjectId}::uuid
+        and cm.metodo = 'lector-v1'
+        and cm.verificado in ('no_esta', 'otro_año')
+    ),
+    -- Dónde sí está, dentro del mismo casillero EPJA y el mismo curso. Se excluye
+    -- la propia materia: si ella lo tuviera, no estaria en faltan.
+    hermanas as (
+      select cm.item, s.name materia, cm.pagina_desde,
+             row_number() over (partition by cm.item order by cm.verificado, cm.pagina_desde) rn
+      from curriculum_map cm
+      join subjects s on s.id = cm.subject_id
+      join yo on s.area = yo.area and s.id <> yo.id
+      where cm.metodo = 'lector-v1'
+        and cm.verificado in ('correcto', 'parcial')
+        and s.disabled_at is null
+        and (select max(d.grade) from documents d where d.subject_id = s.id) = yo.curso
+    )
+    select f.item, f.asignatura, f.motivo,
+           case when h.materia is null then null
+                else jsonb_build_object('materia', h.materia, 'paginaDesde', h.pagina_desde)
+           end as "enHermana"
+    from faltan f
+    left join hermanas h on h.item = f.item and h.rn = 1
+    order by (h.materia is null) desc, f.item`;
+}
