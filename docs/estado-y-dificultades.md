@@ -36,11 +36,45 @@ Fuera de alcance por decisión medida: resolver ejercicios y hacer cálculo.
 | Alucinación real | **~2,6%** (auditada a mano sobre 14 afirmaciones con 8 jueces) |
 | Alucinación que reporta el instrumento | 13,3% — el 79% es ruido del NLI |
 | Abstención indebida | 0,0% — el tutor ya no se niega |
-| Encuadre correcto (`correct_mode`) | 87,5% (21 de 24) |
+| Encuadre correcto (`correct_mode`) | **87,5% (21 de 24)** — baseline rehecho + fuga del margen tapada, 2026-08-22 |
 
 El núcleo pedagógico está sano: el tutor explica bien, cita bien, y **casi no
 inventa**. La brecha entre el 13,3% que reporta la métrica y el ~2,6% real es del
 instrumento, no del producto — está documentada y auditada.
+
+### ⚠️ El baseline de `correct_mode` se rehizo el 2026-08-22
+
+El 87,5% (21/24) que figuraba acá era **anterior al 2026-08-11**, cuando la etapa
+`otra_materia` se apagó por decisión de producto. Desde entonces dos preguntas
+(q030, q034) esperaban un alcance que el código ya no puede producir, y otras
+cuatro esperaban "ningún libro cubre esto" sobre temas que el corpus **sí**
+trata. Con el baseline viejo era imposible distinguir una regresión de una
+expectativa vencida — pasó de verdad al ingerir el corpus EPJA.
+
+Se revisaron las 24 **leyendo el material**, no mirando el scope devuelto (eso
+sería circular). Resultado: 4 expectativas corregidas, 3 revisadas y confirmadas.
+El porqué de cada una vive en el campo `rebaseline` de `golden/questions.jsonl`;
+el archivo anterior quedó en `questions.jsonl.bak-20260822`.
+
+**q034 ya se arregló** (misma fecha): a "¿qué es la fotosíntesis?" desde Lengua 8º
+entraba Lengua 7º pág. 134 —"los restos nudosos de un antiquísimo tocón"— con
+topScore **0,1598, por debajo del gate de 0,18**, rescatado por el margen
+distribucional; después el NLI le daba 0,981 (el texto menciona células, azúcares
+y respiración) y salía como respuesta respaldada.
+
+La causa no era el margen sino DÓNDE se aplicaba: existe para rescatar registro
+coloquial dentro del material del alumno, donde el contexto de materia respalda un
+score bajo. Fuera de su libro ese respaldo no existe. La etapa `otra_materia` ya
+pasaba `gateMargin: 0`; la de `otro_curso` había quedado sin él. Apagarlo ahí subió
+de 20/24 a 21/24 sin mover ninguna otra pregunta.
+
+**Las 3 fallas que quedan son defectos reales, no ruido del instrumento:**
+
+| id | qué pasa | qué falla |
+|---|---|---|
+| q120 | a "¿de qué trata Cien años de soledad?" le da 0,9876 a un texto sobre el "mundo maravilloso" y 0,996 de entailment | el discriminador de answerability |
+| q123 | a "¿qué se cuenta sobre Sherlock Holmes?" responde con un policial de Karen McManus, 0,5052 | el ranking |
+| q126 | "Minotauro" está en el texto de 8º, en el de 7º y en el de 2º Medio, y no lo encuentra | recall |
 
 ### Lo que no
 
