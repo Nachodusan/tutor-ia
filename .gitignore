@@ -38,3 +38,25 @@ packages/eval/rank-sweep-*.json
 # Salida de `retrieval-guard` (se reescribe en cada barrido). Lo que se versiona
 # es el resultado interpretado, en baselines/ y en el HANDOFF.
 packages/eval/retrieval-guard.json
+
+# ── Scripts de scratch del eval ─────────────────────────────────────────────
+# Refutaciones y sondeos de una sola vez: se escriben para contestar UNA pregunta
+# ("¿el arrastre existe?", "¿cuántas unidades detecta?"), se corren, y lo que
+# sobrevive es el hallazgo — que va al HANDOFF o a docs/, no el script.
+# Tenerlos versionados confunde: parecen herramientas mantenidas y no lo son.
+#
+# CONVENCIÓN: un script de scratch va con guion bajo adelante (`_loquesea.ts`).
+# Si algo merece quedarse, se le saca el guion bajo, se le pone entrada en
+# package.json y ahí sí entra al repo — como `ruteo-area` o `inspeccionar-golden`.
+packages/eval/_*.ts
+packages/eval/src/_*.ts
+# Familias anteriores a la convención del guion bajo.
+packages/eval/refutar-*.ts
+packages/eval/src/refutar-*.ts
+packages/eval/src/unit-range-*.ts
+packages/eval/src/a2-votacion.ts
+
+# Salida de auditorías del golden (se regenera; lo que se versiona es la conclusión)
+packages/eval/golden/auditoria/
+# Respaldos del golden antes de un re-baseline: el historial de git ya los guarda.
+packages/eval/golden/*.bak-*
