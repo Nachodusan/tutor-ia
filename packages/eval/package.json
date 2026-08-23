@@ -41,7 +41,10 @@
     "auditoria-planillas": "tsx --env-file-if-exists=../../.env src/auditoria-planillas.ts",
     "ubicar": "tsx --env-file-if-exists=../../.env src/ubicar.ts",
     "cargar-mapa": "tsx --env-file-if-exists=../../.env src/cargar-mapa.ts",
-    "mapa-doc": "tsx --env-file-if-exists=../../.env src/mapa-doc.ts"
+    "mapa-doc": "tsx --env-file-if-exists=../../.env src/mapa-doc.ts",
+    "ingest-epja": "tsx --env-file-if-exists=../../.env src/ingest-epja.ts",
+    "ruteo-area": "tsx --env-file-if-exists=../../.env src/ruteo-area.ts",
+    "inspeccionar-golden": "tsx --env-file-if-exists=../../.env src/inspeccionar-golden.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",
