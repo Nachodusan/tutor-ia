@@ -60,3 +60,10 @@ packages/eval/src/a2-votacion.ts
 packages/eval/golden/auditoria/
 # Respaldos del golden antes de un re-baseline: el historial de git ya los guarda.
 packages/eval/golden/*.bak-*
+
+# Maquetas de diseño: HTML sueltos que se abren a mano para mirar una idea
+# (avatares, sets de iconos, la pantalla de repaso). No los sirve la app ni los
+# importa nadie — viven en public/ solo para poder abrirlos en el navegador.
+# Lo que sí se versiona es la decisión, cuando se toma: el sistema de diseño está
+# en el HANDOFF y lo implementado, en los componentes.
+apps/web/public/propuestas/
