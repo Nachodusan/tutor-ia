@@ -348,8 +348,6 @@ export async function getPlanUnits(subjectId: string): Promise<PlanUnit[]> {
                            where o.document_id = bs.document_id and o.level = 1
                              and o.method = 'unidad_chunks'))
     order by d.title, bs.page_start`;
-  if (unidades.length < 2) return [];
-
   const lecciones = await sql<{
     document_id: string; subject_id: string; doc_title: string; ord: number; title: string;
     unit_no: number | null; lesson_no: number | null; page_start: number; page_end: number;
@@ -360,6 +358,94 @@ export async function getPlanUnits(subjectId: string): Promise<PlanUnit[]> {
     join documents d on d.id = bs.document_id
     where bs.subject_id = ${subjectId} and bs.level = 2
     order by bs.page_start`;
+
+  /**
+   * ── LA UNIDAD LLEGA HASTA DONDE EMPIEZA LA SIGUIENTE ──────────────────────
+   * Las unidades que el parser ubica por folio son MARCADORES DE UNA PÁGINA: la
+   * portadilla donde dice "Unidad 2". Historia 6º tenía nueve unidades en
+   * p.9-9, 25-25, 45-45, 65-65… y la lección de la página 27 no caía adentro de
+   * ninguna. Medido el 2026-08-23: 108 de sus 186 lecciones quedaban huérfanas,
+   * o sea que existían en el índice y no aparecían en el camino de nadie.
+   *
+   * Un libro no tiene huecos entre unidades: la unidad que arranca en la 25
+   * llega hasta la 44 porque en la 45 arranca la siguiente. Eso es lo que se
+   * calcula acá. Para las unidades que ya venían bien —las de `unidad_chunks`
+   * embaldosan (10-49, 50-101, 102-149)— la cuenta da lo mismo y no las toca.
+   *
+   * Se hace al LEER y no corrigiendo `book_sections`: el rango guardado es lo
+   * que el parser encontró de verdad, y pisarlo perdería el dato de que la
+   * portadilla está en esa página.
+   */
+  type Unidad = (typeof unidades)[number];
+  type Leccion = (typeof lecciones)[number];
+
+  const finDeDoc = new Map<string, number>();
+  const inicioDeDoc = new Map<string, number>();
+  for (const l of lecciones) {
+    finDeDoc.set(l.document_id, Math.max(finDeDoc.get(l.document_id) ?? 0, l.page_end));
+    inicioDeDoc.set(l.document_id, Math.min(inicioDeDoc.get(l.document_id) ?? l.page_start, l.page_start));
+  }
+  const porDoc = new Map<string, Unidad[]>();
+  for (const u of unidades) {
+    if (!porDoc.has(u.document_id)) porDoc.set(u.document_id, []);
+    porDoc.get(u.document_id)!.push(u);
+  }
+  for (const us of porDoc.values()) {
+    us.sort((a, b) => a.page_start - b.page_start);
+    for (const [i, u] of us.entries()) {
+      const limite = i + 1 < us.length
+        ? us[i + 1]!.page_start - 1
+        // La última llega hasta donde termina la última lección del tomo.
+        : (finDeDoc.get(u.document_id) ?? u.page_end);
+      if (limite > u.page_end) u.page_end = limite;
+    }
+    // Y la PRIMERA arranca donde arranca la primera lección del tomo. Simétrico
+    // con lo de arriba: la portadilla de la Unidad 1 está en la página 10 y la
+    // lección de apertura en la 8, así que sin esto queda afuera de su propia
+    // unidad. Son 15 lecciones en el corpus.
+    const primera = us[0];
+    if (primera) {
+      const arranque = inicioDeDoc.get(primera.document_id);
+      if (arranque !== undefined && arranque < primera.page_start) primera.page_start = arranque;
+    }
+  }
+
+  /**
+   * ── UN TOMO CON LECCIONES Y SIN UNIDADES TAMBIÉN ES UN NODO ───────────────
+   * Varias materias tienen dos tomos: el texto del estudiante y el del programa
+   * EPJA. A veces el parser saca unidades de uno y lecciones del otro, y como la
+   * lección se asigna a una unidad DEL MISMO documento, las del tomo sin
+   * unidades no aparecen en ningún lado. Lenguaje 6º perdía así sus 30 lecciones
+   * del tomo EPJA — el 91% de las que tenía.
+   *
+   * Se le arma UNA unidad sintética al tomo, que es lo que el tomo es: un bloque
+   * de material con nombre propio. Inventar divisiones adentro sería fabricar
+   * una estructura que el libro no tiene.
+   */
+  const docsConUnidad = new Set(unidades.map((u) => u.document_id));
+  const huerfanos = new Map<string, Leccion[]>();
+  for (const l of lecciones) {
+    if (docsConUnidad.has(l.document_id)) continue;
+    if (!huerfanos.has(l.document_id)) huerfanos.set(l.document_id, []);
+    huerfanos.get(l.document_id)!.push(l);
+  }
+  for (const [docId, ls] of huerfanos) {
+    unidades.push({
+      document_id: docId,
+      subject_id: ls[0]!.subject_id,
+      doc_title: ls[0]!.doc_title,
+      // `ord` negativo: no colisiona con ninguna fila real de `book_sections`,
+      // así que la clave del tema es estable y propia.
+      ord: -1,
+      title: tomo(ls[0]!.doc_title).replace(/\s*·\s*$/, "") || ls[0]!.doc_title,
+      unit_no: null,
+      page_start: Math.min(...ls.map((l) => l.page_start)),
+      page_end: Math.max(...ls.map((l) => l.page_end)),
+    });
+  }
+  unidades.sort((a, b) => a.doc_title.localeCompare(b.doc_title) || a.page_start - b.page_start);
+
+  if (unidades.length < 2) return [];
 
   const variosTomos = new Set(unidades.map((u) => u.document_id)).size > 1;
   const muestras = await muestrasDeRango(unidades.map((u) => ({
