@@ -70,8 +70,18 @@ async function materias(curso?: string): Promise<Materia[]> {
     join documents d on d.subject_id = s.id
     left join book_sections bs on bs.subject_id = s.id and bs.level = 2
     where s.user_id is null
+      -- Las materias apagadas no se le muestran a nadie: generarles el plan es
+      -- pagarle al proveedor por algo que ningún alumno va a abrir.
+      and s.disabled_at is null
     group by s.id, s.name
-    having count(distinct bs.id) >= 3
+    -- DOS CAMINOS POSIBLES, no uno. El de siempre pide lecciones de nivel 2.
+    -- Pero desde que un tomo sin secciones entra al camino como una parada
+    -- propia (ver getPlanUnits), una materia con varios tomos y NINGUNA
+    -- lección también arma plan: son sus tomos. Ciencias para la Ciudadanía es
+    -- exactamente eso —el libro no trae índice y sus seis módulos EPJA sí
+    -- tienen nombre— y con el criterio viejo no entraba a la lista, así que se
+    -- quedaba sin plan sin que nadie se enterara.
+    having count(distinct bs.id) >= 3 or count(distinct d.id) >= 2
        ${curso ? sql`and max(d.grade) = ${curso}` : sql``}
     order by max(d.grade), s.name`;
 }

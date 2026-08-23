@@ -34,6 +34,8 @@ export interface Pilar {
 interface Tramo extends Pilar {
   desde: number;
   hasta: number;
+  /** De qué tomo son estas páginas. Ver `schema_curriculum_tramos_doc.sql`. */
+  documentId: string | null;
 }
 
 /**
@@ -55,6 +57,7 @@ export async function tramosCurriculares(subjectId: string): Promise<Tramo[]> {
   return await sql<Tramo[]>`
     select t.pagina_desde as desde,
            coalesce(t.pagina_hasta, t.pagina_desde) as hasta,
+           t.document_id as "documentId",
            cm.item, coalesce(cm.asignatura, '') as asignatura,
            cm.verificado as cobertura
     from curriculum_map cm
@@ -72,17 +75,31 @@ export async function tramosCurriculares(subjectId: string): Promise<Tramo[]> {
  * Solapamiento y no contención: una lección de las páginas 27-28 y un tramo
  * curricular de la 21 a la 43 se tocan, aunque ninguno contenga al otro. Pedir
  * contención dejaba sin marcar justo las lecciones de las unidades largas.
+ *
+ * ── Y DEL MISMO TOMO ────────────────────────────────────────────────────────
+ * Comparar páginas de libros distintos no significa nada: cada tomo empieza en
+ * su página 1. Mientras al camino solo entraban secciones del texto del
+ * estudiante esto no se notaba; con los módulos EPJA adentro sí — el pilar
+ * "Relación entre salud y enfermedad" apareció colgado de cinco unidades,
+ * incluida "Estructura interna de la Tierra". 36 materias tienen más de un tomo.
+ *
+ * `documentId` null en el nodo (un plan viejo, cacheado antes de que el ítem lo
+ * llevara) NO desactiva el filtro: se comparan igual, que es el comportamiento
+ * de antes. Un tramo sin tomo, en cambio, no existe: la migración los llenó
+ * todos.
  */
 export function pilaresDe(
   tramos: Tramo[],
   p0: number | null,
   p1: number | null,
+  documentId?: string | null,
 ): Pilar[] {
   if (p0 == null) return [];
   const hasta = p1 ?? p0;
   const vistos = new Set<string>();
   const out: Pilar[] = [];
   for (const t of tramos) {
+    if (documentId && t.documentId && t.documentId !== documentId) continue;
     if (t.desde > hasta || t.hasta < p0) continue;
     if (vistos.has(t.item)) continue;
     vistos.add(t.item);

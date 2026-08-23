@@ -331,9 +331,24 @@ export interface PlanUnit extends PlanTopic {
  */
 export async function getPlanUnits(subjectId: string): Promise<PlanUnit[]> {
   const sql = getSql();
+  // ── QUÉ FUENTE DE UNIDADES GANA, POR DOCUMENTO ────────────────────────────
   // `unidad_chunks` primero: seis libros tienen unidades viejas sacadas del
   // índice y algunas están rotas (Matemática 2º Medio: cuatro unidades que
   // abarcan cuatro páginas). No se borran —son parte del índice— pero pierden.
+  //
+  // SALVO que `unidad_chunks` no haya sacado más que "Unidad" y "Unidad 2".
+  // Ese título no le dice nada al alumno, y cuando el índice sí tiene nombres
+  // —"Prevención y transmisión de infecciones", "Consumo sostenible y
+  // conciencia ambiental"— perder esos nombres para quedarse con un número es
+  // el peor de los dos mundos. Ciencias para la Ciudadanía 3º y 4º Medio eran
+  // así, y son los ÚNICOS dos documentos del corpus en esa situación (medido el
+  // 2026-08-23), o sea que esto no reabre la puerta que el criterio original
+  // cerró: los índices rotos que lo motivaron tienen unidades numeradas igual.
+  //
+  // Además, el motivo original —rangos de página absurdos— ya no depende de
+  // esta elección: unas líneas más abajo cada unidad se extiende hasta donde
+  // empieza la siguiente, así que un índice con unidades de una página deja de
+  // ser un problema por sí solo.
   const unidades = await sql<{
     document_id: string; subject_id: string; doc_title: string; ord: number; title: string;
     unit_no: number | null; page_start: number; page_end: number;
@@ -343,10 +358,25 @@ export async function getPlanUnits(subjectId: string): Promise<PlanUnit[]> {
     from book_sections bs
     join documents d on d.id = bs.document_id
     where bs.subject_id = ${subjectId} and bs.level = 1
-      and (bs.method = 'unidad_chunks'
-           or not exists (select 1 from book_sections o
-                           where o.document_id = bs.document_id and o.level = 1
-                             and o.method = 'unidad_chunks'))
+      and case
+        -- El documento tiene unidades de unidad_chunks CON NOMBRE: mandan.
+        when exists (select 1 from book_sections o
+                      where o.document_id = bs.document_id and o.level = 1
+                        and o.method = 'unidad_chunks'
+                        and o.title !~* '^unidad\\s*\\d*\\s*$')
+          then bs.method = 'unidad_chunks'
+        -- No, pero el índice sí tiene nombres: gana el índice.
+        when exists (select 1 from book_sections o
+                      where o.document_id = bs.document_id and o.level = 1
+                        and o.method <> 'unidad_chunks'
+                        and o.title !~* '^unidad\\s*\\d*\\s*$')
+          then bs.method <> 'unidad_chunks'
+        -- Ninguna de las dos tiene nombres: el criterio de siempre.
+        else bs.method = 'unidad_chunks'
+             or not exists (select 1 from book_sections o
+                             where o.document_id = bs.document_id and o.level = 1
+                               and o.method = 'unidad_chunks')
+      end
     order by d.title, bs.page_start`;
   const lecciones = await sql<{
     document_id: string; subject_id: string; doc_title: string; ord: number; title: string;
@@ -437,10 +467,60 @@ export async function getPlanUnits(subjectId: string): Promise<PlanUnit[]> {
       // `ord` negativo: no colisiona con ninguna fila real de `book_sections`,
       // así que la clave del tema es estable y propia.
       ord: -1,
-      title: tomo(ls[0]!.doc_title).replace(/\s*·\s*$/, "") || ls[0]!.doc_title,
+      title: nombreDeTomo(ls[0]!.doc_title),
       unit_no: null,
       page_start: Math.min(...ls.map((l) => l.page_start)),
       page_end: Math.max(...ls.map((l) => l.page_end)),
+    });
+  }
+
+  /**
+   * ── EL TOMO SIN NINGUNA SECCIÓN TAMPOCO SE PIERDE ─────────────────────────
+   * Lo de arriba rescata al tomo que tiene lecciones y no unidades. Falta el
+   * caso de más abajo: el tomo del que el parser no sacó NADA — ni índice ni
+   * unidades— porque el libro no trae tabla de contenidos, no tiene encabezados
+   * y sus marcadores "Unidad 1/2" son encabezados corridos que se repiten de la
+   * página 12 a la 310. Ciencias para la Ciudadanía es así, y por eso su camino
+   * eran dos nodos sin desglosar.
+   *
+   * Medido el 2026-08-23: 19 materias vivas tienen documentos de contenido en
+   * ese estado, con más de 6.000 fragmentos en total. Son en su mayoría los
+   * módulos del programa EPJA, y NO son material menor — cada uno trae su tema
+   * y su título del Mineduc ("Módulo 2: La electricidad"). El alumno los tiene
+   * y no podía llegar a ellos desde el camino.
+   *
+   * El módulo entero es UNA parada. No se inventan lecciones adentro: el libro
+   * no las tiene, y partirlo por páginas daría nodos sin nombre.
+   */
+  const conAlgunaSeccion = new Set([
+    ...unidades.map((u) => u.document_id),
+    ...lecciones.map((l) => l.document_id),
+  ]);
+  const sueltos = await sql<{
+    document_id: string; subject_id: string; doc_title: string;
+    page_start: number; page_end: number;
+  }[]>`
+    select d.id as document_id, d.subject_id, d.title as doc_title,
+           min(c.page_start) as page_start, max(c.page_end) as page_end
+    from documents d
+    join chunks c on c.document_id = d.id and c.corpus_role = 'content'
+                 and c.content_type <> 'index'
+    where d.subject_id = ${subjectId} and d.kind = 'content' and d.status = 'ready'
+      and not exists (select 1 from book_sections bs where bs.document_id = d.id)
+    group by d.id, d.subject_id, d.title
+    -- Un tomo de menos de 10 páginas no es una parada del camino: es un anexo.
+    having max(c.page_end) - min(c.page_start) >= 10`;
+  for (const d of sueltos) {
+    if (conAlgunaSeccion.has(d.document_id)) continue;
+    unidades.push({
+      document_id: d.document_id,
+      subject_id: d.subject_id,
+      doc_title: d.doc_title,
+      ord: -1,
+      title: nombreDeTomo(d.doc_title),
+      unit_no: null,
+      page_start: d.page_start,
+      page_end: d.page_end,
     });
   }
   unidades.sort((a, b) => a.doc_title.localeCompare(b.doc_title) || a.page_start - b.page_start);
@@ -722,6 +802,20 @@ export async function getPlanTopicsForQuery(
     sample: muestras[i] ?? "",
     source: "index" as const,
   }));
+}
+
+/**
+ * El nombre con el que un TOMO ENTERO entra al camino como una parada.
+ *
+ * Los títulos de documento vienen largos y con la procedencia adelante
+ * ("EPJA II Ciclo Media · Ciencias Naturales — Módulo 2: La electricidad"). Lo
+ * que le sirve al alumno es la última parte, que es el tema. Si no hay separador
+ * se devuelve el título entero: es feo pero cierto, y `redactarPlan` lo reescribe
+ * después.
+ */
+export function nombreDeTomo(docTitle: string): string {
+  const partes = docTitle.split(/\s+—\s+|\s+·\s+/);
+  return (partes[partes.length - 1] ?? docTitle).trim() || docTitle;
 }
 
 /** "… — tomo 2" → "Tomo 2 · " (para que no salgan dos "Lección 1" sin contexto). */

@@ -53,16 +53,22 @@ export async function GET(req: Request) {
   // derivado de `curriculum_map`, que se sigue corrigiendo, y guardarlos adentro
   // del plan los congelaría en el estado del mapa del día que se armó.
   const tramos = await tramosCurriculares(subjectId);
-  const conPilares = ((cache?.items ?? []) as Record<string, unknown>[]).map((it) => ({
-    ...it,
-    pilares: pilaresDe(tramos, it.p0 as number | null, it.p1 as number | null),
-    lecciones: Array.isArray(it.lecciones)
-      ? (it.lecciones as Record<string, unknown>[]).map((l) => ({
-          ...l,
-          pilares: pilaresDe(tramos, l.p0 as number | null, l.p1 as number | null),
-        }))
-      : it.lecciones,
-  }));
+  const conPilares = ((cache?.items ?? []) as Record<string, unknown>[]).map((it) => {
+    // El tomo del nodo. La lección hereda el de su unidad: `getPlanUnits` solo
+    // mete adentro de una unidad lecciones del MISMO documento, así que no hace
+    // falta guardarlo por lección ni regenerar los planes cacheados.
+    const doc = (it.documentId ?? null) as string | null;
+    return {
+      ...it,
+      pilares: pilaresDe(tramos, it.p0 as number | null, it.p1 as number | null, doc),
+      lecciones: Array.isArray(it.lecciones)
+        ? (it.lecciones as Record<string, unknown>[]).map((l) => ({
+            ...l,
+            pilares: pilaresDe(tramos, l.p0 as number | null, l.p1 as number | null, doc),
+          }))
+        : it.lecciones,
+    };
+  });
 
   // LO QUE FALTA. Va aparte de los pilares y no como uno más: los pilares se
   // cruzan por rango de páginas y las páginas son de CADA tomo, así que un
