@@ -156,6 +156,44 @@ function plausible(original: string, rewritten: string): boolean {
  * abstención correcta convertida en respuesta inventada CON página es peor que
  * no haber respondido. Por eso los controles negativos están en el test.
  */
+/**
+ * ⚠️ NO "MEJORAR" ESTE PROMPT SIN MEDIR. Se intentó el 2026-08-23 y salió peor.
+ *
+ * El defecto es real y está a la vista: a «¿en qué año ganó Chile la Copa América
+ * de fútbol?» el puente devuelve «Historia de Chile: La Independencia y la
+ * República Conservadora». No traduce el vocabulario del alumno: le CAMBIA EL
+ * TEMA por uno vecino de una materia que sí existe. La regla que lo habilita es
+ * "Si es un tema escolar, siempre hay títulos".
+ *
+ * Se probaron dos correcciones, midiendo las 101 preguntas con el fixture fijo:
+ *
+ *   prompt                          correct_mode   recall@5   cobertura
+ *   ORIGINAL (este)                    21/24        84,5%       88,5%
+ *   + "mismo contenido" + NADA         17/24        84,5%       88,5%
+ *   + solo NADA                        19/24        84,5%       88,5%
+ *
+ * El recall NO SE MUEVE y la abstención empeora en las dos. La causa se ve en el
+ * fixture: al pedirle fidelidad, el puente PRESERVA los términos distintivos, y
+ * eso engancha material VECINO del libro. Caso testigo, «¿qué pasa al final de
+ * Romeo y Julieta?» en Lengua 8º:
+ *
+ *   antes: "El desenlace de la tragedia, La muerte de los protagonistas"
+ *          -> no engancha nada -> abstiene OK (el libro no trae la obra)
+ *   con fidelidad: "La tragedia de Romeo y Julieta, El desenlace de la obra"
+ *          -> engancha la unidad de tragedia a 0,55 -> NO abstiene
+ *
+ * O SEA: parte de la buena abstención de hoy viene de que el puente traduce mal.
+ * Es una virtud accidental, y hay que saberlo antes de tocar esto.
+ *
+ * Las tres mejoras evidentes que sí logró la corrección —Copa América, capital de
+ * Australia y elecciones presidenciales pasaban a NADA— NO GANARON UN PUNTO:
+ * esas preguntas ya se abstenían por otra vía. El defecto era real pero inocuo.
+ *
+ * DÓNDE ESTÁ EL ARREGLO DE VERDAD: en la answerability, no acá. Las regresiones
+ * traían entailment de 0,915 a 0,997 sobre material que no responde — el
+ * discriminador aprueba lo vecino. Mientras eso no se arregle, un puente más
+ * fiel es un puente que le da de comer.
+ */
 const PUENTE_SYSTEM = `Escribís los TÍTULOS DE SECCIÓN con los que un libro de texto escolar chileno nombra el contenido que el alumno está preguntando. Como si copiaras del ÍNDICE del libro.
 
 Devolvés 4 o 5 títulos, UNO POR LÍNEA. Nada más: sin numerar, sin viñetas, sin explicación, y sin contestar la pregunta.
