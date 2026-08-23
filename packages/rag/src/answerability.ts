@@ -122,24 +122,42 @@ export function answerabilityMinFromEnv(): number {
  * LEYENDO el material servido, con una línea de justificación cada uno. Se mide
  * con `pnpm --filter @tutor-ia/eval eval-answerability`.
  *
- * Y su primer veredicto cierra la discusión sobre el umbral:
+ * Su veredicto cierra la discusión sobre el umbral (42 casos, 29 evaluables —
+ * los otros 13 no tienen material servido y ahí el gate ya abstuvo antes):
  *
- *   acierto con el umbral actual (0,85)          13/16
+ *   acierto con el umbral actual (0,85)          19/29   (65,5%)
  *   entailment cuando SÍ responde          0,953 – 0,999
- *   entailment cuando NO responde          0,012 – 0,997
- *   SEPARACIÓN (mín sí − máx no)                 -0,043
+ *   entailment cuando NO responde          0,010 – 0,999
+ *   SEPARACIÓN (mín sí − máx no)                 -0,045
+ *
+ * ⚠️ El banco chico (22 casos) daba 13/16 = 81%. Al agregarle 20 VECINOS el
+ * acierto cayó 16 puntos. O sea que la calidad aparente del discriminador
+ * dependía de cuántos casos difíciles tuviera el banco — razón de más para no
+ * haber decidido nada con los 6 originales.
  *
  * La separación es NEGATIVA: las dos poblaciones se solapan, así que NINGÚN
  * umbral las separa. Mover `RAG_ANSWERABILITY_MIN` no puede arreglar esto —
  * bajarlo aprueba más ruido y subirlo empieza a rechazar material que sí
  * responde. Está probado, no supuesto.
  *
- * Los tres falsos positivos son todos material VECINO:
- *   b15  0,997  "¿cómo se resuelve una ecuación de segundo grado?" en Matemática
- *               6º, contra ecuaciones simples por descomposición de 6º básico.
- *   b17  0,964  "¿qué es el pH?" contra ácidos, bases y neutralización.
- *   b06  0,949  "¿cómo se amplió el voto?" contra un gráfico de participación
- *               electoral y la portada de la unidad que lo ANUNCIA.
+ * LOS DIEZ FALLOS SON TODOS DEL MISMO TIPO: falsos positivos sobre material
+ * VECINO. No hay un solo falso negativo. El discriminador no es estricto de más
+ * en ningún caso: es permisivo en todos.
+ *
+ *   b24  0,999  "¿quién fue Napoleón?"        vs la independencia hispanoamericana
+ *   b15  0,997  "¿ecuación de segundo grado?" vs ecuaciones simples de 6º
+ *   b37  0,997  "¿velocidad de la luz?"       vs sombras y longitudes de onda
+ *   b30  0,993  "¿qué es la fotosíntesis?"    vs "¿cómo son las plantas?"
+ *   b36  0,983  "¿qué es la tabla periódica?" vs el índice y el glosario del libro
+ *   b40  0,982  "¿qué fue el Modernismo?"     vs la biografía de José Martí
+ *   b26  0,978  "¿Revolución Industrial?"     vs la definición de "revolución"
+ *   b17  0,964  "¿qué es el pH?"              vs ácidos, bases y neutralización
+ *   b06  0,949  "¿cómo se amplió el voto?"    vs un gráfico de participación
+ *   b42  0,922  "¿cuento vs novela?"          vs cómo interpretar una lectura
+ *
+ * El patrón: el NLI aprueba cuando el fragmento MENCIONA lo preguntado o su
+ * campo, aunque no lo explique. "José Martí fue escritor" implica, para el
+ * modelo, que el texto explica qué fue el Modernismo.
  *
  * El banco es chico (22, de los que 16 miden al discriminador: los otros 6 no
  * tienen material y ahí el gate ya abstuvo antes). Para crecerlo se agregan
