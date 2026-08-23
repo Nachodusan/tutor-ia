@@ -48,7 +48,12 @@ async function main() {
       studentGrade: perfil?.grade ?? null, struggling: isStruggling(q),
     });
     const ctx = res.ctx;
-    console.log(`\n${"═".repeat(78)}\n${id} · espera ${g.expect_mode}/${g.expect_scope} · dio ${res.mode}/${ctx?.scope}`);
+    // NO se imprime el `mode`: lo deriva `derivarModo` a partir de los veredictos
+    // de la verificación, que este inspector no produce — solo hace retrieval.
+    // Antes decía `res.mode`, que no existe en `TeachingResult`: salía
+    // "undefined" en pantalla y tsx no frena por un error de tipos.
+    const hayMaterial = (ctx?.citable.length ?? 0) > 0;
+    console.log(`\n${"═".repeat(78)}\n${id} · espera ${g.expect_mode}/${g.expect_scope} · dio scope=${ctx?.scope} ${hayMaterial ? "con material" : "SIN material"}`);
     console.log(`«${q}»`);
     for (const c of (ctx?.citable ?? []).slice(0, 2)) {
       console.log(`\n  ── ${c.documentTitle} · pág ${c.pageStart}${c.pageEnd !== c.pageStart ? "-" + c.pageEnd : ""} · score ${c.score.toFixed(4)}`);
