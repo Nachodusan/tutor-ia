@@ -36,11 +36,43 @@ Fuera de alcance por decisión medida: resolver ejercicios y hacer cálculo.
 | Alucinación real | **~2,6%** (auditada a mano sobre 14 afirmaciones con 8 jueces) |
 | Alucinación que reporta el instrumento | 13,3% — el 79% es ruido del NLI |
 | Abstención indebida | 0,0% — el tutor ya no se niega |
-| Encuadre correcto (`correct_mode`) | **87,5% (21 de 24)** — baseline rehecho + fuga del margen tapada, 2026-08-22 |
+| Encuadre correcto (`correct_mode`) | **21/24 (87,5%)**, con ±1 de ruido — ver abajo |
 
 El núcleo pedagógico está sano: el tutor explica bien, cita bien, y **casi no
 inventa**. La brecha entre el 13,3% que reporta la métrica y el ~2,6% real es del
 instrumento, no del producto — está documentada y auditada.
+
+### ⚠️⚠️ `correct_mode` TIENE ±1 DE RUIDO — medido el 2026-08-23
+
+**Una diferencia de un punto NO prueba nada.** Se corrió la guarda tres veces con
+el MISMO código (diff de solo comentarios) y la misma semilla: **20, 21, 21**.
+
+Toda la varianza está en **q034**, cuyo score saltó entre 0,0484, 0,1598 y 0,2331
+en las corridas del día. Vive en el borde del gate, y ahí un lazo de
+realimentación amplifica cualquier temblor del proveedor:
+
+> El puente de vocabulario (`query-normalize`) se activa **solo cuando el gate
+> corta**. Si el gate corta, la consulta se reescribe y la reescrita busca otro
+> material, con otros scores. O sea que el gate y el normalizador están
+> acoplados: **endurecer el gate no filtra, DESVÍA consultas a otro camino**.
+
+El origen del temblor es el proveedor: `temperature=0` no da determinismo con
+Qwen3.6-35B-A3B, que es MoE — el ruteo de expertos y el batcheo del servidor
+varían entre llamadas. **`LLM_SEED=7` no lo estabilizó**, así que no alcanza con
+fijar la semilla.
+
+**Cómo medir, entonces:**
+- q120, q123 y q126 dan IDÉNTICO en las tres corridas, hasta el cuarto decimal.
+  Ésos son defectos reales y reproducibles: son el baseline que sirve.
+- Para comparar un cambio, correr la guarda **3 veces** y mirar la mediana, o
+  excluir q034 y comparar sobre 23.
+- Un cambio que mueve un solo punto y no se puede explicar desde el código
+  probablemente no movió nada.
+
+⚠️ Las conclusiones de ±1 del 2026-08-22 quedan bajo esta advertencia. Lo que NO
+se ve afectado son los hallazgos que salieron de LEER el material (q120 no
+responde, Sherlock no está en el libro, el Minotauro sí está en tres): esos se
+verificaron a mano, no con el contador.
 
 ### ⚠️ El baseline de `correct_mode` se rehizo el 2026-08-22
 

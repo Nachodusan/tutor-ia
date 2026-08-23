@@ -44,7 +44,8 @@
     "mapa-doc": "tsx --env-file-if-exists=../../.env src/mapa-doc.ts",
     "ingest-epja": "tsx --env-file-if-exists=../../.env src/ingest-epja.ts",
     "ruteo-area": "tsx --env-file-if-exists=../../.env src/ruteo-area.ts",
-    "inspeccionar-golden": "tsx --env-file-if-exists=../../.env src/inspeccionar-golden.ts"
+    "inspeccionar-golden": "tsx --env-file-if-exists=../../.env src/inspeccionar-golden.ts",
+    "alineacion-peda": "tsx --env-file-if-exists=../../.env src/alineacion-peda.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",

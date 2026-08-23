@@ -8,8 +8,14 @@
  *     evaluación, solucionario). Alimenta la estrategia de enseñanza.
  *
  * El link NO es el join rígido (unit,lesson) — el piloto mostró que TE y GDD
- * numeran distinto. Es RELEVANCIA + boost cuando el OA coincide con el del
- * contenido top. La metadata (unit/lesson/oa) queda como señal blanda.
+ * numeran distinto (re-medido el 2026-08-23: 21% de acierto, azar 25%).
+ *
+ * ⚠️ El link es RELEVANCIA A LA PREGUNTA, y nada más. El diseño decía
+ * "relevancia + boost cuando el OA coincide", pero ese boost NUNCA se ejecutó:
+ * ningún chunk de contenido tiene OA y no se le puede poner (ver el comentario
+ * de `oaBoostFromEnv`). Conviene saberlo antes de razonar sobre este archivo:
+ * la guía docente se elige por parecido con la PREGUNTA, no con el material que
+ * el tutor efectivamente va a enseñar.
  */
 import { getSql } from "@tutor-ia/db";
 import {
@@ -39,6 +45,41 @@ export function contentKFromEnv(): number {
  *  cruzaba el gate de 0.18 solo por el boost. Configurable con RAG_OA_BOOST. */
 export const DEFAULT_OA_BOOST = 0.15;
 
+/**
+ * ⚠️ EL BOOST DE OA ESTÁ MUERTO Y NO SE PUEDE REVIVIR. Medido el 2026-08-22/23.
+ *
+ * `oasContent` sale de los chunks de CONTENIDO y siempre está vacío: 0 de 16.548
+ * tienen `oa`. Los únicos 349 con OA son de pedagogía, de Ciencias Naturales 1º y
+ * 2º — dos cursos cerrados. O sea que la línea del boost, más abajo, nunca se
+ * ejecuta.
+ *
+ * NO es un dato que falte cargar. Se midieron tres caminos y los tres cierran:
+ *
+ *  1. EXTRAER EL OA DEL TEXTO. Los libros no imprimen los códigos: solo el 0,9%
+ *     de los chunks de contenido y el 1,7% de los de pedagogía mencionan un
+ *     "OA n". El caso de CN 1º/2º es la excepción — un formato de GDD que ponía
+ *     el OA en cada encabezado de lección.
+ *
+ *  2. USAR (unit, lesson) COMO LLAVE. Se midió si la unidad N del TE se
+ *     corresponde con la N de la GDD: 21% de acierto, con azar en 25%. La
+ *     numeración efectivamente no coincide, como decía el piloto. Un boost por
+ *     unidad empujaría la guía equivocada 4 de cada 5 veces.
+ *
+ *  3. ALINEAR POR PARECIDO CON EL CONTENIDO ELEGIDO — que es el OBJETIVO real
+ *     del boost: preferir la guía de lo que se va a enseñar. Se implementó
+ *     rerankeando la pedagogía contra el fragmento citable top y NO SIRVIÓ: los
+ *     puntajes salían todos entre 0,003 y 0,013, sin discriminar. El reranker es
+ *     un modelo de pregunta→pasaje y se lo estaba usando para pasaje↔pasaje.
+ *     Con COSENO DE EMBEDDINGS sí discrimina (0,739 → 0,592, y los 8 primeros
+ *     resultaron ser todos de la lección correcta), y es gratis porque los
+ *     vectores ya están en la base. Pero no se implementó: en los casos medidos
+ *     el orden por pregunta YA elegía la guía de esa misma lección, así que la
+ *     ganancia no se pudo demostrar. Si alguna vez se retoma, el camino es el
+ *     coseno, no el reranker.
+ *
+ * Se deja la línea del boost como está: es inerte, no cuesta nada, y el día que
+ * un corpus traiga OA en los dos lados vuelve a servir sola.
+ */
 export function oaBoostFromEnv(): number {
   const n = Number(process.env.RAG_OA_BOOST ?? "");
   return Number.isFinite(n) && n >= 0 ? n : DEFAULT_OA_BOOST;
@@ -727,6 +768,7 @@ export async function retrieveForTeaching(
         return { ...c, rerankScore, rankScore: Math.min(1, boosted) };
       })
       .sort((a, b) => b.rankScore - a.rankScore);
+
     const pedaMin = pedagogyMinScoreFromEnv();
     for (const c of rankedPeda) {
       // Gate por score CRUDO (misma disciplina que el resto: el boost de OA solo
