@@ -547,6 +547,24 @@ export async function retrieveForTeaching(
       subjectIds: opts.familyIds,
       k: contentK,
       minRerankScore: threshold,
+      // MARGEN APAGADO, igual que en `area` y en el corpus completo.
+      //
+      // El margen distribucional existe para rescatar el registro coloquial
+      // DENTRO del material del alumno: ahí el contexto de materia respalda un
+      // score absoluto bajo. Fuera de su libro no hay tal respaldo, y el margen
+      // deja de ser un rescate para volverse una puerta lateral.
+      //
+      // Medido (q034, 2026-08-22): a "¿qué es la fotosíntesis?" preguntada desde
+      // Lengua 8º entraba Lengua 7º pág. 134 —"los restos nudosos de un
+      // antiquísimo tocón"— con topScore 0.1598, POR DEBAJO del gate de 0.18,
+      // rescatado por el margen. Después el NLI le dio 0.981 de entailment
+      // (el texto menciona células, azúcares y respiración) y salió como
+      // respuesta respaldada. Dos mecanismos sanos encadenados dan uno insano.
+      //
+      // Es la misma fuga que `otra_materia` ya tapaba con este mismo `0` — ver
+      // el comentario de `gateMargin` en rerank.ts, que la documenta con
+      // "¿cuánto hervir un huevo?" a 0.16 pese al listón de 0.50.
+      gateMargin: 0,
       corpusRole: "content",
     });
     if (ampliado.grounded && (await pasaAnswerability(ampliado.chunks, ampliado.topScore))) {
