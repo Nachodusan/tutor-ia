@@ -48,6 +48,20 @@ const APLICAR = process.argv.includes("--aplicar");
  * dónde estudiar: le señala un tercio del libro. Una lección real ronda las 19.
  */
 const MAX_TRAMO = Number(arg("max-tramo") ?? 40);
+/**
+ * TOPE DE COBERTURA — un conocimiento que engancha MEDIO LIBRO no ubica nada.
+ *
+ * Medido el 2026-08-23: "Contexto de producción y recepción de un texto
+ * literario" enganchó 45 de las 46 lecciones de Lengua 2º Medio. Y no está mal
+ * contestado —todo texto literario tiene contexto de producción—: está mal
+ * PREGUNTADO. El pilar existe para decirle al alumno QUÉ lección le van a
+ * exigir, y si están marcadas todas no le dice nada.
+ *
+ * Es el mismo error que MAX_TRAMO por el otro extremo: uno señala un bloque de
+ * 60 páginas, el otro señala el libro entero. Descartar no pierde información:
+ * el tramo principal —leído por una persona— sigue estando.
+ */
+const MAX_COBERTURA = Number(arg("max-cobertura") ?? 0.5);
 
 interface Leccion { ord: number; title: string; page_start: number; page_end: number }
 
@@ -68,8 +82,9 @@ Reglas:
 async function main(): Promise<void> {
   const filtroArea = arg("area");
   const filtroMateria = arg("materia");
-  if (!filtroArea && !filtroMateria) {
-    console.error('uso: tramos-indice (--area "ciencias naturales" | --materia "Física 1º Medio") [--aplicar]');
+  const todas = process.argv.includes("--todas");
+  if (!filtroArea && !filtroMateria && !todas) {
+    console.error('uso: tramos-indice (--todas | --area "ciencias naturales" | --materia "Física 1º Medio") [--aplicar]');
     process.exit(1);
   }
 
@@ -84,6 +99,10 @@ async function main(): Promise<void> {
       and s.disabled_at is null
       and (${filtroArea ?? null}::text is null or s.area = ${filtroArea ?? null})
       and (${filtroMateria ?? null}::text is null or s.name = ${filtroMateria ?? null})
+      -- Los cursos cerrados quedan afuera: nadie los ve, y meter tramos que nadie
+      -- va a revisar en materias que nadie abre es ensuciar el mapa gratis.
+      and (select max(d.grade) from documents d where d.subject_id = s.id)
+          not in ('1B','2B','3B','4B','5B')
       -- Sin índice legible no hay lecciones que marcar.
       and exists (select 1 from book_sections bs where bs.subject_id = s.id and bs.level = 2)
     order by s.name, cm.item`;
@@ -125,6 +144,12 @@ async function main(): Promise<void> {
     )].sort((a, b) => a - b).map((n) => lecciones[n - 1]!);
 
     console.log(`── ${f.materia} · ${f.item.slice(0, 58)}`);
+    if (elegidas.length > lecciones.length * MAX_COBERTURA) {
+      console.log(`   ⚠️  DESCARTADO: ${elegidas.length}/${lecciones.length} lecciones `
+        + `(${Math.round(100 * elegidas.length / lecciones.length)}%) — el conocimiento es `
+        + `demasiado general para ubicarlo. Queda el tramo principal.\n`);
+      continue;
+    }
     if (elegidas.length === 0) {
       console.log(`   (el modelo no eligió ninguna: "${out.trim().slice(0, 60)}")\n`);
       continue;
