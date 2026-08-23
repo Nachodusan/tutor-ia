@@ -1,5 +1,5 @@
 import { buildStudyPlan, SinEstructura, logDecision } from "@tutor-ia/core";
-import { planSizes } from "@tutor-ia/rag";
+import { planSizes , pilaresDe, tramosCurriculares } from "@tutor-ia/rag";
 import { getSql, toJson } from "@tutor-ia/db";
 import { rechazarMateriaApagada, requireCursoAbierto } from "@/lib/auth";
 
@@ -49,8 +49,23 @@ export async function GET(req: Request) {
     ? true
     : ((await planSizes([subjectId]))[subjectId] ?? 0) > 0;
 
+  // LOS PILARES se calculan acá y no viven en el plan cacheado: son dato
+  // derivado de `curriculum_map`, que se sigue corrigiendo, y guardarlos adentro
+  // del plan los congelaría en el estado del mapa del día que se armó.
+  const tramos = await tramosCurriculares(subjectId);
+  const conPilares = ((cache?.items ?? []) as Record<string, unknown>[]).map((it) => ({
+    ...it,
+    pilares: pilaresDe(tramos, it.p0 as number | null, it.p1 as number | null),
+    lecciones: Array.isArray(it.lecciones)
+      ? (it.lecciones as Record<string, unknown>[]).map((l) => ({
+          ...l,
+          pilares: pilaresDe(tramos, l.p0 as number | null, l.p1 as number | null),
+        }))
+      : it.lecciones,
+  }));
+
   return Response.json({
-    items: cache?.items ?? [],
+    items: conPilares,
     puedeArmarse,
     doneKeys: hechos.map((r) => r.topic_key),
     scores: Object.fromEntries(intentos.map((i) => [i.topic_key, { score: i.score, total: i.total }])),

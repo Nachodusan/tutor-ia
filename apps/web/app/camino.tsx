@@ -449,6 +449,31 @@ export function CaminoView({
                   </span>
                 )}
 
+                {/* EL PILAR: lo que el Estado exige en este tramo.
+                    Va con el título y no en el nodo porque el nodo ya carga
+                    tres estados (hecho / actual / futuro) y un cuarto anillo lo
+                    volvía ilegible. Con el color SOL, que en la paleta no lo usa
+                    nada más: la exigencia curricular tiene que distinguirse de
+                    "te fue bien" (verde) y de "estás acá" (cobalto).
+
+                    Dice el conocimiento, no un rótulo genérico: "Lo pide el
+                    currículum" no le enseña nada a nadie; "Productos notables"
+                    le dice al alumno QUÉ es lo que le van a exigir. */}
+                {(p.item.pilares?.length ?? 0) > 0 && (
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", gap: 5,
+                    fontFamily: FONT.round, fontWeight: 800, fontSize: 10.5, lineHeight: 1.3,
+                    color: C.ink, background: C.sun, border: `2px solid ${C.ink}`,
+                    borderRadius: 8, padding: "2px 7px", maxWidth: ETIQUETA,
+                  }} title={p.item.pilares!.map((x) => x.item).join(" · ")}>
+                    <IconStar size={12} />
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {p.item.pilares![0]!.item.replace(/\.$/, "")}
+                      {p.item.pilares!.length > 1 ? ` +${p.item.pilares!.length - 1}` : ""}
+                    </span>
+                  </span>
+                )}
+
                 {/* Cuántas lecciones lleva hechas. CON LA PALABRA "lecciones":
                     el "0 de 4" pelado no decía de qué eran los cuatro, y los
                     cuatro puntos sobre el sendero quedaban sin nombre — decirlo
