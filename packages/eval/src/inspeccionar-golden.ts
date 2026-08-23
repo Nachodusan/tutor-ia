@@ -10,7 +10,7 @@
  * que leerlo.
  */
 import { readFile } from "node:fs/promises";
-import { getTeachingContext } from "@tutor-ia/core";
+import { getTeachingContext, isStruggling } from "@tutor-ia/core";
 import { getSql } from "@tutor-ia/db";
 
 const IDS = process.argv.slice(2).filter((a) => /^q\d+$/.test(a));
@@ -34,9 +34,18 @@ async function main() {
     const g = G.get(id);
     if (!g) { console.log(`\n${id}: no está en el golden`); continue; }
     const q = g.question ?? g.q;
+    // MISMOS PARÁMETROS QUE `retrieval-guard`, o esto no reproduce lo que pasa.
+    // Faltaba `studentGrade`: activa la penalización por cercanía de grado, que
+    // reordena el material y cambia cuál queda arriba — con él q029 devuelve
+    // material y sin él se abstiene. Un inspector que no reproduce el caso que
+    // se quiere mirar es peor que no tenerlo.
+    const [perfil] = await sql<{ grade: string | null }[]>`
+      select grade from student_profiles
+      where user_id = '00000000-0000-0000-0000-000000000001'::uuid`;
     const res = await getTeachingContext({
       userId: "00000000-0000-0000-0000-000000000001", subjectId: s!.id,
       question: q, history: [], familyIds: fam.map((r) => r.id), areaIds: ar.map((r) => r.id),
+      studentGrade: perfil?.grade ?? null, struggling: isStruggling(q),
     });
     const ctx = res.ctx;
     console.log(`\n${"═".repeat(78)}\n${id} · espera ${g.expect_mode}/${g.expect_scope} · dio ${res.mode}/${ctx?.scope}`);
