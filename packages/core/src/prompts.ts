@@ -260,7 +260,7 @@ export function buildTeachingTurn(params: {
   /** Cursos de los que salió el material citable. */
   sourceGrades?: string[];
   /** Hasta dónde hubo que ir a buscar el material. */
-  scope?: "curso" | "otro_curso" | "otra_materia" | "ninguno";
+  scope?: "curso" | "otro_curso" | "area" | "otra_materia" | "ninguno";
 }): string {
   const adapt = params.struggling
     ? `\n⚠️ El estudiante NO entendió la explicación anterior. NO la repitas: cambia de método usando OTRA estrategia de la GUÍA (otra actividad/habilidad/ejemplo) y simplifica.\n`

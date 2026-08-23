@@ -146,7 +146,7 @@ export function VerificationBadge({ v, mode, scope, citations }: { v?: Verificat
   // se lee como "está en tu libro de Lengua". Medido sobre el golden: 12 de 24
   // preguntas que ningún libro de Lengua cubre traían material legítimo de
   // Ciencias Naturales o Biología y se mostraban con el sello verde.
-  if (mode === "libro" && (scope === "otra_materia" || scope === "otro_curso")) {
+  if (mode === "libro" && (scope === "otra_materia" || scope === "otro_curso" || scope === "area")) {
     const libro = citations?.[0]?.label?.split(" · ").slice(0, 2).join(" · ");
     return (
       <div style={{ marginTop: 9, display: "inline-flex", gap: 7, alignItems: "flex-start", background: C.panel2, color: C.dim, border: `1px solid ${C.border}`, fontSize: 12.5, padding: "8px 12px", borderRadius: 12, lineHeight: 1.5, maxWidth: 480 }}>

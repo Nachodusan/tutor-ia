@@ -97,6 +97,7 @@ async function runTurn(
   q: string,
   history: ChatMessage[],
   familyIds: string[] | null,
+  areaIds: string[] | null,
   studentGrade: string | null,
 ): Promise<TurnResult> {
   const t0 = Date.now();
@@ -112,7 +113,7 @@ async function runTurn(
   // eval.ts: sin familia la etapa `otro_curso` de la cascada NUNCA CORRE y esto
   // mediría un motor con una etapa menos que el que atiende al alumno. Es el bug
   // que ya escondió el de producción una vez (HANDOFF §7).
-  const req = { userId, subjectId, question: q, history, struggling, familyIds, studentGrade };
+  const req = { userId, subjectId, question: q, history, struggling, familyIds, areaIds, studentGrade };
   const res = await getTeachingContext(req);
   const ctx = res.ctx;
   const hayMaterial = (ctx?.citable.length ?? 0) > 0;
@@ -159,19 +160,27 @@ async function main() {
 
   // La familia y el curso, con LA MISMA consulta que /api/chat y eval.ts.
   const sqlCtx = getSql();
-  const [perfilFilas, familiaFilas] = await Promise.all([
+  const [perfilFilas, familiaFilas, areaFilas] = await Promise.all([
     sqlCtx<{ grade: string | null }[]>`
       select grade from student_profiles where user_id = ${userId}::uuid`,
     sqlCtx<{ id: string }[]>`
       select s2.id from subjects s1 join subjects s2 on s2.family = s1.family
       where s1.id = ${subjectId}::uuid and s1.family is not null
         and s2.disabled_at is null and (s2.user_id is null or s2.user_id = ${userId}::uuid)`,
+    // Etapa `area`: si el eval no la pasa, mide una cascada que ya no es la que
+    // corre en producción — el mismo motivo por el que `familyIds` no es opcional.
+    sqlCtx<{ id: string }[]>`
+      select s2.id from subjects s1 join subjects s2 on s2.area = s1.area
+      where s1.id = ${subjectId}::uuid and s1.area is not null
+        and s2.disabled_at is null and (s2.user_id is null or s2.user_id = ${userId}::uuid)`,
   ]);
   const studentGrade = perfilFilas[0]?.grade ?? null;
   const familyIds = familiaFilas.length ? familiaFilas.map((r) => r.id) : null;
+  const areaIds = areaFilas.length ? areaFilas.map((r) => r.id) : null;
   console.log(
     `   curso ${studentGrade ?? "(sin perfil)"} · asignatura en ${familyIds?.length ?? 0} cursos` +
       ((familyIds?.length ?? 0) > 1 ? "" : "  ⚠️ la etapa `otro_curso` no va a correr") +
+      ` · área en ${areaIds?.length ?? 0} materias` +
       `\n   answerability=${process.env.RAG_ANSWERABILITY === "1" ? "ON" : "off"}\n`,
   );
 
@@ -198,7 +207,7 @@ async function main() {
     const turnos: TurnResult[] = [];
     const history: ChatMessage[] = [];
     for (const turno of c.turns) {
-      const r = await runTurn(userId, subjectId, turno.q, [...history], familyIds, studentGrade);
+      const r = await runTurn(userId, subjectId, turno.q, [...history], familyIds, areaIds, studentGrade);
       turnos.push(r);
       history.push({ role: "user", content: turno.q });
       history.push({ role: "assistant", content: r.answer });

@@ -72,10 +72,16 @@ async function main(): Promise<void> {
   ]);
   const studentGrade = perfil[0]?.grade ?? null;
   const familyIds = familia.length ? familia.map((r) => r.id) : null;
+  // La etapa `area` también, o el guard mide una cascada distinta a la real.
+  const areaFilas = await sql<{ id: string }[]>`
+    select s2.id from subjects s1 join subjects s2 on s2.area = s1.area
+    where s1.id = ${subjectId}::uuid and s1.area is not null and s2.disabled_at is null`;
+  const areaIds = areaFilas.length ? areaFilas.map((r) => r.id) : null;
 
   console.log(
     `🔎 Guarda de retrieval — ${preguntas.length} preguntas · SIN generación\n` +
       `   curso ${studentGrade ?? "(sin perfil)"} · familia ${familyIds?.length ?? 0} cursos · ` +
+      `área ${areaIds?.length ?? 0} materias · ` +
       `answerability=${process.env.RAG_ANSWERABILITY === "1" ? "ON" : "off"}\n` +
       `   umbrales: ${umbrales.length ? umbrales.join(" · ") : "(el del entorno)"}\n`,
   );
@@ -121,7 +127,7 @@ async function main(): Promise<void> {
       const q = g.question ?? g.q ?? "";
       const res = await getTeachingContext({
         userId, subjectId, question: q, history: [],
-        struggling: isStruggling(q), familyIds, studentGrade,
+        struggling: isStruggling(q), familyIds, areaIds, studentGrade,
       });
       const ctx = res.ctx;
       const hay = (ctx?.citable.length ?? 0) > 0;

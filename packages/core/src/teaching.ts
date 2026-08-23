@@ -41,6 +41,10 @@ export interface TeachRequest {
   /** Materias de la MISMA asignatura en todos los cursos (etapa 1 de la
    *  cascada de alcance). Las resuelve la ruta con `subjects.family`. */
   familyIds?: string[] | null;
+  /** Materias del MISMO CASILLERO del plan EPJA (etapa 2 de la cascada). Las
+   *  resuelve la ruta con `subjects.area`: Biología, Física y Química son una
+   *  sola "Ciencias Naturales" para el currículum. */
+  areaIds?: string[] | null;
   /** Primer tema PENDIENTE del plan de la materia. Es lo que se le ofrece al
    *  alumno que no trae tema propio, en vez de dejar que el modelo elija uno. */
   primerTema?: string | null;
@@ -265,6 +269,7 @@ export async function getTeachingContext(req: TeachRequest): Promise<TeachingRes
       unit: req.unit ?? null,
       lesson: req.lesson ?? null,
       familyIds: req.familyIds ?? null,
+      areaIds: req.areaIds ?? null,
       studentGrade: req.studentGrade ?? null,
       // Turno sin tema propio ("no entendí") o alumno trabado: el discriminador
       // de answerability se apaga. La consulta es el turno previo pegado al

@@ -182,6 +182,22 @@ export async function POST(req: Request) {
           and (s2.user_id is null or s2.user_id = ${userId}::uuid)`
     : Promise.resolve([] as { id: string }[]);
 
+  // Las materias del MISMO CASILLERO del plan EPJA (etapa 2 de la cascada), por
+  // `subjects.area`. Es más ancho que la familia: para el currículum, Biología,
+  // Física y Química son UNA materia ("Ciencias Naturales"), así que la pregunta
+  // de ondas que llega desde Biología tiene que poder alcanzar el libro de
+  // Física del mismo curso. Ver schema_subject_area.sql.
+  const area = body.subjectId
+    ? getSql()<{ id: string }[]>`
+        select s2.id
+        from subjects s1
+        join subjects s2 on s2.area = s1.area
+        where s1.id = ${body.subjectId}::uuid
+          and s1.area is not null
+          and s2.disabled_at is null
+          and (s2.user_id is null or s2.user_id = ${userId}::uuid)`
+    : Promise.resolve([] as { id: string }[]);
+
   const teachReq = {
     userId,
     subjectId: body.subjectId ?? null,
@@ -193,6 +209,7 @@ export async function POST(req: Request) {
     studentGrade: null as string | null,
     subjectName: null as string | null,
     familyIds: null as string[] | null,
+    areaIds: null as string[] | null,
     primerTema,
   };
 
@@ -201,13 +218,15 @@ export async function POST(req: Request) {
     // El perfil y la familia se resuelven ANTES del retrieval porque los dos
     // entran en él (nivel de lectura y etapa 1 de la cascada). Son dos lookups
     // por índice: ~1 ms contra un retrieval de segundos.
-    const [filas, fam, mat] = await Promise.all([
+    const [filas, fam, ar, mat] = await Promise.all([
       perfil.catch(() => [] as { grade: string | null }[]),
       familia.catch(() => [] as { id: string }[]),
+      area.catch(() => [] as { id: string }[]),
       materia.catch(() => [] as { name: string }[]),
     ]);
     teachReq.studentGrade = filas[0]?.grade ?? null;
     teachReq.familyIds = fam.length ? fam.map((r) => r.id) : null;
+    teachReq.areaIds = ar.length ? ar.map((r) => r.id) : null;
     teachReq.subjectName = mat[0]?.name ?? null;
     res = await getTeachingContext(teachReq);
   } catch {

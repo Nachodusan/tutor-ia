@@ -203,6 +203,17 @@ export interface TeachingOptions {
    *  todo el corpus. */
   familyIds?: string[] | null;
   /**
+   * Todas las materias del MISMO CASILLERO del plan EPJA (`subjects.area`):
+   * Biología + Física + Química + Ciencias para la Ciudadanía son una sola
+   * "Ciencias Naturales" para el currículum, e Historia va con Educación
+   * Ciudadana. Etapa 2 de la cascada, entre la familia y el corpus completo.
+   *
+   * NO es "aflojar el alcance": une lo que el plan de estudio ya cuenta como una
+   * materia. Lengua sigue sin ver Biología — ese es el caso que hizo apagar la
+   * etapa de corpus completo, y sigue apagado.
+   */
+  areaIds?: string[] | null;
+  /**
    * Buscar en el corpus ENTERO (otras asignaturas) cuando la propia no alcanza.
    *
    * ⚠️ APAGADO POR DEFECTO, y es una decisión de producto, no una calibración:
@@ -227,7 +238,7 @@ export interface TeachingOptions {
 }
 
 /** Hasta dónde hubo que ir a buscar el material que se está citando. */
-export type TeachingScope = "curso" | "otro_curso" | "otra_materia" | "ninguno";
+export type TeachingScope = "curso" | "otro_curso" | "area" | "otra_materia" | "ninguno";
 
 /**
  * "1B".."8B" → 1..8 · "1M".."4M" → 9..12. Escala CONTINUA, para poder restar
@@ -261,6 +272,21 @@ export function gradeOrdinal(g: string | null | undefined): number | null {
  * propósito: ver el comentario en la cascada. Configurable para poder barrerlo.
  */
 export const UMBRAL_OTRA_MATERIA = Number(process.env.RAG_UMBRAL_OTRA_MATERIA ?? "") || 0.5;
+
+/**
+ * Listón de la etapa `area` — el casillero del plan EPJA, un libro hermano.
+ *
+ * Va en el medio a propósito: más que el 0,18 de la propia asignatura (esto ya
+ * no es el libro que el chico tiene sobre la mesa) y mucho menos que el 0,5 del
+ * corpus entero (sí es la materia que el currículum le exige, y hay contexto de
+ * materia que lo respalda).
+ *
+ * ⚠️ 0,30 sale de la medición del mapa curricular, no de un barrido: con ese
+ * corte, las 13 exigencias que un libro debía y su hermano cubría puntúan entre
+ * 0,30 y 0,83, y nada de lo descartado quedó arriba de 0,22. Es un piso
+ * defendible, no un óptimo — cuando haya golden set de esta etapa, recalibrar.
+ */
+export const UMBRAL_AREA = Number(process.env.RAG_UMBRAL_AREA ?? "") || 0.3;
 
 export const PENAL_GRADO_ABAJO = 0.02;
 export const PENAL_GRADO_ARRIBA = 0.05;
@@ -528,6 +554,56 @@ export async function retrieveForTeaching(
       scope = "otro_curso";
     }
   }
+
+  // ETAPA `area`: EL CASILLERO DEL PLAN, NO LA ASIGNATURA DEL LIBRO.
+  //
+  // El EPJA no tiene Biología, Física ni Química: tiene UN casillero "Ciencias
+  // Naturales" con un solo juego de conocimientos esenciales, que la enseñanza
+  // regular reparte en tres libros. Un chico de Biología al que le preguntan por
+  // ondas está rindiendo Ciencias Naturales, y la respuesta está en el libro de
+  // Física de su MISMO curso.
+  //
+  // Esto no existía y el agujero estaba tapado por la etapa de corpus completo,
+  // que se apagó el 2026-08-11 sin revisar qué se apoyaba en ella (ver
+  // schema_subject_area.sql). Medido sobre el mapa curricular: de 47 exigencias
+  // que un libro no cubría, 43 estaban en un libro hermano.
+  //
+  // Corre DESPUÉS de la familia y solo si la familia no llegó al listón de ESTA
+  // etapa — misma disciplina que la cascada de abajo: umbrales distintos por
+  // etapa significan que frenar en la primera que supera el suyo deja ganar a un
+  // match flojo por venir antes en el código. Y como allá, gana el mejor
+  // `rerankScore`, que es comparable porque es el mismo cross-encoder.
+  const familiaFloja =
+    (scope === "curso" || scope === "otro_curso") &&
+    (content?.topScore ?? 0) < UMBRAL_AREA;
+  // El libro del PROPIO curso se queda aunque puntúe bajo: es el que el chico
+  // tiene sobre la mesa y con el que lo van a evaluar. Solo se sigue buscando si
+  // no hubo material, o si lo que hay vino de otro curso y quedó flojo.
+  const cedeElPropio = scope !== "curso" || !content?.grounded;
+  if (
+    !dirigido && !directedOk && (opts.areaIds?.length ?? 0) > 1 &&
+    (!content?.grounded || (familiaFloja && cedeElPropio))
+  ) {
+    const porArea = await retrieveRanked(query, {
+      userId: opts.userId,
+      subjectIds: opts.areaIds,
+      k: contentK,
+      minRerankScore: Math.max(threshold, UMBRAL_AREA),
+      // Igual que en la etapa de corpus completo: el margen existe para rescatar
+      // registro coloquial DENTRO del material del alumno, no para perforar un
+      // listón que justamente sube porque el material es de otro libro.
+      gateMargin: 0,
+      corpusRole: "content",
+    });
+    if (
+      porArea.grounded &&
+      porArea.topScore > (content?.grounded ? content.topScore : -1) &&
+      (await pasaAnswerability(porArea.chunks, porArea.topScore))
+    ) {
+      content = { ...porArea, chunks: porCercania(porArea.chunks) };
+      scope = "area";
+    }
+  }
   // LA CASCADA NO PUEDE SER "EL PRIMERO QUE PASA GANA".
   //
   // Las etapas tienen umbrales distintos —0.18 la propia asignatura, 0.5 el
@@ -568,7 +644,8 @@ export async function retrieveForTeaching(
   //
   // Se enciende con `corpusCompleto: true` para medir, nunca para atender.
   const flojo =
-    scope === "otro_curso" && (content?.topScore ?? 0) < UMBRAL_OTRA_MATERIA;
+    (scope === "otro_curso" || scope === "area") &&
+    (content?.topScore ?? 0) < UMBRAL_OTRA_MATERIA;
   if (
     !dirigido && !directedOk && opts.corpusCompleto === true &&
     (!content?.grounded || flojo)

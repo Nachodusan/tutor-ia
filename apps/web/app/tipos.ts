@@ -10,7 +10,7 @@ export interface Citation { index: number; chunkId: string; page: number | null;
 export interface Verification { grounded: boolean; contradicted: string[]; unsupported: string[]; checked?: number; unavailable?: boolean }
 
 export type AnswerMode = "libro" | "apoyado" | "general";
-export type AnswerScope = "curso" | "otro_curso" | "otra_materia" | "ninguno";
+export type AnswerScope = "curso" | "otro_curso" | "area" | "otra_materia" | "ninguno";
 /** `tarjeta` = el turno se resolvió por el MODO EJERCICIO y se pinta como ficha
  *  (enunciado, resultado verificado, pasos y plano) en vez de burbuja de chat. */
 export interface Msg { role: "user" | "assistant"; content: string; citations?: Citation[]; verification?: Verification | null; grounded?: boolean; mode?: AnswerMode; scope?: AnswerScope; streaming?: boolean; tarjeta?: import("./tarjeta-ejercicio").Tarjeta | null }
