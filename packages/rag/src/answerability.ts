@@ -113,10 +113,26 @@ export function answerabilityMinFromEnv(): number {
  *     entre el material de q120 hay un fragmento que sí habla de García Márquez
  *     —de "Noticia de un secuestro"—, así que nombra al autor sin traer la novela.
  *
- *  4. JUEZ LLM ("¿este fragmento RESPONDE la pregunta? SI/NO"). Es el único que
- *     acierta los dos casos difíciles (q120 y q123), pero da 4/6: se pasa de
- *     estricto en q122 y q125. Cuesta una llamada por turno. No se descarta como
- *     idea — se descarta como cambio no evaluable hoy.
+ *  4. JUEZ LLM ("¿este fragmento RESPONDE la pregunta? SI/NO"). SE IMPLEMENTÓ,
+ *     SE MIDIÓ CONTRA EL BANCO Y SE REVIRTIÓ. Parecía la salida —13/15 contra
+ *     11/15 del NLI en los casos cross-scope— y ERA UN ARTEFACTO DEL BANCO: le
+ *     pasaba 3 fragmentos truncados a 600 caracteres cuando el código le pasa
+ *     hasta 6 COMPLETOS (mediana real: 9.818 caracteres, cinco veces más). Con la
+ *     entrada verdadera:
+ *
+ *         NLI solo     11/15
+ *         juez solo    11/15
+ *         NLI Y juez   12/15
+ *
+ *     La ventaja se evaporó. La conjunción gana UN caso a cambio de una llamada
+ *     al proveedor por turno cruzado, y los tres fallan los mismos duros: b17
+ *     (pH), b24 (Napoleón), c09 (realismo mágico).
+ *
+ *     ⚠️ La lección de método vale más que el resultado: UN BANCO QUE NO
+ *     REPRODUCE LA ENTRADA DEL CÓDIGO MIDE OTRA COSA. Por eso la captura ahora
+ *     guarda todos los fragmentos sin truncar, y por eso hay que medir solo los
+ *     casos cross-scope: con scope=curso este código NI SE INVOCA, y 24 de los
+ *     primeros 42 casos del banco eran de esos.
  *
  * EL BANCO YA EXISTE: `golden/answerability-banco.jsonl`, 22 tríos etiquetados
  * LEYENDO el material servido, con una línea de justificación cada uno. Se mide

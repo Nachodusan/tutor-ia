@@ -65,6 +65,25 @@ const CASOS: [string, string, string, string][] = [
   ["b40", "dif", "Lengua Y Literatura 8º", "¿Qué fue el Modernismo literario?"],
   ["b41", "dif", "Educación Ciudadana 3º Medio", "¿Cada cuántos años se elige presidente en Chile?"],
   ["b42", "dif", "Lengua Y Literatura 7º", "¿Qué diferencia hay entre cuento y novela?"],
+  // ── CROSS-SCOPE: donde el discriminador REALMENTE corre ────────────────────
+  // `pasaAnswerability` solo se invoca en las etapas de la cascada (otro_curso,
+  // area, corpus completo). Con scope=curso ni se llama: el libro del alumno
+  // contesta siempre, por diseño. Un banco sin casos cross-scope mide al
+  // discriminador donde no se ejecuta — pasó con los primeros 42.
+  ["c01", "dif", "Matemática 6º", "¿Cómo se factoriza un trinomio?"],
+  ["c02", "dif", "Matemática 6º", "¿Qué es el teorema de Pitágoras?"],
+  ["c03", "dif", "Matemática 6º", "¿Qué es una función lineal?"],
+  ["c04", "dif", "Biología 1º Medio", "¿Cómo se propaga el sonido?"],
+  ["c05", "dif", "Biología 1º Medio", "¿Qué es el trabajo mecánico?"],
+  ["c06", "dif", "Química 1º Medio", "¿Qué es la selección natural?"],
+  ["c07", "dif", "Química 1º Medio", "¿Cómo funciona el sistema nervioso?"],
+  ["c08", "dif", "Física 1º Medio", "¿Qué es el ADN?"],
+  ["c09", "dif", "Lengua Y Literatura 7º", "¿Qué es el realismo mágico?"],
+  ["c10", "dif", "Lengua Y Literatura 7º", "¿Qué es un soneto?"],
+  ["c11", "dif", "Historia Geografía Y Ciencias Sociales 6º", "¿Qué fue la Edad Media?"],
+  ["c12", "dif", "Historia Geografía Y Ciencias Sociales 6º", "¿Quiénes eran los mayas?"],
+  ["c13", "dif", "Ciencias Naturales 6º", "¿Qué es la tectónica de placas?"],
+  ["c14", "dif", "Ciencias Naturales 6º", "¿Qué es una célula procarionte?"],
 ];
 
 const sql = getSql();
@@ -89,9 +108,14 @@ for (const [id, clase, materia, pregunta] of CASOS) {
     id, clase, materia, pregunta,
     scope: ctx?.scope ?? "ninguno", topScore: Number((ctx?.topScore ?? 0).toFixed(4)),
     entail: ctx?.answerabilityEntail ?? null,
-    servido: (ctx?.citable ?? []).slice(0, 3).map((c) => ({
+    // ⚠️ TODOS los fragmentos y SIN TRUNCAR: es lo que el discriminador recibe
+    // (`contesta(query, chunks.map(c => c.content))`). Truncar a 3 × 600
+    // caracteres hacía que el banco midiera una entrada distinta a la real —
+    // medido: con el material completo el juez pasó de decir NO a decir SI en el
+    // mismo caso. Un banco que no reproduce la entrada mide otra cosa.
+    servido: (ctx?.citable ?? []).map((c) => ({
       libro: c.documentTitle, pag: c.pageStart, score: Number(c.score.toFixed(4)),
-      texto: c.content.replace(/\s+/g, " ").slice(0, 600),
+      texto: c.content.replace(/\s+/g, " "),
     })),
     responde: null, porque: "",
   }));
