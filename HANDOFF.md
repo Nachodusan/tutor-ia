@@ -653,6 +653,14 @@ pnpm --filter @tutor-ia/eval llm-smoke -- --only=deepinfra
 pnpm --filter @tutor-ia/eval llm-smoke -- --base-urls=https://api.deepinfra.com/v1/openai,https://api.scaleway.ai/v1
 pnpm --filter @tutor-ia/eval batch-ingest [rootDir]        # ingesta (RESUMABLE); BATCH_DRY=1 = solo clasificar
 pnpm --filter @tutor-ia/eval eval                          # golden set 101 (~2,5 h, background)
+
+# LO QUE TARDA VA POR ACÁ. Lanzarlo con `nohup … &` y esperar con
+# `until [ -f marcador ]` se cuelga: el productor puede morir sin escribir el
+# marcador, y un `pgrep -f <patrón>` ENCUENTRA AL PROPIO VIGÍA. Pasó 4 veces en
+# una sesión, una de ellas 11 horas. Ver packages/eval/README.md.
+scripts/tarea.sh guarda pnpm --filter @tutor-ia/eval retrieval-guard
+scripts/esperar.sh guarda --tope-min 15   # 0-N=terminó · 3=murió · 4=tope · 5=no se lanzó
+tail -f .tareas/guarda.log
 EVAL_HALLUCINATION=0 pnpm --filter @tutor-ia/eval eval     # sin el juez de claims (igual GENERA)
 pnpm --filter @tutor-ia/eval exp6                          # eval pedagógico
 pnpm --filter @tutor-ia/eval nli-validate                  # A3 relevancia vs NLI

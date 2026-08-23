@@ -13,6 +13,34 @@ paquete de librería: son **scripts CLI** que se corren con `tsx`.
 los embeddings** son remotos) y, para lo que consulta el corpus, Postgres con el
 material ingestado. **Sin red no corre nada**, ni siquiera el retrieval.
 
+## Correr los que tardan (y no quedarse colgado esperándolos)
+
+Varios de estos scripts duran más que el timeout de quien los lanza: la guarda
+~5 min, el banco de answerability ~15, el golden completo ~2,5 h. Lanzarlos con
+`nohup … &` y esperar con `until [ -f marcador ]` **se cuelga**, y pasó cuatro
+veces en una sola sesión — una de ellas 11 horas.
+
+```bash
+scripts/tarea.sh guarda pnpm --filter @tutor-ia/eval retrieval-guard   # devuelve el PID al instante
+scripts/esperar.sh guarda --tope-min 15                                # espera con tope
+tail -f .tareas/guarda.log                                             # o mirarla en vivo
+```
+
+`esperar.sh` tiene **cuatro salidas y ninguna infinita**:
+
+| código | qué pasó |
+|---|---|
+| 0-N | terminó; es el código de salida de la tarea |
+| 3 | el proceso murió sin dejar marcador |
+| 4 | se agotó el tope (la tarea sigue viva) |
+| 5 | la tarea nunca se lanzó |
+
+Por qué así, en una línea: la liveness se comprueba con `kill -0 <pid>`, que
+pregunta por un PID concreto. `pgrep -f <patrón>` **encuentra al propio vigía**
+—su línea de comandos contiene el patrón— y espera para siempre.
+
+Los logs y marcadores van a `.tareas/`, que está gitignoreada.
+
 ## Scripts
 
 Todos se corren con `pnpm --filter @tutor-ia/eval <script>`:
