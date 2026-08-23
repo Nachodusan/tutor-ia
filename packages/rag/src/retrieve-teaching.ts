@@ -108,6 +108,74 @@ export function oaBoostFromEnv(): number {
  * relevantes; en las consultas donde no pasa ninguno el prompt dice "(sin guía
  * para este tema)", que es honesto — mejor sin guía que con la de otra lección.
  */
+/**
+ * ALINEACIÓN CONTENIDO↔PEDAGOGÍA, por coseno de embeddings.
+ *
+ * Hace lo que el boost de OA nunca pudo (ver `oaBoostFromEnv`): preferir la guía
+ * docente que habla de LO QUE SE VA A ENSEÑAR, no solo de cómo se formuló la
+ * pregunta. La guía se recupera y se rerankea contra la pregunta; el material
+ * citable ya se eligió unas líneas más arriba y hasta ahora no influía en nada.
+ *
+ * POR QUÉ COSENO Y NO EL RERANKER. Se probaron los dos (2026-08-23). El reranker
+ * dio puntajes de 0,003 a 0,013 para TODOS los candidatos —sin discriminar—
+ * porque es un modelo de pregunta→pasaje y esto es pasaje↔pasaje. El coseno sí
+ * separa: 0,739 → 0,592 en el caso medido, y los 8 primeros resultaron ser todos
+ * de la lección a la que pertenece el contenido. Además es gratis: los vectores
+ * ya están en la base, no hay llamada a la API ni al sidecar.
+ *
+ * SE NORMALIZA dentro del conjunto de candidatos (min-max). El coseno crudo entre
+ * dos fragmentos del mismo libro vive comprimido —todo entre 0,59 y 0,74— así que
+ * sin normalizar el boost sería casi constante y no reordenaría nada. Lo que
+ * importa es la POSICIÓN RELATIVA, no el valor.
+ *
+ * ⚠️ Solo mueve el ORDEN (`rankScore`), nunca el gate (`rerankScore` crudo).
+ * Misma disciplina que el boost de OA y la penalización de grado: quién ENTRA al
+ * prompt lo decide la relevancia a la pregunta, para no cambiar la semántica de
+ * "hay guía para esto". Acá el orden sí decide algo real: se toman 2 bloques por
+ * tipo, y hay tipos con 5 candidatos que pasan el gate.
+ *
+ * ⚠️ NO SE PUDO DEMOSTRAR LA GANANCIA. En los casos medidos el orden por pregunta
+ * ya elegía guía de la lección correcta, y `correct_mode` no sirve para juzgarlo
+ * (mide encuadre). Se implementa por decisión de producto, no por medición. Para
+ * mirarlo: `pnpm --filter @tutor-ia/eval alineacion-peda`. Se apaga con
+ * RAG_PEDAGOGY_ALIGN=0.
+ */
+export const DEFAULT_PEDAGOGY_ALIGN_BOOST = 0.15;
+/** Cuántos bloques de pedagogía se alinean. Son 2 por tipo los que entran al
+ *  prompt, así que 12 cubre de sobra y acota la consulta. */
+export const PEDAGOGY_ALIGN_K = 12;
+
+export function pedagogyAlignFromEnv(): number {
+  const v = process.env.RAG_PEDAGOGY_ALIGN;
+  if (v == null || v.trim() === "") return DEFAULT_PEDAGOGY_ALIGN_BOOST;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : DEFAULT_PEDAGOGY_ALIGN_BOOST;
+}
+
+/**
+ * Coseno entre un chunk y una lista de chunks, resuelto en la base.
+ *
+ * Va en SQL y no en JS porque los vectores no viajan en `HybridChunk` —el
+ * retrieval no los devuelve— y traer 13 vectores de 1.024 dimensiones para
+ * multiplicarlos acá sería mover 100 KB por turno para hacer lo que pgvector
+ * hace con un operador.
+ */
+async function cosenoContra(
+  refChunkId: string,
+  ids: string[],
+): Promise<Map<string, number>> {
+  if (ids.length === 0) return new Map();
+  const sql = getSql();
+  const filas = await sql<{ id: string; cos: number }[]>`
+    with ref as (select embedding from chunks where id = ${refChunkId}::uuid)
+    select c.id, (1 - (c.embedding <=> (select embedding from ref)))::float as cos
+    from chunks c
+    where c.id = any(${ids}::uuid[])
+      and c.embedding is not null
+      and (select embedding from ref) is not null`;
+  return new Map(filas.map((f) => [f.id, f.cos]));
+}
+
 export const DEFAULT_PEDAGOGY_MIN_SCORE = 0.05;
 
 export function pedagogyMinScoreFromEnv(): number {
@@ -768,6 +836,35 @@ export async function retrieveForTeaching(
         return { ...c, rerankScore, rankScore: Math.min(1, boosted) };
       })
       .sort((a, b) => b.rankScore - a.rankScore);
+
+    // ALINEACIÓN CON EL CONTENIDO ELEGIDO (ver DEFAULT_PEDAGOGY_ALIGN_BOOST).
+    // Reemplaza al boost de OA, que no se puede poblar.
+    const alignBoost = pedagogyAlignFromEnv();
+    const refChunk = oaSrc[0]?.chunkId;
+    if (alignBoost > 0 && refChunk && rankedPeda.length > 1) {
+      const top = rankedPeda.slice(0, PEDAGOGY_ALIGN_K);
+      try {
+        const cos = await cosenoContra(refChunk, top.map((c) => c.chunkId));
+        const vals = [...cos.values()];
+        // Se normaliza min-max DENTRO del conjunto: el coseno entre fragmentos
+        // del mismo libro vive comprimido (0,59-0,74 medido) y sin esto el boost
+        // sería casi constante. Si todos empatan, no hay nada que reordenar.
+        const min = Math.min(...vals), max = Math.max(...vals);
+        if (vals.length > 1 && max - min > 1e-6) {
+          rankedPeda = rankedPeda
+            .map((c) => {
+              const v = cos.get(c.chunkId);
+              const rel = v == null ? 0 : (v - min) / (max - min);
+              // rerankScore queda CRUDO: sigue decidiendo el gate.
+              return { ...c, rankScore: Math.min(1, c.rankScore + alignBoost * rel) };
+            })
+            .sort((a, b) => b.rankScore - a.rankScore);
+        }
+      } catch {
+        // La alineación MEJORA el orden, no es un requisito: si la consulta
+        // falla se sirve el orden por pregunta, que es lo que se servía antes.
+      }
+    }
 
     const pedaMin = pedagogyMinScoreFromEnv();
     for (const c of rankedPeda) {

@@ -36,8 +36,12 @@ async function correr(materia: string, pregunta: string) {
   const ctx = res.ctx;
   const bloques: string[] = [];
   for (const [tipo, cs] of Object.entries(ctx?.pedagogy ?? {})) {
-    for (const c of cs as { content: string; rerankScore: number }[]) {
-      bloques.push(`${tipo}: ${c.content.replace(/\s+/g, " ").slice(0, 62)}`);
+    for (const c of cs as { content: string; rerankScore: number; rankScore: number }[]) {
+      // Los DOS puntajes: el crudo decide el gate, el rankScore decide el orden
+      // (y con 2 bloques por tipo, el orden decide cuáles entran).
+      bloques.push(
+        `${tipo.padEnd(22)} crudo ${c.rerankScore.toFixed(4)} · orden ${c.rankScore.toFixed(4)}  ${c.content.replace(/\s+/g, " ").slice(0, 44)}`,
+      );
     }
   }
   return { contenido: ctx?.citable[0]?.content.replace(/\s+/g, " ").slice(0, 70) ?? "(nada)", bloques };
