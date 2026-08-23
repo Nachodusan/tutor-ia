@@ -40,6 +40,8 @@ async function main() {
   const pi = process.argv.indexOf("--plan");
   if (pi === -1) { console.error("Falta --plan <plan.json>"); process.exit(2); }
   const dry = process.argv.includes("--dry");
+  // --rehacer: re-trocea y re-embebe aunque el documento ya esté listo.
+  const rehacer = process.argv.includes("--rehacer");
   const plan = JSON.parse(readFileSync(rp(process.argv[pi + 1]!), "utf8")) as PlanItem[];
   const sql = getSql();
 
@@ -57,7 +59,7 @@ async function main() {
       select d.id, d.status, count(c.id)::int as n from documents d
       left join chunks c on c.document_id = d.id
       where d.storage_path = ${it.storagePath} group by d.id, d.status`;
-    if (ya && ya.n > 0 && ya.status === "ready") { console.log(`${pref}  ya estaba (${ya.n} chunks)`); saltados++; continue; }
+    if (!rehacer && ya && ya.n > 0 && ya.status === "ready") { console.log(`${pref}  ya estaba (${ya.n} chunks)`); saltados++; continue; }
     if (ya && ya.status !== "ready") console.log(`${pref}  reintentando (quedó ${ya.status} con ${ya.n} chunks)`);
     if (dry) { console.log(`${pref}  [dry]`); continue; }
 
@@ -71,7 +73,15 @@ async function main() {
       do update set title = excluded.title
       returning id`;
     try {
-      const r = await ingestDocumentV2({ documentId: row!.id, doc, corpusRole: "content" });
+      const r = await ingestDocumentV2({
+        documentId: row!.id, doc, corpusRole: "content",
+        // Los cuadernos EPJA vienen escaneados y su maquetación fragmentada
+        // produce chunks inservibles: 19,1% bajo 120 caracteres contra 0,8% de
+        // los libros de editorial. 250 es el piso de un párrafo con sentido —
+        // lo que hace falta para que un fragmento ENSEÑE algo, no solo para que
+        // no sea basura (el piso del chunker, 15, es para eso otro).
+        minChunkChars: 250,
+      });
       chunks += r.chunks; ok++;
       console.log(`${pref}  ✓ ${r.chunks} chunks`);
     } catch (e) {
