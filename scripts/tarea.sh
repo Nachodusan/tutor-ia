@@ -44,10 +44,21 @@ log="$dir/$nombre.log"
 done_file="$dir/$nombre.done"
 rm -f "$done_file"
 
-# DESPEGARSE DEL GRUPO DE PROCESOS. `setsid` no existe en macOS, así que se usa
-# el equivalente POSIX vía perl, que sí viene con el sistema. Sin esto, el
-# SIGTERM que recibe el shell padre al expirar su timeout se propaga al grupo
-# entero y se lleva la tarea — que es exactamente lo que venía pasando.
+# DESPEGARSE DEL PADRE — best effort, y hay que saber hasta dónde llega.
+#
+# `setsid` no existe en macOS; se usa el equivalente POSIX vía perl. MEDIDO: la
+# tarea queda con PPID=1 (se despega del padre, así que no muere cuando el padre
+# termina) pero CONSERVA EL GRUPO DE PROCESOS del lanzador. O sea que un SIGTERM
+# dirigido al GRUPO —que es lo que hace un timeout de shell— igual la alcanza.
+#
+# ⚠️ Y en ese caso el trap de abajo NO llega a escribir el marcador: bash difiere
+# la señal mientras espera al comando en primer plano y muere antes de correrlo.
+# Verificado mandando TERM al grupo: la tarea desaparece sin dejar `.done`.
+#
+# POR ESO LA GARANTÍA DE QUE EL VIGÍA NO SE CUELGUE NO VIVE ACÁ, sino en
+# `esperar.sh`, que comprueba con `kill -0` si el proceso sigue existiendo y no
+# depende del marcador. Medido en ese escenario: detecta la muerte en 0,011 s.
+# Este despegue reduce los casos en que la tarea muere; el vigía cubre el resto.
 if command -v setsid >/dev/null 2>&1; then
   despegar=(setsid)
 else

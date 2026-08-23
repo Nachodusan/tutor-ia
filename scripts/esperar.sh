@@ -54,6 +54,16 @@ log="$dir/$nombre.log"
 pid=""
 [[ -f "$pid_file" ]] && pid="$(cat "$pid_file")"
 
+# SIN pid Y SIN marcador = la tarea nunca se lanzó. Esperar el tope completo por
+# algo que no arrancó es la misma trampa que este script vino a resolver, un paso
+# antes. Se descubrió porque `timeout` no existe en macOS: el comando que debía
+# lanzar la tarea falló, y el vigía se quedó un minuto esperando la nada.
+if [[ -z "$pid" && ! -f "$done_file" ]]; then
+  echo "✗ '$nombre' no existe: no hay $pid_file ni $done_file." >&2
+  echo "  ¿Se lanzó con scripts/tarea.sh? ¿El nombre coincide?" >&2
+  exit 5
+fi
+
 limite=$(( SECONDS + tope_min * 60 ))
 while :; do
   if [[ -f "$done_file" ]]; then
