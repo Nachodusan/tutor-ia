@@ -85,6 +85,47 @@ export function answerabilityMinFromEnv(): number {
  * Idéntica a la de `answerability-sweep.ts` a propósito: si divergen, lo que se
  * midió deja de ser lo que corre.
  */
+/**
+ * ⚠️ EL DISCRIMINADOR APRUEBA MATERIAL VECINO, Y CUATRO INTENTOS DE ARREGLO
+ * FALLARON (medido el 2026-08-23). Leer esto antes de intentar el quinto.
+ *
+ * El síntoma: a «¿de qué trata Cien años de soledad?» preguntada en Lengua 8º,
+ * el NLI le da 0,996 de entailment a un texto sobre mitos que menciona a Tolkien
+ * y Narnia. Y no es un caso aislado: sobre las 7 preguntas de la guarda con
+ * entailment registrado, q120 FALLA con 0,996 y q122 ACIERTA con 0,998 — el
+ * número no separa lo correcto de lo incorrecto, están todos amontonados arriba.
+ *
+ * Lo que se probó, con fragmentos COMPLETOS y sobre los casos reales:
+ *
+ *  1. REFORMULAR LA HIPÓTESIS. "Este texto responde la pregunta: X" y "En este
+ *     texto está escrita la respuesta a: X" dan separación NEGATIVA (-0,18 y
+ *     -0,35) contra el +0,25 de la formulación actual. La que está es la mejor
+ *     de las tres.
+ *
+ *  2. RESTAR UNA HIPÓTESIS DE CONTROL ("El texto explica un tema escolar") para
+ *     descontar el sesgo del marco meta. Desenmascara a algunos fragmentos —uno
+ *     pasó de 0,885 a un neto de -0,003— pero NO al peor: el de Kamshout da 0,996
+ *     contra 0,230 de control, o sea neto 0,765. El NLI está convencido.
+ *
+ *  3. EXIGIR QUE EL FRAGMENTO NOMBRE LO QUE LA PREGUNTA NOMBRA. La señal
+ *     ANTI-CORRELACIONA: q120 (que NO debe responderse) tiene cobertura léxica
+ *     1,00 y los positivos q122/q125/q128 tienen 0,67/0,75/0,60. Pasa porque
+ *     entre el material de q120 hay un fragmento que sí habla de García Márquez
+ *     —de "Noticia de un secuestro"—, así que nombra al autor sin traer la novela.
+ *
+ *  4. JUEZ LLM ("¿este fragmento RESPONDE la pregunta? SI/NO"). Es el único que
+ *     acierta los dos casos difíciles (q120 y q123), pero da 4/6: se pasa de
+ *     estricto en q122 y q125. Cuesta una llamada por turno. No se descarta como
+ *     idea — se descarta como cambio no evaluable hoy.
+ *
+ * QUÉ HACE FALTA PARA ARREGLARLO DE VERDAD: un banco etiquetado de tríos
+ * (pregunta, material SERVIDO, ¿responde?) grande y con etiquetas defendibles.
+ * Hoy no existe: los 6 casos que se usaron acá tienen etiquetas discutibles —en
+ * q125 el juez dice NO mirando el fragmento top (un texto sobre eclipses) y
+ * tiene razón, mientras que la etiqueta dice "sí" por un pasaje de la Odisea que
+ * quedó segundo, a 0,31. Sin ese banco, cualquier cambio acá se calibra contra
+ * el ruido.
+ */
 export function comoAfirmacion(pregunta: string): string {
   const limpia = pregunta
     .replace(/^[¿¡\s]+/, "")
