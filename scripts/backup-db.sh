@@ -18,6 +18,21 @@
 # Restaurar:
 #   createdb tutor_restore
 #   pg_restore -d tutor_restore --no-owner ~/tutor-backups/tutor-AAAA-MM-DD.dump
+#
+# ── COPIA FUERA DE ESTA MÁQUINA ────────────────────────────────────────────
+# Los respaldos de acá viven en el MISMO disco que la base: cubren el `dropdb`
+# accidental, no el disco que falla. La copia remota va como asset de release
+# del repo privado (cabe: el límite es 2 GB por archivo y el dump pesa ~205 MB):
+#
+#   gh release create corpus-AAAA-MM-DD ~/tutor-backups/tutor-AAAA-MM-DD_HHMM.dump \
+#     -R Nachodusan/tutor-ia -t "Corpus AAAA-MM-DD · N chunks"
+#
+# VERIFICAR SIEMPRE bajándolo y comparando el sha256: que el tamaño coincida no
+# prueba que el archivo esté íntegro, y un respaldo sin verificar no es un
+# respaldo. `pg_restore -l` sobre el archivo bajado confirma que se puede leer.
+#
+# ⚠️ El dump lleva adentro el texto completo de libros de editoriales bajo
+# copyright. El repo TIENE que seguir siendo privado.
 # =============================================================================
 set -euo pipefail
 
