@@ -122,12 +122,18 @@ export interface Pendiente {
   asignatura: string;
   /** 'no_esta' | 'otro_año' */
   motivo: string;
-  /** Dónde SÍ está, si otro libro del mismo nivel EPJA lo cubre. */
+  /** Dónde SÍ está, si algún otro libro del corpus lo cubre. */
   enHermana: {
     materia: string;
     paginaDesde: number | null;
-    /** false = es el libro del curso vecino, no una materia hermana del propio. */
-    mismoCurso: boolean;
+    /**
+     * Qué tan lejos hay que ir a buscarlo. Cada escalón se le dice distinto al
+     * alumno: no es lo mismo "está en tu libro de Química" que "está en el de 6º".
+     *   'materia'      otra materia del MISMO curso (Física → Química)
+     *   'curso_vecino' el otro año del MISMO nivel EPJA (1º → 2º Medio)
+     *   'otro_nivel'   la misma asignatura en otro nivel (7º → 6º)
+     */
+    donde: "materia" | "curso_vecino" | "otro_nivel";
   } | null;
 }
 
@@ -169,26 +175,50 @@ export async function pendientesDe(subjectId: string): Promise<Pendiente[]> {
         and cm.metodo = 'lector-v1'
         and cm.verificado in ('no_esta', 'otro_año')
     ),
-    -- Dónde sí está. La llave es el NIVEL EPJA, no el curso: el nivel es la unidad
-    -- real del plan de adultos y comprime dos años del sistema regular en uno —
-    -- "Nivel 1 Educación Media" son 1º y 2º Medio juntos. Por eso el mismo
-    -- conocimiento se mapeó contra las dos materias y cada libro cubre una parte.
+    -- Dónde sí está, en TRES ESCALONES de más cerca a más lejos. Cada uno se le
+    -- dice distinto al alumno, y por eso se distinguen en vez de unificarse.
     --
-    -- Con esa llave entran los dos casos en una sola consulta:
-    --   · la materia hermana del MISMO curso (Física y Química: un casillero)
-    --   · el libro del curso VECINO del mismo nivel (Matemática 1º y 2º Medio)
-    -- Se distinguen al mostrarlos, porque al alumno no se le dicen igual.
+    --  1. Otra materia del MISMO CURSO. El plan EPJA tiene un solo casillero
+    --     "Ciencias Naturales" y el sistema regular lo parte en tres tomos: el
+    --     hueco de Física suele estar en el de Química, que el alumno tiene.
     --
-    -- Se prefiere correcto sobre parcial y, a igualdad, el mismo curso: si su
-    -- propio libro lo tiene, no hay por qué mandarlo a otro.
+    --  2. El otro año del MISMO NIVEL EPJA. El nivel comprime dos años del
+    --     sistema regular — "Nivel 1 Media" son 1º y 2º juntos—, así que ese
+    --     libro también le corresponde.
+    --
+    -- El nivel se deduce del CURSO (nivel_epja), no de la columna nivel de la
+    -- fila: esa columna dice qué nivel EXIGE el conocimiento, y una fila puede
+    -- exigirlo en Nivel 3 y estar ubicada en un libro de 6º, que es Nivel 2.
+    -- Mirando la columna, ese caso se anunciaba como "tu nivel abarca los dos
+    -- años", que para un alumno de 7º frente al libro de 6º es falso.
+    --
+    --  3. La misma asignatura en OTRO NIVEL. El EPJA pide en Nivel 3 Básica
+    --     cosas que el sistema regular enseña en 6º: "Sistema solar y
+    --     estructuras cósmicas" no está en ningún libro de 7º ni 8º y sí en el
+    --     tomo EPJA de Nivel 2, con una unidad entera desde la página 148. La
+    --     cascada de retrieval ya lo alcanza (misma family); lo que faltaba
+    --     era decírselo al alumno en vez de mandarlo a pedirle material al profe.
+    --
+    -- Gana el escalón más cercano, y a igualdad de escalón, correcto sobre
+    -- parcial.
     hermanas as (
       select cm.item, s.name materia, cm.pagina_desde,
-             (select max(d.grade) from documents d where d.subject_id = s.id) = yo.curso mismo_curso,
+             case
+               when (select max(d.grade) from documents d where d.subject_id = s.id) = yo.curso
+                 then 'materia'
+               when nivel_epja((select max(d.grade) from documents d where d.subject_id = s.id))
+                    = nivel_epja(yo.curso)
+                 then 'curso_vecino'
+               else 'otro_nivel'
+             end donde,
              row_number() over (
                partition by cm.item
-               order by cm.verificado,
-                        ((select max(d.grade) from documents d where d.subject_id = s.id) = yo.curso) desc,
-                        cm.pagina_desde
+               order by case
+                 when (select max(d.grade) from documents d where d.subject_id = s.id) = yo.curso then 1
+                 when nivel_epja((select max(d.grade) from documents d where d.subject_id = s.id))
+                      = nivel_epja(yo.curso) then 2
+                 else 3 end,
+                 cm.verificado, cm.pagina_desde
              ) rn
       from curriculum_map cm
       join subjects s on s.id = cm.subject_id
@@ -196,16 +226,14 @@ export async function pendientesDe(subjectId: string): Promise<Pendiente[]> {
       where cm.metodo = 'lector-v1'
         and cm.verificado in ('correcto', 'parcial')
         and s.disabled_at is null
-        and cm.nivel = (select c2.nivel from curriculum_map c2
-                         where c2.subject_id = yo.id and c2.item = cm.item limit 1)
-        -- Del mismo casillero curricular O de la misma asignatura en el curso
-        -- vecino. Sin esto entraría un ítem homónimo de otra asignatura.
+        -- Del mismo casillero curricular o de la misma asignatura. Sin esto
+        -- entraría un ítem homónimo de otra asignatura.
         and (s.area = yo.area or s.family = yo.family)
     )
     select f.item, f.asignatura, f.motivo,
            case when h.materia is null then null
                 else jsonb_build_object('materia', h.materia, 'paginaDesde', h.pagina_desde,
-                                        'mismoCurso', h.mismo_curso)
+                                        'donde', h.donde)
            end as "enHermana"
     from faltan f
     left join hermanas h on h.item = f.item and h.rn = 1

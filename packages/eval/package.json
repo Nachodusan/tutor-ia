@@ -49,7 +49,8 @@
     "banco-answerability": "tsx --env-file-if-exists=../../.env src/banco-answerability.ts",
     "eval-answerability": "tsx --env-file-if-exists=../../.env src/eval-answerability.ts",
     "tramos-indice": "tsx --env-file-if-exists=../../.env src/tramos-indice.ts",
-    "reverificar": "tsx --env-file-if-exists=../../.env src/reverificar.ts"
+    "reverificar": "tsx --env-file-if-exists=../../.env src/reverificar.ts",
+    "buscar-huecos": "tsx --env-file-if-exists=../../.env src/buscar-huecos.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",

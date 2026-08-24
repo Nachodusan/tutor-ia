@@ -658,11 +658,13 @@ export function CaminoView({
                         estudiar de un curso que no le toca. */}
                   <span style={{ display: "block", fontSize: 12, color: C.dim, marginTop: 3, lineHeight: 1.4 }}>
                     {p.enHermana
-                      ? p.enHermana.mismoCurso
-                        ? <>Está en tu libro de <b style={{ color: C.okTx }}>{p.enHermana.materia}</b>
-                            {p.enHermana.paginaDesde ? `, página ${p.enHermana.paginaDesde}` : ""}.</>
-                        : <>Tu nivel abarca los dos años: está en <b style={{ color: C.okTx }}>{p.enHermana.materia}</b>
-                            {p.enHermana.paginaDesde ? `, página ${p.enHermana.paginaDesde}` : ""}.</>
+                      ? (() => {
+                          const donde = <b style={{ color: C.okTx }}>{p.enHermana!.materia}</b>;
+                          const pag = p.enHermana!.paginaDesde ? `, página ${p.enHermana!.paginaDesde}` : "";
+                          if (p.enHermana!.donde === "materia") return <>Está en tu libro de {donde}{pag}.</>;
+                          if (p.enHermana!.donde === "curso_vecino") return <>Tu nivel abarca los dos años: está en {donde}{pag}.</>;
+                          return <>Ningún libro de tu curso lo trae; sí {donde}{pag}. Pedíselo al tutor y te lo explica desde ahí.</>;
+                        })()
                       : p.motivo === "otro_año"
                         ? "Está en tu tomo, pero en la mitad del otro curso."
                         : "No está en ninguno de tus libros: pedile material a tu profe."}

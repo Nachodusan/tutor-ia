@@ -33,7 +33,7 @@ export interface Pendiente {
   asignatura: string;
   /** 'no_esta' = no está en ningún lado del tomo · 'otro_año' = está, en la mitad del otro curso. */
   motivo: string;
-  enHermana: { materia: string; paginaDesde: number | null; mismoCurso: boolean } | null;
+  enHermana: { materia: string; paginaDesde: number | null; donde: "materia" | "curso_vecino" | "otro_nivel" } | null;
 }
 export interface PlanItem { n: number; key: string; title: string; focus: string; points?: string[]; unit: number | null; lesson: number | null; p0: number | null; p1: number | null;
   /** Lo que el Estado exige en este tramo. Vacío = el libro lo trae igual, pero
