@@ -56,6 +56,9 @@ const arg = (n: string): string | undefined => {
 const APLICAR = process.argv.includes("--aplicar");
 const ESTADOS = (arg("estados") ?? "no_esta,otro_año,parcial").split(",").map((s) => s.trim());
 const UMBRAL = Number(arg("umbral") ?? 0.25);
+/** La fecha va en la nota del veredicto: sirve para saber contra qué corpus se
+ *  dictó. Estaba escrita a mano y quedó vieja al día siguiente. */
+const HOY = new Date().toISOString().slice(0, 10);
 
 const EXPANDIR = `Sos un bibliotecario de textos escolares chilenos del Mineduc.
 Te doy un CONOCIMIENTO ESENCIAL del currículum, escrito en el registro normativo del
@@ -327,7 +330,7 @@ async function main(): Promise<void> {
       await sql`
         update curriculum_map set
           verificado = ${ver},
-          verificacion = ${`[reverificado 2026-08-23 sobre el corpus completo] ${porQue}`.slice(0, 900)},
+          verificacion = ${`[reverificado ${HOY} sobre el corpus completo] ${porQue}`.slice(0, 900)},
           document_id = ${mejora && elegido ? elegido.documentId : null} ,
           pagina_desde = case when ${mejora && !!elegido} then ${elegido?.pageStart ?? null} else pagina_desde end,
           pagina_hasta = case when ${mejora && !!elegido} then ${elegido?.pageEnd ?? null} else pagina_hasta end,
