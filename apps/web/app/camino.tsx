@@ -625,8 +625,9 @@ export function CaminoView({
             Esto te lo van a exigir y tu libro no lo trae
           </div>
           <div style={{ color: C.dim, fontSize: 12.5, marginTop: 4, lineHeight: 1.45 }}>
-            {pendientes!.length === 1 ? "Es un tema del" : `Son ${pendientes!.length} temas del`}{" "}
-            programa oficial que tu texto de {area} no desarrolla. No los pierdas de vista.
+            {pendientes!.length === 1
+              ? `Es un tema del programa oficial que tu texto de ${area} no desarrolla. No lo pierdas de vista.`
+              : `Son ${pendientes!.length} temas del programa oficial que tu texto de ${area} no desarrolla. No los pierdas de vista.`}
           </div>
           <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "grid", gap: 8 }}>
             {pendientes!.map((p) => (
@@ -643,14 +644,25 @@ export function CaminoView({
                     {p.item.replace(/\.$/, "")}
                   </span>
                   {/* DÓNDE SÍ ESTÁ. Es la diferencia entre un reproche y algo
-                      accionable: el plan EPJA tiene UN casillero "Ciencias
-                      Naturales" y el sistema regular lo parte en tres tomos, así
-                      que la mitad de estos huecos están en un libro hermano que
-                      el alumno TAMBIÉN tiene. */}
+                      accionable, y son DOS casos que no se dicen igual:
+
+                      · Otra materia del mismo curso. El plan EPJA tiene UN
+                        casillero "Ciencias Naturales" y el sistema regular lo
+                        parte en tres tomos, así que el hueco de Física suele
+                        estar en el de Química, que el alumno también tiene.
+
+                      · El libro del curso vecino. El nivel EPJA comprime dos
+                        años del sistema regular —"Nivel 1 Media" es 1º y 2º
+                        juntos—, así que ese libro también le corresponde. Se
+                        dice explícito para que no parezca que lo mandan a
+                        estudiar de un curso que no le toca. */}
                   <span style={{ display: "block", fontSize: 12, color: C.dim, marginTop: 3, lineHeight: 1.4 }}>
                     {p.enHermana
-                      ? <>Está en tu libro de <b style={{ color: C.okTx }}>{p.enHermana.materia}</b>
-                          {p.enHermana.paginaDesde ? `, página ${p.enHermana.paginaDesde}` : ""}.</>
+                      ? p.enHermana.mismoCurso
+                        ? <>Está en tu libro de <b style={{ color: C.okTx }}>{p.enHermana.materia}</b>
+                            {p.enHermana.paginaDesde ? `, página ${p.enHermana.paginaDesde}` : ""}.</>
+                        : <>Tu nivel abarca los dos años: está en <b style={{ color: C.okTx }}>{p.enHermana.materia}</b>
+                            {p.enHermana.paginaDesde ? `, página ${p.enHermana.paginaDesde}` : ""}.</>
                       : p.motivo === "otro_año"
                         ? "Está en tu tomo, pero en la mitad del otro curso."
                         : "No está en ninguno de tus libros: pedile material a tu profe."}

@@ -122,8 +122,13 @@ export interface Pendiente {
   asignatura: string;
   /** 'no_esta' | 'otro_año' */
   motivo: string;
-  /** Dónde SÍ está, si un libro hermano del mismo casillero EPJA lo cubre. */
-  enHermana: { materia: string; paginaDesde: number | null } | null;
+  /** Dónde SÍ está, si otro libro del mismo nivel EPJA lo cubre. */
+  enHermana: {
+    materia: string;
+    paginaDesde: number | null;
+    /** false = es el libro del curso vecino, no una materia hermana del propio. */
+    mismoCurso: boolean;
+  } | null;
 }
 
 /**
@@ -153,7 +158,7 @@ export async function pendientesDe(subjectId: string): Promise<Pendiente[]> {
   const sql = getSql();
   return await sql<Pendiente[]>`
     with yo as (
-      select s.id, s.area, (select max(d.grade) from documents d where d.subject_id = s.id) curso
+      select s.id, s.area, s.family, (select max(d.grade) from documents d where d.subject_id = s.id) curso
       from subjects s where s.id = ${subjectId}::uuid
     ),
     -- Lo que ESTA materia declara que no tiene.
@@ -164,22 +169,43 @@ export async function pendientesDe(subjectId: string): Promise<Pendiente[]> {
         and cm.metodo = 'lector-v1'
         and cm.verificado in ('no_esta', 'otro_año')
     ),
-    -- Dónde sí está, dentro del mismo casillero EPJA y el mismo curso. Se excluye
-    -- la propia materia: si ella lo tuviera, no estaria en faltan.
+    -- Dónde sí está. La llave es el NIVEL EPJA, no el curso: el nivel es la unidad
+    -- real del plan de adultos y comprime dos años del sistema regular en uno —
+    -- "Nivel 1 Educación Media" son 1º y 2º Medio juntos. Por eso el mismo
+    -- conocimiento se mapeó contra las dos materias y cada libro cubre una parte.
+    --
+    -- Con esa llave entran los dos casos en una sola consulta:
+    --   · la materia hermana del MISMO curso (Física y Química: un casillero)
+    --   · el libro del curso VECINO del mismo nivel (Matemática 1º y 2º Medio)
+    -- Se distinguen al mostrarlos, porque al alumno no se le dicen igual.
+    --
+    -- Se prefiere correcto sobre parcial y, a igualdad, el mismo curso: si su
+    -- propio libro lo tiene, no hay por qué mandarlo a otro.
     hermanas as (
       select cm.item, s.name materia, cm.pagina_desde,
-             row_number() over (partition by cm.item order by cm.verificado, cm.pagina_desde) rn
+             (select max(d.grade) from documents d where d.subject_id = s.id) = yo.curso mismo_curso,
+             row_number() over (
+               partition by cm.item
+               order by cm.verificado,
+                        ((select max(d.grade) from documents d where d.subject_id = s.id) = yo.curso) desc,
+                        cm.pagina_desde
+             ) rn
       from curriculum_map cm
       join subjects s on s.id = cm.subject_id
-      join yo on s.area = yo.area and s.id <> yo.id
+      join yo on s.id <> yo.id
       where cm.metodo = 'lector-v1'
         and cm.verificado in ('correcto', 'parcial')
         and s.disabled_at is null
-        and (select max(d.grade) from documents d where d.subject_id = s.id) = yo.curso
+        and cm.nivel = (select c2.nivel from curriculum_map c2
+                         where c2.subject_id = yo.id and c2.item = cm.item limit 1)
+        -- Del mismo casillero curricular O de la misma asignatura en el curso
+        -- vecino. Sin esto entraría un ítem homónimo de otra asignatura.
+        and (s.area = yo.area or s.family = yo.family)
     )
     select f.item, f.asignatura, f.motivo,
            case when h.materia is null then null
-                else jsonb_build_object('materia', h.materia, 'paginaDesde', h.pagina_desde)
+                else jsonb_build_object('materia', h.materia, 'paginaDesde', h.pagina_desde,
+                                        'mismoCurso', h.mismo_curso)
            end as "enHermana"
     from faltan f
     left join hermanas h on h.item = f.item and h.rn = 1
