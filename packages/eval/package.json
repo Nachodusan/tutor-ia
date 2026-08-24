@@ -50,7 +50,8 @@
     "eval-answerability": "tsx --env-file-if-exists=../../.env src/eval-answerability.ts",
     "tramos-indice": "tsx --env-file-if-exists=../../.env src/tramos-indice.ts",
     "reverificar": "tsx --env-file-if-exists=../../.env src/reverificar.ts",
-    "buscar-huecos": "tsx --env-file-if-exists=../../.env src/buscar-huecos.ts"
+    "buscar-huecos": "tsx --env-file-if-exists=../../.env src/buscar-huecos.ts",
+    "faltantes-doc": "tsx --env-file-if-exists=../../.env src/faltantes-doc.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",
