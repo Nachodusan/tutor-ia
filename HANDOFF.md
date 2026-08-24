@@ -1,7 +1,10 @@
 # HANDOFF — Tutor IA (para retomar en un chat nuevo)
 
-> Estado al **2026-08-13**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
-> Proyecto en `/Users/dusan/Documents/ia`. Rama `feat/bloques-aurora-plan-prueba`.
+> Estado al **2026-08-24**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
+> Proyecto en `/Users/dusan/Documents/ia`. Rama **`main`**.
+> **El código ya está en git remoto**: `github.com/Nachodusan/tutor-ia`, PRIVADO, `main` por
+> defecto. El corpus NO está en git — va como asset de release
+> (`corpus-2026-08-23`, 205 MB, verificado por sha256). Ver §8.
 > **Leé también la memoria del proyecto** (`tutor-ia-estado.md` y las notas por feature).
 
 ---
@@ -1394,6 +1397,12 @@ Probar los tres órdenes (lectura, columna, `y`) y quedarse con el de mejor mono
 
 ## 7. Deuda conocida / próximos pasos
 
+> ⚠️ **Leé el §8 antes de actuar sobre esta lista.** Varios puntos de acá se resolvieron el
+> 2026-08-23/24 —los índices se reconstruyeron, los títulos se limpiaron, `curriculum_map`
+> tiene consumidores— y el §8 tiene el estado real. Lo que sigue vigente acá es lo de UI y
+> lo del tutor; lo del corpus y el camino, revisalo contra el §8.
+
+
 - 🔴 **Los puntos de control se aprietan cuando la unidad tiene muchas lecciones.** El paso
   vertical entre unidades es fijo (`PASO = 164`) y una unidad con 5 lecciones no entra:
   medido en Lengua y Literatura 2º medio, 21 pares de circulitos se superponen. El arreglo
@@ -1719,10 +1728,17 @@ PDF cuelga de dos materias y cada mitad es de un año: Biología p.130, Química
 p.107, Matemática 3º-4º p.109, Filosofía p.123. Las filas que caen en la mitad ajena van
 marcadas `verificado = 'otro_año'`.
 
+> ⚠️ **Esta sección quedó vieja el 2026-08-23.** Los números de arriba (237 puntos, 490
+> tramos) y los dos primeros pendientes de abajo ya no valen: `curriculum_map` SÍ tiene
+> consumidores y los huecos son cero. Lo que sigue vigente es **el método** y la advertencia
+> de filtrar por `metodo = 'lector-v1'`. El estado real está en §8.
+
 **Pendiente, en orden de retorno:**
-1. **Nadie lee `curriculum_map`.** Es un dataset sin consumidor: que el plan de estudio y
-   el tutor lo usen es lo que le da valor ("esto lo estudiás en la página 84").
-2. Los 7 huecos reales: cinco de 6º básico, dos de 7º-8º. Ver el doc.
+1. ~~Nadie lee `curriculum_map`.~~ **HECHO (2026-08-23).** Lo leen los PILARES del camino
+   (`pilaresDe` / `tramosCurriculares`) y el bloque de pendientes (`pendientesDe`), los dos
+   en `packages/rag/src/curriculum.ts`.
+2. ~~Los 7 huecos reales.~~ **CERO (2026-08-24).** Todos los conocimientos del currículum
+   están en algún libro del alumno, en los cuatro niveles. Ver §8.
 3. Tests de los tres scripts. `cargar-mapa` casa veredictos por prefijo de 60 chars — si dos
    conocimientos de una materia comparten el prefijo, se pisan sin avisar.
 4. Los números por nivel NO son comparables entre sí: el prompt del auditor cambió entre
@@ -1730,7 +1746,10 @@ marcadas `verificado = 'otro_año'`.
 5. 6º básico es el resultado más flojo (9 completos de 27) y merece menos crédito: su índice
    tiene 7 secciones y casi ningún chunk tiene heading_path.
 6. Quedan 104 filas de `metodo = 'ubicar-v1'` —la corrida del 11% de precisión— como
-   registro histórico. Filtrar siempre por `metodo = 'lector-v1'`.
+   registro histórico. Filtrar siempre por `metodo = 'lector-v1'`. **De esas 104, 88 ya
+   tienen su fila `lector-v1` para el mismo par (materia, ítem); las 16 restantes son todas
+   de Inglés, que está apagado.** O sea que no hay nada pendiente de convertir ahí — lo
+   creí durante media sesión y era falso.
 
 ---
 
@@ -1771,3 +1790,296 @@ nunca se había comparado. Dos casos validaron el método cruzado: el currículu
 Fuera del mapa quedan 79 conocimientos del pilar, todos explicados: 31 de Inglés (decisión
 del usuario), 37 de Instrumental y Diferenciada (fuera de alcance), 11 de 1º-4º básico
 (curso cerrado).
+
+---
+
+## 8. EL CAMINO Y EL CURRÍCULUM (2026-08-23/24) — la sesión más larga hasta acá
+
+Punto de partida: el mapa curricular existía y **nadie lo leía**. Punto de llegada: el camino
+del alumno muestra lo que el Estado exige, y lo que su libro no trae con el dato de dónde sí
+está. En el medio, doce arreglos y varios errores míos que conviene no repetir.
+
+### 8.0 Git y respaldo del corpus
+
+- **Repo privado**: `github.com/Nachodusan/tutor-ia`, `main` por defecto. Todo el código está.
+- **El corpus NO está en git**: 37.814 chunks en Postgres. La copia remota va como **asset de
+  release** (`corpus-2026-08-23`, 205 MB de un límite de 2 GB).
+- `scripts/backup-db.sh` deja el dump en `~/tutor-backups`, que está en **el mismo disco que
+  la base**: eso cubre un `dropdb` accidental, NO un disco que falla. Subirlo es un paso
+  manual y está documentado en la cabecera del script.
+- **Verificar con sha256, no con el tamaño.** Que el tamaño coincida no prueba integridad; un
+  respaldo sin verificar no es un respaldo.
+- ⚠️ El dump lleva adentro el texto completo de libros de editoriales bajo copyright. **El
+  repo tiene que seguir siendo privado.**
+
+### 8.1 Cómo está formado el camino, en cuatro capas
+
+| capa | de dónde sale | qué falla |
+|---|---|---|
+| **esqueleto** | el índice del libro (`book_sections`, nivel 1 = unidad, nivel 2 = lección) | índices rotos, tomos sin índice |
+| **títulos** | el LLM REESCRIBE el título de la unidad y agrega "qué vas a aprender". No decide orden ni inventa temas; las lecciones conservan el título del autor | si el LLM falla, el fallback es el título del índice |
+| **pilares** | `curriculum_map` cruzado por rango de páginas contra la lección | colisión de páginas entre tomos |
+| **pendientes** | lo que el currículum exige y el libro no trae, con dónde sí está | — |
+
+**La lección pertenece a la unidad cuyo rango de páginas la contiene**, y se resuelve al LEER
+(`getPlanUnits`), sin escribir `parent_ord`.
+
+Hoy: **302 unidades de nivel 1, 1.895 lecciones de nivel 2**, 54 planes cacheados.
+
+### 8.2 ⚠️ EL ORDEN DE LOS CINCO PASOS (esto rompió los 34 caminos)
+
+**`build-sections` BORRA las unidades de nivel 1, que las hace otro job.** Corrí solo el
+primero y las 34 materias vivas quedaron con **planes de cero lecciones**: sin unidades,
+`getPlanUnits` devuelve vacío y `buildStudyPlan` cae al camino plano.
+
+```bash
+pnpm --filter @tutor-ia/eval build-sections --all
+pnpm --filter @tutor-ia/eval build-units
+psql "$DATABASE_URL" -f packages/db/schema_book_sections_limpieza.sql   # fin de libro
+psql "$DATABASE_URL" -f packages/db/schema_book_sections_titulos.sql    # puntos guía
+pnpm --filter @tutor-ia/admin plans generar --forzar
+```
+
+El último paso es obligatorio: **las claves de tema son hash de (documento, ord, título)**, así
+que si cambia el índice cambian las claves. Está escrito en la cabecera de `build-sections.ts`.
+
+**Los índices nunca se habían reconstruido** después de los cambios del corpus. Matemática 7º
+daba 16 temas en simulacro y tenía **cero** en la base.
+
+| materia | antes | ahora |
+|---|---|---|
+| Matemática 7º | **0** lecciones | 14 |
+| Matemática 8º | 3 (una titulada con una fórmula) | 17 |
+| Lenguaje y Comunicación 6º | 3 | 33 |
+| Lengua y Literatura 8º | 18 | 45 |
+| Historia 6º | 77 | 187 |
+
+`schema_book_sections_titulos.sql` saca los puntos guía del índice impreso
+(`El pueblo mapuche.........`, 53 lecciones) y borra los fragmentos cortados —Matemática 7º y
+8º tenían una lección llamada **"irecta"**, de "proporcionalidad directa"—. **No toca los
+títulos largos**: 118 pasan de 70 caracteres y son legítimos, Biología titula cada lección con
+una pregunta entera.
+
+### 8.3 Las lecciones del segundo tomo (250 que no aparecían)
+
+250 de 1.423 lecciones existían en el índice y **no estaban en el camino de nadie**. Dos causas:
+
+1. **La unidad no llegaba hasta la siguiente.** Las unidades ubicadas por folio son marcadores
+   de UNA página —la portadilla—. Historia 6º las tenía en p.9-9, 25-25, 45-45 y la lección de
+   la 27 no caía en ninguna. Un libro no tiene huecos: la que arranca en la 25 llega hasta la
+   44. Y por simetría la primera arranca donde arranca la primera lección del tomo.
+2. **Un tomo con lecciones y ninguna unidad.** El parser sacaba unidades de un tomo y lecciones
+   del otro, y la lección se asigna a una unidad DEL MISMO documento. Lenguaje 6º perdía 30 de
+   33. Ahora ese tomo recibe una unidad sintética (`ord = -1`).
+
+Las dos se resuelven **al leer**, no corrigiendo `book_sections`: el rango guardado es lo que
+el parser encontró y pisarlo perdería en qué página está la portadilla.
+
+Resultado: **1.423 de 1.423 lecciones ubicadas (100%)**.
+
+### 8.4 El tomo sin ninguna sección también es una parada
+
+Ciencias para la Ciudadanía 3º y 4º Medio tenían el camino **vacío**: su texto no trae índice,
+no tiene encabezados y sus marcadores "Unidad 1/2" son encabezados corridos que se repiten de
+la p.12 a la 310. Pero la materia tiene **seis módulos EPJA** con título del Mineduc.
+
+- Un documento de contenido sin ninguna sección entra como **una parada entera** (no se
+  inventan lecciones adentro). Medido: **19 materias vivas** tenían documentos así, con más de
+  **6.000 fragmentos** que el alumno tenía y no podía alcanzar desde el camino.
+- **Las unidades con nombre le ganan a "Unidad 2".** La regla prefería siempre `unidad_chunks`;
+  en estas dos materias eso eran "Unidad" y "Unidad 2" mientras el índice tenía "Prevención y
+  transmisión de infecciones". Son los ÚNICOS dos documentos del corpus en esa situación.
+  Ahora hay **cero unidades sin nombre** en todo el corpus.
+
+### 8.5 Los pilares y la colisión de páginas (158 falsos)
+
+Los pilares se cruzan por **solapamiento** de rangos de página (no contención) **y solo dentro
+del mismo tomo**. Al meter los módulos EPJA al camino apareció en pantalla el pilar *"Relación
+entre salud y enfermedad"* colgado de cinco unidades, una de ellas *"Estructura interna de la
+Tierra"*: cada tomo empieza en su página 1.
+
+**36 materias tienen más de un tomo**, así que no era un caso raro — estaba tapado.
+`curriculum_map_tramos` ganó `document_id` (`schema_curriculum_tramos_doc.sql`), backfilleado
+en tres pasos de más firme a más flojo: coincidencia exacta con el índice (420), rango en un
+solo tomo (287), y por descarte el tomo más largo (159, marcados como tales).
+
+**158 pilares eran falsos.** La cobertura real sobre las lecciones del plan es **~36%**, no el
+45% que daba antes de filtrar.
+
+> **Y el 36% no es un mapa incompleto.** El currículum EPJA pide MUCHO menos de lo que enseña
+> el libro: Matemática 5º tiene 5 exigencias contra 100 lecciones. El camino no es "la lista de
+> lo que el Estado pide": es **el libro entero, con lo que el Estado va a exigir marcado
+> encima**. El número que sí importa es el otro: cuánto de lo que el Estado exige está en algún
+> libro del alumno.
+
+### 8.6 `tramos-indice` — los pilares dejan de ser uno por libro
+
+Física 1º Medio marcaba "sonido y luz" en las páginas 25-30 —UNA lección— cuando el libro las
+enseña de la 5 a la 54, que son 19. De 520 tramos, 213 eran el principal copiado.
+
+`pnpm --filter @tutor-ia/eval tramos-indice --todas --aplicar` le pregunta al modelo, **sobre
+el ÍNDICE** del libro, qué lecciones enseñan cada conocimiento. Sobre el índice y no sobre los
+chunks a propósito: es una lista corta y real de la que el modelo solo puede ELEGIR, no puede
+inventar una página.
+
+Dos topes que hicieron falta, uno en cada extremo:
+
+- **`--max-tramo 40`**: sin él, Química enganchaba "¿Qué son los compuestos orgánicos?"
+  (p.136-196) para "Leyes de conservación de la materia". Señalar un tercio del libro no es
+  decirle dónde estudiar.
+- **`--max-cobertura 0.5`**: sin él, "Contexto de producción y recepción de un texto literario"
+  enganchaba **45 de las 46 lecciones** de Lengua 2º Medio. No está mal contestado —todo texto
+  literario tiene contexto— está mal PREGUNTADO. Si todo es pilar, nada lo es.
+
+Hoy los tramos son 946: `indice=346, lector=307, principal=213, reverificado=78, buscar-huecos=2`.
+
+### 8.7 El bloque "esto te lo van a exigir y tu libro no lo trae"
+
+`pendientesDe` en `packages/rag/src/curriculum.ts`, pintado al final del camino
+(`apps/web/app/camino.tsx`). Dice **dónde sí está**, en tres escalones, y cada uno se le dice
+distinto al alumno:
+
+| escalón | mensaje | casos |
+|---|---|---|
+| `materia` | "Está en tu libro de **Química 1º Medio**, página 40." | 20 |
+| `curso_vecino` | "Tu nivel abarca los dos años: está en **Matemática 2º Medio**." | 5 |
+| `otro_nivel` | "Ningún libro de tu curso lo trae; sí **Ciencias Naturales 6º**." | 2 |
+| — | "No está en ninguno de tus libros: pedile material a tu profe." | **0** |
+
+**La llave es el NIVEL EPJA, no el curso** — el nivel comprime dos años del sistema regular.
+El nivel se deduce del CURSO con `nivel_epja()` (`schema_nivel_epja.sql`), NO de
+`curriculum_map.nivel`: esa columna dice qué nivel EXIGE el conocimiento, y un libro de 6º
+hallado para una exigencia de Nivel 3 se anunciaba como "tu nivel abarca los dos años", que
+para un alumno de 7º es falso.
+
+### 8.8 `reverificar` — el mapa estaba mirando medio corpus
+
+El mapa se verificó el **2026-08-20** y el corpus EPJA se ingirió el **21 y 22**. Todos los
+veredictos se dictaron contra un corpus que no tenía ese material: *"no está en tu libro"*
+quería decir *"no estaba en lo que miré"*. "Teorema de Pitágoras" figuraba ausente en
+Matemática 7º con 12 fragmentos y tres lecciones en el índice.
+
+```bash
+pnpm --filter @tutor-ia/eval reverificar --estados no_esta,otro_año,parcial --aplicar
+```
+
+**LEE los fragmentos en vez de mirar el score** — decidir por score es lo que hace `ubicar`,
+que midió 7 aciertos de 63.
+
+> ⚠️ **SOLO PUEDE MEJORAR UN VEREDICTO, NUNCA EMPEORARLO.** La primera prueba bajó "Funciones
+> lineales y afines" de parcial a `no_esta` porque esa corrida no trajo un solo fragmento. Que
+> este retrieval no encuentre algo no prueba que el libro no lo enseñe. Esta pasada existe para
+> ver lo que la anterior no podía ver; no tiene autoridad sobre lo que alguien estableció
+> leyendo. Los intentos de degradar se cuentan y se imprimen: en la corrida final fueron 12 y
+> **ninguno se escribió**.
+
+**El barrido léxico (2026-08-24).** El reranker se pierde material que un grep encuentra: para
+"clasificación de la materia y mezclas" en Ciencias Naturales 6º traía la página 13 —Unidad 1,
+estados de la materia— y nunca la Unidad 2, "Sustancias puras y mezclas", que ocupa de la 31 a
+la 57. Ahora se le piden al modelo 8-15 términos que un libro usaría y se buscan literalmente.
+
+Tres cosas que hubo que corregir midiendo, y las tres son trampas reutilizables:
+
+1. **Contar términos premia al glosario.** Ganó la página 175 —el modelo heliocéntrico de
+   Copérnico— por tocar "masa", "volumen" y "temperatura". Ahora cada término pesa **inverso a
+   en cuántos fragmentos del libro aparece**: "masa" está en cien y no distingue nada, "mezcla
+   homogénea" está en tres y señala la página.
+2. **El barrido se descartaba entero.** Iba al final y el corte a 10 se lo comía: con cuatro
+   consultas por seis candidatos el retrieval solo ya deja hasta 24. Su lugar se **AGREGA**
+   (8 + 4); probado quitándoselo al reranker (6+4), la corrida pasó de 1 mejora a 0.
+3. **El lector le pasaba por arriba.** Con la página delante contestaba "no desarrolla la
+   clasificación de mezclas" teniendo el fragmento que dice "mezcla homogénea", "soluto" y
+   "disolvente". Ahora cada fragmento del barrido va **marcado con las palabras que se buscaron
+   para encontrarlo** y el prompt pide revisarlo antes de negar el punto.
+
+### 8.9 `buscar-huecos` — para lo que no está en ninguna materia mapeada
+
+```bash
+pnpm --filter @tutor-ia/eval buscar-huecos --aplicar
+```
+
+"Sistema solar y estructuras cósmicas" figuraba sin libro: el EPJA lo pide en Nivel 3 Básica y
+el sistema regular lo enseña en 6º, así que se mapeó contra 7º y 8º y **contra 6º nunca**. El
+único tomo que lo trae —EPJA Nivel 2 Básica, con una unidad entera desde la p.148— quedó fuera
+de la pregunta.
+
+Dos correcciones medidas:
+
+- **El orden de las candidatas era alfabético por grado**, y "1M" va antes que "6B": a un chico
+  de 7º básico se le ofrecía primero el libro de 1º Medio. Ahora se ordenan por distancia en
+  años de escolaridad.
+- **Manda la cercanía, no el veredicto.** Preferir un `correcto` lejano sobre un `parcial`
+  cercano mandaba a Química 2º Medio —tres años adelante— teniendo "Unidad 1: Biodiversidad" en
+  el tomo de 6º. El veredicto desempata solo entre libros a la MISMA distancia.
+
+### 8.10 Estado del currículum (2026-08-24)
+
+`curriculum_map`: **266 filas `lector-v1`** (124 correcto, 88 parcial, 26 no_esta, 1 otro_año)
+sobre materias vivas y cursos abiertos.
+
+| Nivel EPJA | conocimientos | en algún libro | BIEN desarrollado |
+|---|---|---|---|
+| Nivel 2 Básica (6º) | 27 | **100%** | 16 |
+| Nivel 3 Básica (7º-8º) | 32 | **100%** | 24 |
+| Nivel 1 Media (1º-2º) | 28 | **100%** | 22 |
+| Nivel 2 Media (3º-4º) | 29 | **100%** | 21 |
+
+**83 de 116 (72%) están bien desarrollados**; los otros 33, a medias. **Ninguno queda fuera de
+todos los libros.**
+
+`docs/contenidos-faltantes.md` (115 contenidos, uno por uno, con qué trae el libro y qué parte
+falta) se regenera con:
+
+```bash
+pnpm --filter @tutor-ia/eval faltantes-doc --salida docs/contenidos-faltantes.md
+```
+
+### 8.11 `scripts/sql-backticks.sh` — el error que cometí cuatro veces
+
+Un backtick dentro de un literal `` sql`...` `` lo **CIERRA**. Escribir `` `family` `` en un
+comentario SQL —que en prosa es lo natural— parte la consulta al medio, y el error que sale
+("Module declaration names may only use quoted strings") no menciona ni la consulta ni el
+backtick. Me pasó **cuatro veces en una sesión**. El chequeo evita la quinta:
+
+```bash
+./scripts/sql-backticks.sh
+```
+
+### 8.12 Lo que queda, en orden de retorno
+
+1. **Los 88 "incompletos"** son el único grupo con trabajo real, y el documento tiene qué parte
+   falta de cada uno. Ninguno deja al alumno sin nada que leer.
+2. **Cuatro conocimientos de ciencias** donde el corpus no tiene el trozo faltante: evolución
+   (teorías y evidencias), movimientos de la Tierra y la Luna, alergias y enfermedades
+   autoinmunes, y elementos constituyentes (C, H, O, N). Esos sí son para conseguir afuera.
+3. **OpenStax**: investigación lanzada y **detenida a mitad** al cerrarse la sesión. Los cuatro
+   investigadores y el mapeo terminaron; faltó la síntesis. Se retoma con
+   `Workflow({scriptPath: ".claude/.../openstax-para-tutoria-wf_8218a4d5-007.js", resumeFromRunId: "wf_8218a4d5-007"})`.
+   Lo que atrae es la LICENCIA (CC BY, sin el problema de las editoriales); las dudas son el
+   NIVEL (OpenStax es universitario) y que lo específicamente chileno —biodiversidad en Chile,
+   cosmovisiones de los pueblos originarios— no lo va a tener nunca.
+4. **Ciencias para la Ciudadanía 3º y 4º Medio** siguen sin lecciones: 9 unidades con nombre
+   real pero ningún desglose, porque esos libros no tienen índice de nivel 2. Se puede recorrer
+   el camino, no marcar avance fino.
+5. **Matemática 8º arrastra basura del parser**: "Potencia y raíz cuadrada División de
+   potencias… an : am = an – m" y una "Evaluación" de la página 126 a la 181.
+6. **El bloque de pendientes muestra la página del `curriculum_map`**, que no sabe de qué tomo
+   es. Si la materia tiene dos, el número puede apuntar al equivocado. Es solo texto —no marca
+   lecciones— pero es la misma clase de error que los 158 pilares falsos.
+
+### 8.13 La trampa que repetí toda la sesión
+
+**Medir con una entrada que no es la que el código recibe.** Van los casos, porque el patrón se
+repite y es difícil de ver desde adentro:
+
+- Le pasé al buscador **la prosa del lector**, que describe una AUSENCIA ("no hay ni una
+  aparición de 'enlace', 'covalente'…"). Eso no se parece a ninguna página de ningún libro:
+  **13 de 13 dieron "en ningún libro"**. Hay que traducir el hueco a cómo lo escribiría el
+  libro que sí lo trae.
+- Leí los resultados **por nombre de materia y número de página**, y ninguno de los dos
+  identifica nada: "Física 1º Medio p.59" devolvía chunks de **cuatro documentos distintos**.
+  Con eso reporté "9 de 13 resueltos" cuando eran 4.
+- Puse un piso de margen en 0,05 sin comprobarlo contra el caso, que medía 0,1046.
+
+El antídoto que funcionó siempre fue el mismo: **imprimir la entrada real antes de creerle a la
+salida**, y desconfiar de un resultado redondo (13 de 13, 0 de 5) antes que celebrarlo.
