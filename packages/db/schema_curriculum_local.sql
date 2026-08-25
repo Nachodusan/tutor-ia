@@ -66,18 +66,32 @@ update curriculum_map set local = true
   'Funcionamiento de la democracia, formas de participación y representación y la organización político-administrativa en Chile.',
   'Deberes del Estado y derechos y responsabilidades de las personas; derechos humanos y actitudes cívicas en el Chile actual.',
   'Derechos humanos y su reconocimiento, defensa y exigibilidad en Chile.',
-  'Mecanismos de acceso a la justicia y principales características del sistema judicial chileno.'
+  'Mecanismos de acceso a la justicia y principales características del sistema judicial chileno.',
+  -- Los índices exigidos son IPC, UF e IMACEC (así los buscó el lector, textual):
+  -- la UF y el IMACEC son instrumentos exclusivamente chilenos — "qué es la UF"
+  -- no tiene respuesta en España. La parte matemática (porcentajes, interés
+  -- compuesto) es universal, pero el bloque solo actúa en modo general/parcial,
+  -- donde el riesgo es justamente el particular chileno.
+  'Porcentajes, cambio porcentual constante, índices económicos, planilla de cálculo.'
  );
 
--- ── DUDOSOS, decididos así y anotados para revisión del dueño ──────────────
+-- ── REVISADOS Y FIRMES (2026-08-25, contra la evidencia del lector) ────────
 -- · "Surgimiento de las primeras civilizaciones, incluyendo un ejemplo de
---   América": queda UNIVERSAL — el ejemplo americano (mayas/incas) es
---   continental y estándar, no depende de Chile. Marcado dudoso.
--- · "Conceptos económicos y economía global actual": queda UNIVERSAL — es
---   economía general; los índices chilenos (IPC, UF) viven en el ítem de
---   Matemática "Porcentajes, cambio porcentual, índices económicos", que
---   tampoco se marca porque el CONCEPTO de índice es universal y el particular
---   (valor de la UF) el tutor no debería afirmarlo nunca, con o sin marca.
--- · "Desafíos de la ciudadanía local y global": queda UNIVERSAL — el enunciado
---   es genérico; lo chileno entra por los ítems de democracia/justicia de
---   arriba.
+--   América": UNIVERSAL. El libro enseña olmeca, maya, chavín e inca — ejemplos
+--   continentales, no chilenos; los procesos (urbanización, centralización) son
+--   los mismos desde cualquier país.
+-- · "Conceptos económicos y economía global actual": UNIVERSAL. Lo que enseñan
+--   los libros es escasez, sistemas económicos, flujo circular, FMI y Banco
+--   Mundial — economía general sin particulares chilenos.
+-- · "Desafíos de la ciudadanía local y global": UNIVERSAL. El contenido real es
+--   resolución de conflictos, diálogo, bien común y cohesión social; lo chileno
+--   entra por los ítems de democracia/justicia/DD.HH. de arriba.
+-- · "Procesos políticos y económicos globales y locales durante el siglo XIX":
+--   revisado en el barrido final y queda UNIVERSAL — el contenido es
+--   industrialización, imperialismo y cuestión social (historia mundial); el
+--   XIX chileno vive en el ítem "Visión general sobre el desarrollo... en
+--   Chile", que sí está marcado.
+-- · "Porcentajes, cambio porcentual, índices económicos": el barrido final lo
+--   PASÓ A LOCAL (ver el comentario en la lista). Revierte la decisión inicial
+--   — el criterio "el concepto es universal" ignoraba que la exigencia concreta
+--   nombra UF e IMACEC.
