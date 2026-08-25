@@ -87,25 +87,37 @@
   .dst.mal { color:var(--malo); }
   .falta { }
   .pie { font-size:12.5px; color:var(--dim); border-top:1px solid var(--line); padding-top:16px; }
+
+  .chks { list-style:none; margin:7px 0 0; padding:0; display:flex; flex-direction:column; gap:3px; }
+  .chk { display:flex; gap:8px; align-items:baseline; font-size:12.5px; line-height:1.45; color:var(--ink); }
+  .chk .tick { font-family:"IBM Plex Mono",monospace; font-weight:600; flex:0 0 auto; }
+  .chk.si .tick { color:var(--bien); }
+  .chk.no .tick { color:var(--malo); }
+  .chk.no { color:var(--dim); }
+  .pagref { font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--bien);
+            background:var(--bien-bg); border-radius:4px; padding:0 5px; margin-left:4px; }
+  .fuente-comp { font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--dim);
+                 margin-top:5px; letter-spacing:.04em; }
 </style>
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">TutorIA · 24 de agosto de 2026 · mapa re-verificado con barrido léxico</div>
+    <div class="eyebrow">TutorIA · 24 de agosto de 2026 · verificación por componentes oficiales</div>
     <h1>Caminos por curso y materia</h1>
     <p class="sub">
-      Cada materia con su camino (unidades, lecciones y cuántas cubren una exigencia del
-      Estado) y, abajo, los conocimientos esenciales que su libro no desarrolla del todo —
-      uno por uno, con qué parte falta y dónde sí está.
+      Cada materia con su camino y, abajo, los conocimientos esenciales que su libro no
+      desarrolla del todo. Donde el Mineduc publicó el Programa de Estudio EPJA 2026, el
+      faltante es un checklist de componentes oficiales: ✓ lo que el libro cubre (con
+      página) y ✗ lo que falta conseguir.
     </p>
   </header>
 
   <div class="cifras">
     <div class="cifra"><div class="n">34</div><div class="l">materias con camino</div></div>
     <div class="cifra"><div class="n">239</div><div class="l">exigencias mapeadas (con repetición entre materias del mismo casillero)</div></div>
-    <div class="cifra hi"><div class="n">124</div><div class="l">bien desarrolladas en su libro</div></div>
-    <div class="cifra"><div class="n">88</div><div class="l">incompletas (🟡)</div></div>
-    <div class="cifra"><div class="n">27</div><div class="l">no están en ese libro — todas con destino (🔴/🟠)</div></div>
+    <div class="cifra hi"><div class="n">126</div><div class="l">bien desarrolladas en su libro</div></div>
+    <div class="cifra"><div class="n">45</div><div class="l">con checklist oficial de componentes</div></div>
+    <div class="cifra"><div class="n">26</div><div class="l">no están en ese libro — todas con destino</div></div>
   </div>
 
   <section class="curso">
@@ -127,10 +139,43 @@
               <div class="kn-d"><span class="dst">Lo que hay: p.165</span> <span class="falta">Falta: El material explica los efectos de la rotación (día/noche) y la traslación (estaciones) de la Tierra, pero no desarrolla los movimientos de la Luna ni sus efectos sobre los seres vivos.</span></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Niveles de organización de los seres vivos, incluyendo célula, tejido, órgano y sistema</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.72</span> <span class="falta">Falta: El material menciona y ejemplifica el tejido (p.71) y la célula (p.61, 72), pero no desarrolla los niveles de órgano y sistema, limitándose a conceptos generales o tróficos.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>niveles de organización de los seres vivos <span class="pagref">p.63</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>célula <span class="pagref">p.61</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>tejido <span class="pagref">p.72</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>órgano</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>sistema <span class="pagref">p.113</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistemas del cuerpo humano: funciones, estructuras básicas (sistemas digestivo, respiratorio, circulatorio y reproductor; tubo digestivo, pulmones y bronquios, vasos sanguíneos y corazón, y gónadas), considerando medidas de prevención y autocuidado</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.13</span> <span class="falta">Falta: los sistemas digestivo, respiratorio y circulatorio con sus estructuras (tubo digestivo, pulmones y bronquios, vasos sanguíneos y corazón)</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>funciones de los sistemas del cuerpo humano <span class="pagref">p.134</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>estructuras básicas del sistema digestivo <span class="pagref">p.135</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructuras básicas del sistema respiratorio</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructuras básicas del sistema circulatorio</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructuras básicas del sistema reproductor</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>medidas de prevención y autocuidado</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -141,7 +186,25 @@
           <span class="okline">✓ 4 de 6 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Macrozonas y sus paisajes de Chile; principales zonas naturales, recursos significativos y trabajo humano que le da valor. Riesgos socio-naturales</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.160</span> <span class="falta">Falta: los riesgos socio-naturales (sismos/terremotos, tsunamis, erupciones, aluviones, inundaciones, incendios, sequías) y su prevención: no hay ninguna página del texto del alumno que los enseñe; lo de 168-171 es cambio climático, no riesgos…</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>macrozonas de Chile</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>paisajes de Chile</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>zonas naturales de Chile <span class="pagref">p.151</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>recursos significativos de Chile</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>trabajo humano que da valor</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>riesgos socio-naturales</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Pueblos originarios en Chile: ubicación geográfica, uso y dominio de recursos naturales</span></div>
               <div class="kn-d"><span class="dst">Lo que hay: p.180</span> <span class="falta">Falta: el uso y dominio de los recursos naturales por parte de los pueblos originarios: ninguna página lo enseña (adaptación al medio, economía indígena, agricultura/ganadería/pesca); ese contenido es de 4º básico…</span></div>
@@ -155,13 +218,46 @@
           <span class="okline">✓ 6 de 9 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Géneros literarios; poesía, narrativa y textos dramáticos</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.102</span> <span class="falta">Falta: Los textos dramáticos: no hay ninguna obra ni lección de teatro; &quot;teatro&quot; y &quot;acotación&quot; no aparecen nunca y &quot;dramático&quot; solo figura como adjetivo común (pp. 11, 181, 188).</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>poesía <span class="pagref">p.157</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>narrativa <span class="pagref">p.118</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>textos dramáticos</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Normas ortográficas literal, acentual y puntual</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.176</span> <span class="falta">Falta: el lector lo había dado por ausente y SÍ está. EL HUECO ES FALSO, al menos en su parte «puntual». En la p. 176 hay una cápsula rotulada literalmente «Ortografía:» que enseña dos normas de puntuación (la raya de diálogo para la intervención …</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>normas ortográficas literal</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>normas ortográficas acentual</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>normas ortográficas puntual</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Textos orales cotidianos y sus características: tono, volumen, inflexión, ritmo y gestos</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.99</span> <span class="falta">Falta: La inflexión como término no existe en el libro (lo más cercano es &quot;entonación&quot;), y el contenido se trabaja desde la exposición oral formal, no desde los textos orales cotidianos.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>tono</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>volumen</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>inflexión</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>ritmo</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>gestos</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -169,16 +265,40 @@
             <div class="camino-res">7 unidades · 53 lecciones · 17 con exigencia (32%)</div>
           </header>
           <div class="mini"><div class="minifill" style="width:32%"></div></div>
-          <span class="okline">✓ 2 de 5 conocimientos bien desarrollados</span>
+          <span class="okline">✓ 3 de 5 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Fracciones, decimales y transformación de unidades de medidas</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.37</span> <span class="falta">Falta: La transformación de unidades de medida: cero resultados en &#x27;Matemática 6º — texto del estudiante&#x27;. Está en el otro libro del nivel (Sumo Primero 6º tomo 2, Cap. 18, págs. 99-107), no en este.</span></div>
-            </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Medidas de tendencia central (mediana, media, moda)</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.307</span> <span class="falta">Falta: Hueco PARCIAL: el lector se equivocó en la parte de la MEDIA. Su razón textual —&#x27;Promedio aparece únicamente como conocimiento previo... sin enseñar cómo se calcula ni definirlo&#x27;— es falsa: el Glosario del texto del estudiante (pág. 309, se…</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>mediana</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>media <span class="pagref">p.156</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>moda</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Rotaciones, reflexiones y traslaciones de figuras 2D, medida de ángulos, perímetro y área</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.187</span> <span class="falta">Falta: Perímetro y área de figuras 2D: no hay lección propia, solo recuadros &#x27;Atención&#x27; (definición de perímetro en la p. 51, área del rectángulo en la p. 61) y un repaso previo en la p. 143. La lección que sí existe, &#x27;Área de cubos y paralelepípe…</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>rotaciones de figuras 2D <span class="pagref">p.187</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>reflexiones de figuras 2D <span class="pagref">p.296</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>traslaciones de figuras 2D <span class="pagref">p.187</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>medida de ángulos <span class="pagref">p.147</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>perímetro de figuras</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>área de figuras <span class="pagref">p.296</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article></div>
     </section><section class="curso">
@@ -367,22 +487,109 @@
           <span class="okline">✓ 2 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Características y propiedades del sonido y la luz, y su impacto en la vida cotidiana</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.25 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.25 (mismo curso)</span> <ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>características del sonido</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>propiedades de la luz</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>impacto en la vida cotidiana</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.112 (mismo curso)</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.193 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.193 (mismo curso)</span> <ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>ley de conservación de la energía mecánica</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>conceptos de trabajo mecánico</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>conceptos de potencia mecánica</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.26</span> <span class="falta">Falta: El conocimiento junta dos temas. (1) Evolución, teorías y evidencias: el tramo principal es la Lección 2 «¿Cómo evolucionan los seres vivos?» (26-35): selección natural y viaje de Darwin (28-31), anatomía comparada, estructuras homólogas/ho…</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>teorías asociadas a la evolución <span class="pagref">p.38</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>evidencias de la evolución <span class="pagref">p.52</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>impacto de la evolución en la vida <span class="pagref">p.30</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre organismo y población</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre población y comunidad</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre comunidad y ecosistema</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>principios de herencia genética de Mendel</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructura y función del ADN</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.100</span> <span class="falta">Falta: La química orgánica y los grupos funcionales (haluros, éteres, alcoholes, cetonas) y las propiedades del carbono (tetravalencia, enlace covalente, hidrocarburos): no hay ni una aparición en todo el libro; es contenido de Química 1º Medio.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>grupos funcionales haluros éteres alcoholes</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>propiedades y características del carbono</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>formación de moléculas orgánicas</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>fotosíntesis <span class="pagref">p.102</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>respiración celular <span class="pagref">p.103</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>ciclo del carbono <span class="pagref">p.95</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.244</span> <span class="falta">Falta: El material enseña la estructura del páncreas y sus hormonas, pero no desarrolla los efectos del consumo de drogas ni las medidas de autocuidado.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>características del sistema nervioso <span class="pagref">p.244</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructuras básicas del sistema endocrino</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>nervios y cerebro <span class="pagref">p.131</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>páncreas <span class="pagref">p.244</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>hormonas sexuales</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>hormonas pancreáticas <span class="pagref">p.244</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>efectos del consumo de drogas <span class="pagref">p.140</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>medidas de protección</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>autocuidado</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -393,22 +600,127 @@
           <span class="okline">✓ 2 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.102</span> <span class="falta">Falta: El material define y relaciona organismo, población, comunidad y ecosistema, pero no aborda en absoluto la evolución, sus teorías ni sus evidencias.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>teorías asociadas a la evolución</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>evidencias de la evolución</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>impacto de la evolución en la vida</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre organismo y población</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre población y comunidad</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre comunidad y ecosistema</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>principios de herencia genética de Mendel</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructura y función del ADN</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.112</span> <span class="falta">Falta: El material desarrolla extensamente la teoría científica del Big Bang y su evolución, pero no menciona en absoluto las cosmovisiones de los pueblos originarios.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>la creación del universo</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>la evolución del universo <span class="pagref">p.112</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>teorías científicas del universo <span class="pagref">p.116</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>cosmovisiones de pueblos originarios</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Leyes de conservación de la materia. Reacciones químicas y formación de compuestos útiles para los seres vivos</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.58</span> <span class="falta">Falta: El material explica la ley de conservación y las reacciones químicas con ejemplos, pero no desarrolla la formación de compuestos útiles para los seres vivos.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>Leyes de conservación de la materia <span class="pagref">p.55</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>Reacciones químicas <span class="pagref">p.54</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>Formación de compuestos útiles para los seres vivos</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>Reorganización de átomos <span class="pagref">p.58</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>Formación de nuevas sustancias <span class="pagref">p.54</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.193</span> <span class="falta">Falta: El fragmento 7 explica detalladamente la conservación de la energía mecánica, pero el material no desarrolla los conceptos de trabajo ni potencia mecánica requeridos por el conocimiento esencial.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>ley de conservación de la energía mecánica <span class="pagref">p.193</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>conceptos de trabajo mecánico <span class="pagref">p.189</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>conceptos de potencia mecánica</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.25</span> <span class="falta">Falta: El material explica las propiedades del carbono y menciona la existencia de grupos funcionales, pero no los desarrolla ni da ejemplos, y solo alude a la fotosíntesis y respiración sin explicar sus mecanismos ni el ciclo del carbono.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>grupos funcionales haluros éteres alcoholes</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>propiedades y características del carbono <span class="pagref">p.14</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>formación de moléculas orgánicas <span class="pagref">p.14</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>fotosíntesis <span class="pagref">p.25</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>respiración celular <span class="pagref">p.23</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>ciclo del carbono</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.93</span> <span class="falta">Falta: el material explica el páncreas y la insulina, pero no desarrolla las estructuras básicas del sistema nervioso ni los efectos de las drogas.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>características del sistema nervioso</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructuras básicas del sistema endocrino</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>nervios y cerebro</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>páncreas</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>hormonas sexuales</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>hormonas pancreáticas</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>efectos del consumo de drogas</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>medidas de protección</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>autocuidado</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -419,10 +731,37 @@
           <span class="okline">✓ 4 de 6 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Revoluciones del siglo XVIII e inicios del siglo XIX en Europa y América, incluyendo la Independencia de Chile</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.32</span> <span class="falta">Falta: la Independencia de Chile como proceso (Patria Vieja, Reconquista, Patria Nueva, batallas, O&#x27;Higgins), que solo aparece mencionada como hito en la línea de tiempo de p. 42-43 y de pasada en p. 82 y 155; y la Revolución Francesa, de la que s…</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>revoluciones del siglo XVIII en Europa</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>revoluciones del siglo XVIII en América</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>independencia de Chile <span class="pagref">p.81</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Visión general sobre el desarrollo político, económico, social y medioambiental en Chile durante el siglo XIX y primera mitad del siglo XX, incluyendo la perspectiva de los pueblos indígenas y las mujeres</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.114</span> <span class="falta">Falta: la primera mitad del siglo XX más allá de ~1920-1925: no hay nada sobre 1925-1950 (Constitución de 1925, Frente Popular, industrialización por sustitución, voto femenino de 1949)</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>desarrollo político en Chile siglo XIX y XX <span class="pagref">p.96</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>desarrollo económico en Chile siglo XIX y XX <span class="pagref">p.54</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>desarrollo social en Chile siglo XIX y XX</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>desarrollo medioambiental en Chile siglo XIX y XX</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>perspectiva de los pueblos indígenas</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>perspectiva de las mujeres</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -433,7 +772,16 @@
           <span class="okline">✓ 6 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Intertextualidad a través de personajes, temas y símbolos de textos clásicos</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.142</span> <span class="falta">Falta: El recuadro &quot;Tipos de relaciones intertextuales en los textos&quot; (p. 142) distingue intertextualidad a nivel local (cita y alusión, con el ejemplo &quot;el título &#x27;Nieve negra&#x27; alude a &#x27;Blanca Nieves&#x27;&quot;) y a nivel global (se reusan historia, estruc…</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>personajes de textos clásicos</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>temas de textos clásicos</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>símbolos de textos clásicos</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Normas de citación</span></div>
               <div class="kn-d"><span class="dst">Lo que hay: p.30</span> <span class="falta">Falta: La norma de citación propiamente tal: el formato de la referencia bibliográfica (autor, año, título, editorial; APA, MLA) no se enseña en ninguna parte del texto del estudiante. La Bibliografía (pp. 222-225) muestra el formato pero no lo ex…</span></div>
@@ -447,7 +795,16 @@
           <span class="okline">✓ 5 de 6 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Función y ecuación cuadrática</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Matemática 2º Medio</b>, p.163 (el otro año del mismo nivel)</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Matemática 2º Medio</b>, p.163 (el otro año del mismo nivel)</span> <ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>productos notables</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>función cuadrática</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>ecuación cuadrática</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -458,10 +815,43 @@
           <span class="okline">✓ 1 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Características y propiedades del sonido y la luz, y su impacto en la vida cotidiana</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.25 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.25 (mismo curso)</span> <ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>características del sonido</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>propiedades de la luz</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>impacto en la vida cotidiana</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Biología 1º Medio</b>, p.26 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Biología 1º Medio</b>, p.26 (mismo curso)</span> <ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>teorías asociadas a la evolución</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>evidencias de la evolución</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>impacto de la evolución en la vida</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre organismo y población</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre población y comunidad</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre comunidad y ecosistema</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>principios de herencia genética de Mendel</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructura y función del ADN</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.112 (mismo curso)</span></div>
@@ -473,10 +863,37 @@
               <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.93 (mismo curso)</span></div>
             </li><li class="kn otr">
               <div class="kn-h"><span class="sello otr">🟠 otro curso</span><span class="kn-t">Principios básicos de herencia genética en plantas y animales propuestos por Mendel. Estructura y función del ADN</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.17 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.17 (mismo curso)</span> <ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>principios básicos de herencia genética propuestos por Mendel</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructura del ADN</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>función del ADN</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.202</span> <span class="falta">Falta: El material explica las propiedades del carbono y los grupos funcionales, pero no desarrolla los temas de fotosíntesis, respiración celular ni el ciclo del carbono.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>grupos funcionales haluros éteres alcoholes <span class="pagref">p.178</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>propiedades y características del carbono <span class="pagref">p.203</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>formación de moléculas orgánicas <span class="pagref">p.203</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>fotosíntesis</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>respiración celular</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>ciclo del carbono</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article></div>
     </section><section class="curso">
@@ -492,7 +909,16 @@
           <span class="okline">✓ 3 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Características y propiedades del sonido y la luz, y su impacto en la vida cotidiana</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Química 2º Medio</b>, p.16 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Química 2º Medio</b>, p.16 (mismo curso)</span> <ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>características del sonido</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>propiedades de la luz</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>impacto en la vida cotidiana</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Física 2º Medio</b>, p.112 (mismo curso)</span></div>
@@ -501,10 +927,52 @@
               <div class="kn-d"><span class="dst ok">Está en <b>Física 2º Medio</b>, p.179 (mismo curso)</span></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.52</span> <span class="falta">Falta: El material desarrolla extensamente la evolución, teorías y evidencias, pero solo menciona superficialmente la relación entre organismo, población, comunidad y ecosistema sin explicarla.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>teorías asociadas a la evolución <span class="pagref">p.38</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>evidencias de la evolución <span class="pagref">p.32</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>impacto de la evolución en la vida <span class="pagref">p.30</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre organismo y población</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre población y comunidad</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre comunidad y ecosistema</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>principios de herencia genética de Mendel</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructura y función del ADN</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.95</span> <span class="falta">Falta: El material cubre el ciclo del carbono, la fotosíntesis y la respiración celular, pero no aborda la química orgánica, los grupos funcionales ni las propiedades del carbono.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>grupos funcionales haluros éteres alcoholes</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>propiedades y características del carbono</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>formación de moléculas orgánicas</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>fotosíntesis <span class="pagref">p.102</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>respiración celular <span class="pagref">p.103</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>ciclo del carbono <span class="pagref">p.95</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -515,13 +983,37 @@
           <span class="okline">✓ 1 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.52 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.52 (mismo curso)</span> <ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>teorías asociadas a la evolución</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>evidencias de la evolución</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>impacto de la evolución en la vida</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre organismo y población</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre población y comunidad</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre comunidad y ecosistema</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>principios de herencia genética de Mendel</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructura y función del ADN</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Leyes de conservación de la materia. Reacciones químicas y formación de compuestos útiles para los seres vivos</span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.103 (mismo curso)</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Principios básicos de herencia genética en plantas y animales propuestos por Mendel. Estructura y función del ADN</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.216 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Química 2º Medio</b>, p.81 (mismo curso)</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.95 (mismo curso)</span></div>
@@ -530,10 +1022,31 @@
               <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.130 (mismo curso)</span></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Características y propiedades del sonido y la luz, y su impacto en la vida cotidiana</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.34</span> <span class="falta">Falta: El material define el sonido como onda y menciona sus características (tono, timbre, intensidad), pero no desarrolla las propiedades de la luz ni su impacto en la vida cotidiana.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>características del sonido <span class="pagref">p.34</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>propiedades de la luz</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>impacto en la vida cotidiana</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.112</span> <span class="falta">Falta: las cosmovisiones de los pueblos originarios sobre la creación del universo (no hay nada de mapuche, aymara, rapa nui ni etnoastronomía en todo el libro)</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>la creación del universo <span class="pagref">p.112</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>la evolución del universo <span class="pagref">p.112</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>teorías científicas del universo <span class="pagref">p.112</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>cosmovisiones de pueblos originarios</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -544,10 +1057,40 @@
           <span class="okline">✓ 4 de 6 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Multiculturalismo, identidades y patrimonio material e inmaterial en Chile</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.252</span> <span class="falta">Falta: el patrimonio material e inmaterial: en el libro del alumno &#x27;patrimonio&#x27; solo aparece en sentido económico-jurídico (p. 187 y p. 233) y el único uso cultural está en la guía del docente, no en el texto del alumno…</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>multiculturalismo en Chile <span class="pagref">p.256</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>identidades en Chile <span class="pagref">p.14</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>patrimonio material en Chile</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>patrimonio inmaterial en Chile</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Visión general sobre el desarrollo político, económico, social y medioambiental en Chile durante el siglo XIX y primera mitad del siglo XX, incluyendo la perspectiva de los pueblos indígenas y las mujeres</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.56</span> <span class="falta">Falta: tres partes: (1) el siglo XIX, porque la lección arranca en la Guerra Civil de 1891 y el libro no trata el Chile decimonónico; (2) lo medioambiental del período, que solo aparece referido al Chile actual (Unidad 4, pp. 248-249); (3) la pers…</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>desarrollo político en Chile siglo XIX y XX <span class="pagref">p.136</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>desarrollo económico en Chile siglo XIX y XX <span class="pagref">p.111</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>desarrollo social en Chile siglo XIX y XX <span class="pagref">p.106</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>desarrollo medioambiental en Chile siglo XIX y XX</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>perspectiva de los pueblos indígenas <span class="pagref">p.107</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>perspectiva de las mujeres</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -558,7 +1101,13 @@
           <span class="okline">✓ 5 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Estrategias de comprensión lectora y de comprensión oral</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.68</span> <span class="falta">Falta: las estrategias de comprensión ORAL: no hay ninguna cápsula ni recuadro sobre escucha activa, escuchar con atención o toma de apuntes; solo indicaciones genéricas dentro de debates y mesas redondas (pp.23, 48, 117, 152, 157) y la pauta de p…</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>comprensión lectora <span class="pagref">p.14</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>comprensión oral</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Intertextualidad a través de personajes, temas y símbolos de textos clásicos</span></div>
               <div class="kn-d"><span class="dst">Lo que hay: p.128</span> <span class="falta">Falta: la intertextualidad como concepto: la palabra no aparece nunca en el libro y no se enseña la relación entre textos (alusión, cita, parodia, reescritura); el libro llega solo hasta comparar un mismo tema en dos épocas…</span></div>
@@ -575,13 +1124,49 @@
           <span class="okline">✓ 3 de 6 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Homotecias y teorema de Thales</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.82</span> <span class="falta">Falta: el material enseña a aplicar la semejanza de triángulos para calcular alturas (Teorema de Thales) y define homotecias como ampliación/reducción, pero no explica el Teorema de Thales ni la homotecia como transformación geométrica formal.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>homotecias</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>teorema de Thales</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Operaciones con números racionales, potencias, raíces y sus propiedades</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.20</span> <span class="falta">Falta: los números racionales y las propiedades de las potencias: el libro no las enseña, las da por sabidas de cursos anteriores (solo las pide en la evaluación diagnóstica de la p. 10 y en la pregunta de entrada de la p. 24)</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>operaciones con números racionales <span class="pagref">p.13</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>propiedades de potencias <span class="pagref">p.47</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>propiedades de raíces <span class="pagref">p.13</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>relación entre potencias y raíces</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>escritura científica <span class="pagref">p.47</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>potencias de exponente positivo <span class="pagref">p.47</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>potencias de exponente negativo <span class="pagref">p.47</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Probabilidades, regla multiplicativa y regla aditiva</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.125</span> <span class="falta">Falta: la regla (principio) aditiva: el objetivo de la lección la anuncia en la p. 125 pero el libro nunca la define ni la desarrolla — no hay P(A ∪ B) = P(A) + P(B) − P(A ∩ B), ni sucesos excluyentes o independientes…</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>probabilidades <span class="pagref">p.125</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>regla multiplicativa <span class="pagref">p.126</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>regla aditiva</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -589,28 +1174,109 @@
             <div class="camino-res">11 unidades · 8 lecciones · 3 con exigencia (38%)</div>
           </header>
           <div class="mini"><div class="minifill" style="width:38%"></div></div>
-          <span class="okline">✓ 1 de 8 conocimientos bien desarrollados</span>
+          <span class="okline">✓ 2 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Física 2º Medio</b>, p.112 (mismo curso)</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Física 2º Medio</b>, p.179 (mismo curso)</span></div>
-            </li><li class="kn mal">
-              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.130 (mismo curso)</span></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.102</span> <span class="falta">Falta: El material define y relaciona organismo, población, comunidad y ecosistema, pero no aborda en absoluto la evolución, sus teorías ni sus evidencias.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>teorías asociadas a la evolución</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>evidencias de la evolución</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>impacto de la evolución en la vida</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>relación entre organismo y población <span class="pagref">p.20</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>relación entre población y comunidad <span class="pagref">p.21</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>relación entre comunidad y ecosistema <span class="pagref">p.102</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>principios de herencia genética de Mendel</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructura y función del ADN</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Leyes de conservación de la materia. Reacciones químicas y formación de compuestos útiles para los seres vivos</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.45</span> <span class="falta">Falta: el material explica y ejemplifica la ley de conservación de la materia, pero no desarrolla el tema de las reacciones químicas y la formación de compuestos útiles para los seres vivos.</span></div>
-            </li><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Principios básicos de herencia genética en plantas y animales propuestos por Mendel. Estructura y función del ADN</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.148</span> <span class="falta">Falta: Todo Mendel: cero apariciones de &#x27;Mendel&#x27;, dominante, recesivo, alelo, genotipo, fenotipo, heredar y cromosoma en el corpus completo. También falta la FUNCIÓN del ADN: el libro la deriva a una actividad de investigación (p. 148) y remite a …</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>Leyes de conservación de la materia <span class="pagref">p.45</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>Reacciones químicas</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>Formación de compuestos útiles para los seres vivos</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>Reorganización de átomos</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>Formación de nuevas sustancias</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
-              <div class="kn-d"><span class="dst">Lo que hay: p.138</span> <span class="falta">Falta: El ciclo del carbono: cero aciertos en todo el corpus para &#x27;ciclo del carbono&#x27;, &#x27;ciclo biogeoquímico&#x27; y &#x27;ciclos de la materia&#x27;.</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk si">
+          <span class="tick">✓</span>
+          <span>grupos funcionales haluros éteres alcoholes <span class="pagref">p.178</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>propiedades y características del carbono <span class="pagref">p.14</span></span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>formación de moléculas orgánicas <span class="pagref">p.14</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>fotosíntesis</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>respiración celular</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>ciclo del carbono</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
+              <div class="kn-d"><ul class="chks"><li class="chk no">
+          <span class="tick">✗</span>
+          <span>características del sistema nervioso</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>estructuras básicas del sistema endocrino</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>nervios y cerebro</span>
+        </li><li class="chk si">
+          <span class="tick">✓</span>
+          <span>páncreas <span class="pagref">p.93</span></span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>hormonas sexuales</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>hormonas pancreáticas</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>efectos del consumo de drogas</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>medidas de protección</span>
+        </li><li class="chk no">
+          <span class="tick">✗</span>
+          <span>autocuidado</span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026</div></div>
             </li></ul>
         </article></div>
     </section><section class="curso">
@@ -763,10 +1429,11 @@
     </section>
 
   <p class="pie">
-    🔴 "no está" y 🟠 "otro curso" traen dónde SÍ está — hoy los 27 tienen destino y
-    ninguno queda sin libro. 🟡 "incompleto" trae qué parte falta, con las palabras del lector
-    que revisó el libro. Un mismo conocimiento aparece en varias materias del mismo casillero
-    EPJA (ciencias es UN casillero repartido en tres libros): lo que cuenta para el alumno es
-    que esté bien en alguna. Cursos 1º-5º básico y materias apagadas quedan fuera.
+    🔴 "no está" y 🟠 "otro curso" traen dónde SÍ está. 🟡 "incompleto" trae, donde el
+    programa EPJA 2026 existe, el checklist oficial de componentes (✓ cubierto con página ·
+    ✗ faltante); donde el programa no se publicó todavía (Nivel 3 Básica y casi todo Nivel 2
+    Media), queda la descripción del lector que revisó el libro. Un mismo conocimiento
+    aparece en varias materias del mismo casillero EPJA: lo que cuenta para el alumno es que
+    esté bien en alguna. Cursos 1º-5º básico y materias apagadas quedan fuera.
   </p>
 </div>
