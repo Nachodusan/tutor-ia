@@ -1,0 +1,772 @@
+<title>Caminos por curso y materia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --paper:#FCFCFE; --card:#FFFFFF; --ink:#14141C; --dim:#5C5C70;
+    --line:#E4E4EE; --line2:#F0F0F6;
+    --pilar:#C98A00; --pilar-bg:#FBF1D8;
+    --malo:#D63A1E; --malo-bg:#FCE9E5; --aviso:#9A6400; --aviso-bg:#FAF0DA;
+    --otro:#B4560A; --otro-bg:#FBEBDD;
+    --bien:#15734A; --bien-bg:#E7F4ED;
+    --sombra:0 1px 2px rgba(20,20,40,.05), 0 8px 24px -18px rgba(20,20,40,.35);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#101018; --card:#181822; --ink:#ECECF4; --dim:#9A9AB0;
+      --line:#2A2A38; --line2:#22222E;
+      --pilar:#E8B94A; --pilar-bg:#3A2F14;
+      --malo:#FF8A70; --malo-bg:#3A1E18; --aviso:#E8BE6A; --aviso-bg:#332913;
+      --otro:#F0A060; --otro-bg:#38230F;
+      --bien:#5FCB98; --bien-bg:#15301F;
+      --sombra:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#101018; --card:#181822; --ink:#ECECF4; --dim:#9A9AB0;
+    --line:#2A2A38; --line2:#22222E;
+    --pilar:#E8B94A; --pilar-bg:#3A2F14;
+    --malo:#FF8A70; --malo-bg:#3A1E18; --aviso:#E8BE6A; --aviso-bg:#332913;
+    --otro:#F0A060; --otro-bg:#38230F;
+    --bien:#5FCB98; --bien-bg:#15301F;
+    --sombra:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif; font-size:15px; line-height:1.55;
+    -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1040px; margin:0 auto; padding:44px 22px 80px; display:flex; flex-direction:column; gap:36px; }
+  h1,h2,h3 { font-family:"Bricolage Grotesque",system-ui,sans-serif; margin:0; text-wrap:balance; }
+  h1 { font-size:clamp(30px,4.6vw,46px); font-weight:800; letter-spacing:-.028em; line-height:1.04; }
+  .sub { color:var(--dim); max-width:64ch; margin-top:10px; }
+  .eyebrow { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--dim); margin-bottom:12px; }
+  .cifras { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px;
+    background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden; box-shadow:var(--sombra); }
+  .cifra { background:var(--card); padding:18px 18px 16px; }
+  .cifra .n { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:34px;
+    letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums; }
+  .cifra .l { font-size:12.5px; color:var(--dim); margin-top:7px; }
+  .cifra.hi .n { color:var(--bien); }
+  .curso { display:flex; flex-direction:column; gap:14px; }
+  .curso-h { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    border-bottom:2px solid var(--ink); padding-bottom:8px; }
+  .curso-h h2 { font-size:22px; font-weight:700; letter-spacing:-.02em; }
+  .curso-res { display:flex; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--dim);
+    font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; }
+  .curso-res b { color:var(--ink); font-weight:600; }
+  .curso-res .destaca b { color:var(--pilar); }
+  .cards { display:flex; flex-direction:column; gap:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:18px 20px; box-shadow:var(--sombra); }
+  .card-h { display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  .card-h h3 { font-size:17.5px; font-weight:700; letter-spacing:-.015em; }
+  .camino-res { font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--dim);
+    font-variant-numeric:tabular-nums; }
+  .mini { height:6px; border-radius:3px; background:var(--line); overflow:hidden; margin:10px 0 4px; }
+  .minifill { height:100%; background:var(--pilar); border-radius:3px; }
+  .okline { display:block; font-size:12.5px; color:var(--bien); margin:6px 0 2px; font-weight:500; }
+  .nada { margin:10px 0 0; font-size:13.5px; color:var(--bien); background:var(--bien-bg);
+    border-radius:9px; padding:9px 12px; }
+  .kns { list-style:none; margin:12px 0 0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .kn { background:var(--line2); border-radius:10px; padding:10px 12px; border-left:3px solid var(--line); }
+  .kn.mal { border-left-color:var(--malo); }
+  .kn.par { border-left-color:var(--pilar); }
+  .kn.otr { border-left-color:var(--otro); }
+  .kn-h { display:flex; gap:9px; align-items:baseline; flex-wrap:wrap; }
+  .sello { font-family:"IBM Plex Mono",monospace; font-size:10.5px; white-space:nowrap;
+    padding:1px 7px; border-radius:5px; }
+  .sello.mal { background:var(--malo-bg); color:var(--malo); font-weight:600; }
+  .sello.par { background:var(--pilar-bg); color:var(--pilar); }
+  .sello.otr { background:var(--otro-bg); color:var(--otro); }
+  .kn-t { font-size:13.5px; font-weight:600; line-height:1.4; }
+  .kn-d { margin-top:5px; font-size:12.5px; color:var(--dim); line-height:1.5;
+    display:flex; flex-direction:column; gap:3px; }
+  .dst.ok b { color:var(--bien); }
+  .dst.mal { color:var(--malo); }
+  .falta { }
+  .pie { font-size:12.5px; color:var(--dim); border-top:1px solid var(--line); padding-top:16px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">TutorIA · 24 de agosto de 2026 · mapa re-verificado con barrido léxico</div>
+    <h1>Caminos por curso y materia</h1>
+    <p class="sub">
+      Cada materia con su camino (unidades, lecciones y cuántas cubren una exigencia del
+      Estado) y, abajo, los conocimientos esenciales que su libro no desarrolla del todo —
+      uno por uno, con qué parte falta y dónde sí está.
+    </p>
+  </header>
+
+  <div class="cifras">
+    <div class="cifra"><div class="n">34</div><div class="l">materias con camino</div></div>
+    <div class="cifra"><div class="n">239</div><div class="l">exigencias mapeadas (con repetición entre materias del mismo casillero)</div></div>
+    <div class="cifra hi"><div class="n">124</div><div class="l">bien desarrolladas en su libro</div></div>
+    <div class="cifra"><div class="n">88</div><div class="l">incompletas (🟡)</div></div>
+    <div class="cifra"><div class="n">27</div><div class="l">no están en ese libro — todas con destino (🔴/🟠)</div></div>
+  </div>
+
+  <section class="curso">
+      <header class="curso-h"><h2>6º Básico</h2>
+        <div class="curso-res"><span><b>4</b> materias</span><span><b>275</b> lecciones</span><span class="destaca"><b>29%</b> con exigencia</span></div>
+      </header>
+      <div class="cards"><article class="card">
+          <header class="card-h">
+            <h3>Ciencias Naturales</h3>
+            <div class="camino-res">8 unidades · 3 lecciones · 3 con exigencia (100%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:100%"></div></div>
+          <span class="okline">✓ 5 de 9 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Biodiversidad en Chile y su preservación</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.81</span> <span class="falta">Falta: El libro menciona especies nativas e introducidas, pero no desarrolla la preservación ni la biodiversidad como tema integral de conservación.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Movimientos de la Tierra y la Luna, y sus efectos en los objetos y seres vivos</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.165</span> <span class="falta">Falta: El material explica los efectos de la rotación (día/noche) y la traslación (estaciones) de la Tierra, pero no desarrolla los movimientos de la Luna ni sus efectos sobre los seres vivos.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Niveles de organización de los seres vivos, incluyendo célula, tejido, órgano y sistema</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.72</span> <span class="falta">Falta: El material menciona y ejemplifica el tejido (p.71) y la célula (p.61, 72), pero no desarrolla los niveles de órgano y sistema, limitándose a conceptos generales o tróficos.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistemas del cuerpo humano: funciones, estructuras básicas (sistemas digestivo, respiratorio, circulatorio y reproductor; tubo digestivo, pulmones y bronquios, vasos sanguíneos y corazón, y gónadas), considerando medidas de prevención y autocuidado</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.13</span> <span class="falta">Falta: los sistemas digestivo, respiratorio y circulatorio con sus estructuras (tubo digestivo, pulmones y bronquios, vasos sanguíneos y corazón)</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Historia y Cs. Sociales</h3>
+            <div class="camino-res">13 unidades · 186 lecciones · 57 con exigencia (31%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:31%"></div></div>
+          <span class="okline">✓ 4 de 6 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Macrozonas y sus paisajes de Chile; principales zonas naturales, recursos significativos y trabajo humano que le da valor. Riesgos socio-naturales</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.160</span> <span class="falta">Falta: los riesgos socio-naturales (sismos/terremotos, tsunamis, erupciones, aluviones, inundaciones, incendios, sequías) y su prevención: no hay ninguna página del texto del alumno que los enseñe; lo de 168-171 es cambio climático, no riesgos…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Pueblos originarios en Chile: ubicación geográfica, uso y dominio de recursos naturales</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.180</span> <span class="falta">Falta: el uso y dominio de los recursos naturales por parte de los pueblos originarios: ninguna página lo enseña (adaptación al medio, economía indígena, agricultura/ganadería/pesca); ese contenido es de 4º básico…</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Lenguaje y Comunicación</h3>
+            <div class="camino-res">5 unidades · 33 lecciones · 4 con exigencia (12%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:12%"></div></div>
+          <span class="okline">✓ 6 de 9 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Géneros literarios; poesía, narrativa y textos dramáticos</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.102</span> <span class="falta">Falta: Los textos dramáticos: no hay ninguna obra ni lección de teatro; &quot;teatro&quot; y &quot;acotación&quot; no aparecen nunca y &quot;dramático&quot; solo figura como adjetivo común (pp. 11, 181, 188).</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Normas ortográficas literal, acentual y puntual</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.176</span> <span class="falta">Falta: el lector lo había dado por ausente y SÍ está. EL HUECO ES FALSO, al menos en su parte «puntual». En la p. 176 hay una cápsula rotulada literalmente «Ortografía:» que enseña dos normas de puntuación (la raya de diálogo para la intervención …</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Textos orales cotidianos y sus características: tono, volumen, inflexión, ritmo y gestos</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.99</span> <span class="falta">Falta: La inflexión como término no existe en el libro (lo más cercano es &quot;entonación&quot;), y el contenido se trabaja desde la exposición oral formal, no desde los textos orales cotidianos.</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Matemática</h3>
+            <div class="camino-res">7 unidades · 53 lecciones · 17 con exigencia (32%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:32%"></div></div>
+          <span class="okline">✓ 2 de 5 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Fracciones, decimales y transformación de unidades de medidas</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.37</span> <span class="falta">Falta: La transformación de unidades de medida: cero resultados en &#x27;Matemática 6º — texto del estudiante&#x27;. Está en el otro libro del nivel (Sumo Primero 6º tomo 2, Cap. 18, págs. 99-107), no en este.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Medidas de tendencia central (mediana, media, moda)</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.307</span> <span class="falta">Falta: Hueco PARCIAL: el lector se equivocó en la parte de la MEDIA. Su razón textual —&#x27;Promedio aparece únicamente como conocimiento previo... sin enseñar cómo se calcula ni definirlo&#x27;— es falsa: el Glosario del texto del estudiante (pág. 309, se…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Rotaciones, reflexiones y traslaciones de figuras 2D, medida de ángulos, perímetro y área</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.187</span> <span class="falta">Falta: Perímetro y área de figuras 2D: no hay lección propia, solo recuadros &#x27;Atención&#x27; (definición de perímetro en la p. 51, área del rectángulo en la p. 61) y un repaso previo en la p. 143. La lección que sí existe, &#x27;Área de cubos y paralelepípe…</span></div>
+            </li></ul>
+        </article></div>
+    </section><section class="curso">
+      <header class="curso-h"><h2>7º Básico</h2>
+        <div class="curso-res"><span><b>4</b> materias</span><span><b>156</b> lecciones</span><span class="destaca"><b>41%</b> con exigencia</span></div>
+      </header>
+      <div class="cards"><article class="card">
+          <header class="card-h">
+            <h3>Ciencias Naturales</h3>
+            <div class="camino-res">6 unidades · 20 lecciones · 8 con exigencia (40%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:40%"></div></div>
+          <span class="okline">✓ 4 de 10 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Biodiversidad en Chile y su preservación</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Ciencias Naturales 6º</b>, p.81 (otro nivel — el tutor lo alcanza)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Interacción entre los sistemas del cuerpo humano: digestivo, circulatorio, respiratorio, excretor. Nutrición, nutrientes y salud</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Ciencias Naturales 8º</b>, p.13 (el otro año del mismo nivel)</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Circuito eléctrico, fuerzas y tipos de fuerzas, fuerza eléctrica y energía eléctrica. Medidas de seguridad y buen uso energético</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.44</span> <span class="falta">Falta: Todo lo eléctrico: circuito eléctrico, corriente, fuerza eléctrica, energía eléctrica, voltaje, pila, cortocircuito y consumo eléctrico (cero resultados), y las medidas de seguridad eléctrica. Del &#x27;buen uso energético&#x27; solo hay menciones su…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistema periódico de clasificación de los elementos y elementos constituyentes de la Tierra y los seres vivos (carbono, hidrógeno, oxígeno y nitrógeno)</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.141</span> <span class="falta">Falta: El material detalla los elementos constituyentes de la Tierra, pero solo menciona al hidrógeno como elemento del universo sin desarrollar su presencia en la Tierra o seres vivos, y omite completamente al carbono, hidrógeno, oxígeno y nitróg…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistema solar y estructuras cósmicas</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.12</span> <span class="falta">Falta: El fragmento menciona la formación de la Tierra junto con el Sistema Solar, pero no desarrolla las estructuras cósmicas ni los componentes del sistema solar.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Teoría celular. Estructura celular básica (procariontes y eucariontes), reproducción (sexual y asexual), transporte a nivel celular y mecanismos de interacción entre la célula y el entorno (difusión y osmosis)</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.86</span> <span class="falta">Falta: Transporte a nivel celular (activo y pasivo) y ósmosis: cero resultados en todo el libro, incluido el glosario. La difusión de la p. 30 es de gases (Lección 2, leyes de los gases), no de la célula con su entorno. Tampoco hay reproducción ce…</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Historia y Cs. Sociales</h3>
+            <div class="camino-res">4 unidades · 78 lecciones · 36 con exigencia (46%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:46%"></div></div>
+          <span class="okline">✓ 4 de 5 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Transformaciones durante la Época Moderna (por ejemplo, encuentro de dos mundos, surgimiento del Estado moderno, difusión del conocimiento, fin de la unidad religiosa)</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Historia Geografía Y Ciencias Sociales 8º</b>, p.10 (el otro año del mismo nivel)</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Lengua y Literatura</h3>
+            <div class="camino-res">5 unidades · 44 lecciones · 17 con exigencia (39%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:39%"></div></div>
+          <span class="okline">✓ 5 de 9 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Ortografía literal, acentual y puntual</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Lengua Y Literatura 8º</b>, p.128 (el otro año del mismo nivel)</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Estrategias de comprensión lectora y de comprensión oral</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.21</span> <span class="falta">Falta: La comprensión oral como estrategia propia: no hay recuadro que enseñe escucha activa, audición, oralidad ni exposición oral; solo pautas de participación en conversación y en debate.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Gramática: sustantivos, adjetivos, adverbios y pronombres; preposiciones y conjunciones, y conjugaciones verbales</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.129</span> <span class="falta">Falta: Sustantivos y preposiciones del todo: no hay ninguna ocurrencia de &#x27;sustantivo&#x27;, &#x27;preposición&#x27;, &#x27;clases de palabras&#x27;, &#x27;categorías gramaticales&#x27; ni &#x27;artículo&#x27; en el libro. Tampoco hay una unidad de gramática sistemática: las categorías apare…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Vocabulario: sinónimos, hipónimos, hiperónimos locuciones y comparaciones</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.129</span> <span class="falta">Falta: Las locuciones: ninguna ocurrencia de &#x27;locución&#x27;, &#x27;expresión fija&#x27;, &#x27;modismo&#x27; ni &#x27;frase hecha&#x27;. Y las comparaciones no se enseñan, ni como recurso de vocabulario ni como figura literaria: solo se usan dentro de preguntas de análisis (p. 53 …</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Matemática</h3>
+            <div class="camino-res">7 unidades · 14 lecciones · 3 con exigencia (21%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:21%"></div></div>
+          <span class="okline">✓ 5 de 8 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Expresiones algebraicas, ecuaciones e inecuaciones lineales</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.54</span> <span class="falta">Falta: Ecuaciones e inecuaciones lineales: no hay ninguna ecuación planteada ni resuelta. La única mención es la palabra &#x27;incógnitas&#x27; en la introducción de la p. 54.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Funciones lineales y afines</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.64</span> <span class="falta">Falta: La función afín (y = mx + n, con coeficiente de posición). El libro sí desarrolla la función lineal completa, pero la llama &#x27;proporcionalidad directa&#x27; (y = k · x) y nunca sale del caso que pasa por el origen.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Área y volumen de prismas rectos con diferentes bases y cilindros</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.130</span> <span class="falta">Falta: El fragmento 8 anuncia explícitamente que se calculará el volumen del cilindro, pero no desarrolla la fórmula ni el procedimiento, limitándose a la introducción del tema.</span></div>
+            </li></ul>
+        </article></div>
+    </section><section class="curso">
+      <header class="curso-h"><h2>8º Básico</h2>
+        <div class="curso-res"><span><b>4</b> materias</span><span><b>142</b> lecciones</span><span class="destaca"><b>36%</b> con exigencia</span></div>
+      </header>
+      <div class="cards"><article class="card">
+          <header class="card-h">
+            <h3>Ciencias Naturales</h3>
+            <div class="camino-res">5 unidades · 6 lecciones · 4 con exigencia (67%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:67%"></div></div>
+          <span class="okline">✓ 1 de 10 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Biodiversidad en Chile y su preservación</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Ciencias Naturales 6º</b>, p.81 (otro nivel — el tutor lo alcanza)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Modelo de la tectónica de placas y su impacto en la naturaleza</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Ciencias Naturales 7º</b>, p.56 (el otro año del mismo nivel)</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Aspectos biológicos, afectivos y sociales en la sexualidad. Paternidad y maternidad responsable. Control de natalidad. ITS, mecanismos de transmisión y medidas de prevención</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.72</span> <span class="falta">Falta: El material aborda los aspectos afectivos y sociales de la sexualidad y la paternidad responsable, pero no desarrolla los contenidos sobre control de natalidad, ITS, ni sus mecanismos de transmisión y prevención.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Características de microorganismos y virus, sus efectos en el ambiente y la salud, considerando medidas de autocuidado</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.82</span> <span class="falta">Falta: El material describe características de bacterias y virus y menciona tratamientos, pero no desarrolla las medidas de autocuidado ni los efectos ambientales requeridos por el conocimiento.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Circuito eléctrico, fuerzas y tipos de fuerzas, fuerza eléctrica y energía eléctrica. Medidas de seguridad y buen uso energético</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.90</span> <span class="falta">Falta: Las fuerzas y los tipos de fuerza: en toda la Unidad 3 no hay un solo tramo que enseñe qué es una fuerza ni sus tipos (gravitatoria, de roce, magnética). Tampoco se enseña la fuerza eléctrica ni la ley de Coulomb: las cargas se tratan solo …</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">El átomo, estructura e historia de los modelos atómicos. Sustancias puras, elementos y compuestos químicos</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.124</span> <span class="falta">Falta: La clasificación de la materia en sustancias puras y mezclas: no hay ninguna sección que distinga sustancia pura de mezcla ni mezclas homogéneas de heterogéneas (el único &#x27;mezcla&#x27; del libro es la masticación del alimento, p.13). &#x27;Elemento&#x27; …</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistema periódico de clasificación de los elementos y elementos constituyentes de la Tierra y los seres vivos (carbono, hidrógeno, oxígeno y nitrógeno)</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.144</span> <span class="falta">Falta: Los elementos constituyentes de la Tierra y de los seres vivos (carbono, hidrógeno, oxígeno y nitrógeno): ninguna página los presenta como los elementos que forman la materia viva. El carbono solo aparece como referencia de masa atómica en …</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistema solar y estructuras cósmicas</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.12</span> <span class="falta">Falta: El fragmento 3 menciona la formación de la Tierra junto con el Sistema Solar, pero no desarrolla las estructuras cósmicas ni los componentes del sistema solar, limitándose a la historia geológica temprana.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Teoría celular. Estructura celular básica (procariontes y eucariontes), reproducción (sexual y asexual), transporte a nivel celular y mecanismos de interacción entre la célula y el entorno (difusión y osmosis)</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.56</span> <span class="falta">Falta: La reproducción celular sexual y asexual: no hay ninguna sección que enseñe mitosis, meiosis, bipartición, gemación, esporulación ni ciclo celular (solo una frase suelta en p.57 y la &#x27;división o diferenciación celular&#x27; mencionada de paso en…</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Historia y Cs. Sociales</h3>
+            <div class="camino-res">11 unidades · 74 lecciones · 25 con exigencia (34%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:34%"></div></div>
+          <span class="okline">✓ 1 de 5 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Complejización de las primeras sociedades, su dispersión por el planeta y la interacción del ser humano con el medio</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.138</span> <span class="falta">Falta: La complejización de las primeras sociedades y su dispersión por el planeta: no hay ni una línea sobre prehistoria, neolítico, poblamiento, nomadismo, sedentarismo, homínidos, cazadores recolectores, domesticación ni Beringia. El libro part…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Formación y consolidación de la cultura occidental durante la Edad Media (por ejemplo: confluencia del mundo clásico, judeocristiano y germano; fragmentación territorial y ruralización; cristianismo y conformación del poder político)</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.34</span> <span class="falta">Falta: La confluencia del mundo clásico, judeocristiano y germano y, en general, la formación y consolidación de la cultura occidental durante la Edad Media: no hay resultados para &#x27;germano&#x27;, &#x27;judeocristiano&#x27;, &#x27;cristiandad&#x27;, &#x27;señorío&#x27;, &#x27;Edad Media…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Formas de organización política en la Antigüedad clásica y sus proyecciones en la cultura occidental y latinoamericana, considerando ejemplos del pasado y del presente de Chile</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.124</span> <span class="falta">Falta: Las formas de organización política de la Antigüedad clásica: no hay nada sobre Grecia, Atenas, la polis, la democracia ateniense, Roma, la república romana, el senado ni Pericles. La única aparición es una línea en el recuadro de arte rena…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Surgimiento de las primeras civilizaciones, incluyendo un ejemplo de América (procesos característicos, por ejemplo: centralización político-administrativa, urbanización, unidad religiosa, estratificación social, etcétera.)</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.15</span> <span class="falta">Falta: El material menciona el surgimiento de civilizaciones en América (olmeca, maya, chavín, inca) pero solo las nombra sin desarrollar sus procesos característicos como la centralización o urbanización.</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Lengua y Literatura</h3>
+            <div class="camino-res">5 unidades · 45 lecciones · 18 con exigencia (40%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:40%"></div></div>
+          <span class="okline">✓ 4 de 9 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Estrategias de comprensión lectora y de comprensión oral</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.53</span> <span class="falta">Falta: Las estrategias de comprensión oral: no hay escucha activa, toma de notas ni apuntes. Lo de la pág. 29 es interacción oral, no comprensión oral.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Gramática: sustantivos, adjetivos, adverbios y pronombres; preposiciones y conjunciones, y conjugaciones verbales</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.83</span> <span class="falta">Falta: Las preposiciones (0 resultados en todo el libro) y el sustantivo como clase de palabra (solo aparece dentro de la concordancia).</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Imágenes, gráficos, tablas, mapas o diagramas</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.120</span> <span class="falta">Falta: Tablas y diagramas (tampoco infografías ni mapas conceptuales): el libro los usa, pero no enseña a leerlos ni a construirlos.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Ortografía literal, acentual y puntual</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.128</span> <span class="falta">Falta: La ortografía acentual completa (tilde, acentuación, sílaba tónica, agudas, graves, esdrújulas, diptongo, hiato) y la ortografía literal (b/v, h, s/c/z). Solo está la ortografía puntual.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Vocabulario: sinónimos, hipónimos, hiperónimos locuciones y comparaciones</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.78</span> <span class="falta">Falta: Hipónimos, hiperónimos, locuciones y comparaciones. Solo los sinónimos están trabajados de forma explícita.</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Matemática</h3>
+            <div class="camino-res">7 unidades · 17 lecciones · 4 con exigencia (24%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:24%"></div></div>
+          <span class="okline">✓ 7 de 8 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Experimentos aleatorios, frecuencia absoluta, relativa y la probabilidad</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.143</span> <span class="falta">Falta: la frecuencia relativa (no aparece ni una vez en el libro), la definición de frecuencia absoluta y el vínculo entre frecuencia relativa y probabilidad experimental…</span></div>
+            </li></ul>
+        </article></div>
+    </section><section class="curso">
+      <header class="curso-h"><h2>1º Medio</h2>
+        <div class="curso-res"><span><b>6</b> materias</span><span><b>226</b> lecciones</span><span class="destaca"><b>35%</b> con exigencia</span></div>
+      </header>
+      <div class="cards"><article class="card">
+          <header class="card-h">
+            <h3>Biología</h3>
+            <div class="camino-res">6 unidades · 21 lecciones · 9 con exigencia (43%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:43%"></div></div>
+          <span class="okline">✓ 2 de 8 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Características y propiedades del sonido y la luz, y su impacto en la vida cotidiana</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.25 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.112 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.193 (mismo curso)</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.26</span> <span class="falta">Falta: El conocimiento junta dos temas. (1) Evolución, teorías y evidencias: el tramo principal es la Lección 2 «¿Cómo evolucionan los seres vivos?» (26-35): selección natural y viaje de Darwin (28-31), anatomía comparada, estructuras homólogas/ho…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.100</span> <span class="falta">Falta: La química orgánica y los grupos funcionales (haluros, éteres, alcoholes, cetonas) y las propiedades del carbono (tetravalencia, enlace covalente, hidrocarburos): no hay ni una aparición en todo el libro; es contenido de Química 1º Medio.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.244</span> <span class="falta">Falta: El material enseña la estructura del páncreas y sus hormonas, pero no desarrolla los efectos del consumo de drogas ni las medidas de autocuidado.</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Física</h3>
+            <div class="camino-res">14 unidades · 88 lecciones · 21 con exigencia (24%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:24%"></div></div>
+          <span class="okline">✓ 2 de 8 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.102</span> <span class="falta">Falta: El material define y relaciona organismo, población, comunidad y ecosistema, pero no aborda en absoluto la evolución, sus teorías ni sus evidencias.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.112</span> <span class="falta">Falta: El material desarrolla extensamente la teoría científica del Big Bang y su evolución, pero no menciona en absoluto las cosmovisiones de los pueblos originarios.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Leyes de conservación de la materia. Reacciones químicas y formación de compuestos útiles para los seres vivos</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.58</span> <span class="falta">Falta: El material explica la ley de conservación y las reacciones químicas con ejemplos, pero no desarrolla la formación de compuestos útiles para los seres vivos.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.193</span> <span class="falta">Falta: El fragmento 7 explica detalladamente la conservación de la energía mecánica, pero el material no desarrolla los conceptos de trabajo ni potencia mecánica requeridos por el conocimiento esencial.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.25</span> <span class="falta">Falta: El material explica las propiedades del carbono y menciona la existencia de grupos funcionales, pero no los desarrolla ni da ejemplos, y solo alude a la fotosíntesis y respiración sin explicar sus mecanismos ni el ciclo del carbono.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.93</span> <span class="falta">Falta: el material explica el páncreas y la insulina, pero no desarrolla las estructuras básicas del sistema nervioso ni los efectos de las drogas.</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Historia y Cs. Sociales</h3>
+            <div class="camino-res">7 unidades · 11 lecciones · 8 con exigencia (73%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:73%"></div></div>
+          <span class="okline">✓ 4 de 6 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Revoluciones del siglo XVIII e inicios del siglo XIX en Europa y América, incluyendo la Independencia de Chile</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.32</span> <span class="falta">Falta: la Independencia de Chile como proceso (Patria Vieja, Reconquista, Patria Nueva, batallas, O&#x27;Higgins), que solo aparece mencionada como hito en la línea de tiempo de p. 42-43 y de pasada en p. 82 y 155; y la Revolución Francesa, de la que s…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Visión general sobre el desarrollo político, económico, social y medioambiental en Chile durante el siglo XIX y primera mitad del siglo XX, incluyendo la perspectiva de los pueblos indígenas y las mujeres</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.114</span> <span class="falta">Falta: la primera mitad del siglo XX más allá de ~1920-1925: no hay nada sobre 1925-1950 (Constitución de 1925, Frente Popular, industrialización por sustitución, voto femenino de 1949)</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Lengua y Literatura</h3>
+            <div class="camino-res">8 unidades · 63 lecciones · 16 con exigencia (25%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:25%"></div></div>
+          <span class="okline">✓ 6 de 8 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Intertextualidad a través de personajes, temas y símbolos de textos clásicos</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.142</span> <span class="falta">Falta: El recuadro &quot;Tipos de relaciones intertextuales en los textos&quot; (p. 142) distingue intertextualidad a nivel local (cita y alusión, con el ejemplo &quot;el título &#x27;Nieve negra&#x27; alude a &#x27;Blanca Nieves&#x27;&quot;) y a nivel global (se reusan historia, estruc…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Normas de citación</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.30</span> <span class="falta">Falta: La norma de citación propiamente tal: el formato de la referencia bibliográfica (autor, año, título, editorial; APA, MLA) no se enseña en ninguna parte del texto del estudiante. La Bibliografía (pp. 222-225) muestra el formato pero no lo ex…</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Matemática</h3>
+            <div class="camino-res">7 unidades · 35 lecciones · 20 con exigencia (57%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:57%"></div></div>
+          <span class="okline">✓ 5 de 6 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Función y ecuación cuadrática</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Matemática 2º Medio</b>, p.163 (el otro año del mismo nivel)</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Química</h3>
+            <div class="camino-res">6 unidades · 8 lecciones · 4 con exigencia (50%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:50%"></div></div>
+          <span class="okline">✓ 1 de 8 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Características y propiedades del sonido y la luz, y su impacto en la vida cotidiana</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.25 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Biología 1º Medio</b>, p.26 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.112 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.193 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.93 (mismo curso)</span></div>
+            </li><li class="kn otr">
+              <div class="kn-h"><span class="sello otr">🟠 otro curso</span><span class="kn-t">Principios básicos de herencia genética en plantas y animales propuestos por Mendel. Estructura y función del ADN</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.17 (mismo curso)</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.202</span> <span class="falta">Falta: El material explica las propiedades del carbono y los grupos funcionales, pero no desarrolla los temas de fotosíntesis, respiración celular ni el ciclo del carbono.</span></div>
+            </li></ul>
+        </article></div>
+    </section><section class="curso">
+      <header class="curso-h"><h2>2º Medio</h2>
+        <div class="curso-res"><span><b>6</b> materias</span><span><b>342</b> lecciones</span><span class="destaca"><b>40%</b> con exigencia</span></div>
+      </header>
+      <div class="cards"><article class="card">
+          <header class="card-h">
+            <h3>Biología</h3>
+            <div class="camino-res">6 unidades · 21 lecciones · 8 con exigencia (38%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:38%"></div></div>
+          <span class="okline">✓ 3 de 8 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Características y propiedades del sonido y la luz, y su impacto en la vida cotidiana</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Química 2º Medio</b>, p.16 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 2º Medio</b>, p.112 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 2º Medio</b>, p.179 (mismo curso)</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.52</span> <span class="falta">Falta: El material desarrolla extensamente la evolución, teorías y evidencias, pero solo menciona superficialmente la relación entre organismo, población, comunidad y ecosistema sin explicarla.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.95</span> <span class="falta">Falta: El material cubre el ciclo del carbono, la fotosíntesis y la respiración celular, pero no aborda la química orgánica, los grupos funcionales ni las propiedades del carbono.</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Física</h3>
+            <div class="camino-res">8 unidades · 87 lecciones · 20 con exigencia (23%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:23%"></div></div>
+          <span class="okline">✓ 1 de 8 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.52 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Leyes de conservación de la materia. Reacciones químicas y formación de compuestos útiles para los seres vivos</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.103 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Principios básicos de herencia genética en plantas y animales propuestos por Mendel. Estructura y función del ADN</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.216 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.95 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.130 (mismo curso)</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Características y propiedades del sonido y la luz, y su impacto en la vida cotidiana</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.34</span> <span class="falta">Falta: El material define el sonido como onda y menciona sus características (tono, timbre, intensidad), pero no desarrolla las propiedades de la luz ni su impacto en la vida cotidiana.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.112</span> <span class="falta">Falta: las cosmovisiones de los pueblos originarios sobre la creación del universo (no hay nada de mapuche, aymara, rapa nui ni etnoastronomía en todo el libro)</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Historia y Cs. Sociales</h3>
+            <div class="camino-res">8 unidades · 115 lecciones · 51 con exigencia (44%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:44%"></div></div>
+          <span class="okline">✓ 4 de 6 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Multiculturalismo, identidades y patrimonio material e inmaterial en Chile</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.252</span> <span class="falta">Falta: el patrimonio material e inmaterial: en el libro del alumno &#x27;patrimonio&#x27; solo aparece en sentido económico-jurídico (p. 187 y p. 233) y el único uso cultural está en la guía del docente, no en el texto del alumno…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Visión general sobre el desarrollo político, económico, social y medioambiental en Chile durante el siglo XIX y primera mitad del siglo XX, incluyendo la perspectiva de los pueblos indígenas y las mujeres</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.56</span> <span class="falta">Falta: tres partes: (1) el siglo XIX, porque la lección arranca en la Guerra Civil de 1891 y el libro no trata el Chile decimonónico; (2) lo medioambiental del período, que solo aparece referido al Chile actual (Unidad 4, pp. 248-249); (3) la pers…</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Lengua y Literatura</h3>
+            <div class="camino-res">22 unidades · 45 lecciones · 21 con exigencia (47%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:47%"></div></div>
+          <span class="okline">✓ 5 de 8 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Estrategias de comprensión lectora y de comprensión oral</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.68</span> <span class="falta">Falta: las estrategias de comprensión ORAL: no hay ninguna cápsula ni recuadro sobre escucha activa, escuchar con atención o toma de apuntes; solo indicaciones genéricas dentro de debates y mesas redondas (pp.23, 48, 117, 152, 157) y la pauta de p…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Intertextualidad a través de personajes, temas y símbolos de textos clásicos</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.128</span> <span class="falta">Falta: la intertextualidad como concepto: la palabra no aparece nunca en el libro y no se enseña la relación entre textos (alusión, cita, parodia, reescritura); el libro llega solo hasta comparar un mismo tema en dos épocas…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Normas de citación</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.39</span> <span class="falta">Falta: las normas formales de citación (APA, MLA u otra) y cómo construir una lista de referencias o bibliografía; las pp.222-225 son la bibliografía del propio libro, no una lección…</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Matemática</h3>
+            <div class="camino-res">8 unidades · 66 lecciones · 34 con exigencia (52%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:52%"></div></div>
+          <span class="okline">✓ 3 de 6 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Homotecias y teorema de Thales</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.82</span> <span class="falta">Falta: el material enseña a aplicar la semejanza de triángulos para calcular alturas (Teorema de Thales) y define homotecias como ampliación/reducción, pero no explica el Teorema de Thales ni la homotecia como transformación geométrica formal.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Operaciones con números racionales, potencias, raíces y sus propiedades</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.20</span> <span class="falta">Falta: los números racionales y las propiedades de las potencias: el libro no las enseña, las da por sabidas de cursos anteriores (solo las pide en la evaluación diagnóstica de la p. 10 y en la pregunta de entrada de la p. 24)</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Probabilidades, regla multiplicativa y regla aditiva</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.125</span> <span class="falta">Falta: la regla (principio) aditiva: el objetivo de la lección la anuncia en la p. 125 pero el libro nunca la define ni la desarrolla — no hay P(A ∪ B) = P(A) + P(B) − P(A ∩ B), ni sucesos excluyentes o independientes…</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Química</h3>
+            <div class="camino-res">11 unidades · 8 lecciones · 3 con exigencia (38%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:38%"></div></div>
+          <span class="okline">✓ 1 de 8 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 2º Medio</b>, p.112 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Física 2º Medio</b>, p.179 (mismo curso)</span></div>
+            </li><li class="kn mal">
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.130 (mismo curso)</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.102</span> <span class="falta">Falta: El material define y relaciona organismo, población, comunidad y ecosistema, pero no aborda en absoluto la evolución, sus teorías ni sus evidencias.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Leyes de conservación de la materia. Reacciones químicas y formación de compuestos útiles para los seres vivos</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.45</span> <span class="falta">Falta: el material explica y ejemplifica la ley de conservación de la materia, pero no desarrolla el tema de las reacciones químicas y la formación de compuestos útiles para los seres vivos.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Principios básicos de herencia genética en plantas y animales propuestos por Mendel. Estructura y función del ADN</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.148</span> <span class="falta">Falta: Todo Mendel: cero apariciones de &#x27;Mendel&#x27;, dominante, recesivo, alelo, genotipo, fenotipo, heredar y cromosoma en el corpus completo. También falta la FUNCIÓN del ADN: el libro la deriva a una actividad de investigación (p. 148) y remite a …</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.138</span> <span class="falta">Falta: El ciclo del carbono: cero aciertos en todo el corpus para &#x27;ciclo del carbono&#x27;, &#x27;ciclo biogeoquímico&#x27; y &#x27;ciclos de la materia&#x27;.</span></div>
+            </li></ul>
+        </article></div>
+    </section><section class="curso">
+      <header class="curso-h"><h2>3º Medio</h2>
+        <div class="curso-res"><span><b>5</b> materias</span><span><b>141</b> lecciones</span><span class="destaca"><b>30%</b> con exigencia</span></div>
+      </header>
+      <div class="cards"><article class="card">
+          <header class="card-h">
+            <h3>Cs. para la Ciudadanía</h3>
+            <div class="camino-res">9 unidades <b>sin desglose</b> — el libro no trae índice de lecciones</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:0%"></div></div>
+          <span class="okline">✓ 6 de 8 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Enlace químico y reactividad en sustancias químicas. Plaguicidas, insecticidas y sustancias químicas de uso común</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.126</span> <span class="falta">Falta: el enlace químico (no hay ni una aparición de &#x27;enlace&#x27;, &#x27;covalente&#x27;, &#x27;iónico&#x27;, &#x27;electronegatividad&#x27; ni &#x27;tabla periódica&#x27; en las 323 páginas) y la reactividad como contenido enseñado: solo está definida en el glosario de la p. 319…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Relación entre salud y enfermedad. Sistema inmune, alergias y enfermedades autoinmunes. Medidas de prevención, como el uso de vacunas</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.64</span> <span class="falta">Falta: las alergias y las enfermedades autoinmunes: &#x27;autoinmun&#x27; no aparece en todo el libro y &#x27;alergi&#x27; solo figura como dato de un gráfico de ejemplo (pp. 10-11) y como advertencia sobre filtros solares (p. 124); nunca se enseñan…</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Educación Ciudadana</h3>
+            <div class="camino-res">14 unidades · 12 lecciones · 12 con exigencia (100%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:100%"></div></div>
+          <span class="okline">✓ 6 de 6 conocimientos bien desarrollados</span>
+          <p class="nada">Nada pendiente: todo lo que el Estado exige está bien desarrollado en este libro.</p>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Filosofía</h3>
+            <div class="camino-res">4 unidades · 6 lecciones · 4 con exigencia (67%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:67%"></div></div>
+          <span class="okline">✓ 5 de 5 conocimientos bien desarrollados</span>
+          <p class="nada">Nada pendiente: todo lo que el Estado exige está bien desarrollado en este libro.</p>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Lengua y Literatura</h3>
+            <div class="camino-res">9 unidades · 92 lecciones · 17 con exigencia (18%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:18%"></div></div>
+          <span class="okline">✓ 3 de 6 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Posicionamiento de un emisor, su propósito, ideas implícitas, ambigüedades y sesgos</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.271</span> <span class="falta">Falta: las ambigüedades: la palabra solo aparece en p.268 describiendo la estética del absurdo, nunca como recurso a detectar en el emisor…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Recursos literarios</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.112</span> <span class="falta">Falta: las figuras retóricas clásicas y el lenguaje figurado: metáfora, hipérbole, personificación, símil, aliteración, anáfora, prosopopeya y &#x27;recurso estilístico&#x27; no tienen ninguna aparición didáctica en el libro…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Temas, tópicos y motivos literarios universales</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.301</span> <span class="falta">Falta: los tópicos y los motivos literarios universales: el libro nunca los nombra ni los define (no hay carpe diem, ubi sunt, locus amoenus, arquetipo ni &#x27;motivo literario&#x27;); los temas universales se trabajan como eje de cada unidad, pero sin ens…</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Matemática</h3>
+            <div class="camino-res">12 unidades · 31 lecciones · 9 con exigencia (29%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:29%"></div></div>
+          <span class="okline">✓ 0 de 4 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Cuartiles y quintiles, planilla de cálculo</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.16</span> <span class="falta">Falta: Los quintiles: &#x27;quintil&#x27;, &#x27;decil&#x27; y &#x27;percentil&#x27; no aparecen ni una vez en las 256 páginas del libro. Además, los cuartiles se dan por sabidos de cursos anteriores: no se definen ni se muestra su procedimiento de cálculo.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Elementos de la geometría básica para el dibujo técnico</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.60</span> <span class="falta">Falta: El dibujo técnico por completo: no hay instrumentos (escuadra, compás), ni escalas, ni plano acotado, ni vistas, proyecciones, perspectiva isométrica o croquis en ninguna página del curso; tampoco construcciones con mediatriz, bisectriz, pe…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Función exponencial, planilla de cálculo</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.36</span> <span class="falta">Falta: La función exponencial está COMPLETA en 36-39: definición, dominio (ℝ) y recorrido (ℝ+), intersección con el eje Y en (0, a), el eje X como asíntota, crecimiento si b &gt; 1 y decrecimiento si 0 &lt; b &lt; 1, y las traslaciones horizontal y vertica…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Porcentajes, cambio porcentual constante, índices económicos, planilla de cálculo</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.42</span> <span class="falta">Falta: Los índices económicos (IPC, UF, IMACEC, inflación, canasta): el libro solo los enseña en la página 119 y en &#x27;Porcentajes en el comercio&#x27; (110-113), que pertenecen al Texto del estudiante · 4° medio, fuera de este curso.</span></div>
+            </li></ul>
+        </article></div>
+    </section><section class="curso">
+      <header class="curso-h"><h2>4º Medio</h2>
+        <div class="curso-res"><span><b>5</b> materias</span><span><b>141</b> lecciones</span><span class="destaca"><b>44%</b> con exigencia</span></div>
+      </header>
+      <div class="cards"><article class="card">
+          <header class="card-h">
+            <h3>Cs. para la Ciudadanía</h3>
+            <div class="camino-res">9 unidades <b>sin desglose</b> — el libro no trae índice de lecciones</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:0%"></div></div>
+          <span class="okline">✓ 6 de 8 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Enlace químico y reactividad en sustancias químicas. Plaguicidas, insecticidas y sustancias químicas de uso común</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.126</span> <span class="falta">Falta: el enlace químico por completo: &#x27;enlace&#x27;, &#x27;covalente&#x27;, &#x27;iónico&#x27;, &#x27;electronegatividad&#x27;, &#x27;valencia&#x27;, &#x27;tabla periódica&#x27; y &#x27;grupo funcional&#x27; no aparecen nunca en las 323 páginas. La reactividad tampoco se enseña: solo figura como entrada de glo…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Relación entre salud y enfermedad. Sistema inmune, alergias y enfermedades autoinmunes. Medidas de prevención, como el uso de vacunas</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.64</span> <span class="falta">Falta: las alergias y las enfermedades autoinmunes: no se enseñan en ninguna parte del libro. &#x27;alergi&#x27; solo aparece en p. 10-11 como ejemplo de gráfico y en p. 124 (&#x27;pueden provocar reacciones alérgicas&#x27; a filtros solares químicos) sin explicar el…</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Educación Ciudadana</h3>
+            <div class="camino-res">14 unidades · 12 lecciones · 12 con exigencia (100%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:100%"></div></div>
+          <span class="okline">✓ 4 de 6 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Conceptos económicos y economía global actual (por ejemplo: mercado financiero, comercio mundial, cambios en la producción y en el mercado del trabajo, nuevas formas de consumo)</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.98</span> <span class="falta">Falta: el mercado financiero y las nuevas formas de consumo: no hay lección sobre ninguno de los dos (la expresión «mercado financiero» solo aparece dentro de una columna de opinión en la evaluación de la p. 122)</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Procesos geográficos, sociales y culturales recientes en Chile y América Latina (por ejemplo: migraciones, presente de los pueblos indígenas, cambios demográficos, desafíos en torno a la planificación urbana y rural)</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.202</span> <span class="falta">Falta: América Latina como región y la planificación rural: el libro no las trata…</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Filosofía</h3>
+            <div class="camino-res">4 unidades · 6 lecciones · 4 con exigencia (67%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:67%"></div></div>
+          <span class="okline">✓ 5 de 5 conocimientos bien desarrollados</span>
+          <p class="nada">Nada pendiente: todo lo que el Estado exige está bien desarrollado en este libro.</p>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Lengua y Literatura</h3>
+            <div class="camino-res">9 unidades · 92 lecciones · 36 con exigencia (39%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:39%"></div></div>
+          <span class="okline">✓ 3 de 6 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Posicionamiento de un emisor, su propósito, ideas implícitas, ambigüedades y sesgos</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.271</span> <span class="falta">Falta: &#x27;ambigüedades&#x27; y &#x27;sesgos&#x27; no se enseñan como conceptos de lectura: &#x27;sesgo&#x27; solo aparece como contenido de los textos (pp. 124, 128, 131) y &#x27;ambigüedad&#x27; como rasgo del teatro del absurdo (p. 268)</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Recursos literarios</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.40</span> <span class="falta">Falta: el recuadro principal no nombra ni define ninguna figura literaria; el glosario final (pp. 319-320) solo define &#x27;Recursos lingüísticos&#x27; y &#x27;Recursos no lingüísticos&#x27;, que no son recursos literarios…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Temas, tópicos y motivos literarios universales</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.301</span> <span class="falta">Falta: el libro nunca usa &#x27;tópico&#x27; ni &#x27;motivo literario&#x27; como conceptos, ni habla de la universalidad de los temas…</span></div>
+            </li></ul>
+        </article><article class="card">
+          <header class="card-h">
+            <h3>Matemática</h3>
+            <div class="camino-res">10 unidades · 31 lecciones · 10 con exigencia (32%)</div>
+          </header>
+          <div class="mini"><div class="minifill" style="width:32%"></div></div>
+          <span class="okline">✓ 1 de 4 conocimientos bien desarrollados</span>
+          <ul class="kns"><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Cuartiles y quintiles, planilla de cálculo</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.17</span> <span class="falta">Falta: El material menciona los cuartiles como medidas de posición pero no desarrolla su cálculo ni su uso en planillas de cálculo, limitándose a una introducción teórica.</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Elementos de la geometría básica para el dibujo técnico</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.196</span> <span class="falta">Falta: el dibujo técnico propiamente tal: instrumentos (regla, compás, escuadra), escalas, acotación, proyección ortogonal e isométrica, croquis y vistas…</span></div>
+            </li><li class="kn par">
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Función exponencial, planilla de cálculo</span></div>
+              <div class="kn-d"><span class="dst">Lo que hay: p.37</span> <span class="falta">Falta: el material define formalmente la función exponencial y su forma algebraica, pero no desarrolla el uso de planillas de cálculo para su modelamiento o análisis.</span></div>
+            </li></ul>
+        </article></div>
+    </section>
+
+  <p class="pie">
+    🔴 "no está" y 🟠 "otro curso" traen dónde SÍ está — hoy los 27 tienen destino y
+    ninguno queda sin libro. 🟡 "incompleto" trae qué parte falta, con las palabras del lector
+    que revisó el libro. Un mismo conocimiento aparece en varias materias del mismo casillero
+    EPJA (ciencias es UN casillero repartido en tres libros): lo que cuenta para el alumno es
+    que esté bien en alguna. Cursos 1º-5º básico y materias apagadas quedan fuera.
+  </p>
+</div>
