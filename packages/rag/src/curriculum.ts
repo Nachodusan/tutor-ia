@@ -113,9 +113,7 @@ export function pilaresDe(
  *
  * Existe porque `pilaresDe` solo puede destacar lo que el libro sí trae, y así
  * el hueco es INVISIBLE: el alumno recorre su camino entero sin enterarse de que
- * hay algo que le van a exigir y que su tomo no cubre. La información ya estaba
- * en `curriculum_map` (los veredictos `no_esta` y `otro_año`); la pantalla la
- * escondía.
+ * hay algo que le van a exigir y que su tomo no cubre.
  */
 export interface Pendiente {
   item: string;
@@ -125,117 +123,156 @@ export interface Pendiente {
   /** Dónde SÍ está, si algún otro libro del corpus lo cubre. */
   enHermana: {
     materia: string;
+    /** El TOMO concreto (título del documento), cuando se conoce. Sin esto la
+     *  página miente: "Física 1º Medio p.17" era la p.17 del Módulo 6 EPJA. */
+    tomo: string | null;
     paginaDesde: number | null;
     /**
-     * Qué tan lejos hay que ir a buscarlo. Cada escalón se le dice distinto al
-     * alumno: no es lo mismo "está en tu libro de Química" que "está en el de 6º".
      *   'materia'      otra materia del MISMO curso (Física → Química)
      *   'curso_vecino' el otro año del MISMO nivel EPJA (1º → 2º Medio)
      *   'otro_nivel'   la misma asignatura en otro nivel (7º → 6º)
      */
     donde: "materia" | "curso_vecino" | "otro_nivel";
+    /** true = esa ubicación NO desarrolla el ítem completo (veredicto parcial,
+     *  o quedan componentes sin destino). El consumidor dice "está a medias en…"
+     *  y NUNCA "ya lo tiene, no hay nada que conseguir". */
+    aMedias: boolean;
   } | null;
+  /** Los componentes faltantes viven en varios tomos distintos: un puntero
+   *  único mentiría. El consumidor muestra el checklist por componente. */
+  repartido: boolean;
+}
+
+interface CompCobertura {
+  c: string; ok: boolean; pag: number | null;
+  en?: { materia: string; doc?: string | null; pag: number | null };
 }
 
 /**
- * Lo que le van a exigir a este alumno y su libro no trae.
+ * Lo que le van a exigir a este alumno y su libro no trae, con el puntero de
+ * dónde sí está DERIVADO DE LOS COMPONENTES, no de otra tubería.
  *
- * ── Por qué mira a las materias HERMANAS ────────────────────────────────────
- * El plan EPJA tiene UN casillero "Ciencias Naturales" y el sistema regular lo
- * parte en tres libros. Por eso la misma exigencia se mapeó contra Biología,
- * Física y Química, y cada libro cubre su tercio: los otros dos quedan
- * `no_esta`. Medido el 2026-08-23: de las 5 materias vivas con menos pilares,
- * las 5 son de ciencias, y Física 1º Medio tiene 1 pilar en 88 lecciones con 4
- * de sus 5 huecos cubiertos por un tomo hermano que el alumno también tiene.
+ * ── El bug que esta derivación reemplaza ────────────────────────────────────
+ * La cabecera salía del pagina_desde a nivel ítem de la fila hermana del mapa,
+ * y los punteros por componente salían de buscar-componentes: dos tuberías que
+ * nunca se cruzaron. Revisadas las 8 entradas del informe que tenían cabecera y
+ * desglose: las 8 se contradecían (0 coincidencias). Y encima la cabecera
+ * imprimía la MATERIA con la página de un MÓDULO EPJA colgado de ella —
+ * "Física 1º Medio p.17" era el Módulo 6 de reproducción y herencia—, y
+ * admitía como destino ubicaciones marcadas parcial para el mismo ítem
+ * ("Biodiversidad… ya lo tiene — CN 6º p.81" cuando esa página figura
+ * incompleta dos pantallas más arriba).
  *
- * Decirle "esto no está" a secas sería falso y desalentador. Decirle "esto está
- * en tu libro de Química, página 40" es la misma verdad, accionable.
+ * ── La regla, determinista y en código ──────────────────────────────────────
+ *  1. Si el ítem tiene cobertura por componentes con destinos anotados:
+ *     · todos los componentes faltantes apuntan al MISMO tomo → ese tomo,
+ *       página más baja;
+ *     · repartidos en varios tomos → sin puntero único (repartido: true), el
+ *       consumidor muestra el checklist;
+ *     · si el destino está marcado parcial para este ítem, o quedan
+ *       componentes sin destino → aMedias: true.
+ *  2. Sin cobertura (niveles sin programa publicado): la búsqueda por filas
+ *     hermanas de siempre, con dos arreglos — el veredicto se rankea explícito
+ *     (nada de confiar en el orden alfabético de un text), el tomo sale de
+ *     document_id, y parcial se marca aMedias en vez de venderse como completo.
  *
- * ── Por qué esto NO es un pilar más ─────────────────────────────────────────
- * Los pilares se cruzan por RANGO DE PÁGINAS, y las páginas son de CADA tomo: la
- * página 40 de Química no es la 40 de Física. Meter los tramos de la hermana en
- * `tramosCurriculares` marcaría lecciones al azar. Por eso esto va aparte, al
- * final del camino, nombrando el libro.
- *
- * `otro_año` se informa pero se distingue: ese contenido está en el tomo del
- * curso vecino, que es un dato distinto de "no existe en ningún lado".
+ * No se usa el LLM: la información correcta ya está en la base, y esto tiene
+ * que ser reproducible — el bug se encontró con una consulta.
  */
 export async function pendientesDe(subjectId: string): Promise<Pendiente[]> {
   const sql = getSql();
-  return await sql<Pendiente[]>`
+
+  const faltan = await sql<{
+    item: string; asignatura: string; motivo: string; cobertura: CompCobertura[] | null;
+  }[]>`
+    select cm.item, coalesce(cm.asignatura, '') asignatura, cm.verificado motivo,
+           cm.componentes_cobertura cobertura
+    from curriculum_map cm
+    where cm.subject_id = ${subjectId}::uuid
+      and cm.metodo = 'lector-v1'
+      and cm.verificado in ('no_esta', 'otro_año')
+    order by cm.item`;
+  if (faltan.length === 0) return [];
+
+  // Filas hermanas: el fallback, y también el veredicto del destino para aMedias.
+  const hermanas = await sql<{
+    item: string; materia: string; verificado: string; pagina_desde: number | null;
+    tomo: string | null; donde: string; rango: number;
+  }[]>`
     with yo as (
-      select s.id, s.area, s.family, (select max(d.grade) from documents d where d.subject_id = s.id) curso
+      select s.id, s.area, s.family,
+             (select max(d.grade) from documents d where d.subject_id = s.id) curso
       from subjects s where s.id = ${subjectId}::uuid
-    ),
-    -- Lo que ESTA materia declara que no tiene.
-    faltan as (
-      select cm.item, coalesce(cm.asignatura, '') asignatura, cm.verificado motivo
-      from curriculum_map cm
-      where cm.subject_id = ${subjectId}::uuid
-        and cm.metodo = 'lector-v1'
-        and cm.verificado in ('no_esta', 'otro_año')
-    ),
-    -- Dónde sí está, en TRES ESCALONES de más cerca a más lejos. Cada uno se le
-    -- dice distinto al alumno, y por eso se distinguen en vez de unificarse.
-    --
-    --  1. Otra materia del MISMO CURSO. El plan EPJA tiene un solo casillero
-    --     "Ciencias Naturales" y el sistema regular lo parte en tres tomos: el
-    --     hueco de Física suele estar en el de Química, que el alumno tiene.
-    --
-    --  2. El otro año del MISMO NIVEL EPJA. El nivel comprime dos años del
-    --     sistema regular — "Nivel 1 Media" son 1º y 2º juntos—, así que ese
-    --     libro también le corresponde.
-    --
-    -- El nivel se deduce del CURSO (nivel_epja), no de la columna nivel de la
-    -- fila: esa columna dice qué nivel EXIGE el conocimiento, y una fila puede
-    -- exigirlo en Nivel 3 y estar ubicada en un libro de 6º, que es Nivel 2.
-    -- Mirando la columna, ese caso se anunciaba como "tu nivel abarca los dos
-    -- años", que para un alumno de 7º frente al libro de 6º es falso.
-    --
-    --  3. La misma asignatura en OTRO NIVEL. El EPJA pide en Nivel 3 Básica
-    --     cosas que el sistema regular enseña en 6º: "Sistema solar y
-    --     estructuras cósmicas" no está en ningún libro de 7º ni 8º y sí en el
-    --     tomo EPJA de Nivel 2, con una unidad entera desde la página 148. La
-    --     cascada de retrieval ya lo alcanza (misma family); lo que faltaba
-    --     era decírselo al alumno en vez de mandarlo a pedirle material al profe.
-    --
-    -- Gana el escalón más cercano, y a igualdad de escalón, correcto sobre
-    -- parcial.
-    hermanas as (
-      select cm.item, s.name materia, cm.pagina_desde,
-             case
-               when (select max(d.grade) from documents d where d.subject_id = s.id) = yo.curso
-                 then 'materia'
-               when nivel_epja((select max(d.grade) from documents d where d.subject_id = s.id))
-                    = nivel_epja(yo.curso)
-                 then 'curso_vecino'
-               else 'otro_nivel'
-             end donde,
-             row_number() over (
-               partition by cm.item
-               order by case
-                 when (select max(d.grade) from documents d where d.subject_id = s.id) = yo.curso then 1
-                 when nivel_epja((select max(d.grade) from documents d where d.subject_id = s.id))
-                      = nivel_epja(yo.curso) then 2
-                 else 3 end,
-                 cm.verificado, cm.pagina_desde
-             ) rn
-      from curriculum_map cm
-      join subjects s on s.id = cm.subject_id
-      join yo on s.id <> yo.id
-      where cm.metodo = 'lector-v1'
-        and cm.verificado in ('correcto', 'parcial')
-        and s.disabled_at is null
-        -- Del mismo casillero curricular o de la misma asignatura. Sin esto
-        -- entraría un ítem homónimo de otra asignatura.
-        and (s.area = yo.area or s.family = yo.family)
     )
-    select f.item, f.asignatura, f.motivo,
-           case when h.materia is null then null
-                else jsonb_build_object('materia', h.materia, 'paginaDesde', h.pagina_desde,
-                                        'donde', h.donde)
-           end as "enHermana"
-    from faltan f
-    left join hermanas h on h.item = f.item and h.rn = 1
-    order by (h.materia is null) desc, f.item`;
+    select cm.item, s.name materia, cm.verificado, cm.pagina_desde,
+           (select d.title from documents d where d.id = cm.document_id) tomo,
+           case
+             when (select max(d.grade) from documents d where d.subject_id = s.id) = yo.curso
+               then 'materia'
+             when nivel_epja((select max(d.grade) from documents d where d.subject_id = s.id))
+                  = nivel_epja(yo.curso)
+               then 'curso_vecino'
+             else 'otro_nivel'
+           end donde,
+           case
+             when (select max(d.grade) from documents d where d.subject_id = s.id) = yo.curso then 1
+             when nivel_epja((select max(d.grade) from documents d where d.subject_id = s.id))
+                  = nivel_epja(yo.curso) then 2
+             else 3
+           end rango
+    from curriculum_map cm
+    join subjects s on s.id = cm.subject_id
+    join yo on s.id <> yo.id
+    where cm.metodo = 'lector-v1'
+      and cm.verificado in ('correcto', 'parcial')
+      and s.disabled_at is null
+      and (s.area = yo.area or s.family = yo.family)`;
+
+  const veredictoDe = (item: string, materia: string): string | null =>
+    hermanas.find((h) => h.item === item && h.materia === materia)?.verificado ?? null;
+  const dondeDe = (item: string, materia: string): "materia" | "curso_vecino" | "otro_nivel" => {
+    const h = hermanas.find((x) => x.item === item && x.materia === materia);
+    return (h?.donde as "materia" | "curso_vecino" | "otro_nivel") ?? "otro_nivel";
+  };
+
+  const out: Pendiente[] = [];
+  for (const f of faltan) {
+    const faltantes = (f.cobertura ?? []).filter((x) => !x.ok);
+    const conDestino = faltantes.filter((x) => x.en);
+
+    if (conDestino.length > 0) {
+      // ── Derivado de los componentes ──
+      const llaves = new Set(conDestino.map((x) => `${x.en!.materia}|${x.en!.doc ?? ""}`));
+      if (llaves.size > 1) {
+        out.push({ item: f.item, asignatura: f.asignatura, motivo: f.motivo,
+          enHermana: null, repartido: true });
+        continue;
+      }
+      const materia = conDestino[0]!.en!.materia;
+      const tomo = conDestino[0]!.en!.doc ?? null;
+      const pags = conDestino.map((x) => x.en!.pag).filter((p): p is number => p != null);
+      const aMedias = veredictoDe(f.item, materia) === "parcial"
+        || conDestino.length < faltantes.length;
+      out.push({ item: f.item, asignatura: f.asignatura, motivo: f.motivo,
+        enHermana: { materia, tomo, paginaDesde: pags.length ? Math.min(...pags) : null,
+          donde: dondeDe(f.item, materia), aMedias },
+        repartido: false });
+      continue;
+    }
+
+    // ── Fallback sin cobertura: la mejor hermana, con rankeo explícito ──
+    const cands = hermanas.filter((h) => h.item === f.item)
+      .sort((a, b) => a.rango - b.rango
+        || (a.verificado === "correcto" ? 0 : 1) - (b.verificado === "correcto" ? 0 : 1)
+        || (a.pagina_desde ?? 1e9) - (b.pagina_desde ?? 1e9));
+    const h = cands[0];
+    out.push({ item: f.item, asignatura: f.asignatura, motivo: f.motivo,
+      enHermana: h ? { materia: h.materia, tomo: h.tomo, paginaDesde: h.pagina_desde,
+        donde: h.donde as "materia" | "curso_vecino" | "otro_nivel",
+        aMedias: h.verificado === "parcial" } : null,
+      repartido: false });
+  }
+  out.sort((a, b) => Number(b.enHermana === null && !b.repartido) - Number(a.enHermana === null && !a.repartido)
+    || a.item.localeCompare(b.item));
+  return out;
 }

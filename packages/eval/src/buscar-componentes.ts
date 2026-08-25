@@ -130,7 +130,9 @@ async function main(): Promise<void> {
           select componentes_cobertura cob from curriculum_map where id = ${id}::uuid`;
         if (!fila?.cob) continue;
         const cob = fila.cob.map((x) =>
-          x.c === f.c && !x.ok ? { ...x, en: { materia, pag: frag.pageStart ?? null } } : x);
+          x.c === f.c && !x.ok
+            ? { ...x, en: { materia, doc: (frag.documentTitle ?? null), pag: frag.pageStart ?? null } }
+            : x);
         await sql`
           update curriculum_map set componentes_cobertura = ${toJson(sql, cob)}, updated_at = now()
           where id = ${id}::uuid`;

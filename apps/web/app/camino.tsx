@@ -657,12 +657,20 @@ export function CaminoView({
                         dice explícito para que no parezca que lo mandan a
                         estudiar de un curso que no le toca. */}
                   <span style={{ display: "block", fontSize: 12, color: C.dim, marginTop: 3, lineHeight: 1.4 }}>
-                    {p.enHermana
+                    {p.repartido
+                      ? "Está repartido en varios de tus libros — mirá el detalle por componente."
+                      : p.enHermana
                       ? (() => {
-                          const donde = <b style={{ color: C.okTx }}>{p.enHermana!.materia}</b>;
-                          const pag = p.enHermana!.paginaDesde ? `, página ${p.enHermana!.paginaDesde}` : "";
-                          if (p.enHermana!.donde === "materia") return <>Está en tu libro de {donde}{pag}.</>;
-                          if (p.enHermana!.donde === "curso_vecino") return <>Tu nivel abarca los dos años: está en {donde}{pag}.</>;
+                          const e = p.enHermana!;
+                          {/* El TOMO manda sobre la materia cuando se conoce: "Física 1º
+                              Medio p.17" era en realidad la p.17 del Módulo 6 EPJA de
+                              reproducción y herencia — la materia con la página del
+                              módulo es una dirección falsa. */}
+                          const donde = <b style={{ color: C.okTx }}>{e.tomo ?? e.materia}</b>;
+                          const pag = e.paginaDesde ? `, página ${e.paginaDesde}` : "";
+                          if (e.aMedias) return <>Está <b>a medias</b> en {donde}{pag} — mirá qué parte en el detalle.</>;
+                          if (e.donde === "materia") return <>Está en tu libro: {donde}{pag}.</>;
+                          if (e.donde === "curso_vecino") return <>Tu nivel abarca los dos años: está en {donde}{pag}.</>;
                           return <>Ningún libro de tu curso lo trae; sí {donde}{pag}. Pedíselo al tutor y te lo explica desde ahí.</>;
                         })()
                       : p.motivo === "otro_año"

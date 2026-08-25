@@ -33,7 +33,17 @@ export interface Pendiente {
   asignatura: string;
   /** 'no_esta' = no está en ningún lado del tomo · 'otro_año' = está, en la mitad del otro curso. */
   motivo: string;
-  enHermana: { materia: string; paginaDesde: number | null; donde: "materia" | "curso_vecino" | "otro_nivel" } | null;
+  enHermana: {
+    materia: string;
+    /** El tomo concreto (título del documento), cuando se conoce. */
+    tomo: string | null;
+    paginaDesde: number | null;
+    donde: "materia" | "curso_vecino" | "otro_nivel";
+    /** true = esa ubicación no desarrolla el ítem completo: "está a medias en…". */
+    aMedias: boolean;
+  } | null;
+  /** Los componentes faltantes viven en varios tomos: sin puntero único. */
+  repartido: boolean;
 }
 export interface PlanItem { n: number; key: string; title: string; focus: string; points?: string[]; unit: number | null; lesson: number | null; p0: number | null; p1: number | null;
   /** Lo que el Estado exige en este tramo. Vacío = el libro lo trae igual, pero

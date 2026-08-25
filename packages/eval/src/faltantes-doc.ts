@@ -49,7 +49,7 @@ interface Fila {
   /** La descomposición oficial del programa EPJA y su cobertura medida. */
   componentes: string[] | null;
   cobertura: { c: string; ok: boolean; pag: number | null;
-    en?: { materia: string; pag: number | null } }[] | null;
+    en?: { materia: string; doc?: string | null; pag: number | null } }[] | null;
 }
 
 /**
@@ -103,12 +103,17 @@ async function main(): Promise<void> {
 
   // Dónde sí está cada hueco, con el mismo criterio que ve el alumno en su
   // camino: no tiene sentido pedirle a alguien que consiga material que ya tiene.
-  const donde = new Map<string, { materia: string; pagina: number | null; donde: string }>();
+  const donde = new Map<string, {
+    materia: string; tomo: string | null; pagina: number | null;
+    donde: string; aMedias: boolean; repartido: boolean;
+  }>();
   for (const sid of new Set(filas.map((f) => f.subject_id))) {
     for (const p of await pendientesDe(sid)) {
-      if (p.enHermana) {
+      if (p.enHermana || p.repartido) {
         donde.set(`${sid}|${p.item}`, {
-          materia: p.enHermana.materia, pagina: p.enHermana.paginaDesde, donde: p.enHermana.donde,
+          materia: p.enHermana?.materia ?? "", tomo: p.enHermana?.tomo ?? null,
+          pagina: p.enHermana?.paginaDesde ?? null, donde: p.enHermana?.donde ?? "",
+          aMedias: p.enHermana?.aMedias ?? false, repartido: p.repartido,
         });
       }
     }
@@ -180,11 +185,20 @@ async function main(): Promise<void> {
         L.push(`### ${SELLO[f.verificado] ?? f.verificado} · ${f.item.replace(/\.$/, "")}\n`);
         if (f.asignatura) L.push(`*Asignatura del currículum: ${f.asignatura}*\n`);
         const d = donde.get(`${f.subject_id}|${f.item}`);
-        if (d) {
+        if (d?.repartido) {
+          L.push(`**Está repartido en varios de sus libros** — ver el detalle por componente.\n`);
+        } else if (d) {
           const como = d.donde === "materia"
             ? "en otra materia del mismo curso"
             : d.donde === "curso_vecino" ? "en el otro año del mismo nivel EPJA" : "en otro nivel";
-          L.push(`**Ya lo tiene el alumno** — ${d.materia}${d.pagina ? `, página ${d.pagina}` : ""} (${como}). No hay nada que conseguir.\n`);
+          // El TOMO manda sobre la materia: la materia con la página de un
+          // módulo colgado de ella es una dirección falsa.
+          const lugar = `${d.tomo ?? d.materia}${d.pagina ? `, página ${d.pagina}` : ""}`;
+          // ⛔ "Ya lo tiene / no hay nada que conseguir" SOLO si la ubicación
+          // desarrolla el ítem completo. "A medias" es otra afirmación.
+          L.push(d.aMedias
+            ? `**Está a medias** en ${lugar} (${como}) — ver qué parte en el detalle.\n`
+            : `**Ya lo tiene el alumno** — ${lugar} (${como}). No hay nada que conseguir.\n`);
         } else if (f.verificado !== "parcial") {
           L.push(`**No está en ningún libro del alumno.** Acá sí hace falta conseguir material.\n`);
         }
@@ -215,6 +229,43 @@ async function main(): Promise<void> {
         }
       }
     }
+  }
+
+  /**
+   * CHEQUEO DE COHERENCIA — este bug no puede repetirse en silencio.
+   *
+   * Revisadas a mano las 8 entradas con cabecera y desglose por componente:
+   * las 8 se contradecían (la cabecera salía de otra tubería). Ahora la
+   * cabecera se DERIVA de los componentes, y esto verifica esa derivación en
+   * cada generación: para cada ítem con cobertura y puntero único, el par
+   * (tomo-o-materia, página) de la cabecera tiene que coincidir con el destino
+   * de página más baja de sus componentes faltantes. Si no coincide, el
+   * documento NO se escribe.
+   */
+  const errores: string[] = [];
+  for (const f of filas) {
+    if (f.verificado === "parcial") continue;
+    const d = donde.get(`${f.subject_id}|${f.item}`);
+    if (!d || d.repartido || !f.cobertura?.length) continue;
+    const dest = f.cobertura.filter((x) => !x.ok && x.en);
+    if (dest.length === 0) continue; // puntero por fallback: no hay contra qué chequear
+    const materias = new Set(dest.map((x) => x.en!.materia));
+    if (materias.size !== 1 || !materias.has(d.materia)) {
+      errores.push(`${f.materia} · ${f.item.slice(0, 60)}: cabecera ${d.materia} vs componentes ${[...materias].join("/")}`);
+      continue;
+    }
+    const pags = dest.map((x) => x.en!.pag).filter((p): p is number => p != null);
+    if (pags.length && d.pagina !== Math.min(...pags)) {
+      errores.push(`${f.materia} · ${f.item.slice(0, 60)}: cabecera p.${d.pagina} vs componentes p.${Math.min(...pags)}`);
+    }
+    if (!d.aMedias && dest.length < f.cobertura.filter((x) => !x.ok).length) {
+      errores.push(`${f.materia} · ${f.item.slice(0, 60)}: dice completo con componentes sin destino`);
+    }
+  }
+  if (errores.length) {
+    console.error(`\n⛔ ${errores.length} cabecera(s) no coinciden con sus componentes — NO se escribe:`);
+    for (const e of errores) console.error(`   · ${e}`);
+    process.exit(1);
   }
 
   const fs = await import("node:fs/promises");
