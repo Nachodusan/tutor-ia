@@ -361,3 +361,101 @@ export async function temaLocalPorPregunta(pregunta: string): Promise<{ item: st
   }
   return mejorScore >= 0.15 ? { item: items[mejor]! } : null;
 }
+
+/** Un conocimiento del programa que el libro NO desarrolla del todo, listo para
+ *  ser una parada del camino. Ver `programaPendienteDe`. */
+export interface ParadaPendiente {
+  item: string;
+  /** 'no_esta' · 'otro_año' · 'parcial' */
+  estado: string;
+  /** Clave estable para el progreso. No colisiona con las de `book_sections`
+   *  (que son hash de documento+ord+título) porque lleva prefijo propio. */
+  key: string;
+  /** Dónde SÍ está, derivado de los componentes. Ver `pendientesDe`. */
+  enHermana: Pendiente["enHermana"];
+  repartido: boolean;
+  /** Los componentes oficiales que faltan, para que la parada diga QUÉ falta. */
+  faltan: string[];
+}
+
+/**
+ * EL PROGRAMA COMPLETO como paradas: todo lo que el Estado exige y este libro no
+ * desarrolla del todo.
+ *
+ * ── Por qué ────────────────────────────────────────────────────────────────
+ * Hasta ahora el camino era EL LIBRO con lo exigido marcado encima: lo que el
+ * libro no traía vivía en un bloque al final, fuera del recorrido. Eso deja al
+ * alumno recorriendo un camino que se siente completo mientras le falta parte
+ * del programa. Ahora esos conocimientos son PARADAS: se ven, se cuentan y se
+ * pueden abrir.
+ *
+ * ── Qué NO hace ────────────────────────────────────────────────────────────
+ * No les inventa páginas ni los intercala entre las lecciones del libro. No
+ * están en este tomo: meterlos en la secuencia del índice sería fingir que sí.
+ * Van al final, en su propia unidad, con la etiqueta de por qué están ahí.
+ *
+ * `correcto` no aparece: eso ya está en el camino, marcado como pilar sobre la
+ * lección que lo enseña.
+ */
+export async function programaPendienteDe(subjectId: string): Promise<ParadaPendiente[]> {
+  const sql = getSql();
+  const filas = await sql<{
+    item: string; verificado: string; cobertura: CompCobertura[] | null;
+  }[]>`
+    select cm.item, cm.verificado, cm.componentes_cobertura cobertura
+    from curriculum_map cm
+    where cm.subject_id = ${subjectId}::uuid
+      and cm.metodo = 'lector-v1'
+      and cm.verificado in ('no_esta', 'otro_año', 'parcial')
+    order by
+      case cm.verificado when 'no_esta' then 0 when 'otro_año' then 1 else 2 end,
+      cm.item`;
+  if (filas.length === 0) return [];
+
+  // El puntero derivado ya lo calcula `pendientesDe` para no_esta/otro_año; para
+  // `parcial` el destino sale de los componentes con la misma regla.
+  const pend = await pendientesDe(subjectId);
+  const porItem = new Map(pend.map((p) => [p.item, p]));
+
+  return filas.map((f) => {
+    const p = porItem.get(f.item);
+    const faltantes = (f.cobertura ?? []).filter((x) => !x.ok);
+    let enHermana = p?.enHermana ?? null;
+    let repartido = p?.repartido ?? false;
+    if (!p && faltantes.length) {
+      // Fila `parcial`: misma derivación que en pendientesDe, sin repetir la
+      // consulta de hermanas — el destino vive en los propios componentes.
+      const conDestino = faltantes.filter((x) => x.en);
+      const llaves = new Set(conDestino.map((x) => `${x.en!.materia}|${x.en!.doc ?? ""}`));
+      if (llaves.size > 1) repartido = true;
+      else if (conDestino.length) {
+        const pags = conDestino.map((x) => x.en!.pag).filter((n): n is number => n != null);
+        enHermana = {
+          materia: conDestino[0]!.en!.materia,
+          tomo: conDestino[0]!.en!.doc ?? null,
+          paginaDesde: pags.length ? Math.min(...pags) : null,
+          donde: "otro_nivel",
+          // Un `parcial` siempre está a medias por definición.
+          aMedias: true,
+        };
+      }
+    }
+    return {
+      item: f.item,
+      estado: f.verificado,
+      key: claveParada(subjectId, f.item),
+      enHermana,
+      repartido,
+      faltan: faltantes.map((x) => x.c),
+    };
+  });
+}
+
+/** Clave de progreso de una parada del programa. Prefijo `p` + hash, para no
+ *  colisionar con las claves `s…` de `book_sections`. */
+function claveParada(subjectId: string, item: string): string {
+  const base = `${subjectId}|${item}`;
+  let h = 0;
+  for (let i = 0; i < base.length; i++) h = (Math.imul(31, h) + base.charCodeAt(i)) | 0;
+  return `p${(h >>> 0).toString(36)}`;
+}

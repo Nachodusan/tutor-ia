@@ -1,5 +1,5 @@
 import { buildStudyPlan, SinEstructura, logDecision } from "@tutor-ia/core";
-import { planSizes , pilaresDe, tramosCurriculares, pendientesDe } from "@tutor-ia/rag";
+import { planSizes , pilaresDe, tramosCurriculares, pendientesDe, programaPendienteDe } from "@tutor-ia/rag";
 import { getSql, toJson } from "@tutor-ia/db";
 import { rechazarMateriaApagada, requireCursoAbierto } from "@/lib/auth";
 
@@ -76,8 +76,40 @@ export async function GET(req: Request) {
   // de este. Se nombra el libro y listo.
   const pendientes = await pendientesDe(subjectId);
 
+  /**
+   * EL PROGRAMA COMPLETO EN EL CAMINO. Lo que el Estado exige y este libro no
+   * desarrolla del todo entra como una unidad más, al final: se ve, se cuenta y
+   * se puede abrir. No se intercala entre las lecciones del libro ni se le
+   * inventan páginas — no está en este tomo, y fingir una posición sería
+   * mentir sobre dónde estudiarlo.
+   *
+   * Va DESPUÉS del cache y no adentro: es dato derivado de `curriculum_map`,
+   * que se sigue corrigiendo, igual que los pilares. Guardarlo en el plan lo
+   * congelaría en el estado del mapa del día que se armó.
+   */
+  const programa = await programaPendienteDe(subjectId);
+  const unidadPrograma = programa.length
+    ? [{
+        n: conPilares.length + 1,
+        key: `programa-${subjectId}`,
+        title: "Lo que el programa pide y tu libro no cubre",
+        focus: `${programa.length} ${programa.length === 1 ? "contenido que el Estado exige y este libro no desarrolla del todo" : "contenidos que el Estado exige y este libro no desarrolla del todo"}. Se pueden estudiar igual: tocá cada uno.`,
+        points: [] as string[],
+        unit: null, lesson: null, p0: null, p1: null,
+        documentId: null, subjectId,
+        pilares: [],
+        esPrograma: true,
+        lecciones: programa.map((x) => ({
+          key: x.key, title: x.item.replace(/\.$/, ""),
+          p0: null, p1: null, unit: null, lesson: null, pilares: [],
+          estado: x.estado, enHermana: x.enHermana, repartido: x.repartido,
+          faltan: x.faltan,
+        })),
+      }]
+    : [];
+
   return Response.json({
-    items: conPilares,
+    items: [...conPilares, ...unidadPrograma],
     pendientes,
     puedeArmarse,
     doneKeys: hechos.map((r) => r.topic_key),

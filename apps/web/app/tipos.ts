@@ -51,7 +51,18 @@ export interface PlanItem { n: number; key: string; title: string; focus: string
   pilares?: Pilar[];
   /** Los puntos de control de la unidad. Vacío cuando el libro no tiene índice
    *  y la unidad no se desglosa, o cuando el ítem ya es una lección. */
-  lecciones?: { key: string; title: string; p0: number; p1: number; unit: number | null; lesson: number | null; pilares?: Pilar[] }[] }
+  lecciones?: {
+    key: string; title: string; p0: number | null; p1: number | null;
+    unit: number | null; lesson: number | null; pilares?: Pilar[];
+    /** Solo en la unidad del PROGRAMA: por qué esta parada está pendiente. */
+    estado?: string;
+    enHermana?: Pendiente["enHermana"];
+    repartido?: boolean;
+    faltan?: string[];
+  }[];
+  /** true = la unidad sintética con lo que el programa pide y el libro no trae.
+   *  Sus paradas no tienen páginas: no están en este tomo. */
+  esPrograma?: boolean }
 /** `correct`/`explain` NO llegan con la prueba: la clave vive en el servidor y
  *  se revela recién en la respuesta del submit (antes viajaba en el payload y
  *  cualquiera la veía en la pestaña Red). */

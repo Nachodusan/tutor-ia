@@ -112,7 +112,15 @@ export default function CaminoPage() {
       <CaminoView
         items={plan} done={done} scores={scores} subject={subject} loading={planLoading}
         pendientes={pendientes}
-        onAbrir={(it) => router.push(`/materia/${id}/camino/${it.key}`)}
+        onAbrir={(it) =>
+          /* La parada del PROGRAMA no tiene lección que abrir —no está en este
+             libro—, así que va al tutor con el tema como pregunta. El tutor sí
+             puede enseñarlo: si el material está en otro libro del alumno la
+             cascada lo alcanza, y si no está en ninguno responde en modo
+             general con su sello. Mandarla a /camino/<key> daría un 404. */
+          it.esPrograma
+            ? router.push(`/materia/${id}/chat?${new URLSearchParams({ q: `Explicame ${it.title}` })}`)
+            : router.push(`/materia/${id}/camino/${it.key}`)}
         onExamen={() => router.push(`/materia/${id}/prueba`)}
         testLoading={false}
         onRegen={generarPlan}

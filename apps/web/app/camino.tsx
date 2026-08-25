@@ -430,14 +430,25 @@ export function CaminoView({
           // sigue siendo tocable (acá no se bloquea a nadie), pero se lee como
           // "todavía no llegaste" de un vistazo.
           const futuro = !hecho && !esActual;
-          const fondo = hecho ? (bien ? C.ok : C.warn) : esActual ? C.accent : C.panel;
-          const tinta = hecho || esActual ? "#fff" : C.dim;
+          /* La unidad del PROGRAMA no es una unidad del libro: es lo que el
+             Estado exige y este tomo no desarrolla. Va en coral —el color que
+             el bloque de pendientes ya usa para eso— para que se lea distinta
+             sin necesidad de tocarla. */
+          const esProgUnidad = p.item.esPrograma === true;
+          const fondo = hecho ? (bien ? C.ok : C.warn)
+            : esProgUnidad ? C.coral : esActual ? C.accent : C.panel;
+          const tinta = hecho || esActual || esProgUnidad ? "#fff" : C.dim;
           return (
             <div key={p.item.key}>
               <div style={etiquetaPos}>
                 <span style={{ fontFamily: FONT.round, fontWeight: esActual ? 800 : 700, fontSize: esActual ? 13.5 : 12.5, lineHeight: 1.25, color: futuro || (hecho && !esActual) ? C.dim : C.text }}>
                   {p.item.title}
                 </span>
+                {esProgUnidad && (
+                  <span style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 10, letterSpacing: .4, textTransform: "uppercase", color: "#fff", background: C.coral, border: `2px solid ${C.ink}`, borderRadius: 8, padding: "2px 7px", whiteSpace: "nowrap" }}>
+                    Del programa
+                  </span>
+                )}
                 {/* Chapa y nota van con el título, no sueltas junto al nodo:
                     ahí también las cruzaba el trazo. */}
                 {esActual && !hecho && (
@@ -528,20 +539,45 @@ export function CaminoView({
                 // tramo que llega a la 6.
                 const q = puntoEnTramo(k, t, amp, ys);
                 const lh = done.includes(l.key);
+                /* PARADA DEL PROGRAMA: lo que el Estado exige y este libro no
+                   desarrolla. Se distingue del punto de lección porque no es lo
+                   mismo "andá a leer la página 40" que "esto te lo van a exigir
+                   y acá no está": el color del estado (coral si no está, sol si
+                   está incompleto) y el símbolo lo dicen sin abrir nada. */
+                const esProg = p.item.esPrograma === true;
+                const colProg = l.estado === "parcial" ? C.sun : C.coral;
                 // La PRÓXIMA lección de la unidad actual late en cobalto, igual
                 // que el nodo grande: es la respuesta a "¿y ahora qué toco?".
                 const sig = esActual && !lh && lecciones.slice(0, j).every((x) => done.includes(x.key));
                 return (
-                  <button key={l.key} title={l.title} aria-label={`Lección ${j + 1}: ${l.title}`}
+                  <button key={l.key}
+                    title={esProg
+                      ? `${l.estado === "parcial" ? "Incompleto en tu libro" : "No está en tu libro"}: ${l.title}` +
+                        (l.enHermana ? ` — está en ${l.enHermana.tomo ?? l.enHermana.materia}${l.enHermana.paginaDesde ? ` p.${l.enHermana.paginaDesde}` : ""}` : "")
+                      : l.title}
+                    aria-label={esProg
+                      ? `${l.estado === "parcial" ? "Contenido incompleto" : "Contenido que no está en tu libro"}: ${l.title}`
+                      : `Lección ${j + 1}: ${l.title}`}
                     className={sig ? "camino-sig" : undefined}
-                    onClick={() => onAbrir({ ...p.item, key: l.key, title: l.title, p0: l.p0, p1: l.p1, unit: l.unit, lesson: l.lesson, lecciones: undefined })}
+                    onClick={() => onAbrir({
+                      ...p.item, key: l.key, title: l.title, p0: l.p0, p1: l.p1,
+                      unit: l.unit, lesson: l.lesson, lecciones: undefined,
+                      // La parada del programa NO tiene página de la que salga
+                      // una lección: se abre en el tutor con el tema. Quien
+                      // navega decide, mirando `esPrograma`.
+                      esPrograma: p.item.esPrograma,
+                    })}
                     style={{
                       position: "absolute", top: q.y, left: `calc(50% + ${q.x}px)`,
                       transform: "translate(-50%,-50%)",
                       width: PUNTO, height: PUNTO, borderRadius: "50%", padding: 0,
-                      background: lh ? C.ok : sig ? C.accent : C.panel,
-                      border: `2.5px solid ${futuro ? C.dim : C.ink}`,
-                      color: lh || sig ? "#fff" : futuro ? C.dim : C.text,
+                      background: lh ? C.ok : esProg ? colProg : sig ? C.accent : C.panel,
+                      border: `2.5px solid ${esProg ? C.ink : futuro ? C.dim : C.ink}`,
+                      // Sobre el SOL (incompleto) la tinta va oscura, no gris de
+                      // "futuro": el gris sobre amarillo se lee apagado y estas
+                      // paradas no son "todavía no llegaste", son "esto falta".
+                      color: lh || sig || (esProg && l.estado !== "parcial") ? "#fff"
+                        : esProg ? C.ink : futuro ? C.dim : C.text,
                       fontFamily: FONT.round, fontWeight: 800, fontSize: 11.5,
                       display: "grid", placeItems: "center", cursor: "pointer",
                       // El aro: separa la moneda de las huellas que pasan por
@@ -552,7 +588,7 @@ export function CaminoView({
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.transform = "translate(-50%,-50%) scale(1.22)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = "translate(-50%,-50%)"; }}>
-                    {lh ? <IconCheck size={13} /> : j + 1}
+                    {lh ? <IconCheck size={13} /> : esProg ? (l.estado === "parcial" ? "!" : "?") : j + 1}
                   </button>
                 );
               })}
