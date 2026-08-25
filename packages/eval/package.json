@@ -53,7 +53,8 @@
     "buscar-huecos": "tsx --env-file-if-exists=../../.env src/buscar-huecos.ts",
     "faltantes-doc": "tsx --env-file-if-exists=../../.env src/faltantes-doc.ts",
     "componentes-epja": "tsx --env-file-if-exists=../../.env src/componentes-epja.ts",
-    "buscar-componentes": "tsx --env-file-if-exists=../../.env src/buscar-componentes.ts"
+    "buscar-componentes": "tsx --env-file-if-exists=../../.env src/buscar-componentes.ts",
+    "clases": "tsx --env-file-if-exists=../../.env src/clases.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",

@@ -90,3 +90,28 @@ export interface SubjectStats { planDone: number; planTotal: number; weak: WeakT
 
 /** Estado de la llamada de voz. */
 export type CallState = "idle" | "listening" | "thinking" | "speaking";
+
+// ── LA CLASE DE UNA PARADA ──────────────────────────────────────────────────
+// Lo que el alumno lee ANTES de las preguntas. Espejo de las formas de
+// `packages/core/src/leccion.ts`; se declara acá para que la pantalla no importe
+// del paquete de servidor.
+//
+// La distinción que ordena todo el render: `texto` es LITERAL del libro y lleva
+// su página; `glosa` es prosa del tutor; `ejemplo` NO se puede verificar contra
+// el libro y por eso NO lleva página nunca. Se pintan distinto a propósito.
+export interface ClaseMomento {
+  titulo: string;
+  texto: string;
+  pagina: number | null;
+  entrada: string;
+  glosa: string;
+  palabras: { palabra: string; enCriollo: string }[];
+  ejemplo: string;
+  chequeo: { pregunta: string; opciones: string[]; correcta: number };
+}
+export interface Clase {
+  apertura: string;
+  cierre: string;
+  momentos: ClaseMomento[];
+  errorFrecuente: string | null;
+}

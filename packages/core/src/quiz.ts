@@ -148,8 +148,25 @@ export async function generarPreguntas(
   const porTema = Math.max(1, opts.porTema ?? 1);
   const total = temas.length * porTema;
 
+  // PRESUPUESTO REPARTIDO, no un corte fijo.
+  //
+  // ⚠️ ACÁ HABÍA UN `slice(0, 340)` Y ERA EL PEOR BUG DEL CAMINO. La ruta de la
+  // lección arma la muestra con `muestraRepartida(fragmentos, n, largo)` — cuatro
+  // ventanas que RECORREN la lección justamente para que las preguntas no salgan
+  // todas del primer párrafo — y este corte se quedaba con la primera y tiraba las
+  // otras tres. Las diez preguntas de cada parada se generaban mirando 340
+  // caracteres de libro, que en varias lecciones son las instrucciones de una
+  // actividad ("Golpeen con fuerza la tapa de la olla"). Los intentos reales
+  // (0/10, 1/10) se explican por acá.
+  //
+  // El corte existía por una razón buena: con muchos temas, mandarlos enteros
+  // desborda el contexto. La respuesta correcta no es un número fijo sino un
+  // presupuesto que se REPARTE: un tema solo se lleva todo, diez temas se llevan
+  // un pedazo cada uno. El piso de 340 garantiza que nunca sea peor que antes.
+  const porMuestra = Math.max(340, Math.min(3000, Math.floor(9000 / temas.length)));
+
   const toc = temas
-    .map((t, i) => `Tema ${i} (${t.title}): ${t.sample.slice(0, 340)}`)
+    .map((t, i) => `Tema ${i} (${t.title}): ${t.sample.slice(0, porMuestra)}`)
     .join("\n\n");
 
   let gen: {
@@ -198,10 +215,19 @@ export async function generarPreguntas(
   // sin nada por un 429 es peor que una clave sin doble chequeo.
   let verificados = candidatos;
   try {
+    // EL MATERIAL VA UNA SOLA VEZ. Antes se repetía dentro de CADA pregunta, así
+    // que con `porTema: 10` sobre un tema único el mismo fragmento viajaba diez
+    // veces: el presupuesto se lo comía la repetición y por eso el corte tenía
+    // que ser tan chico. Con los fragmentos arriba y una referencia por pregunta,
+    // el verificador ve el MISMO texto que vio el generador.
+    const usados = [...new Set(candidatos.map(({ t }) => temas.indexOf(t)))];
+    const material = usados
+      .map((i) => `--- Material ${i} (${temas[i]!.title}) ---\n${temas[i]!.sample.slice(0, porMuestra)}`)
+      .join("\n\n");
     const enunciado = candidatos
       .map(
         ({ q, t }, k) =>
-          `Pregunta ${k + 1} (fragmento: ${t.sample.slice(0, 340)})\n${q.question}\n` +
+          `Pregunta ${k + 1} (usá el Material ${temas.indexOf(t)})\n${q.question}\n` +
           q.options.map((o, j) => `${j}: ${o}`).join("\n"),
       )
       .join("\n\n");
@@ -210,11 +236,12 @@ export async function generarPreguntas(
         {
           role: "system",
           content:
-            "Respondé esta prueba de opción múltiple usando SOLO el fragmento de material de cada pregunta. " +
+            "Respondé esta prueba de opción múltiple usando SOLO el material que se te da. " +
+            "Cada pregunta indica de qué Material sale. " +
             "Devolvé JSON { answers: [...] } con el índice 0-3 de la opción correcta de cada pregunta, en orden. " +
-            "Si ninguna opción es correcta según el fragmento, devolvé -1 para esa pregunta.",
+            "Si ninguna opción es correcta según el material, devolvé -1 para esa pregunta.",
         },
-        { role: "user", content: enunciado },
+        { role: "user", content: `${material}\n\n=== PREGUNTAS ===\n\n${enunciado}` },
       ],
       V_SCHEMA,
       { maxTokens: 60 + candidatos.length * 8 },

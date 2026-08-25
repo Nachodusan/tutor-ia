@@ -99,7 +99,12 @@ export async function POST(req: Request) {
   // Muestra que RECORRE la lección, no sus primeros párrafos: con solo el
   // arranque, las 3 preguntas salen todas del mismo pedazo y la última parte de
   // la lección nunca se evalúa.
-  const sample = muestraRepartida(fragmentos.map((f) => f.content), 4, 320);
+  // SEIS ventanas de 500, no cuatro de 320. Antes daba igual cuántas se pusieran:
+  // `generarPreguntas` cortaba la muestra en 340 caracteres y se quedaba con la
+  // primera. Arreglado eso (ver el presupuesto repartido en quiz.ts), el tamaño de
+  // la muestra vuelve a importar y conviene que recorra la lección de verdad:
+  // 3.000 caracteres contra una parada mediana de 4.449.
+  const sample = muestraRepartida(fragmentos.map((f) => f.content), 6, 500);
 
   let items: QuizItem[];
   try {

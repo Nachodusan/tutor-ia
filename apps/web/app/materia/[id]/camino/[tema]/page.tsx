@@ -17,7 +17,8 @@ import { traerMateria } from "../../../../datos";
 import { aprobado } from "../../../../camino";
 import { C, FONT, HARD, Dots, IconCheck, IconChat, IconArrow, subjectLabel } from "../../../../ui";
 import { limpiarPregunta } from "../../../../limpiar-texto";
-import type { PlanItem, QuizQ, QuizResult, Subject } from "../../../../tipos";
+import { ClaseParada } from "../../../../clase-parada";
+import type { Clase, PlanItem, QuizQ, QuizResult, Subject } from "../../../../tipos";
 
 export default function LeccionPage() {
   const { id, tema } = useParams<{ id: string; tema: string }>();
@@ -33,6 +34,16 @@ export default function LeccionPage() {
   const [err, setErr] = useState("");
   /** Índice de la pregunta que se está mostrando. */
   const [paso, setPaso] = useState(0);
+  /**
+   * LA CLASE DE LA PARADA — lo que se enseña antes de preguntar.
+   *
+   * `null` mientras se busca; `false` cuando esta parada todavía no tiene clase
+   * generada (hoy son casi todas: el batch va de a poco). En ese caso la
+   * pantalla se comporta exactamente como antes y va derecho a las preguntas, así
+   * que el camino entero sigue funcionando mientras las clases se van generando.
+   */
+  const [clase, setClase] = useState<Clase | null | false>(null);
+  const [enClase, setEnClase] = useState(true);
 
   /**
    * EL PLAN, APLANADO A PASOS ABRIBLES. Desde que el camino es de UNIDADES,
@@ -70,6 +81,24 @@ export default function LeccionPage() {
   }, [idx, pasos, plan, tema]);
 
   useEffect(() => { void traerMateria(id).then(setSubject); }, [id]);
+
+  // La clase se pide aparte de las preguntas y no las bloquea: son dos fetch
+  // independientes que corren juntos. La clase sale de una tabla (0 llamadas al
+  // modelo), así que vuelve enseguida y casi siempre gana la carrera.
+  useEffect(() => {
+    if (!item) return;
+    let vivo = true;
+    setClase(null); setEnClase(true);
+    fetch(`/api/lesson/clase?subjectId=${id}&topicKey=${encodeURIComponent(item.key)}`)
+      .then(async (r) => {
+        if (!vivo) return;
+        if (!r.ok) { setClase(false); return; }
+        const j = await r.json();
+        setClase(j.clase?.momentos?.length ? j.clase : false);
+      })
+      .catch(() => { if (vivo) setClase(false); });
+    return () => { vivo = false; };
+  }, [id, item?.key]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetch(`/api/plan?subjectId=${id}`).then((r) => r.json())
@@ -139,6 +168,11 @@ export default function LeccionPage() {
     );
   }
 
+  // La clase está en pantalla mientras exista, no haya terminado y no haya
+  // resultado. `clase === null` es "todavía buscando": no se pinta nada, para no
+  // hacer parpadear las preguntas y después taparlas con la clase.
+  const enClaseVisible = enClase && clase !== null && clase !== false && !res;
+
   const q = quiz?.[paso];
   const elegida = q ? ans[q.n] : undefined;
   const total = quiz?.length ?? 0;
@@ -156,7 +190,7 @@ export default function LeccionPage() {
       {item.focus && <div style={{ color: C.dim, fontSize: 13.5, marginTop: 2, lineHeight: 1.4 }}>{item.focus}</div>}
       {pages && <div style={{ fontFamily: FONT.mono, fontSize: 12, color: C.dim, marginTop: 3 }}>{pages}</div>}
 
-      {item.points && item.points.length > 0 && !res && (
+      {item.points && item.points.length > 0 && !res && !enClaseVisible && (
         <div style={{ marginTop: 14, background: C.panel2, border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "11px 13px" }}>
           <div style={{ fontSize: 12, color: C.dim, marginBottom: 6 }}>Cuando termines vas a poder explicar:</div>
           {item.points.map((p, i) => (
@@ -168,7 +202,18 @@ export default function LeccionPage() {
         </div>
       )}
 
-      {cargando && (
+      {/* LA CLASE. Va antes que todo lo demás: el alumno lee y recién después
+          se le pregunta. Mientras no haya clase generada para esta parada, esto
+          no se pinta y la pantalla es la de siempre. */}
+      {enClaseVisible && (
+        <ClaseParada
+          clase={clase as Clase}
+          onTerminar={() => setEnClase(false)}
+          onPreguntar={() => repasar()}
+        />
+      )}
+
+      {cargando && !enClaseVisible && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.dim, fontSize: 13.5, padding: "26px 0" }}>
           <Dots /> Armando las preguntas de esta lección…
         </div>
@@ -178,7 +223,7 @@ export default function LeccionPage() {
       )}
 
       {/* ── DE A UNA ─────────────────────────────────────────────────────── */}
-      {quiz && !res && q && (
+      {quiz && !res && q && !enClaseVisible && (
         <div style={{ marginTop: 18 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
             <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 13 }}>Pregunta {paso + 1} de {total}</span>
@@ -286,14 +331,14 @@ export default function LeccionPage() {
 
       {/* "No entiendo" está siempre disponible: si se traba en la pregunta 3 no
           tiene que terminar las diez para poder preguntar. */}
-      {!res && (
+      {!res && !enClaseVisible && (
         <button onClick={() => repasar()}
           style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 20, background: "transparent", color: C.text, border: `2px solid ${C.ink}`, borderRadius: 11, padding: "10px 14px", fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <IconChat size={15} /> No entiendo esto
         </button>
       )}
 
-      {done.includes(tema) && !res && !cargando && (
+      {done.includes(tema) && !res && !cargando && !enClaseVisible && (
         <div style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 6, color: C.okTx, fontSize: 12.5 }}>
           <IconCheck size={14} /> Ya hiciste esta lección antes
         </div>
