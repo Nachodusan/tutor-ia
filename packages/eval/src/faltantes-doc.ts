@@ -46,6 +46,9 @@ interface Fila {
   subject_id: string; materia: string; curso: string; asignatura: string;
   item: string; verificado: string; pagina_desde: number | null;
   pagina_hasta: number | null; verificacion: string | null; doc: string | null;
+  /** La descomposición oficial del programa EPJA y su cobertura medida. */
+  componentes: string[] | null;
+  cobertura: { c: string; ok: boolean; pag: number | null }[] | null;
 }
 
 /**
@@ -86,7 +89,8 @@ async function main(): Promise<void> {
            (select max(d.grade) from documents d where d.subject_id = s.id) curso,
            coalesce(cm.asignatura, '') asignatura,
            cm.item, cm.verificado, cm.pagina_desde, cm.pagina_hasta, cm.verificacion,
-           (select d2.title from documents d2 where d2.id = cm.document_id) doc
+           (select d2.title from documents d2 where d2.id = cm.document_id) doc,
+           cm.componentes, cm.componentes_cobertura cobertura
     from curriculum_map cm
     join subjects s on s.id = cm.subject_id
     where cm.metodo = 'lector-v1'
@@ -187,8 +191,23 @@ async function main(): Promise<void> {
           const hasta = f.pagina_hasta && f.pagina_hasta !== f.pagina_desde ? `-${f.pagina_hasta}` : "";
           L.push(`Lo que hay, en su libro: página ${f.pagina_desde}${hasta}${f.doc ? ` · ${f.doc}` : ""}\n`);
         }
-        const v = limpiar(f.verificacion);
-        if (v) L.push(`> ${v}\n`);
+        /**
+         * CON COBERTURA POR COMPONENTES, EL CHECKLIST REEMPLAZA LA PROSA. Es la
+         * descomposición OFICIAL del programa EPJA con lo medido contra el
+         * libro: quien busca material lee exactamente qué componente conseguir,
+         * con la página de los que sí están. La prosa del lector queda para los
+         * ítems sin componentes (niveles sin programa publicado).
+         */
+        if (f.cobertura?.length) {
+          for (const x of f.cobertura) {
+            L.push(`- ${x.ok ? "✓" : "✗"} ${x.c}${x.ok && x.pag ? ` (p.${x.pag})` : ""}`);
+          }
+          L.push("");
+          L.push(`*Componentes según el Programa de Estudio EPJA 2026.*\n`);
+        } else {
+          const v = limpiar(f.verificacion);
+          if (v) L.push(`> ${v}\n`);
+        }
       }
     }
   }

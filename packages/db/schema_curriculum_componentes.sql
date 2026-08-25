@@ -31,3 +31,14 @@ comment on column curriculum_map.componentes is
    publicado o no lo descompone. Lo llena componentes-epja (packages/eval).';
 comment on column curriculum_map.componentes_fuente is
   'De qué programa salieron los componentes (archivo + URL de curriculumnacional).';
+
+-- ── La cobertura medida de cada componente ──────────────────────────────────
+-- La llena reverificar cuando el conocimiento tiene componentes: por cada uno,
+-- si el material del alumno lo cubre y en qué página se vio. Es la evidencia
+-- fina detrás del veredicto — "parcial" deja de ser un juicio de bulto y pasa
+-- a ser "cubre 4 de 5; falta transporte activo".
+alter table curriculum_map add column if not exists componentes_cobertura jsonb;
+
+comment on column curriculum_map.componentes_cobertura is
+  'Array de {c, ok, pag}: por componente, si el material lo cubre y la página de
+   la evidencia. Lo escribe reverificar; NULL si nunca se midió por componentes.';

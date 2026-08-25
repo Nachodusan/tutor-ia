@@ -44,7 +44,7 @@
  * Sin `--aplicar` imprime lo que haría y no toca nada.
  */
 import { chatText } from "@tutor-ia/core";
-import { getSql } from "@tutor-ia/db";
+import { getSql, toJson } from "@tutor-ia/db";
 import { retrieveRanked, type RankedChunk } from "@tutor-ia/rag";
 
 const DEV_USER_ID = process.env.DEV_USER_ID ?? "00000000-0000-0000-0000-000000000001";
@@ -54,6 +54,8 @@ const arg = (n: string): string | undefined => {
   return i >= 0 ? process.argv[i + 1] : undefined;
 };
 const APLICAR = process.argv.includes("--aplicar");
+/** Restringe la corrida a los conocimientos con descomposición oficial. */
+const SOLO_COMP = process.argv.includes("--solo-componentes");
 const ESTADOS = (arg("estados") ?? "no_esta,otro_año,parcial").split(",").map((s) => s.trim());
 const UMBRAL = Number(arg("umbral") ?? 0.25);
 /** La fecha va en la nota del veredicto: sirve para saber contra qué corpus se
@@ -88,6 +90,41 @@ Reglas:
 - Podés usar raíces sin terminación para cubrir variantes: "mezcla", "digesti".
 - Solo los términos, uno por línea.`;
 
+/**
+ * EL JUEZ POR COMPONENTES — dictamina por partes, no por bulto.
+ *
+ * El juicio holístico ("¿el material desarrolla esto?") oscila entre corridas:
+ * "correcto" y "parcial" son etiquetas de bulto sobre un ítem que suele juntar
+ * varios temas, y el modelo (MoE, no determinista a temp 0) las cambia de una
+ * corrida a la otra. Con la descomposición OFICIAL de los programas EPJA, el
+ * modelo contesta N preguntas binarias chicas —¿este fragmento cubre este
+ * subtema?— y el VEREDICTO lo calcula el código, mecánicamente:
+ *
+ *   todos los componentes cubiertos → correcto
+ *   al menos uno                    → parcial
+ *   ninguno                        → no_esta
+ *
+ * Además el "qué falta" deja de ser prosa: queda la lista exacta de
+ * componentes sin cubrir, con la página de la evidencia de los cubiertos.
+ */
+const JUZGAR_COMP = `Sos un profesor que revisa si el material de un alumno cubre cada
+COMPONENTE de un conocimiento que el Estado va a evaluar.
+
+Te doy el CONOCIMIENTO, sus COMPONENTES numerados (la descomposición oficial del
+programa de estudio) y FRAGMENTOS del material, numerados, con su libro y página.
+
+Por CADA componente contestá UNA línea, exactamente así:
+C1: si · FRAGMENTO: 3
+C2: no
+(“si” solo cuando algún fragmento ENSEÑA ese componente — explicación o desarrollo,
+no una mención al pasar. FRAGMENTO es el que mejor lo enseña, solo cuando es “si”.)
+
+Al final, una línea:
+POR QUE: una oración concreta sobre lo que falta (o “todos cubiertos”).
+
+Algunos fragmentos vienen marcados con "encontrado buscando: …". Esas palabras se
+buscaron literalmente en el libro y aparecen ahí: revisalo antes de negar un componente.`;
+
 const JUZGAR = `Sos un profesor que revisa si el material de un alumno alcanza para
 aprender un conocimiento que el Estado va a evaluar.
 
@@ -114,6 +151,8 @@ decir que el libro no trata ese punto.`;
 interface Fila {
   id: string; item: string; subject_id: string; materia: string;
   asignatura: string; verificado: string;
+  /** La descomposición oficial del programa EPJA, si existe (ver componentes-epja). */
+  componentes: string[] | null;
 }
 
 /**
@@ -233,7 +272,7 @@ async function main(): Promise<void> {
   const filtroMateria = arg("materia");
   const filas = await sql<Fila[]>`
     select cm.id, cm.item, cm.subject_id, s.name materia,
-           coalesce(cm.asignatura,'') asignatura, cm.verificado
+           coalesce(cm.asignatura,'') asignatura, cm.verificado, cm.componentes
     from curriculum_map cm join subjects s on s.id = cm.subject_id
     where cm.metodo = 'lector-v1'
       and cm.verificado = any(${ESTADOS})
@@ -241,6 +280,7 @@ async function main(): Promise<void> {
       and (select max(d.grade) from documents d where d.subject_id = s.id)
           not in ('1B','2B','3B','4B','5B')
       and (${filtroMateria ?? null}::text is null or s.name = ${filtroMateria ?? null})
+      and (${SOLO_COMP} = false or cm.componentes is not null)
     order by s.name, cm.item`;
 
   console.log(`${filas.length} fila(s)${APLICAR ? "" : "  ·  SIMULACIÓN"}\n`);
@@ -298,6 +338,102 @@ async function main(): Promise<void> {
       const sello = t ? ` · encontrado buscando: ${t}` : "";
       return `[${i + 1}] ${c.documentTitle ?? "?"} · p.${c.pageStart}${sello}\n${(c.content ?? "").slice(0, 900)}`;
     }).join("\n\n");
+    /**
+     * CON COMPONENTES OFICIALES SE DICTAMINA POR PARTES; sin ellos, el juicio
+     * holístico de siempre. La cobertura por componente se escribe SIEMPRE que
+     * se mide (es evidencia nueva); el veredicto, solo si mejora — la regla de
+     * no degradar no cambia.
+     */
+    if (f.componentes && f.componentes.length >= 2) {
+      const comps = f.componentes;
+      /**
+       * DOBLE VOTO SOBRE LOS MISMOS FRAGMENTOS. Medido con una corrida simple:
+       * "Niveles de organización" dio 4/5, 5/5 y 3/5 en tres corridas — el
+       * modelo (MoE, no determinista a temp 0) cambia el voto de los
+       * componentes limítrofes. Y como el veredicto solo puede MEJORAR, una
+       * corrida con suerte trinquetea el ruido hacia arriba: un 5/5 espurio
+       * queda escrito como "correcto" para siempre.
+       *
+       * Un componente cuenta como cubierto solo si LOS DOS votos dicen que sí.
+       * El voto es barato (~300 tokens); el veredicto inflado es caro.
+       */
+      const votos: string[] = [];
+      try {
+        for (let v = 0; v < 2; v++) {
+          votos.push(await chatText(
+            [{ role: "system", content: JUZGAR_COMP },
+             { role: "user", content: `CONOCIMIENTO (${f.materia}):\n${f.item}\n\nCOMPONENTES:\n` +
+                comps.map((c, i) => `C${i + 1}: ${c}`).join("\n") +
+                `\n\nFRAGMENTOS:\n${texto}` }],
+            { temperature: 0, maxTokens: 60 + comps.length * 30 },
+          ));
+        }
+      } catch {
+        console.log(`── ${f.materia} · ${f.item.slice(0,50)}\n   ⚠️  el proveedor no respondió; se deja como está\n`);
+        cambios.igual++;
+        continue;
+      }
+      const voto = (outC: string, i: number) =>
+        new RegExp(`C${i + 1}\\s*:\\s*(si|sí|no)(?:[^\\n]*FRAGMENTO:\\s*(\\d+))?`, "i").exec(outC);
+      const cobertura = comps.map((c, i) => {
+        const m1 = voto(votos[0]!, i), m2 = voto(votos[1]!, i);
+        const ok = !!m1 && !!m2 && /s/i.test(m1[1]!) && /s/i.test(m2[1]!);
+        const n = Number((m1?.[2] ?? m2?.[2]) ?? 0);
+        const frag = ok && n >= 1 && n <= frags.length ? frags[n - 1]! : null;
+        return { c, ok, pag: frag?.pageStart ?? null, frag };
+      });
+      const legibles = comps.filter((_, i) => voto(votos[0]!, i) && voto(votos[1]!, i)).length;
+      if (legibles < comps.length) {
+        // Un componente sin veredicto legible no es un "no": no se adivina.
+        console.log(`── ${f.materia} · ${f.item.slice(0,50)}\n   ⚠️  veredicto ilegible (${legibles}/${comps.length} componentes); se deja como está\n`);
+        cambios.igual++;
+        continue;
+      }
+      const cubiertos = cobertura.filter((x) => x.ok);
+      const ver = cubiertos.length === comps.length ? "correcto"
+                : cubiertos.length > 0 ? "parcial" : "no_esta";
+      const faltan = cobertura.filter((x) => !x.ok).map((x) => x.c);
+      const porQue = faltan.length
+        ? `cubre ${cubiertos.length} de ${comps.length} componentes; faltan: ${faltan.join("; ")}`
+        : `cubre los ${comps.length} componentes oficiales`;
+      const rank = { no_esta: 0, "otro_año": 0, parcial: 1, correcto: 2 } as Record<string, number>;
+      const mejora = (rank[ver] ?? 0) > (rank[f.verificado] ?? 0);
+      cambios[mejora ? "mejora" : ver === f.verificado ? "igual" : "empeora"]++;
+      const elegido = cubiertos.find((x) => x.frag)?.frag ?? null;
+      const marca = mejora ? "✅" : ver === f.verificado ? "  " : "🔻";
+      console.log(`── ${f.materia} · ${f.item.slice(0,50)}`);
+      console.log(`   ${marca} ${f.verificado} → ${ver}  ·  ${cubiertos.length}/${comps.length} componentes`);
+      if (faltan.length) console.log(`   faltan: ${faltan.join(" · ").slice(0, 130)}`);
+      console.log("");
+      if (APLICAR) {
+        await sql`
+          update curriculum_map set
+            componentes_cobertura = ${toJson(sql, cobertura.map(({ c, ok, pag }) => ({ c, ok, pag })))},
+            updated_at = now()
+          where id = ${f.id}::uuid`;
+        if (mejora) {
+          await sql`
+            update curriculum_map set
+              verificado = ${ver},
+              verificacion = ${`[reverificado ${HOY} por componentes oficiales] ${porQue}`.slice(0, 900)},
+              document_id = ${elegido?.documentId ?? null},
+              pagina_desde = case when ${!!elegido} then ${elegido?.pageStart ?? null} else pagina_desde end,
+              pagina_hasta = case when ${!!elegido} then ${elegido?.pageEnd ?? null} else pagina_hasta end,
+              cita = case when ${!!elegido} then ${(elegido?.content ?? "").slice(0, 400)} else cita end,
+              updated_at = now()
+            where id = ${f.id}::uuid`;
+          if (elegido) {
+            await sql`
+              insert into curriculum_map_tramos (map_id, orden, seccion, pagina_desde, pagina_hasta, que_cubre, fuente, document_id)
+              values (${f.id}::uuid, 0, ${elegido.headingPath ?? null}, ${elegido.pageStart},
+                      ${elegido.pageEnd}, ${porQue.slice(0,200)}, 'reverificado', ${elegido.documentId})
+              on conflict do nothing`;
+          }
+        }
+      }
+      continue;
+    }
+
     let out = "";
     try {
       out = await chatText(
