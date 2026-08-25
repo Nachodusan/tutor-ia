@@ -51,7 +51,8 @@
     "tramos-indice": "tsx --env-file-if-exists=../../.env src/tramos-indice.ts",
     "reverificar": "tsx --env-file-if-exists=../../.env src/reverificar.ts",
     "buscar-huecos": "tsx --env-file-if-exists=../../.env src/buscar-huecos.ts",
-    "faltantes-doc": "tsx --env-file-if-exists=../../.env src/faltantes-doc.ts"
+    "faltantes-doc": "tsx --env-file-if-exists=../../.env src/faltantes-doc.ts",
+    "componentes-epja": "tsx --env-file-if-exists=../../.env src/componentes-epja.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",
