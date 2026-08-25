@@ -2052,12 +2052,24 @@ backtick. Me pasó **cuatro veces en una sesión**. El chequeo evita la quinta:
 2. **Cuatro conocimientos de ciencias** donde el corpus no tiene el trozo faltante: evolución
    (teorías y evidencias), movimientos de la Tierra y la Luna, alergias y enfermedades
    autoinmunes, y elementos constituyentes (C, H, O, N). Esos sí son para conseguir afuera.
-3. **OpenStax**: investigación lanzada y **detenida a mitad** al cerrarse la sesión. Los cuatro
-   investigadores y el mapeo terminaron; faltó la síntesis. Se retoma con
-   `Workflow({scriptPath: ".claude/.../openstax-para-tutoria-wf_8218a4d5-007.js", resumeFromRunId: "wf_8218a4d5-007"})`.
-   Lo que atrae es la LICENCIA (CC BY, sin el problema de las editoriales); las dudas son el
-   NIVEL (OpenStax es universitario) y que lo específicamente chileno —biodiversidad en Chile,
-   cosmovisiones de los pueblos originarios— no lo va a tener nunca.
+3. **OpenStax: DESCARTADO (2026-08-24), investigado a fondo antes.** Verificado contra la API
+   del CMS de OpenStax: son **11 títulos en español de 129**, TODOS universitarios (los 3 de
+   Cálculo además CC BY-NC-SA, bloqueante si se cobra). Cero biología, historia, lengua o
+   filosofía en español. Sus propios prefacios dicen "curso universitario de dos semestres" y
+   "asume álgebra intermedia". Y el argumento de producto pesa más que el catálogo: OpenStax
+   convertiría un "no está en tu libro" HONESTO en un "sale de un libro" que el alumno no
+   tiene, y cada chunk ajeno en el pool desplaza un chunk del libro del alumno.
+   **Lo que sí salió de la investigación** (todo verificado, con URL):
+   - **Boletín del Museo Chileno de Arte Precolombino, CC BY 4.0**: cubre las cosmovisiones
+     mapuche-pewenche (etnoastronomía, We Tripantü, Yepun/Wünelve). Es EL hallazgo.
+   - Revista Chilena de Historia Natural (CC BY) + datos.gob.cl (CC0) para biodiversidad.
+   - CK-12 y Khan Academy: **prohíben el uso en IA** por licencia, aunque fuera gratis.
+   - Chile NO tiene dominio público estatal (Ley 17.336 art. 88): material de CONAF/MMA/
+     Mineduc sin CC explícita = todos los derechos reservados aunque el PDF sea gratis.
+   - **La jugada de mayor retorno es un correo, no ingeniería**: pedir autorización escrita
+     al Mineduc/UCE por los módulos EPJA ya ingeridos (y al MMA por su libro de biodiversidad).
+   - Hallazgo transferible: **el gate de verificación no tiene noción de NIVEL** — ese riesgo
+     existe hoy con el corpus propio, sin OpenStax.
 4. **Ciencias para la Ciudadanía 3º y 4º Medio** siguen sin lecciones: 9 unidades con nombre
    real pero ningún desglose, porque esos libros no tienen índice de nivel 2. Se puede recorrer
    el camino, no marcar avance fino.
