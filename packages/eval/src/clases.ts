@@ -28,6 +28,13 @@ const arg = (f: string) => {
 const MATERIA = arg("--materia");
 const KEY = arg("--key");
 const LIMITE = Number(arg("--limite") ?? (TODAS ? 100000 : 3));
+/**
+ * REINTENTOS, y no son un parche: el modelo es un MoE y a temperatura 0 igual
+ * cambia de corrida. La misma parada de Matemática dio dos momentos en pie una
+ * vez y CERO la siguiente, porque el gate encontró una afirmación contradicha en
+ * la segunda glosa. Un lote de 1.846 sin reintentos deja huecos al azar.
+ */
+const REINTENTOS = Number(arg("--reintentos") ?? 2);
 
 interface Parada {
   subjectId: string; subjectName: string; documentId: string | null;
@@ -52,7 +59,7 @@ async function paradas(): Promise<Parada[]> {
     cross join lateral jsonb_array_elements(sp.items) it
     cross join lateral jsonb_array_elements(it->'lecciones') l
     where l->>'p0' is not null
-      and (${MATERIA ?? null}::text is null or s.name = ${MATERIA ?? null})
+      and (${MATERIA ?? null}::text is null or s.name ilike ${MATERIA ? `%${MATERIA}%` : null})
       and (${KEY ?? null}::text is null or l->>'key' = ${KEY ?? null})
     order by s.name, (l->>'p0')::int`) as unknown as {
     subject_id: string; subject_name: string; document_id: string | null;
@@ -108,6 +115,16 @@ async function errorFrecuente(subjectId: string, titulo: string): Promise<string
 
 async function main() {
   const lista = (await paradas()).slice(0, LIMITE);
+  // Un filtro que no matchea devolvía "0 paradas" sin decir por qué, y el nombre
+  // real de la materia casi nunca es el que uno escribe ("Historia Geografía Y
+  // Ciencias Sociales 1º Medio", sin coma). Mejor fallar ruidoso.
+  if (lista.length === 0) {
+    console.log(`Ningún resultado para ${MATERIA ? `--materia "${MATERIA}"` : ""}${KEY ? `--key ${KEY}` : ""}.`);
+    const cs = (await sql`select distinct s.name from subjects s join subject_plans sp on sp.subject_id = s.id order by s.name limit 40`) as unknown as { name: string }[];
+    console.log(`Materias con plan:\n  ${cs.map((c) => c.name).join("\n  ")}`);
+    await sql.end();
+    return;
+  }
   console.log(`${lista.length} parada(s)${APLICAR ? "" : "  [ensayo: no escribe]"}\n`);
 
   let ok = 0, sinMaterial = 0, fallo = 0, sinGate = 0;
@@ -128,10 +145,20 @@ async function main() {
     const ef = await errorFrecuente(p.subjectId, p.title);
     const t0 = Date.now();
     try {
-      let clase = await armarClase({
-        titulo: p.title, subjectName: p.subjectName, oraciones, errorFrecuente: ef,
-      });
-      clase = await verificarClase(clase, oraciones, nliPairs);
+      let clase = null as Awaited<ReturnType<typeof armarClase>> | null;
+      let ultimo: unknown = null;
+      for (let intento = 0; intento <= REINTENTOS && !clase; intento++) {
+        try {
+          const c = await armarClase({
+            titulo: p.title, subjectName: p.subjectName, oraciones, errorFrecuente: ef,
+          });
+          clase = await verificarClase(c, oraciones, nliPairs);
+        } catch (e) {
+          ultimo = e;
+          if (intento < REINTENTOS) console.log(`     · intento ${intento + 1} sin clase (${e instanceof SinClase ? e.razon : e}), reintento`);
+        }
+      }
+      if (!clase) throw ultimo;
       const seg = ((Date.now() - t0) / 1000).toFixed(1);
 
       const g = clase.gate!;

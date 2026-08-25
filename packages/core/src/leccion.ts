@@ -176,6 +176,14 @@ function despegarTitulos(t: string): string[] {
   return piezas.map((p) => p.trim()).filter(Boolean);
 }
 
+/**
+ * Letras de enumeración de un ejercicio ("a.", "b)", "d."), que quedan sueltas
+ * entre oraciones cuando el extractor aplana una lista de alternativas. Sin
+ * sacarlas, el pasaje del libro sale como "…un número decimal. b. Todos los
+ * números naturales son racionales. d." — literal, sí, pero ilegible.
+ */
+const ENUMERADOR = /(?<=^|\s)[a-hA-H][.)](?=\s|$)/g;
+
 /** Símbolos sueltos del maquetado: "½ ½", "λ λ", viñetas, grados. */
 const SIMBOLO_SUELTO = /(?:^|\s)[^\w\sáéíóúñüÁÉÍÓÚÑÜ¿¡]{1,2}(?=\s|$)/g;
 
@@ -183,12 +191,34 @@ const SIMBOLO_SUELTO = /(?:^|\s)[^\w\sáéíóúñüÁÉÍÓÚÑÜ¿¡]{1,2}(?=\
 function limpiar(texto: string): string {
   return texto
     .replace(/([a-záéíóúñü])-\s+([a-záéíóúñü])/g, "$1$2")
+    .replace(ENUMERADOR, " ")
     .replace(SIMBOLO_SUELTO, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 const TERMINAL = /[.!?…]/;
+
+/**
+ * Entradas de GLOSARIO y epígrafes de foto. El maquetado deja el rótulo y los
+ * pies de imagen pegados adelante de la definición:
+ *
+ *   "Museo Carnavalet Banderas de distintas naciones Glosario
+ *    Capitalismo: sistema económico que defiende la propiedad privada…"
+ *
+ * La definición que sigue a "Palabra:" es contenido bueno —de hecho es de lo
+ * mejor que tiene el libro para explicar un término— así que no se descarta la
+ * oración: se le poda todo lo que viene ANTES de la palabra definida.
+ */
+const GLOSARIO = /^.*?\s(?=[A-ZÁÉÍÓÚÑ][a-záéíóúñü]{3,}:\s)/;
+
+function podarGlosario(t: string): string {
+  const m = t.match(GLOSARIO);
+  // Solo si el prefijo NO es una oración de verdad: si tiene punto adentro,
+  // estamos partiendo texto legítimo y no un rótulo.
+  if (!m || !m[0].trim() || TERMINAL.test(m[0])) return t;
+  return t.slice(m[0].length);
+}
 
 /**
  * Corta el pie de página que quedó DESPUÉS del último punto.
@@ -212,11 +242,78 @@ function podarCola(t: string): string {
  * terminan en signo, así que la regla del punto no los agarra: "Unidad 1: ¿De
  * qué manera se relacionan las ondas con el sonido? Para comenzar Lección…".
  */
+/**
+ * CONSIGNAS. Un libro escolar está lleno de imperativos dirigidos al alumno
+ * ("Justifica, en cada caso, dando un ejemplo."), y son oraciones perfectamente
+ * formadas: terminan en punto, tienen seis palabras y pasan todas las otras
+ * reglas. Pero NUNCA son un pasaje que explique algo, y una consigna adentro del
+ * recuadro "En tu libro" es exactamente lo que el recuadro no puede tener.
+ *
+ * Solo cuando ARRANCA la oración: "Se determina el período…" es contenido,
+ * "Determina el período…" es una tarea.
+ */
+const CONSIGNA = new RegExp(
+  "^(justific|calcul|resuelv|respond|observ|complet|explic|analiz|compar|dibuj|escrib|anot|" +
+  "marc|un[ií]|le[ea]|realiz|determin|verific|comprueb|aplic|identific|describ|clasific|orden|" +
+  "represent|grafic|investig|coment|discut|argument|elabor|construy|propon|señal|indic|nombr|" +
+  "menciona|revis|busc|piens|imagin|recuerd|fíjate|ten[ée]|hag[aá]|consig|reún|mid[ae]|arm[ae])" +
+  "[aeioná]{0,3}(n|se|los|las|le|lo)?\\b", "i");
+
+/**
+ * Restos de TABLA: encabezados de una letra en fila ("a b b a a b b a"), que el
+ * extractor deja pegados al principio de la oración siguiente.
+ */
+const FILA_DE_TABLA = /^(?:[a-zA-Z0-9]\s+){3,}/;
+
 const MUEBLE = /(para comenzar|paso a paso|ciencia en acci[oó]n|antes de empezar|¿qu[eé] aprender|lecci[oó]n\s+unidad|taller de|me preparo para|lo que s[eé]|activaci[oó]n de)/i;
+
+/**
+ * La reescritura del aviso del profesor tiene que estar dirigida AL ALUMNO, y
+ * pedirlo en el prompt NO ALCANZA: aun con la instrucción y un ejemplo de la
+ * conversión, volvió con "Recuérdale que cualquier número se puede escribir como
+ * fracción". Esto es una verificación, no una sugerencia — si no pasa, el bloque
+ * no se muestra.
+ *
+ * Preferimos una parada sin ese bloque a una que le dé al alumno una instrucción
+ * escrita para otra persona: leer "recuérdale a tus alumnos" en tu propio
+ * material de estudio es la señal más clara posible de que nadie miró esto.
+ */
+const HABLA_AL_DOCENTE =
+  /\b(recu[eé]rd[ae]le|se[ñn][aá]lele|se[ñn]ale que|aclare que|expl[ií]quele|p[ií]dale|ind[ií]quele|mu[eé]strele|h[aá]gale|sus? (alumnos?|estudiantes?)|el (alumno|estudiante) debe|los (alumnos|estudiantes) (suelen|deben|tienden))\b/i;
+
+/**
+ * ⚠️ NOTACIÓN DESTRUIDA — el límite REAL de este diseño, y no es un filtro que
+ * falte: en Matemática el corpus NO CONTIENE LA MATEMÁTICA.
+ *
+ * Medido en Matemática 1º Medio p.13-16. La regla de suma de fracciones sale del
+ * extractor así:
+ *
+ *   "Adición: a c a d b c b d b d Sustracción: a c a d b c b d b d
+ *    Donde a, b, c, d Z con b 0, d 0."
+ *
+ * Eso era a/b + c/d = (ad + bc)/(bd). Las barras de fracción, los signos y los
+ * paréntesis vivían en la MAQUETACIÓN del PDF, no en el texto, y el extractor los
+ * aplanó; sobreviven las variables sueltas. Lo mismo pasa con los ejemplos
+ * resueltos, que quedan como una tira de números sin operadores.
+ *
+ * Un pasaje así es literal —está de verdad en el libro— y aun así no dice nada.
+ * Recortar el libro FUNCIONA para las materias de prosa y NO funciona donde el
+ * sentido vive en la notación o en la figura. Acá se detecta y la parada se queda
+ * sin clase, que es la salida honesta: mejor el comportamiento de antes que un
+ * recuadro "En tu libro" lleno de letras sueltas.
+ */
+function notacionRota(t: string): boolean {
+  const tokens = t.split(/\s+/).filter(Boolean);
+  if (tokens.length < 6) return false;
+  const sueltos = tokens.filter((w) => w.replace(/[.,;:()]/g, "").length === 1).length;
+  return sueltos >= 3 && sueltos / tokens.length > 0.2;
+}
 
 function esBasura(s: string): boolean {
   const t = s.trim();
   if (MUEBLE.test(t)) return true;
+  if (CONSIGNA.test(t)) return true;
+  if (notacionRota(t)) return true;
   if (t.length < 40) return true;
   if (!/[a-záéíóúñü]/.test(t)) return true;            // TODO MAYÚSCULAS
   if (!TERMINAL.test(t.slice(-1))) return true;        // no cierra: es rótulo
@@ -242,7 +339,7 @@ export function partirEnOraciones(
     const porPunto = limpio.split(/(?<=[.!?…])\s+(?=[¿¡"“(]?[A-ZÁÉÍÓÚÑ0-9])/);
     for (const pieza of porPunto) {
       for (const sub of despegarTitulos(pieza)) {
-        const t = podarCola(sub.trim());
+        const t = podarCola(podarGlosario(sub.replace(FILA_DE_TABLA, "").trim()));
         if (!t || esBasura(t)) continue;
         out.push({ i: out.length, texto: t, pagina: f.page });
       }
@@ -289,8 +386,11 @@ const SISTEMA =
   "a alguien de su casa.\n" +
   "- `errorComun`: SOLO si te paso el aviso del libro del profesor. Ese aviso está escrito PARA EL " +
   "PROFESOR ('es importante que aclare…', 'señale que…') y así no se le puede mostrar al alumno. " +
-  "Pasalo a segunda persona y a 25-45 palabras: qué error se comete y qué es lo correcto. Sin " +
-  "inventar nada que el aviso no diga. Si no te paso aviso, devolvé null.\n\n" +
+  "Pasalo a segunda persona DIRIGIDA AL ALUMNO y a 25-45 palabras: qué error se comete y qué es " +
+  "lo correcto. Sin inventar nada que el aviso no diga. Ejemplo de la conversión: si el aviso " +
+  "dice 'Recuérdele que todo entero es racional', vos escribís 'No creas que un número entero no " +
+  "es racional: 4 también es 8/2'. Nada de 'recuérdale', 'señale', 'aclare' ni 'sus alumnos'. " +
+  "Si no te paso aviso, devolvé null.\n\n" +
   "ESPAÑOL DE CHILE, tuteo. Prohibidos los mexicanismos: no 'jalar' (es tirar), no 'platicar', " +
   "no 'checar', no 'carro', no 'alberca', no 'chido'. Prohibido el 'vosotros'. Los ejemplos son " +
   "chilenos: la micro, la feria, el metro, la olla, el pan amasado, la cordillera.\n" +
@@ -438,7 +538,19 @@ export async function armarClase(opts: {
   // que poner en el recuadro del libro, y ese recuadro es la garantía entera.
   const momentos: Momento[] = [];
   for (const m of out.momentos ?? []) {
-    const idx = (m.pasaje ?? []).filter((i) => porIndice.has(i));
+    // DEDUPE POR TEXTO, no por índice. El corpus tiene ~19% de chunks repetidos
+    // (hay libros cargados dos veces), así que la MISMA oración aparece con dos
+    // números distintos y el modelo elige los dos: el recuadro "En tu libro"
+    // salía con la frase pegada a sí misma.
+    const vistos = new Set<string>();
+    const idx = (m.pasaje ?? []).filter((i) => {
+      const o = porIndice.get(i);
+      if (!o) return false;
+      const llave = o.texto.toLowerCase().replace(/\s+/g, " ");
+      if (vistos.has(llave)) return false;
+      vistos.add(llave);
+      return true;
+    });
     if (idx.length === 0) continue;
     if (!m.glosa?.trim()) continue;
     const ops = (m.chequeo?.opciones ?? []).map((s) => String(s).trim()).filter(Boolean);
@@ -488,7 +600,15 @@ export async function armarClase(opts: {
     // presenta como literal: el bloque dice "libro del profesor" (procedencia, que
     // es cierta) y no lleva número de página. Y pasa por el gate como cualquier
     // otra afirmación, contra el aviso original.
-    errorFrecuente: out.errorComun?.trim() || null,
+    errorFrecuente: (() => {
+      const t = out.errorComun?.trim();
+      if (!t) return null;
+      if (HABLA_AL_DOCENTE.test(t)) {
+        console.warn(`[clase] el error frecuente quedó dirigido al docente; no se muestra: "${t.slice(0, 80)}…"`);
+        return null;
+      }
+      return t;
+    })(),
     errorFuente: opts.errorFrecuente?.trim() || null,
   };
 }
