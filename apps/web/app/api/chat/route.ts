@@ -347,7 +347,14 @@ export async function POST(req: Request) {
             res.ctx.parcial === true,
           );
           controller.enqueue(
-            encoder.encode("\n\x1e" + JSON.stringify({ verification: v, mode, scope: res.ctx!.scope }) + "\n"),
+            encoder.encode("\n\x1e" + JSON.stringify({
+              verification: v, mode, scope: res.ctx!.scope,
+              // Eje SEPARADO del modo: el tema pisa un conocimiento local (la
+              // respuesta depende de Chile). Lo resolvió streamTeaching por los
+              // chunks del turno; general+local lleva advertencia más fuerte
+              // porque ahí la NLI no tiene material contra el que verificar.
+              temaLocal: res.ctx!.temaLocal ?? null,
+            }) + "\n"),
           );
           // TUVO material y llamó al modelo. `selfAbstain` es la señal decisiva:
           // si sale true, el gate hizo bien su trabajo y el que se abstuvo fue
@@ -385,6 +392,8 @@ export async function POST(req: Request) {
             nliUnavailable: v?.unavailable === true,
             nliChecked: v?.checked ?? null,
             mode, supportedFrac, scope: res.ctx.scope ?? null,
+            temaLocal: res.ctx.temaLocal != null,
+            itemLocal: res.ctx.temaLocal ?? null,
             nRetrieved: res.ctx.retrieved?.length ?? null,
             chars: full.length,
             ms: Date.now() - t0,

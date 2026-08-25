@@ -11,6 +11,7 @@ import {
   type TeachingContext,
   type CitableChunk,
   type PedagogyChunk,
+  temaLocalDe,
 } from "@tutor-ia/rag";
 import { chatStream, type ChatMsg } from "./client";
 import { config } from "./config";
@@ -605,6 +606,20 @@ export async function* streamTeaching(
 ): AsyncGenerator<string> {
   const material = formatMaterial(ctx.citable);
   const guide = formatGuide(ctx.pedagogy);
+  /**
+   * ¿El turno pisa un conocimiento LOCAL (la respuesta depende de Chile)?
+   * Se resuelve por los chunks: los citables si hay; si el gate cortó (modo
+   * general), los del ranking crudo — el tema se conoce aunque el material no
+   * alcance. Es un eje SEPARADO del modo: sale del currículum, no de los
+   * veredictos, y por eso se conoce antes de generar.
+   */
+  const chunksDelTema = (ctx.citable.length ? ctx.citable : (ctx.retrieved ?? []).slice(0, 3))
+    .map((c) => c.chunkId);
+  let temaLocal: string | null = null;
+  try {
+    temaLocal = (await temaLocalDe(chunksDelTema))?.item ?? null;
+  } catch { temaLocal = null; }
+  ctx.temaLocal = temaLocal;
   const history: ChatMsg[] = (req.history ?? []).map((m) => ({ role: m.role, content: m.content }));
   const messages: ChatMsg[] = [
     { role: "system", content: TEACHING_SYSTEM },
@@ -626,6 +641,7 @@ export async function* streamTeaching(
         // alumno, el modelo tiene que saberlo para poder decirlo.
         sourceGrades: [...new Set(ctx.citable.map((c) => c.grade).filter(Boolean))] as string[],
         scope: ctx.scope,
+        temaLocal,
       }),
     },
   ];

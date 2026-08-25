@@ -101,17 +101,21 @@
 
   .enref { font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--aviso);
            background:var(--aviso-bg); border-radius:4px; padding:0 5px; margin-left:4px; }
+
+  .dst.med { color:var(--aviso); }
+  .loc { font-size:11px; margin-left:4px; }
 </style>
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">TutorIA · 24 de agosto de 2026 · componentes buscados en todo el corpus</div>
+    <div class="eyebrow">TutorIA · 24 de agosto de 2026 · punteros derivados de los componentes</div>
     <h1>Caminos por curso y materia</h1>
     <p class="sub">
       Cada materia con su camino y los conocimientos que su libro no desarrolla del todo.
-      El checklist es la descomposición oficial del Programa EPJA 2026: ✓ lo que el libro
-      cubre (con página), ✗ lo que falta — y cuando lo que falta está en otro libro que el
-      alumno ya tiene, la flecha dice dónde.
+      El checklist es la descomposición oficial del Programa EPJA 2026; el puntero de cada
+      faltante ahora se deriva de los componentes y nombra el TOMO exacto. 🇨🇱 marca los
+      conocimientos cuya respuesta depende de Chile — donde el tutor no afirma
+      particulares sin material.
     </p>
   </header>
 
@@ -120,7 +124,7 @@
     <div class="cifra"><div class="n">239</div><div class="l">exigencias mapeadas (con repetición entre materias del mismo casillero)</div></div>
     <div class="cifra hi"><div class="n">126</div><div class="l">bien desarrolladas en su libro</div></div>
     <div class="cifra"><div class="n">45</div><div class="l">con checklist oficial de componentes</div></div>
-    <div class="cifra"><div class="n">26</div><div class="l">no están en ese libro — todas con destino</div></div>
+    <div class="cifra"><div class="n">19</div><div class="l">conocimientos locales 🇨🇱 (dependen de Chile)</div></div>
   </div>
 
   <section class="curso">
@@ -135,7 +139,7 @@
           <div class="mini"><div class="minifill" style="width:100%"></div></div>
           <span class="okline">✓ 5 de 9 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Biodiversidad en Chile y su preservación</span></div>
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Biodiversidad en Chile y su preservación <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
               <div class="kn-d"><span class="dst">Lo que hay: p.81</span> <span class="falta">Falta: El libro menciona especies nativas e introducidas, pero no desarrolla la preservación ni la biodiversidad como tema integral de conservación.</span></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Movimientos de la Tierra y la Luna, y sus efectos en los objetos y seres vivos</span></div>
@@ -153,11 +157,11 @@
           <span>tejido <span class="pagref">p.72</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>órgano <span class="enref">→ Biología 1º Medio p.58</span></span>
+          <span>órgano <span class="enref">→ Biología 1º Medio — texto del estudiante p.58</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>sistema <span class="pagref">p.113</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistemas del cuerpo humano: funciones, estructuras básicas (sistemas digestivo, respiratorio, circulatorio y reproductor; tubo digestivo, pulmones y bronquios, vasos sanguíneos y corazón, y gónadas), considerando medidas de prevención y autocuidado</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
@@ -168,17 +172,17 @@
           <span>estructuras básicas del sistema digestivo <span class="pagref">p.135</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructuras básicas del sistema respiratorio <span class="enref">→ Física 1º Medio p.68</span></span>
+          <span>estructuras básicas del sistema respiratorio <span class="enref">→ EPJA I Ciclo Media · Ciencias Naturales — Módulo 7: Fuentes de energía y materia prima p.68</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructuras básicas del sistema circulatorio <span class="enref">→ Física 1º Medio p.100</span></span>
+          <span>estructuras básicas del sistema circulatorio <span class="enref">→ EPJA I Ciclo Media · Ciencias Naturales — Módulo 7: Fuentes de energía y materia prima p.100</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructuras básicas del sistema reproductor <span class="enref">→ Ciencias Naturales 8º p.63</span></span>
+          <span>estructuras básicas del sistema reproductor <span class="enref">→ EPJA Nivel 3 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales p.63</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>medidas de prevención y autocuidado <span class="enref">→ Biología 2º Medio p.141</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>medidas de prevención y autocuidado <span class="enref">→ Biología 2º Medio — texto del estudiante p.141</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -188,28 +192,28 @@
           <div class="mini"><div class="minifill" style="width:31%"></div></div>
           <span class="okline">✓ 4 de 6 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Macrozonas y sus paisajes de Chile; principales zonas naturales, recursos significativos y trabajo humano que le da valor. Riesgos socio-naturales</span></div>
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Macrozonas y sus paisajes de Chile; principales zonas naturales, recursos significativos y trabajo humano que le da valor. Riesgos socio-naturales <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>macrozonas de Chile <span class="enref">→ Historia Geografía Y Ciencias Sociales 8º p.141</span></span>
+          <span>macrozonas de Chile <span class="enref">→ Historia Geografía Y Ciencias Sociales 8º — texto del estudiante p.141</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>paisajes de Chile <span class="enref">→ Historia Geografía Y Ciencias Sociales 6º p.151</span></span>
+          <span>paisajes de Chile <span class="enref">→ EPJA Nivel 2 Básica · Estudios Sociales — Texto Cuaderno Estudios Sociales p.151</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>zonas naturales de Chile <span class="pagref">p.151</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>recursos significativos de Chile <span class="enref">→ Historia Geografía Y Ciencias Sociales 6º p.158</span></span>
+          <span>recursos significativos de Chile <span class="enref">→ EPJA Nivel 2 Básica · Estudios Sociales — Texto Cuaderno Estudios Sociales p.158</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>trabajo humano que da valor</span>
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>riesgos socio-naturales</span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Pueblos originarios en Chile: ubicación geográfica, uso y dominio de recursos naturales</span></div>
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Pueblos originarios en Chile: ubicación geográfica, uso y dominio de recursos naturales <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
               <div class="kn-d"><span class="dst">Lo que hay: p.180</span> <span class="falta">Falta: el uso y dominio de los recursos naturales por parte de los pueblos originarios: ninguna página lo enseña (adaptación al medio, economía indígena, agricultura/ganadería/pesca); ese contenido es de 4º básico…</span></div>
             </li></ul>
         </article><article class="card">
@@ -229,8 +233,8 @@
           <span>narrativa <span class="pagref">p.118</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>textos dramáticos <span class="enref">→ Lengua Y Literatura 2º Medio p.209</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>textos dramáticos <span class="enref">→ Lengua Y Literatura 2º Medio — texto del estudiante p.209</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Normas ortográficas literal, acentual y puntual</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
@@ -242,7 +246,7 @@
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>normas ortográficas puntual</span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Textos orales cotidianos y sus características: tono, volumen, inflexión, ritmo y gestos</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
@@ -259,8 +263,8 @@
           <span>ritmo</span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>gestos <span class="enref">→ Lengua Y Literatura 3º Medio p.241</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>gestos <span class="enref">→ Lengua Y Literatura 3º Medio — texto del estudiante p.241</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -273,14 +277,14 @@
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Medidas de tendencia central (mediana, media, moda)</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>mediana <span class="enref">→ Matemática 3º Medio p.114</span></span>
+          <span>mediana <span class="enref">→ EPJA Segundo Nivel Media 2024 · Matemática — Guía de Aprendizaje 2024 p.114</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>media <span class="pagref">p.156</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>moda <span class="enref">→ Matemática 3º Medio p.112</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>moda <span class="enref">→ EPJA Segundo Nivel Media 2024 · Matemática — Guía de Aprendizaje 2024 p.112</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Rotaciones, reflexiones y traslaciones de figuras 2D, medida de ángulos, perímetro y área</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
@@ -297,11 +301,11 @@
           <span>medida de ángulos <span class="pagref">p.147</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>perímetro de figuras <span class="enref">→ Matemática 6º p.88</span></span>
+          <span>perímetro de figuras <span class="enref">→ EPJA Nivel 2 Básica · Matemática — Texto Cuaderno Matemática p.88</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>área de figuras <span class="pagref">p.296</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article></div>
     </section><section class="curso">
@@ -316,8 +320,8 @@
           <div class="mini"><div class="minifill" style="width:40%"></div></div>
           <span class="okline">✓ 4 de 10 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
-              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Biodiversidad en Chile y su preservación</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Ciencias Naturales 6º</b>, p.81 (otro nivel — el tutor lo alcanza)</span></div>
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Biodiversidad en Chile y su preservación <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
+              <div class="kn-d"><span class="dst med">Está <b>a medias</b> en EPJA Nivel 2 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales, p.81 (otro nivel — el tutor lo alcanza) — qué parte, en el detalle.</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Interacción entre los sistemas del cuerpo humano: digestivo, circulatorio, respiratorio, excretor. Nutrición, nutrientes y salud</span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Ciencias Naturales 8º</b>, p.13 (el otro año del mismo nivel)</span></div>
@@ -342,7 +346,7 @@
           <div class="mini"><div class="minifill" style="width:46%"></div></div>
           <span class="okline">✓ 4 de 5 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
-              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Transformaciones durante la Época Moderna (por ejemplo, encuentro de dos mundos, surgimiento del Estado moderno, difusión del conocimiento, fin de la unidad religiosa)</span></div>
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Transformaciones durante la Época Moderna (por ejemplo, encuentro de dos mundos, surgimiento del Estado moderno, difusión del conocimiento, fin de la unidad religiosa) <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Historia Geografía Y Ciencias Sociales 8º</b>, p.10 (el otro año del mismo nivel)</span></div>
             </li></ul>
         </article><article class="card">
@@ -354,7 +358,7 @@
           <span class="okline">✓ 5 de 9 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Ortografía literal, acentual y puntual</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Lengua Y Literatura 8º</b>, p.128 (el otro año del mismo nivel)</span></div>
+              <div class="kn-d"><span class="dst med">Está <b>a medias</b> en Lengua Y Literatura 8º, p.128 (el otro año del mismo nivel) — qué parte, en el detalle.</span></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Estrategias de comprensión lectora y de comprensión oral</span></div>
               <div class="kn-d"><span class="dst">Lo que hay: p.21</span> <span class="falta">Falta: La comprensión oral como estrategia propia: no hay recuadro que enseñe escucha activa, audición, oralidad ni exposición oral; solo pautas de participación en conversación y en debate.</span></div>
@@ -395,8 +399,8 @@
           <div class="mini"><div class="minifill" style="width:67%"></div></div>
           <span class="okline">✓ 1 de 10 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
-              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Biodiversidad en Chile y su preservación</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Ciencias Naturales 6º</b>, p.81 (otro nivel — el tutor lo alcanza)</span></div>
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Biodiversidad en Chile y su preservación <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
+              <div class="kn-d"><span class="dst med">Está <b>a medias</b> en EPJA Nivel 2 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales, p.81 (otro nivel — el tutor lo alcanza) — qué parte, en el detalle.</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Modelo de la tectónica de placas y su impacto en la naturaleza</span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Ciencias Naturales 7º</b>, p.56 (el otro año del mismo nivel)</span></div>
@@ -436,7 +440,7 @@
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Formación y consolidación de la cultura occidental durante la Edad Media (por ejemplo: confluencia del mundo clásico, judeocristiano y germano; fragmentación territorial y ruralización; cristianismo y conformación del poder político)</span></div>
               <div class="kn-d"><span class="dst">Lo que hay: p.34</span> <span class="falta">Falta: La confluencia del mundo clásico, judeocristiano y germano y, en general, la formación y consolidación de la cultura occidental durante la Edad Media: no hay resultados para &#x27;germano&#x27;, &#x27;judeocristiano&#x27;, &#x27;cristiandad&#x27;, &#x27;señorío&#x27;, &#x27;Edad Media…</span></div>
             </li><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Formas de organización política en la Antigüedad clásica y sus proyecciones en la cultura occidental y latinoamericana, considerando ejemplos del pasado y del presente de Chile</span></div>
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Formas de organización política en la Antigüedad clásica y sus proyecciones en la cultura occidental y latinoamericana, considerando ejemplos del pasado y del presente de Chile <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
               <div class="kn-d"><span class="dst">Lo que hay: p.124</span> <span class="falta">Falta: Las formas de organización política de la Antigüedad clásica: no hay nada sobre Grecia, Atenas, la polis, la democracia ateniense, Roma, la república romana, el senado ni Pericles. La única aparición es una línea en el recuadro de arte rena…</span></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Surgimiento de las primeras civilizaciones, incluyendo un ejemplo de América (procesos característicos, por ejemplo: centralización político-administrativa, urbanización, unidad religiosa, estratificación social, etcétera.)</span></div>
@@ -490,31 +494,31 @@
           <span class="okline">✓ 2 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Características y propiedades del sonido y la luz, y su impacto en la vida cotidiana</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.25 (mismo curso)</span> <ul class="chks"><li class="chk no">
+              <div class="kn-d"><span class="dst">Está <b>repartido en varios de sus libros</b> — el detalle por componente, abajo.</span> <ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>características del sonido <span class="enref">→ Química 2º Medio p.11</span></span>
+          <span>características del sonido <span class="enref">→ EPJA Primer Nivel Media 2024 · Ciencias Naturales — Guía de Aprendizaje 2024 p.11</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>propiedades de la luz <span class="enref">→ Física 2º Medio p.42</span></span>
+          <span>propiedades de la luz <span class="enref">→ Física 2º Medio — texto del estudiante p.42</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>impacto en la vida cotidiana</span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn mal">
-              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.112 (mismo curso)</span></div>
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
+              <div class="kn-d"><span class="dst med">Está <b>a medias</b> en Física 1º Medio — texto del estudiante, p.112 (mismo curso) — qué parte, en el detalle.</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.193 (mismo curso)</span> <ul class="chks"><li class="chk no">
+              <div class="kn-d"><span class="dst">Está <b>repartido en varios de sus libros</b> — el detalle por componente, abajo.</span> <ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>ley de conservación de la energía mecánica <span class="enref">→ Física 2º Medio p.193</span></span>
+          <span>ley de conservación de la energía mecánica <span class="enref">→ Física 2º Medio — texto del estudiante p.193</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>conceptos de trabajo mecánico <span class="enref">→ Física 1º Medio p.181</span></span>
+          <span>conceptos de trabajo mecánico <span class="enref">→ Física 1º Medio — texto del estudiante p.181</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>conceptos de potencia mecánica <span class="enref">→ Física 2º Medio p.184</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>conceptos de potencia mecánica <span class="enref">→ Física 2º Medio — texto del estudiante p.184</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
@@ -528,20 +532,20 @@
           <span>impacto de la evolución en la vida <span class="pagref">p.30</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre organismo y población <span class="enref">→ Biología 2º Medio p.38</span></span>
+          <span>relación entre organismo y población <span class="enref">→ Biología 2º Medio — texto del estudiante p.38</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre población y comunidad <span class="enref">→ Biología 1º Medio p.251</span></span>
+          <span>relación entre población y comunidad <span class="enref">→ Biología 1º Medio — texto del estudiante p.251</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre comunidad y ecosistema <span class="enref">→ Biología 2º Medio p.69</span></span>
+          <span>relación entre comunidad y ecosistema <span class="enref">→ Biología 2º Medio — texto del estudiante p.69</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>principios de herencia genética de Mendel <span class="enref">→ Biología 2º Medio p.217</span></span>
+          <span>principios de herencia genética de Mendel <span class="enref">→ Biología 2º Medio — texto del estudiante p.217</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructura y función del ADN <span class="enref">→ Ciencias Naturales 8º p.41</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>estructura y función del ADN <span class="enref">→ EPJA Nivel 3 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales p.41</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
@@ -549,10 +553,10 @@
           <span>grupos funcionales haluros éteres alcoholes</span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>propiedades y características del carbono <span class="enref">→ Química 2º Medio p.14</span></span>
+          <span>propiedades y características del carbono <span class="enref">→ Química 2º Medio — texto del estudiante p.203</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>formación de moléculas orgánicas <span class="enref">→ Química 1º Medio p.150</span></span>
+          <span>formación de moléculas orgánicas <span class="enref">→ Química 1º Medio — texto del estudiante p.150</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>fotosíntesis <span class="pagref">p.102</span></span>
@@ -562,7 +566,7 @@
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>ciclo del carbono <span class="pagref">p.95</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
@@ -570,7 +574,7 @@
           <span>características del sistema nervioso <span class="pagref">p.244</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructuras básicas del sistema endocrino <span class="enref">→ Ciencias Para La Ciudadanía 3º Medio p.61</span></span>
+          <span>estructuras básicas del sistema endocrino <span class="enref">→ EPJA II Ciclo Media · Ciencias Naturales — Módulo 4: Recepción y flujo de información en el organismo p.61</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>nervios y cerebro <span class="pagref">p.131</span></span>
@@ -579,7 +583,7 @@
           <span>páncreas <span class="pagref">p.244</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>hormonas sexuales <span class="enref">→ Ciencias Para La Ciudadanía 3º Medio p.70</span></span>
+          <span>hormonas sexuales <span class="enref">→ EPJA II Ciclo Media · Ciencias Naturales — Módulo 4: Recepción y flujo de información en el organismo p.70</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>hormonas pancreáticas <span class="pagref">p.244</span></span>
@@ -591,8 +595,8 @@
           <span>medidas de protección</span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>autocuidado <span class="enref">→ Biología 2º Medio p.141</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>autocuidado <span class="enref">→ Biología 2º Medio — texto del estudiante p.141</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -605,34 +609,34 @@
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>teorías asociadas a la evolución <span class="enref">→ Biología 1º Medio p.38</span></span>
+          <span>teorías asociadas a la evolución <span class="enref">→ Biología 1º Medio — texto del estudiante p.38</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>evidencias de la evolución <span class="enref">→ Biología 1º Medio p.39</span></span>
+          <span>evidencias de la evolución <span class="enref">→ Biología 1º Medio — texto del estudiante p.39</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>impacto de la evolución en la vida <span class="enref">→ Ciencias Para La Ciudadanía 4º Medio p.20</span></span>
+          <span>impacto de la evolución en la vida <span class="enref">→ EPJA II Ciclo Media · Ciencias Naturales — Módulo 5: Evolución y biodiversidad p.20</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre organismo y población <span class="enref">→ Biología 2º Medio p.38</span></span>
+          <span>relación entre organismo y población <span class="enref">→ Biología 2º Medio — texto del estudiante p.38</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre población y comunidad <span class="enref">→ Biología 1º Medio p.251</span></span>
+          <span>relación entre población y comunidad <span class="enref">→ Biología 1º Medio — texto del estudiante p.251</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre comunidad y ecosistema <span class="enref">→ Biología 2º Medio p.69</span></span>
+          <span>relación entre comunidad y ecosistema <span class="enref">→ Biología 2º Medio — texto del estudiante p.69</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>principios de herencia genética de Mendel <span class="enref">→ Biología 2º Medio p.217</span></span>
+          <span>principios de herencia genética de Mendel <span class="enref">→ Biología 2º Medio — texto del estudiante p.217</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructura y función del ADN <span class="enref">→ Ciencias Naturales 8º p.41</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>estructura y función del ADN <span class="enref">→ EPJA Nivel 3 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales p.41</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>la creación del universo <span class="enref">→ Educación Ciudadana 4º Medio p.52</span></span>
+          <span>la creación del universo <span class="enref">→ EPJA II Ciclo Media · Ciencias Sociales — Módulo 1: Etapas de la historia universal p.52</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>la evolución del universo <span class="pagref">p.112</span></span>
@@ -641,8 +645,8 @@
           <span>teorías científicas del universo <span class="pagref">p.116</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>cosmovisiones de pueblos originarios <span class="enref">→ Ciencias Naturales 6º p.174</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>cosmovisiones de pueblos originarios <span class="enref">→ EPJA Nivel 2 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales p.174</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Leyes de conservación de la materia. Reacciones químicas y formación de compuestos útiles para los seres vivos</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
@@ -653,14 +657,14 @@
           <span>Reacciones químicas <span class="pagref">p.54</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>Formación de compuestos útiles para los seres vivos <span class="enref">→ Química 2º Medio p.11</span></span>
+          <span>Formación de compuestos útiles para los seres vivos <span class="enref">→ EPJA I Ciclo Media · Ciencias Naturales — Módulo 4: Materia orgánica y combustibles fósiles p.11</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>Reorganización de átomos <span class="pagref">p.58</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>Formación de nuevas sustancias <span class="pagref">p.54</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
@@ -671,8 +675,8 @@
           <span>conceptos de trabajo mecánico <span class="pagref">p.189</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>conceptos de potencia mecánica <span class="enref">→ Física 2º Medio p.184</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>conceptos de potencia mecánica <span class="enref">→ Física 2º Medio — texto del estudiante p.184</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
@@ -693,37 +697,37 @@
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>ciclo del carbono <span class="enref">→ Biología 2º Medio p.95</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>características del sistema nervioso <span class="enref">→ Biología 2º Medio p.131</span></span>
+          <span>características del sistema nervioso <span class="enref">→ Biología 2º Medio — texto del estudiante p.131</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructuras básicas del sistema endocrino <span class="enref">→ Ciencias Para La Ciudadanía 3º Medio p.61</span></span>
+          <span>estructuras básicas del sistema endocrino <span class="enref">→ EPJA II Ciclo Media · Ciencias Naturales — Módulo 4: Recepción y flujo de información en el organismo p.61</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>nervios y cerebro <span class="enref">→ Biología 2º Medio p.133</span></span>
+          <span>nervios y cerebro <span class="enref">→ Biología 2º Medio — texto del estudiante p.133</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>páncreas <span class="enref">→ Ciencias Naturales 6º p.136</span></span>
+          <span>páncreas <span class="enref">→ EPJA Nivel 2 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales p.136</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>hormonas sexuales <span class="enref">→ Ciencias Para La Ciudadanía 3º Medio p.70</span></span>
+          <span>hormonas sexuales <span class="enref">→ EPJA II Ciclo Media · Ciencias Naturales — Módulo 4: Recepción y flujo de información en el organismo p.70</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>hormonas pancreáticas</span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>efectos del consumo de drogas <span class="enref">→ Ciencias Para La Ciudadanía 4º Medio p.30</span></span>
+          <span>efectos del consumo de drogas <span class="enref">→ Ciencias Para La Ciudadanía 4º Medio — texto del estudiante p.30</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>medidas de protección</span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>autocuidado <span class="enref">→ Biología 2º Medio p.141</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>autocuidado <span class="enref">→ Biología 2º Medio — texto del estudiante p.141</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -733,19 +737,19 @@
           <div class="mini"><div class="minifill" style="width:73%"></div></div>
           <span class="okline">✓ 4 de 6 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Revoluciones del siglo XVIII e inicios del siglo XIX en Europa y América, incluyendo la Independencia de Chile</span></div>
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Revoluciones del siglo XVIII e inicios del siglo XIX en Europa y América, incluyendo la Independencia de Chile <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>revoluciones del siglo XVIII en Europa <span class="enref">→ Historia Geografía Y Ciencias Sociales 6º p.63</span></span>
+          <span>revoluciones del siglo XVIII en Europa <span class="enref">→ Historia Geografía Y Ciencias Sociales 8º — texto del estudiante p.94</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>revoluciones del siglo XVIII en América <span class="enref">→ Historia Geografía Y Ciencias Sociales 6º p.63</span></span>
+          <span>revoluciones del siglo XVIII en América <span class="enref">→ Historia Geografía Y Ciencias Sociales 6º — texto del estudiante p.63</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>independencia de Chile <span class="pagref">p.81</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Visión general sobre el desarrollo político, económico, social y medioambiental en Chile durante el siglo XIX y primera mitad del siglo XX, incluyendo la perspectiva de los pueblos indígenas y las mujeres</span></div>
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Visión general sobre el desarrollo político, económico, social y medioambiental en Chile durante el siglo XIX y primera mitad del siglo XX, incluyendo la perspectiva de los pueblos indígenas y las mujeres <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
           <span class="tick">✓</span>
           <span>desarrollo político en Chile siglo XIX y XX <span class="pagref">p.96</span></span>
@@ -754,17 +758,17 @@
           <span>desarrollo económico en Chile siglo XIX y XX <span class="pagref">p.54</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>desarrollo social en Chile siglo XIX y XX <span class="enref">→ Historia Geografía Y Ciencias Sociales 2º Medio p.136</span></span>
+          <span>desarrollo social en Chile siglo XIX y XX <span class="enref">→ EPJA Primer Nivel Media 2024 · Ciencias Sociales — Guía de Aprendizaje 2024 p.136</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>desarrollo medioambiental en Chile siglo XIX y XX <span class="enref">→ Historia Geografía Y Ciencias Sociales 2º Medio p.248</span></span>
+          <span>desarrollo medioambiental en Chile siglo XIX y XX <span class="enref">→ Historia Geografía Y Ciencias Sociales 2º Medio — texto del estudiante p.248</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>perspectiva de los pueblos indígenas <span class="enref">→ Historia Geografía Y Ciencias Sociales 7º p.78</span></span>
+          <span>perspectiva de los pueblos indígenas <span class="enref">→ Historia Geografía Y Ciencias Sociales 7º — texto del estudiante p.78</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>perspectiva de las mujeres <span class="enref">→ Lenguaje Y Comunicación 6º p.224</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>perspectiva de las mujeres <span class="enref">→ Lenguaje Y Comunicación 6º — texto del estudiante p.224</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -777,14 +781,14 @@
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Intertextualidad a través de personajes, temas y símbolos de textos clásicos</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>personajes de textos clásicos <span class="enref">→ Lengua Y Literatura 1º Medio p.203</span></span>
+          <span>personajes de textos clásicos <span class="enref">→ Lengua Y Literatura 1º Medio — texto del estudiante p.203</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>temas de textos clásicos <span class="enref">→ Lengua Y Literatura 1º Medio p.142</span></span>
+          <span>temas de textos clásicos <span class="enref">→ Lengua Y Literatura 1º Medio — texto del estudiante p.142</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>símbolos de textos clásicos <span class="enref">→ Lengua Y Literatura 2º Medio p.67</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>símbolos de textos clásicos <span class="enref">→ Lengua Y Literatura 2º Medio — texto del estudiante p.67</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Normas de citación</span></div>
               <div class="kn-d"><span class="dst">Lo que hay: p.30</span> <span class="falta">Falta: La norma de citación propiamente tal: el formato de la referencia bibliográfica (autor, año, título, editorial; APA, MLA) no se enseña en ninguna parte del texto del estudiante. La Bibliografía (pp. 222-225) muestra el formato pero no lo ex…</span></div>
@@ -798,16 +802,16 @@
           <span class="okline">✓ 5 de 6 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Función y ecuación cuadrática</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Matemática 2º Medio</b>, p.163 (el otro año del mismo nivel)</span> <ul class="chks"><li class="chk no">
+              <div class="kn-d"><span class="dst">Está <b>repartido en varios de sus libros</b> — el detalle por componente, abajo.</span> <ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>productos notables <span class="enref">→ Matemática 2º Medio p.29</span></span>
+          <span>productos notables <span class="enref">→ EPJA I Ciclo Media · Matemática — Guía 3: Números y letras para resolver problemas p.29</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>función cuadrática <span class="enref">→ Matemática 3º Medio p.9</span></span>
+          <span>función cuadrática <span class="enref">→ EPJA II Ciclo Media · Matemática — Guía 2: Las funciones cuadráticas p.9</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>ecuación cuadrática <span class="enref">→ Matemática 2º Medio p.53</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>ecuación cuadrática <span class="enref">→ Matemática 2º Medio — texto del estudiante p.53</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -818,64 +822,64 @@
           <span class="okline">✓ 1 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Características y propiedades del sonido y la luz, y su impacto en la vida cotidiana</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.25 (mismo curso)</span> <ul class="chks"><li class="chk no">
+              <div class="kn-d"><span class="dst">Está <b>repartido en varios de sus libros</b> — el detalle por componente, abajo.</span> <ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>características del sonido <span class="enref">→ Química 2º Medio p.11</span></span>
+          <span>características del sonido <span class="enref">→ EPJA Primer Nivel Media 2024 · Ciencias Naturales — Guía de Aprendizaje 2024 p.11</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>propiedades de la luz <span class="enref">→ Física 2º Medio p.42</span></span>
+          <span>propiedades de la luz <span class="enref">→ Física 2º Medio — texto del estudiante p.42</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>impacto en la vida cotidiana</span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Biología 1º Medio</b>, p.26 (mismo curso)</span> <ul class="chks"><li class="chk no">
+              <div class="kn-d"><span class="dst">Está <b>repartido en varios de sus libros</b> — el detalle por componente, abajo.</span> <ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>teorías asociadas a la evolución <span class="enref">→ Biología 1º Medio p.38</span></span>
+          <span>teorías asociadas a la evolución <span class="enref">→ Biología 1º Medio — texto del estudiante p.38</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>evidencias de la evolución <span class="enref">→ Biología 1º Medio p.39</span></span>
+          <span>evidencias de la evolución <span class="enref">→ Biología 1º Medio — texto del estudiante p.39</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>impacto de la evolución en la vida <span class="enref">→ Ciencias Para La Ciudadanía 4º Medio p.20</span></span>
+          <span>impacto de la evolución en la vida <span class="enref">→ EPJA II Ciclo Media · Ciencias Naturales — Módulo 5: Evolución y biodiversidad p.20</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre organismo y población <span class="enref">→ Biología 2º Medio p.38</span></span>
+          <span>relación entre organismo y población <span class="enref">→ Biología 2º Medio — texto del estudiante p.38</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre población y comunidad <span class="enref">→ Biología 1º Medio p.251</span></span>
+          <span>relación entre población y comunidad <span class="enref">→ Biología 1º Medio — texto del estudiante p.251</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre comunidad y ecosistema <span class="enref">→ Biología 2º Medio p.69</span></span>
+          <span>relación entre comunidad y ecosistema <span class="enref">→ Biología 2º Medio — texto del estudiante p.69</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>principios de herencia genética de Mendel <span class="enref">→ Biología 2º Medio p.217</span></span>
+          <span>principios de herencia genética de Mendel <span class="enref">→ Biología 2º Medio — texto del estudiante p.217</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructura y función del ADN <span class="enref">→ Ciencias Naturales 8º p.41</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>estructura y función del ADN <span class="enref">→ EPJA Nivel 3 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales p.41</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn mal">
-              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.112 (mismo curso)</span></div>
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
+              <div class="kn-d"><span class="dst med">Está <b>a medias</b> en Física 1º Medio — texto del estudiante, p.112 (mismo curso) — qué parte, en el detalle.</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.193 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst med">Está <b>a medias</b> en Física 1º Medio — texto del estudiante, p.193 (mismo curso) — qué parte, en el detalle.</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.93 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst med">Está <b>a medias</b> en EPJA Primer Nivel Media 2024 · Ciencias Naturales — Guía de Aprendizaje 2024, p.93 (mismo curso) — qué parte, en el detalle.</span></div>
             </li><li class="kn otr">
               <div class="kn-h"><span class="sello otr">🟠 otro curso</span><span class="kn-t">Principios básicos de herencia genética en plantas y animales propuestos por Mendel. Estructura y función del ADN</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 1º Medio</b>, p.17 (mismo curso)</span> <ul class="chks"><li class="chk no">
+              <div class="kn-d"><span class="dst">Está <b>repartido en varios de sus libros</b> — el detalle por componente, abajo.</span> <ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>principios básicos de herencia genética propuestos por Mendel <span class="enref">→ Biología 1º Medio p.217</span></span>
+          <span>principios básicos de herencia genética propuestos por Mendel <span class="enref">→ Biología 1º Medio — texto del estudiante p.217</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructura del ADN <span class="enref">→ Ciencias Naturales 8º p.41</span></span>
+          <span>estructura del ADN <span class="enref">→ EPJA Nivel 3 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales p.41</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>función del ADN <span class="enref">→ Física 1º Medio p.35</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>función del ADN <span class="enref">→ EPJA I Ciclo Media · Ciencias Naturales — Módulo 5: La célula p.35</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
@@ -896,7 +900,7 @@
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>ciclo del carbono <span class="enref">→ Biología 2º Medio p.95</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article></div>
     </section><section class="curso">
@@ -912,19 +916,19 @@
           <span class="okline">✓ 3 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Características y propiedades del sonido y la luz, y su impacto en la vida cotidiana</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Química 2º Medio</b>, p.16 (mismo curso)</span> <ul class="chks"><li class="chk no">
+              <div class="kn-d"><span class="dst">Está <b>repartido en varios de sus libros</b> — el detalle por componente, abajo.</span> <ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>características del sonido <span class="enref">→ Química 2º Medio p.11</span></span>
+          <span>características del sonido <span class="enref">→ EPJA Primer Nivel Media 2024 · Ciencias Naturales — Guía de Aprendizaje 2024 p.11</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>propiedades de la luz <span class="enref">→ Física 2º Medio p.42</span></span>
+          <span>propiedades de la luz <span class="enref">→ Física 2º Medio — texto del estudiante p.42</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>impacto en la vida cotidiana</span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn mal">
-              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 2º Medio</b>, p.112 (mismo curso)</span></div>
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
+              <div class="kn-d"><span class="dst med">Está <b>a medias</b> en Física 2º Medio, p.112 (mismo curso) — qué parte, en el detalle.</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Física 2º Medio</b>, p.179 (mismo curso)</span></div>
@@ -941,20 +945,20 @@
           <span>impacto de la evolución en la vida <span class="pagref">p.30</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre organismo y población <span class="enref">→ Biología 2º Medio p.38</span></span>
+          <span>relación entre organismo y población <span class="enref">→ Biología 2º Medio — texto del estudiante p.38</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre población y comunidad <span class="enref">→ Biología 1º Medio p.251</span></span>
+          <span>relación entre población y comunidad <span class="enref">→ Biología 1º Medio — texto del estudiante p.251</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre comunidad y ecosistema <span class="enref">→ Biología 2º Medio p.69</span></span>
+          <span>relación entre comunidad y ecosistema <span class="enref">→ Biología 2º Medio — texto del estudiante p.69</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>principios de herencia genética de Mendel <span class="enref">→ Biología 2º Medio p.217</span></span>
+          <span>principios de herencia genética de Mendel <span class="enref">→ Biología 2º Medio — texto del estudiante p.217</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructura y función del ADN <span class="enref">→ Ciencias Naturales 8º p.41</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>estructura y función del ADN <span class="enref">→ EPJA Nivel 3 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales p.41</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
@@ -962,10 +966,10 @@
           <span>grupos funcionales haluros éteres alcoholes</span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>propiedades y características del carbono <span class="enref">→ Química 2º Medio p.14</span></span>
+          <span>propiedades y características del carbono <span class="enref">→ Química 2º Medio — texto del estudiante p.203</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>formación de moléculas orgánicas <span class="enref">→ Química 1º Medio p.150</span></span>
+          <span>formación de moléculas orgánicas <span class="enref">→ Química 1º Medio — texto del estudiante p.150</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>fotosíntesis <span class="pagref">p.102</span></span>
@@ -975,7 +979,7 @@
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>ciclo del carbono <span class="pagref">p.95</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -986,40 +990,40 @@
           <span class="okline">✓ 1 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.52 (mismo curso)</span> <ul class="chks"><li class="chk no">
+              <div class="kn-d"><span class="dst">Está <b>repartido en varios de sus libros</b> — el detalle por componente, abajo.</span> <ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>teorías asociadas a la evolución <span class="enref">→ Biología 1º Medio p.38</span></span>
+          <span>teorías asociadas a la evolución <span class="enref">→ Biología 1º Medio — texto del estudiante p.38</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>evidencias de la evolución <span class="enref">→ Biología 1º Medio p.39</span></span>
+          <span>evidencias de la evolución <span class="enref">→ Biología 1º Medio — texto del estudiante p.39</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>impacto de la evolución en la vida <span class="enref">→ Ciencias Para La Ciudadanía 4º Medio p.20</span></span>
+          <span>impacto de la evolución en la vida <span class="enref">→ EPJA II Ciclo Media · Ciencias Naturales — Módulo 5: Evolución y biodiversidad p.20</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre organismo y población <span class="enref">→ Biología 2º Medio p.38</span></span>
+          <span>relación entre organismo y población <span class="enref">→ Biología 2º Medio — texto del estudiante p.38</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre población y comunidad <span class="enref">→ Biología 1º Medio p.251</span></span>
+          <span>relación entre población y comunidad <span class="enref">→ Biología 1º Medio — texto del estudiante p.251</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre comunidad y ecosistema <span class="enref">→ Biología 2º Medio p.69</span></span>
+          <span>relación entre comunidad y ecosistema <span class="enref">→ Biología 2º Medio — texto del estudiante p.69</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>principios de herencia genética de Mendel <span class="enref">→ Biología 2º Medio p.217</span></span>
+          <span>principios de herencia genética de Mendel <span class="enref">→ Biología 2º Medio — texto del estudiante p.217</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructura y función del ADN <span class="enref">→ Ciencias Naturales 8º p.41</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>estructura y función del ADN <span class="enref">→ EPJA Nivel 3 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales p.41</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Leyes de conservación de la materia. Reacciones químicas y formación de compuestos útiles para los seres vivos</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.103 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio — texto del estudiante</b>, p.103 (mismo curso)</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Principios básicos de herencia genética en plantas y animales propuestos por Mendel. Estructura y función del ADN</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Química 2º Medio</b>, p.81 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst ok">Está en <b>EPJA I Ciclo Media · Ciencias Naturales — Módulo 6: La reproducción y la herencia</b>, p.81 (mismo curso)</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.95 (mismo curso)</span></div>
+              <div class="kn-d"><span class="dst med">Está <b>a medias</b> en Biología 2º Medio — texto del estudiante, p.95 (mismo curso) — qué parte, en el detalle.</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Biología 2º Medio</b>, p.130 (mismo curso)</span></div>
@@ -1030,13 +1034,13 @@
           <span>características del sonido <span class="pagref">p.34</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>propiedades de la luz <span class="enref">→ Física 2º Medio p.42</span></span>
+          <span>propiedades de la luz <span class="enref">→ Física 2º Medio — texto del estudiante p.42</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>impacto en la vida cotidiana</span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
           <span class="tick">✓</span>
           <span>la creación del universo <span class="pagref">p.112</span></span>
@@ -1048,8 +1052,8 @@
           <span>teorías científicas del universo <span class="pagref">p.112</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>cosmovisiones de pueblos originarios <span class="enref">→ Ciencias Naturales 6º p.174</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>cosmovisiones de pueblos originarios <span class="enref">→ EPJA Nivel 2 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales p.174</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -1059,7 +1063,7 @@
           <div class="mini"><div class="minifill" style="width:44%"></div></div>
           <span class="okline">✓ 4 de 6 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Multiculturalismo, identidades y patrimonio material e inmaterial en Chile</span></div>
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Multiculturalismo, identidades y patrimonio material e inmaterial en Chile <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
           <span class="tick">✓</span>
           <span>multiculturalismo en Chile <span class="pagref">p.256</span></span>
@@ -1068,13 +1072,13 @@
           <span>identidades en Chile <span class="pagref">p.14</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>patrimonio material en Chile <span class="enref">→ Historia Geografía Y Ciencias Sociales 8º p.86</span></span>
+          <span>patrimonio material en Chile <span class="enref">→ Historia Geografía Y Ciencias Sociales 8º — texto del estudiante p.86</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>patrimonio inmaterial en Chile <span class="enref">→ Historia Geografía Y Ciencias Sociales 7º p.156</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>patrimonio inmaterial en Chile <span class="enref">→ Historia Geografía Y Ciencias Sociales 7º — texto del estudiante p.156</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Visión general sobre el desarrollo político, económico, social y medioambiental en Chile durante el siglo XIX y primera mitad del siglo XX, incluyendo la perspectiva de los pueblos indígenas y las mujeres</span></div>
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Visión general sobre el desarrollo político, económico, social y medioambiental en Chile durante el siglo XIX y primera mitad del siglo XX, incluyendo la perspectiva de los pueblos indígenas y las mujeres <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
           <span class="tick">✓</span>
           <span>desarrollo político en Chile siglo XIX y XX <span class="pagref">p.136</span></span>
@@ -1086,14 +1090,14 @@
           <span>desarrollo social en Chile siglo XIX y XX <span class="pagref">p.106</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>desarrollo medioambiental en Chile siglo XIX y XX <span class="enref">→ Historia Geografía Y Ciencias Sociales 2º Medio p.248</span></span>
+          <span>desarrollo medioambiental en Chile siglo XIX y XX <span class="enref">→ Historia Geografía Y Ciencias Sociales 2º Medio — texto del estudiante p.248</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>perspectiva de los pueblos indígenas <span class="pagref">p.107</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>perspectiva de las mujeres <span class="enref">→ Lenguaje Y Comunicación 6º p.224</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>perspectiva de las mujeres <span class="enref">→ Lenguaje Y Comunicación 6º — texto del estudiante p.224</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -1110,7 +1114,7 @@
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>comprensión oral</span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Intertextualidad a través de personajes, temas y símbolos de textos clásicos</span></div>
               <div class="kn-d"><span class="dst">Lo que hay: p.128</span> <span class="falta">Falta: la intertextualidad como concepto: la palabra no aparece nunca en el libro y no se enseña la relación entre textos (alusión, cita, parodia, reescritura); el libro llega solo hasta comparar un mismo tema en dos épocas…</span></div>
@@ -1129,11 +1133,11 @@
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Homotecias y teorema de Thales</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>homotecias <span class="enref">→ Matemática 1º Medio p.110</span></span>
+          <span>homotecias <span class="enref">→ Matemática 1º Medio — texto del estudiante p.110</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>teorema de Thales <span class="enref">→ Matemática 1º Medio p.124</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>teorema de Thales <span class="enref">→ Matemática 1º Medio — texto del estudiante p.124</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Operaciones con números racionales, potencias, raíces y sus propiedades</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
@@ -1147,7 +1151,7 @@
           <span>propiedades de raíces <span class="pagref">p.13</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>relación entre potencias y raíces <span class="enref">→ Matemática 2º Medio p.24</span></span>
+          <span>relación entre potencias y raíces <span class="enref">→ Matemática 2º Medio — texto del estudiante p.24</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>escritura científica <span class="pagref">p.47</span></span>
@@ -1157,7 +1161,7 @@
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>potencias de exponente negativo <span class="pagref">p.47</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Probabilidades, regla multiplicativa y regla aditiva</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
@@ -1168,8 +1172,8 @@
           <span>regla multiplicativa <span class="pagref">p.126</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>regla aditiva <span class="enref">→ Matemática 1º Medio p.203</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>regla aditiva <span class="enref">→ Matemática 1º Medio — texto del estudiante p.203</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article><article class="card">
           <header class="card-h">
@@ -1179,8 +1183,8 @@
           <div class="mini"><div class="minifill" style="width:38%"></div></div>
           <span class="okline">✓ 2 de 8 conocimientos bien desarrollados</span>
           <ul class="kns"><li class="kn mal">
-              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios</span></div>
-              <div class="kn-d"><span class="dst ok">Está en <b>Física 2º Medio</b>, p.112 (mismo curso)</span></div>
+              <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">La creación y evolución del universo según teorías científicas y cosmovisiones de los pueblos originarios <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
+              <div class="kn-d"><span class="dst med">Está <b>a medias</b> en Física 2º Medio, p.112 (mismo curso) — qué parte, en el detalle.</span></div>
             </li><li class="kn mal">
               <div class="kn-h"><span class="sello mal">🔴 no está</span><span class="kn-t">Movimiento, ley de conservación de la energía mecánica y los conceptos de trabajo y potencia mecánica</span></div>
               <div class="kn-d"><span class="dst ok">Está en <b>Física 2º Medio</b>, p.179 (mismo curso)</span></div>
@@ -1188,13 +1192,13 @@
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Evolución, teorías asociadas y sus evidencias y su impacto en el desarrollo de la vida. Relación entre organismo, población, comunidad y ecosistema</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>teorías asociadas a la evolución <span class="enref">→ Biología 1º Medio p.38</span></span>
+          <span>teorías asociadas a la evolución <span class="enref">→ Biología 1º Medio — texto del estudiante p.38</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>evidencias de la evolución <span class="enref">→ Biología 1º Medio p.39</span></span>
+          <span>evidencias de la evolución <span class="enref">→ Biología 1º Medio — texto del estudiante p.39</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>impacto de la evolución en la vida <span class="enref">→ Ciencias Para La Ciudadanía 4º Medio p.20</span></span>
+          <span>impacto de la evolución en la vida <span class="enref">→ EPJA II Ciclo Media · Ciencias Naturales — Módulo 5: Evolución y biodiversidad p.20</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>relación entre organismo y población <span class="pagref">p.20</span></span>
@@ -1206,11 +1210,11 @@
           <span>relación entre comunidad y ecosistema <span class="pagref">p.102</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>principios de herencia genética de Mendel <span class="enref">→ Biología 2º Medio p.217</span></span>
+          <span>principios de herencia genética de Mendel <span class="enref">→ Biología 2º Medio — texto del estudiante p.217</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructura y función del ADN <span class="enref">→ Ciencias Naturales 8º p.41</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>estructura y función del ADN <span class="enref">→ EPJA Nivel 3 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales p.41</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Leyes de conservación de la materia. Reacciones químicas y formación de compuestos útiles para los seres vivos</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
@@ -1218,17 +1222,17 @@
           <span>Leyes de conservación de la materia <span class="pagref">p.45</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>Reacciones químicas <span class="enref">→ Química 2º Medio p.48</span></span>
+          <span>Reacciones químicas <span class="enref">→ Química 2º Medio — texto del estudiante p.48</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>Formación de compuestos útiles para los seres vivos <span class="enref">→ Química 2º Medio p.11</span></span>
+          <span>Formación de compuestos útiles para los seres vivos <span class="enref">→ EPJA I Ciclo Media · Ciencias Naturales — Módulo 4: Materia orgánica y combustibles fósiles p.11</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>Reorganización de átomos <span class="enref">→ Ciencias Naturales 7º p.151</span></span>
+          <span>Reorganización de átomos <span class="enref">→ EPJA Nivel 3 Básica · Ciencias Naturales — Texto Cuaderno Ciencias Naturales p.151</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>Formación de nuevas sustancias <span class="enref">→ Química 2º Medio p.53</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>Formación de nuevas sustancias <span class="enref">→ EPJA Primer Nivel Media 2024 · Ciencias Naturales — Guía de Aprendizaje 2024 p.53</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Química orgánica y los grupos funcionales (haluros, éteres, alcoholes, entre otros). Propiedades y características del carbono y su relación en la formación de moléculas orgánicas. Fotosíntesis y la respiración celular y ciclo del carbono</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk si">
@@ -1249,37 +1253,37 @@
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>ciclo del carbono <span class="enref">→ Biología 2º Medio p.95</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li><li class="kn par">
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Sistemas del cuerpo humano: características y estructuras básicas del sistema nervioso y endocrino; nervios y cerebro, páncreas y hormonas sexuales y pancreáticas. Efectos del consumo de drogas, medidas de protección y autocuidado</span></div>
               <div class="kn-d"><ul class="chks"><li class="chk no">
           <span class="tick">✗</span>
-          <span>características del sistema nervioso <span class="enref">→ Biología 2º Medio p.131</span></span>
+          <span>características del sistema nervioso <span class="enref">→ Biología 2º Medio — texto del estudiante p.131</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>estructuras básicas del sistema endocrino <span class="enref">→ Ciencias Para La Ciudadanía 3º Medio p.61</span></span>
+          <span>estructuras básicas del sistema endocrino <span class="enref">→ EPJA II Ciclo Media · Ciencias Naturales — Módulo 4: Recepción y flujo de información en el organismo p.61</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>nervios y cerebro <span class="enref">→ Biología 2º Medio p.133</span></span>
+          <span>nervios y cerebro <span class="enref">→ Biología 2º Medio — texto del estudiante p.133</span></span>
         </li><li class="chk si">
           <span class="tick">✓</span>
           <span>páncreas <span class="pagref">p.93</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>hormonas sexuales <span class="enref">→ Ciencias Para La Ciudadanía 3º Medio p.70</span></span>
+          <span>hormonas sexuales <span class="enref">→ EPJA II Ciclo Media · Ciencias Naturales — Módulo 4: Recepción y flujo de información en el organismo p.70</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>hormonas pancreáticas</span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>efectos del consumo de drogas <span class="enref">→ Ciencias Para La Ciudadanía 4º Medio p.30</span></span>
+          <span>efectos del consumo de drogas <span class="enref">→ Ciencias Para La Ciudadanía 4º Medio — texto del estudiante p.30</span></span>
         </li><li class="chk no">
           <span class="tick">✗</span>
           <span>medidas de protección</span>
         </li><li class="chk no">
           <span class="tick">✗</span>
-          <span>autocuidado <span class="enref">→ Biología 2º Medio p.141</span></span>
-        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → dónde está lo que falta</div></div>
+          <span>autocuidado <span class="enref">→ Biología 2º Medio — texto del estudiante p.141</span></span>
+        </li></ul><div class="fuente-comp">Componentes según el Programa de Estudio EPJA 2026 · → el tomo donde está lo que falta</div></div>
             </li></ul>
         </article></div>
     </section><section class="curso">
@@ -1383,7 +1387,7 @@
               <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Conceptos económicos y economía global actual (por ejemplo: mercado financiero, comercio mundial, cambios en la producción y en el mercado del trabajo, nuevas formas de consumo)</span></div>
               <div class="kn-d"><span class="dst">Lo que hay: p.98</span> <span class="falta">Falta: el mercado financiero y las nuevas formas de consumo: no hay lección sobre ninguno de los dos (la expresión «mercado financiero» solo aparece dentro de una columna de opinión en la evaluación de la p. 122)</span></div>
             </li><li class="kn par">
-              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Procesos geográficos, sociales y culturales recientes en Chile y América Latina (por ejemplo: migraciones, presente de los pueblos indígenas, cambios demográficos, desafíos en torno a la planificación urbana y rural)</span></div>
+              <div class="kn-h"><span class="sello par">🟡 incompleto</span><span class="kn-t">Procesos geográficos, sociales y culturales recientes en Chile y América Latina (por ejemplo: migraciones, presente de los pueblos indígenas, cambios demográficos, desafíos en torno a la planificación urbana y rural) <span class="loc" title="La respuesta correcta depende de Chile">🇨🇱</span></span></div>
               <div class="kn-d"><span class="dst">Lo que hay: p.202</span> <span class="falta">Falta: América Latina como región y la planificación rural: el libro no las trata…</span></div>
             </li></ul>
         </article><article class="card">
@@ -1432,10 +1436,11 @@
     </section>
 
   <p class="pie">
-    ✓ componente cubierto en el propio libro, con página · ✗ faltante; la flecha (→) dice en
-    qué otro libro del alumno está, medido buscando en todo el corpus y leyendo. Los ✗ sin
-    flecha son la lista real de material a conseguir. Donde el programa EPJA no se publicó
-    todavía (Nivel 3 Básica y casi todo Nivel 2 Media) queda la descripción del lector.
-    Cursos 1º-5º básico y materias apagadas quedan fuera.
+    ✓ componente cubierto en el propio libro, con página · ✗ faltante, con → el tomo del
+    alumno donde está. "Está a medias en…" reemplaza al viejo "ya lo tiene" cuando la
+    ubicación no desarrolla el ítem completo; "repartido" cuando los componentes viven en
+    varios tomos y un puntero único mentiría. 🇨🇱 = la respuesta correcta depende de Chile
+    (lista cerrada, schema_curriculum_local.sql). Cursos 1º-5º básico y materias apagadas
+    quedan fuera.
   </p>
 </div>

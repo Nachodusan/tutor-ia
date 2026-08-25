@@ -211,7 +211,7 @@ export default function ChatPage() {
               const meta = JSON.parse(frame);
               // El modo DEFINITIVO llega acá: el del primer frame es provisorio
               // (ahí solo se sabe si hubo material, todavía no si hubo deriva).
-              patch({ ...(meta.verification ? { verification: meta.verification } : {}), ...(meta.mode ? { mode: meta.mode } : {}), ...(meta.scope ? { scope: meta.scope } : {}) });
+              patch({ ...(meta.verification ? { verification: meta.verification } : {}), ...(meta.mode ? { mode: meta.mode } : {}), ...(meta.scope ? { scope: meta.scope } : {}), ...(meta.temaLocal !== undefined ? { temaLocal: meta.temaLocal } : {}) });
             } catch { /* */ }
           }
         }

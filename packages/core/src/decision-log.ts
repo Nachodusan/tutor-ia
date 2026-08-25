@@ -105,6 +105,13 @@ export interface Decision {
    * pasaba y nadie veía.
    */
   mode?: string | null;
+  /** El turno pisó un conocimiento esencial LOCAL (la respuesta depende de
+   *  Chile). Con itemLocal se contesta DESPUÉS: cuántos turnos cayeron en modo
+   *  general sobre contenido local y sobre qué conocimiento — ese número decide
+   *  qué material del Mineduc o la BCN ir a buscar, con demanda real en vez de
+   *  adivinando. */
+  temaLocal?: boolean;
+  itemLocal?: string | null;
   /** Fracción de oraciones respaldadas por el material (0-1). */
   supportedFrac?: number | null;
   /**
@@ -219,6 +226,14 @@ export function logDecision(d: Decision): void {
     `cierre=${d.cierreChecked ? (d.cierreReplaced ? "replaced" : "ok") : "-"}`,
     `drift=${fmt(d.drift)}`,
     `nli=${d.nliUnavailable ? "unavailable" : fmt(d.nliChecked)}`,
+    // mode y scope estaban en la interfaz pero NO se imprimían: la pregunta
+    // "cuántos turnos cayeron en modo general sobre contenido local, y sobre
+    // qué conocimiento" necesita los tres en la misma línea. itemLocal decide
+    // qué material del Mineduc o la BCN ir a buscar, con demanda real.
+    `mode=${fmt(d.mode)}`,
+    `scope=${fmt(d.scope)}`,
+    `temaLocal=${fmt(d.temaLocal)}`,
+    `itemLocal=${d.itemLocal ? JSON.stringify(d.itemLocal.slice(0, 60)) : "-"}`,
     `chars=${fmt(d.chars)}`,
     `ms=${fmt(d.ms)}`,
   ];

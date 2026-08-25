@@ -261,6 +261,15 @@ export function buildTeachingTurn(params: {
   sourceGrades?: string[];
   /** Hasta dónde hubo que ir a buscar el material. */
   scope?: "curso" | "otro_curso" | "area" | "otra_materia" | "ninguno";
+  /**
+   * El turno pisa un conocimiento esencial LOCAL: la respuesta correcta
+   * depende de Chile (especies, geografía, historia nacional, instituciones,
+   * pueblos originarios, normativa). Ver curriculum_map.local. Solo cambia el
+   * turno cuando además el modo es general o parcial — ahí la NLI no tiene
+   * material contra el que verificar y el modelo inventa lo chileno con
+   * confianza.
+   */
+  temaLocal?: string | null;
 }): string {
   const adapt = params.struggling
     ? `\n⚠️ El estudiante NO entendió la explicación anterior. NO la repitas: cambia de método usando OTRA estrategia de la GUÍA (otra actividad/habilidad/ejemplo) y simplifica.\n`
@@ -292,6 +301,21 @@ ${avisoDeActualidad()}\n`
   // NIVEL DE LECTURA. El material puede venir de un curso más avanzado —el chunk
   // es entrada del modelo, no prosa que el chico lea— así que lo que hay que
   // fijar es a QUIÉN le habla, no de dónde salió el texto.
+  /**
+   * CONTENIDO LOCAL SIN RED. El turno pisa un conocimiento cuya respuesta
+   * correcta depende de Chile, y el modo es general o parcial: la NLI no tiene
+   * material contra el que verificar los particulares chilenos, y el modelo
+   * los inventa con confianza (especies, ubicaciones, fechas nacionales).
+   *
+   * NO es volver a la abstención: el concepto general y transferible se enseña
+   * igual (qué es endemismo, qué es una cosmovisión). Lo único que se acota es
+   * AFIRMAR particulares locales — se nombran como lo que hay que ir a buscar,
+   * no como dato. Solo aplica a la lista cerrada de curriculum_map.local.
+   */
+  const temaLocal =
+    params.temaLocal && (params.sinMaterial || params.parcial)
+      ? `\n⚠️ ESTE TEMA ES DE CHILE («${params.temaLocal.replace(/\.$/, "")}») y no tenés el material que lo respalda. Enseñá el CONCEPTO general y transferible con la soltura de siempre, pero NO AFIRMES los particulares chilenos: nombres de especies, lugares, cifras, fechas nacionales, detalles de cosmovisiones o de normativa. Si el ejemplo natural sería uno chileno, decí que ese dato hay que buscarlo en su libro o con su profe ("acá te va a servir buscar qué especies de tu zona…"), en vez de ponerle un nombre que no leíste. Un dato chileno inventado acá es exactamente el error que no podemos permitirnos.\n`
+      : "";
   const nivel = params.studentGrade ? `\n${nivelLectura(params.studentGrade)}\n` : "";
   // Si el material es de otro curso, que lo diga: el alumno tiene que poder
   // ubicar lo que lee, y "esto se ve en 2º Medio" es información útil, no una
@@ -306,7 +330,7 @@ ${params.material || "(no se recuperó material relevante)"}
 === GUÍA DIDÁCTICA (cómo se enseña esto acá; el solucionario es el MÉTODO a imitar) ===
 ${params.guide || "(sin guía para este tema)"}
 === FIN ===
-${adapt}${sinMaterial}${proponerTema}${parcial}${nivel}${otroCurso}
+${adapt}${sinMaterial}${proponerTema}${parcial}${temaLocal}${nivel}${otroCurso}
 Leé PRIMERO qué clase de turno es el de abajo. Si es una pregunta de contenido, enseñá en una conversación breve y simple: conectá con algo que ya sepa, explicá UNA idea con un ejemplo concreto y cerrá con una pregunta que lo haga pensar.
 Si es un comentario, algo personal, un pedido sobre la forma ("más corto", "en dos frases") o un cierre, respondé A ESO, corto, y NO cierres con una pregunta de chequeo — ninguna de esas del tipo "¿qué pasaría si…?" o "¿podés darme un ejemplo de…?". Ofrecerle algo ("¿lo vemos con un ejemplo?") sí podés. Antes de mandar, releé tu última oración: si es una pregunta que lo pone a rendir y el turno no era una pregunta de contenido, borrala. Hablá natural, SIN páginas ni "(pág. X)" ni "según el material" en el texto (las referencias van aparte). Sin títulos, rótulos, markdown ni emojis. Si el MATERIAL de arriba no trae justo lo que preguntó, enseñá IGUAL con el método del libro: avisá que no está en su libro solo si te preguntó por otra materia. Si te manda un EJERCICIO, resolvelo paso a paso y TERMINÁ LA CUENTA —el resultado va—; nunca le digas que no está en su material. TODA la matemática que escribas va en TEXTO PLANO (x² - 5x + 6 = 0, √(x+9), 15/3): la app muestra tu texto tal cual, así que un $, un asterisco o un backtick los lee el chico en la pantalla.
 

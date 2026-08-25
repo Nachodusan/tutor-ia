@@ -276,3 +276,41 @@ export async function pendientesDe(subjectId: string): Promise<Pendiente[]> {
     || a.item.localeCompare(b.item));
   return out;
 }
+/**
+ * ¿El turno pisa un conocimiento esencial LOCAL (la respuesta depende de Chile)?
+ *
+ * ── Por qué existe ──────────────────────────────────────────────────────────
+ * "Sin material" sobre energía mecánica y "sin material" sobre biodiversidad
+ * chilena son riesgos distintos: el modelo sabe la primera de sobra y la
+ * segunda la inventa con confianza. Y la red no cubre ahí: la NLI verifica
+ * contra el citable, y en modo general no hay citable. Esta señal se conoce
+ * ANTES de generar y sale del currículum (curriculum_map.local, lista cerrada
+ * en schema_curriculum_local.sql), no de los veredictos — es un eje separado
+ * del modo, a propósito, para poder medirlos por separado.
+ *
+ * ── Cómo resuelve ───────────────────────────────────────────────────────────
+ * Por los chunks del turno: citables si hay; si el gate cortó (modo general),
+ * los del ranking crudo — el tema se conoce aunque el material no alcance.
+ * El chunk lleva su documento y páginas en la base, y eso se cruza contra los
+ * tramos de los ítems locales (mismo documento + solape de páginas). Gana el
+ * ítem con más chunks encima.
+ */
+export async function temaLocalDe(chunkIds: string[]): Promise<{ item: string } | null> {
+  if (chunkIds.length === 0) return null;
+  const sql = getSql();
+  const filas = await sql<{ item: string; n: number }[]>`
+    select cm.item, count(*)::int n
+    from chunks c
+    join curriculum_map_tramos t
+      on t.document_id = c.document_id
+     and t.pagina_desde <= coalesce(c.page_end, c.page_start)
+     and coalesce(t.pagina_hasta, t.pagina_desde) >= c.page_start
+    join curriculum_map cm on cm.id = t.map_id
+    where c.id = any(${chunkIds}::uuid[])
+      and cm.metodo = 'lector-v1'
+      and cm.local
+    group by cm.item
+    order by n desc
+    limit 1`;
+  return filas[0] ? { item: filas[0].item } : null;
+}

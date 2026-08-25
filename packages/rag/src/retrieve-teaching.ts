@@ -239,6 +239,11 @@ export interface TeachingContext {
   /** El "qué": contenido citable. Contenido (TE) preferido; si el TE no alcanza
    *  (típico en grados bajos, muy visuales), cae a la GDD como material oficial. */
   citable: CitableChunk[];
+  /** El turno pisa un conocimiento esencial LOCAL (curriculum_map.local): la
+   *  respuesta correcta depende de Chile. Lo resuelve streamTeaching por los
+   *  chunks del turno y lo deja acá para que la ruta lo selle y lo registre.
+   *  Eje SEPARADO del modo, a propósito: se miden por separado. */
+  temaLocal?: string | null;
   /** false → ni el TE ni la GDD tienen material del tema: abstenerse. */
   grounded: boolean;
   /** De dónde salió el material citable (para transparencia). */

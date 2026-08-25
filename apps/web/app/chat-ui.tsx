@@ -100,7 +100,7 @@ export function Bubble({ m, onSpeak }: { m: Msg; onSpeak?: () => void }) {
             {m.content && !m.streaming && onSpeak && <button onClick={onSpeak} title="Leer en voz alta" style={{ background: "none", border: "none", color: C.accentSoft, cursor: "pointer", flexShrink: 0, padding: 2, display: "flex" }}><IconVolume size={16} /></button>}
           </div>
         )}
-      <VerificationBadge v={m.verification} mode={m.mode} scope={m.scope} citations={m.citations} />
+      <VerificationBadge v={m.verification} mode={m.mode} scope={m.scope} citations={m.citations} temaLocal={m.temaLocal} />
       {m.citations && m.citations.length > 0 && (() => {
         const seen = new Set<string>();
         // Dedupe por ROTULO: con material de varios cursos, dos "pág. 12" de
@@ -140,7 +140,7 @@ export function Note({ children, tone }: { children: React.ReactNode; tone: "war
  * responde igual, ese es justamente el caso que MÁS necesita marcador: es la
  * única señal de que lo que el chico está leyendo no salió de su libro.
  */
-export function VerificationBadge({ v, mode, scope, citations }: { v?: Verification | null; mode?: AnswerMode; scope?: AnswerScope; citations?: Citation[] }) {
+export function VerificationBadge({ v, mode, scope, citations, temaLocal }: { v?: Verification | null; mode?: AnswerMode; scope?: AnswerScope; citations?: Citation[]; temaLocal?: string | null }) {
   // "De tu libro" cuando el material salió de OTRA MATERIA es engañoso, aunque
   // la cita nombre el libro correcto: el alumno está en Lengua y el sello, ahí,
   // se lee como "está en tu libro de Lengua". Medido sobre el golden: 12 de 24
@@ -152,6 +152,21 @@ export function VerificationBadge({ v, mode, scope, citations }: { v?: Verificat
       <div style={{ marginTop: 9, display: "inline-flex", gap: 7, alignItems: "flex-start", background: C.panel2, color: C.dim, border: `1px solid ${C.border}`, fontSize: 12.5, padding: "8px 12px", borderRadius: 12, lineHeight: 1.5, maxWidth: 480 }}>
         <span style={{ display: "flex", flexShrink: 0, marginTop: 1 }}><IconBook size={14} /></span>
         <span>Esto no está en el libro de esta materia. Lo saqué de <strong style={{ color: C.text }}>{libro || "otro libro tuyo"}</strong>.</span>
+      </div>
+    );
+  }
+  /**
+   * GENERAL SOBRE CONTENIDO LOCAL: la advertencia fuerte. Es el único caso sin
+   * red — la NLI verifica contra el material citable y acá no hay citable, así
+   * que el sello no puede medir si los particulares chilenos son ciertos. El
+   * eje local es SEPARADO del modo (sale del currículum, antes de generar); lo
+   * que ve el alumno combina los dos.
+   */
+  if (mode === "general" && temaLocal) {
+    return (
+      <div style={{ marginTop: 9, display: "inline-flex", gap: 7, alignItems: "flex-start", background: C.badBg, color: C.badTx, fontSize: 12.5, padding: "8px 12px", borderRadius: 12, lineHeight: 1.5, maxWidth: 480 }}>
+        <span style={{ display: "flex", flexShrink: 0, marginTop: 1 }}><IconAlert size={14} /></span>
+        <span>Esto <strong>no está en tu libro</strong> y es un tema de Chile: los nombres, lugares y datos concretos <strong>verificalos en tu material o con tu profe</strong> antes de usarlos.</span>
       </div>
     );
   }
