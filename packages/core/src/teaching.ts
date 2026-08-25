@@ -12,6 +12,7 @@ import {
   type CitableChunk,
   type PedagogyChunk,
   temaLocalDe,
+  temaLocalPorPregunta,
 } from "@tutor-ia/rag";
 import { chatStream, type ChatMsg } from "./client";
 import { config } from "./config";
@@ -618,6 +619,15 @@ export async function* streamTeaching(
   let temaLocal: string | null = null;
   try {
     temaLocal = (await temaLocalDe(chunksDelTema))?.item ?? null;
+    // RESPALDO PARA EL MODO GENERAL: sin material del tema, los chunks no pisan
+    // ningún tramo y la resolución de arriba devuelve null justo en el caso
+    // peligroso. Se pregunta entonces por la PREGUNTA (reranker contra los
+    // textos de los ítems locales; ver temaLocalPorPregunta). Solo cuando el
+    // resultado importa —sin citable o con material parcial— para no pagar la
+    // llamada en cada turno con material sano.
+    if (!temaLocal && (ctx.citable.length === 0 || ctx.parcial === true)) {
+      temaLocal = (await temaLocalPorPregunta(req.question))?.item ?? null;
+    }
   } catch { temaLocal = null; }
   ctx.temaLocal = temaLocal;
   const history: ChatMsg[] = (req.history ?? []).map((m) => ({ role: m.role, content: m.content }));

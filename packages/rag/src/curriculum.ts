@@ -314,3 +314,50 @@ export async function temaLocalDe(chunkIds: string[]): Promise<{ item: string } 
     limit 1`;
   return filas[0] ? { item: filas[0].item } : null;
 }
+
+/**
+ * Respaldo de temaLocalDe PARA EL MODO GENERAL: ¿la PREGUNTA pisa un ítem local?
+ *
+ * ── El agujero que tapa, encontrado probando ────────────────────────────────
+ * La resolución por chunks falla justo en el caso peligroso: si el tema local
+ * no tiene material en la materia, los chunks del ranking no pisan ningún tramo
+ * y temaLocalDe devuelve null. Probado en vivo el 2026-08-25: "¿cómo explicaban
+ * los mapuches la creación del universo?" en Física 1º Medio salió modo general
+ * con temaLocal null, y el modelo afirmó particulares culturales con confianza
+ * y sin advertencia — exactamente lo que la marca existe para impedir.
+ *
+ * ── Cómo ───────────────────────────────────────────────────────────────────
+ * Reranker (el sidecar de siempre, sin LLM): la pregunta contra los ~20 textos
+ * de ítems locales, umbral 0,15. Calibrado con 11 sondas: los universales dan
+ * ≤ 0,002 ("fotosíntesis", "ecuación cuadrática", "Revolución Francesa",
+ * charla), los locales que matchean dan ≥ 0,28. Margen de sobra.
+ *
+ * ── Límite conocido ─────────────────────────────────────────────────────────
+ * Se escapa la pregunta cuyo léxico no toca el texto normativo del ítem:
+ * "¿qué es la UF?" (el ítem dice "índices económicos") y "¿quiénes fueron los
+ * presidentes del siglo XIX?" (el ítem habla de "desarrollo político") dieron
+ * 0,000 y 0,007. Si hace falta cerrar eso, el camino es agregar SEÑAS escritas
+ * a mano por ítem en schema_curriculum_local.sql — no bajar el umbral, que
+ * hoy no produce ni un falso positivo.
+ */
+let cacheItemsLocales: { items: string[]; en: number } | null = null;
+
+export async function temaLocalPorPregunta(pregunta: string): Promise<{ item: string } | null> {
+  if (pregunta.trim().length < 8) return null;
+  const ahora = Date.now();
+  if (!cacheItemsLocales || ahora - cacheItemsLocales.en > 5 * 60_000) {
+    const sql = getSql();
+    const filas = await sql<{ item: string }[]>`
+      select distinct item from curriculum_map where metodo = 'lector-v1' and local`;
+    cacheItemsLocales = { items: filas.map((f) => f.item), en: ahora };
+  }
+  const items = cacheItemsLocales.items;
+  if (items.length === 0) return null;
+  const { rerank } = await import("./rerank");
+  const scores = await rerank(pregunta, items);
+  let mejor = -1, mejorScore = 0;
+  for (let i = 0; i < scores.length; i++) {
+    if ((scores[i] ?? 0) > mejorScore) { mejorScore = scores[i]!; mejor = i; }
+  }
+  return mejorScore >= 0.15 ? { item: items[mejor]! } : null;
+}

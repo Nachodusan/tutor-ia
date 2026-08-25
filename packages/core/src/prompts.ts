@@ -314,7 +314,8 @@ ${avisoDeActualidad()}\n`
    */
   const temaLocal =
     params.temaLocal && (params.sinMaterial || params.parcial)
-      ? `\n⚠️ ESTE TEMA ES DE CHILE («${params.temaLocal.replace(/\.$/, "")}») y no tenés el material que lo respalda. Enseñá el CONCEPTO general y transferible con la soltura de siempre, pero NO AFIRMES los particulares chilenos: nombres de especies, lugares, cifras, fechas nacionales, detalles de cosmovisiones o de normativa. Si el ejemplo natural sería uno chileno, decí que ese dato hay que buscarlo en su libro o con su profe ("acá te va a servir buscar qué especies de tu zona…"), en vez de ponerle un nombre que no leíste. Un dato chileno inventado acá es exactamente el error que no podemos permitirnos.\n`
+      ? `\n⚠️ ESTE TEMA ES DE CHILE («${params.temaLocal.replace(/\.$/, "")}») y no tenés el material que lo respalda. Enseñá el CONCEPTO general y transferible con la soltura de siempre, pero NO AFIRMES los particulares chilenos: nombres de especies o lugares, significados de palabras en mapuzugun u otras lenguas, estructuras de cosmovisiones, cifras, fechas nacionales, detalles de normativa.
+Y si la PREGUNTA pide justamente esos particulares, la respuesta honesta tiene dos partes: (1) decí claro que ese detalle no lo podés dar por seguro sin el material ("el significado exacto y los detalles conviene confirmarlos con tu profe o en material confiable"), y (2) enseñá lo transferible que SÍ sabés con certeza (qué es una cosmovisión, por qué las culturas explican el origen del mundo, cómo se estudia eso). NO cedas a la tentación de dar la estructura completa "de memoria": un significado inventado de una palabra mapuche, dicho con seguridad, es exactamente el error que no podemos permitirnos — peor que decir "esto confirmalo".\n`
       : "";
   const nivel = params.studentGrade ? `\n${nivelLectura(params.studentGrade)}\n` : "";
   // Si el material es de otro curso, que lo diga: el alumno tiene que poder
