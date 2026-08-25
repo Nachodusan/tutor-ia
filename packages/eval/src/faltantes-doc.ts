@@ -48,7 +48,8 @@ interface Fila {
   pagina_hasta: number | null; verificacion: string | null; doc: string | null;
   /** La descomposición oficial del programa EPJA y su cobertura medida. */
   componentes: string[] | null;
-  cobertura: { c: string; ok: boolean; pag: number | null }[] | null;
+  cobertura: { c: string; ok: boolean; pag: number | null;
+    en?: { materia: string; pag: number | null } }[] | null;
 }
 
 /**
@@ -200,7 +201,11 @@ async function main(): Promise<void> {
          */
         if (f.cobertura?.length) {
           for (const x of f.cobertura) {
-            L.push(`- ${x.ok ? "✓" : "✗"} ${x.c}${x.ok && x.pag ? ` (p.${x.pag})` : ""}`);
+            // El ✗ con "en" no es lo mismo que el ✗ pelado: uno se resuelve
+            // mandando al alumno a otro libro que ya tiene; el otro, consiguiendo
+            // material. Son dos listas de compras distintas.
+            const donde = !x.ok && x.en ? ` — está en ${x.en.materia}${x.en.pag ? ` p.${x.en.pag}` : ""}` : "";
+            L.push(`- ${x.ok ? "✓" : "✗"} ${x.c}${x.ok && x.pag ? ` (p.${x.pag})` : ""}${donde}`);
           }
           L.push("");
           L.push(`*Componentes según el Programa de Estudio EPJA 2026.*\n`);
