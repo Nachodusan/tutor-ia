@@ -1,6 +1,6 @@
 # HANDOFF — Tutor IA (para retomar en un chat nuevo)
 
-> Estado al **2026-08-24**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
+> Estado al **2026-08-25**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
 > Proyecto en `/Users/dusan/Documents/ia`. Rama **`main`**.
 > **El código ya está en git remoto**: `github.com/Nachodusan/tutor-ia`, PRIVADO, `main` por
 > defecto. El corpus NO está en git — va como asset de release
@@ -2095,3 +2095,203 @@ repite y es difícil de ver desde adentro:
 
 El antídoto que funcionó siempre fue el mismo: **imprimir la entrada real antes de creerle a la
 salida**, y desconfiar de un resultado redondo (13 de 13, 0 de 5) antes que celebrarlo.
+
+---
+
+## 9. EL CAMINO ENSEÑA, Y EL CURRÍCULUM ENTRA AL CAMINO (2026-08-24/25)
+
+Sigue al §8. Cuatro cosas: los componentes oficiales del currículum, la marca de
+contenido local, el camino como programa completo, y el diseño —todavía sin
+implementar— de la parada que enseña.
+
+### 9.1 Los componentes oficiales (programas EPJA 2026)
+
+El Mineduc publicó en marzo de 2026 los **Programas de Estudio EPJA**. Existen
+NUEVE (verificado sondeando slugs en curriculumnacional.cl: los de Nivel 3 Básica
+y casi todo Nivel 2 Media dan 404). Están en
+`~/Documents/libros/media/programas_epja_2026/` con su texto extraído.
+
+Dos cosas salieron de ahí:
+
+1. **El pilar aguanta**: donde hay programa, los conocimientos esenciales
+   coinciden textual con los del mapa.
+2. **La descomposición oficial existe**: cada conocimiento se abre en subtemas
+   ("Sistemas del cuerpo humano" → seis estructuras). `componentes-epja` los
+   destila a `curriculum_map.componentes` (jsonb) — **52 conocimientos, ~4,6
+   componentes cada uno**. Donde el programa no está publicado queda NULL a
+   propósito.
+
+```bash
+pnpm --filter @tutor-ia/eval componentes-epja --aplicar
+```
+
+⚠️ Caí en la **trampa de jsonb** que la memoria del proyecto advierte:
+`JSON.stringify` guardó las 138 filas como string escalar y `jsonb_array_length`
+explotaba. Se usa `toJson(sql, valor)`, siempre.
+
+### 9.2 La verificación por componentes
+
+`reverificar` dictamina por partes en vez de por bulto cuando el conocimiento
+tiene componentes: el modelo contesta N preguntas binarias y **el veredicto lo
+calcula el código** (todos = correcto, alguno = parcial, ninguno = no_esta).
+
+⚠️ **DOBLE VOTO, y por qué el trinquete lo exige.** Con voto simple, "Niveles de
+organización" dio 4/5, 5/5 y 3/5 en tres corridas — el MoE cambia el voto de los
+componentes limítrofes. Y como el veredicto **solo puede mejorar**, un 5/5
+espurio quedaría escrito para siempre. Un componente cuenta solo si DOS votos
+sobre los mismos fragmentos coinciden.
+
+La variación restante es del RETRIEVAL y su asimetría es correcta: la corrida que
+encuentra la evidencia y la confirma dos veces puede subir el veredicto; la que
+no la encuentra no baja nada.
+
+### 9.3 `buscar-componentes` — dónde está lo que falta
+
+Para cada ✗ del checklist, busca en TODO el corpus dónde está ese material y lo
+anota en el propio componente (`{en: {materia, doc, pag}}`). Las anotaciones se
+ACUMULAN entre corridas: una corrida que no encuentra no borra lo que otra sí.
+
+  114 componentes medidos · 64 cubiertos en su libro · 38 en otro libro del
+  alumno · ~12 sin material en el corpus (la lista real de compras)
+
+⚠️ **La misma lección, reaprendida dos veces en la misma herramienta**: (1) el
+reranker declaró "en ningún libro" a "Reacciones químicas" —69 fragmentos en
+Química 2º Medio—, así que hubo que agregarle brazo léxico; y (2) el brazo léxico
+ordenaba por página más temprana, que es el índice, así que ahora ordena por
+DENSIDAD del término.
+
+### 9.4 La cabecera del puntero se DERIVA (era un bug de dos tuberías)
+
+Las 8 entradas del informe con cabecera y desglose se contradecían, las 8. No era
+un join roto: la cabecera salía del `pagina_desde` a nivel ítem de la fila
+hermana, y los punteros por componente de `buscar-componentes`. Dos tuberías que
+nunca se cruzaron.
+
+Ahora `pendientesDe` deriva el puntero de los componentes, en código y sin LLM:
+
+  · todos en el mismo tomo → ese tomo, página más baja
+  · repartidos → sin puntero único (`repartido: true`), se muestra el checklist
+  · destino `parcial` o componentes sin destino → `aMedias: true`, y la frase
+    pasa a "está a medias en…" — nunca "ya lo tiene, no hay nada que conseguir"
+
+**El puntero nombra el TOMO, no la materia.** "Física 1º Medio p.17" era la p.17
+del Módulo 6 EPJA colgado de esa materia: material correcto, dirección falsa.
+
+Y `faltantes-doc` **falla la generación** si alguna cabecera no coincide con sus
+componentes. Este bug no puede repetirse en silencio.
+
+### 9.5 Contenido LOCAL: la distinción que le faltaba al modo general
+
+"Sin material" sobre energía mecánica y "sin material" sobre biodiversidad
+chilena son riesgos distintos. Y ahí la red no cubre: **la NLI verifica contra el
+citable, y en modo general no hay citable**.
+
+- **`curriculum_map.local`** (`schema_curriculum_local.sql`): 20 ítems donde la
+  respuesta depende de Chile, a mano y por texto completo. EL ARCHIVO ES LA LISTA
+  auditable, con la evidencia de cada decisión — incluidos los que quedaron
+  UNIVERSALES y por qué.
+- **Dos vías de detección**, y la segunda tapa el agujero de la primera:
+  `temaLocalDe(chunks)` cruza tramos; pero si el tema local no tiene material, no
+  hay tramo que pisar — justo el caso peligroso. `temaLocalPorPregunta` usa el
+  reranker contra los 20 textos, umbral 0,15 (calibrado: universales ≤0,002,
+  locales ≥0,28), solo cuando no hay citable o es parcial.
+- El bloque del turno solo actúa con **local ∧ (general ∨ parcial)**: enseña el
+  concepto transferible y NO afirma particulares chilenos. `TEACHING_SYSTEM` y
+  `derivarModo` no se tocaron — el eje local es SEPARADO del modo, a propósito.
+- El sello: general + local lleva advertencia fuerte.
+
+**Probado en vivo, y el test encontró el agujero**: "¿qué es el We Tripantü?" en
+Física 1º Medio salió general con `temaLocal` null y el modelo afirmó
+"significa 'los seis senderos'" — falso, es el año nuevo mapuche. Con la
+detección puesta el modelo IGUAL dio la estructura de memoria, así que el bloque
+se endureció para el caso "la pregunta pide justamente esos particulares".
+
+`logDecision` ahora imprime `mode`, `scope`, `temaLocal` e `itemLocal` — **mode y
+scope estaban en la interfaz y no se imprimían**, así que la pregunta "cuántos
+turnos generales sobre contenido local" era incontestable.
+
+### 9.6 El primer documento NO-Mineduc del corpus
+
+Fu 2016, "Las estrellas a través de las araucarias" (Boletín del Museo Chileno de
+Arte Precolombino, **CC BY 4.0**), 106 chunks colgados de Física 1º y 2º Medio
+con la herramienta EPJA. **La atribución viaja en el TÍTULO del documento**, que
+es lo que la cita le muestra al alumno. Plan reproducible en
+`packages/eval/planes/plan-museo-fu2016.json`.
+
+Las tres eras de la misma pregunta, medidas:
+
+  sin nada        → "We Tripantü significa 'los seis senderos'"  (inventado)
+  con el bloque   → "no puedo saberlo con certeza"               (honesto)
+  con el artículo → "es el año nuevo pewenche; empezaba al ver
+                     las Pléyades antes del amanecer"            (correcto, citado)
+
+REGLA para material externo futuro: solo licencias que permitan redistribución
+comercial (NC es bloqueante), atribución en el título, colgado de la materia
+donde el currículum lo exige. Y no inflar: el verificador mantuvo `parcial`
+porque el artículo cubre etnoastronomía y no los relatos de creación.
+
+### 9.7 El camino es el programa, no el libro
+
+`programaPendienteDe()` + `/api/plan` agregan una unidad final con TODO lo
+no-correcto del currículum: cada conocimiento es una PARADA con su etiqueta
+(coral "?" = no está · sol "!" = incompleto), su destino y los componentes que
+faltan.
+
+- **No se intercalan** entre las lecciones ni se les inventan páginas: no están
+  en ese tomo y fingir una posición sería mentir sobre dónde estudiarlo.
+- **Se abren en el TUTOR**, no en una lección (que daría 404): la cascada alcanza
+  el libro hermano si lo hay, y si no responde en general con su sello.
+- ⚠️ La unidad cuenta para el avance, así que **el porcentaje de cada materia
+  baja**. Es la lectura honesta de "el camino es el programa"; si se prefiere que
+  la barra mida solo el libro, es un cambio de una línea.
+
+### 9.8 PRÓXIMO: la parada que enseña (diseñado, NO implementado)
+
+Hoy la parada **solo pregunta**: abre `/api/lesson/quiz` y presenta diez
+preguntas. El diseño completo está en el artifact "La parada que enseña".
+
+⚠️ **BUG VERIFICADO Y SIN ARREGLAR — el mayor retorno por línea del repo.**
+`packages/core/src/quiz.ts:151` hace `t.sample.slice(0, 340)` sobre una muestra
+que `apps/web/app/api/lesson/quiz/route.ts:102` armó con
+`muestraRepartida(f, 4, 320)` ≈ 1.286 caracteres: **sobrevive la primera ventana
+y se descartan las otras tres**, que existían justamente para recorrer la
+lección. El generador de TODAS las preguntas del camino ve 340 caracteres de
+libro. Lo que ve hoy en "El sonido es parte de nuestro mundo" son las
+instrucciones de una actividad ("Golpeen con fuerza la tapa de la olla"). Los
+intentos reales —0/10, 1/10, promedio 46,7%— se explican por ahí. El mismo corte
+va al verificador de clave (`quiz.ts:203`).
+
+**La decisión de diseño**: la parada NO escribe contenido, **RECORTA el libro**.
+Todo lo que el alumno lee como hecho es texto literal con su página, comprobado
+por substring. Que el modelo escribiera la lección y después sellarla "está en tu
+libro" no cierra: el sello se emite siempre que haya material, así que llevaría
+el sello sin que nada la verificara. Con recorte el problema desaparece.
+
+**Medido en sondas reales** sobre Física 1º Medio p.17-24: el guion tarda 23,5 s
+(6/6 recortes literales), el banco de 9 preguntas 50,5 s (9/9 sobreviven la clave
+a ciegas), y la NLI sirve de VETO y no de sello (la paráfrasis real dio entailment
+0,33; una falsedad de control dio contradicción 0,90).
+
+**La versión mínima, sin llamadas nuevas al modelo:**
+  1. sacar el corte de 340
+  2. mostrar los párrafos del rango antes de preguntar, tal cual y con su página
+  3. diez preguntas → seis (lleva el umbral real de 70% a los dos tercios que el
+     producto dice pedir; con 6 aprobar es 4, y nunca se sirven 4 ni 5 ítems)
+
+### 9.9 Herramientas nuevas de esta tanda
+
+```bash
+pnpm --filter @tutor-ia/eval componentes-epja --aplicar      # descomposición oficial
+pnpm --filter @tutor-ia/eval reverificar --solo-componentes --aplicar
+pnpm --filter @tutor-ia/eval buscar-componentes --aplicar    # dónde está lo que falta
+psql "$DATABASE_URL" -f packages/db/schema_curriculum_local.sql
+psql "$DATABASE_URL" -f packages/db/schema_nivel_epja.sql
+```
+
+### 9.10 Estado del currículum al 2026-08-25
+
+`curriculum_map`: 266 filas `lector-v1` sobre materias vivas y cursos abiertos.
+**100% de los conocimientos está en algún libro del alumno** en los cuatro
+niveles; 83 de 116 (72%) bien desarrollados. 27 pendientes en pantalla, **ninguno
+sin libro**. Documentos: `docs/contenidos-faltantes.md` y
+`docs/caminos-por-materia.html`, los dos regenerables.
