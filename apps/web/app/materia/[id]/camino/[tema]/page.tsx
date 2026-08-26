@@ -1,25 +1,27 @@
 "use client";
 /**
- * UNA LECCIÓN DEL CAMINO — página propia, preguntas de a una.
+ * UNA PARADA DEL CAMINO — el apunte de esa lección.
  *
- * Antes esto era una hoja que subía sobre el camino con las diez preguntas
- * apiladas. Dos problemas: en un teléfono el alumno perdía de vista dónde
- * estaba, y ver diez preguntas juntas antes de empezar desanima más que una
- * sola con su barra de avance.
+ * ⚠️ ACÁ VIVÍAN LA CLASE Y LAS DIEZ PREGUNTAS, y se sacaron a pedido del dueño
+ * del producto: la parada ahora es EL APUNTE y nada más. El código de la clase
+ * (`clase-parada.tsx`, `/api/lesson/clase`, la tabla `lesson_classes`) y el de
+ * las preguntas (`/api/lesson/quiz`) siguen enteros y con sus datos generados —
+ * simplemente ya no se entra desde acá. Volver a colgarlos es agregar la pestaña,
+ * no reconstruirlos.
  *
- * Acá se responde de a una. La barra de arriba dice cuánto falta, y al terminar
- * la lección ofrece SEGUIR CON LA SIGUIENTE sin volver al camino — que es lo que
- * hace que se estudie de corrido en vez de una lección por sesión.
+ * ⚠️ Y ESO SE LLEVÓ PUESTO LO QUE MARCABA EL AVANCE. Era el submit del quiz el
+ * que escribía `student_plan_progress`, así que sin preguntas el camino no
+ * avanzaría nunca y la barra de la materia quedaría clavada. Por eso el apunte
+ * cierra con "Ya lo estudié": lo dice el alumno, que es la única señal que queda
+ * cuando no hay nada que corregir. Es más floja que un 7 de 10 y no se disfraza
+ * de otra cosa.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { traerMateria } from "../../../../datos";
-import { aprobado } from "../../../../camino";
-import { C, FONT, HARD, Dots, IconCheck, IconChat, IconArrow, subjectLabel } from "../../../../ui";
-import { limpiarPregunta } from "../../../../limpiar-texto";
-import { ClaseParada } from "../../../../clase-parada";
 import { ApunteParada } from "../../../../apunte-parada";
-import type { Apunte, Clase, PlanItem, QuizQ, QuizResult, Subject } from "../../../../tipos";
+import { C, FONT, HARD, Dots, IconCheck, IconChat, IconArrow, subjectLabel } from "../../../../ui";
+import type { Apunte, PlanItem, Subject } from "../../../../tipos";
 
 export default function LeccionPage() {
   const { id, tema } = useParams<{ id: string; tema: string }>();
@@ -27,66 +29,40 @@ export default function LeccionPage() {
   const [subject, setSubject] = useState<Subject | undefined>();
   const [plan, setPlan] = useState<PlanItem[]>([]);
   const [done, setDone] = useState<string[]>([]);
-  const [quiz, setQuiz] = useState<QuizQ[] | null>(null);
-  const [ans, setAns] = useState<Record<number, number>>({});
-  const [res, setRes] = useState<QuizResult | null>(null);
-  const [cargando, setCargando] = useState(true);
-  const [enviando, setEnviando] = useState(false);
-  const [err, setErr] = useState("");
-  /** Índice de la pregunta que se está mostrando. */
-  const [paso, setPaso] = useState(0);
-  /**
-   * LA CLASE DE LA PARADA — lo que se enseña antes de preguntar.
-   *
-   * `null` mientras se busca; `false` cuando esta parada todavía no tiene clase
-   * generada (hoy son casi todas: el batch va de a poco). En ese caso la
-   * pantalla se comporta exactamente como antes y va derecho a las preguntas, así
-   * que el camino entero sigue funcionando mientras las clases se van generando.
-   */
-  const [clase, setClase] = useState<Clase | null | false>(null);
-  const [enClase, setEnClase] = useState(true);
-  /**
-   * EL APUNTE — de acá se estudia, y se vuelve. `false` = esta parada todavía no
-   * tiene apunte generado, y entonces la pestaña ni aparece.
-   */
+  /** `false` = esta parada no puede tener apunte (sin texto en el libro). */
   const [apunte, setApunte] = useState<Apunte | null | false>(null);
   const [apunteErr, setApunteErr] = useState("");
-  /** Qué está mirando: la clase/preguntas o el apunte. */
-  const [vista, setVista] = useState<"clase" | "apunte">("clase");
+  const [marcando, setMarcando] = useState(false);
+  /**
+   * ⚠️ UNA SOLA GENERACIÓN POR PARADA. En StrictMode el efecto corre DOS veces, y
+   * como la primera visita de cada parada genera el apunte con el modelo, eso son
+   * dos generaciones simultáneas del mismo apunte: se duplica el gasto y encima
+   * compiten entre sí — medido, una tardó 92 s y la otra se pasó del límite de
+   * 120 s y se perdió. El ref recuerda para qué clave ya se pidió.
+   */
+  const pedido = useRef<string | null>(null);
 
   /**
-   * EL PLAN, APLANADO A PASOS ABRIBLES. Desde que el camino es de UNIDADES,
-   * las claves de lección viven ANIDADAS en `item.lecciones` — y esta página
-   * buscaba solo en el nivel de arriba: tocar cualquier moneda de lección del
-   * camino terminaba en "No encontré esa lección". Cada lección anidada se
-   * aplana con la MISMA forma que arma el camino al abrirla, y "la siguiente"
-   * pasa a ser la próxima lección real (la que sigue dentro de la unidad, o la
-   * primera de la unidad que viene), no el próximo nodo gordo.
+   * EL PLAN, APLANADO A PASOS ABRIBLES. Desde que el camino es de UNIDADES, las
+   * claves de lección viven ANIDADAS en `item.lecciones` — buscar solo en el
+   * nivel de arriba terminaba en "No encontré esa lección" al tocar cualquier
+   * moneda del camino.
    */
   const pasos = useMemo(() => plan.flatMap((p) =>
     p.lecciones?.length
       ? p.lecciones.map((l) => ({ ...p, key: l.key, title: l.title, p0: l.p0, p1: l.p1, unit: l.unit, lesson: l.lesson, lecciones: undefined }))
       : [p]
   ), [plan]);
-  // Primero el nivel de arriba (el nodo grande de una unidad también se abre,
-  // con su propia clave); si no está ahí, es una lección anidada.
   const item = useMemo(
     () => plan.find((p) => p.key === tema) ?? pasos.find((p) => p.key === tema),
     [plan, pasos, tema],
   );
   const idx = useMemo(() => pasos.findIndex((p) => p.key === tema), [pasos, tema]);
-  // Para una clave de UNIDAD (nodo grande) el índice no está en `pasos` — la
-  // lista aplanada la reemplazó por sus lecciones. Sin el segundo caso,
-  // `siguiente` quedaba undefined y el final del quiz de la unidad 2 de 10
-  // decía "Era la última lección del camino 🎉": mentira, y un callejón sin
-  // salida justo en el botón que existe para seguir de corrido. Después del
-  // quiz de la unidad, lo que sigue es SU primera lección.
+  /** Para una clave de UNIDAD, "la siguiente" es SU primera lección. */
   const siguiente = useMemo(() => {
     if (idx >= 0) return pasos[idx + 1];
     const u = plan.find((p) => p.key === tema);
-    return u?.lecciones?.length
-      ? pasos.find((p) => p.key === u.lecciones![0]!.key)
-      : undefined;
+    return u?.lecciones?.length ? pasos.find((p) => p.key === u.lecciones![0]!.key) : undefined;
   }, [idx, pasos, plan, tema]);
 
   useEffect(() => { void traerMateria(id).then(setSubject); }, [id]);
@@ -96,10 +72,9 @@ export default function LeccionPage() {
    *
    * ⚠️ SIN ESTO LA PANTALLA QUEDA EN BLANCO. `item` se busca dentro de `plan`, y
    * con `plan` vacío el componente cae en su rama `!item`, que pinta los tres
-   * puntitos de "cargando" para siempre: no hay error, no hay cartel, no hay
-   * nada. Se borró sin querer al reacomodar los efectos de al lado y el síntoma
-   * fue una parada muda — que es la peor forma de romper algo, porque parece
-   * lentitud y no falla.
+   * puntitos de "cargando" para siempre: sin error, sin cartel, sin nada. Ya se
+   * borró una vez al reacomodar los efectos de al lado, y el síntoma fue una
+   * parada muda — la peor forma de romper algo, porque parece lentitud.
    */
   useEffect(() => {
     fetch(`/api/plan?subjectId=${id}`).then((r) => r.json())
@@ -107,83 +82,65 @@ export default function LeccionPage() {
       .catch(() => setPlan([]));
   }, [id]);
 
-  // La clase se pide aparte de las preguntas y no las bloquea: son dos fetch
-  // independientes que corren juntos. La clase sale de una tabla (0 llamadas al
-  // modelo), así que vuelve enseguida y casi siempre gana la carrera.
+  /**
+   * El apunte. Se pide al ABRIR la parada porque ahora es lo único que hay acá:
+   * cuando había pestañas se esperaba al clic para no gastar una llamada al
+   * modelo en algo que quizá no se miraba, pero si es la pantalla entera, no
+   * pedirlo es dejarla vacía.
+   *
+   * La primera visita de cada parada paga la generación; después sale de la
+   * tabla y es instantánea para todos.
+   */
   useEffect(() => {
-    if (!item) return;
+    if (!item || pedido.current === item.key) return;
+    pedido.current = item.key;
     let vivo = true;
-    setClase(null); setEnClase(true);
-    fetch(`/api/lesson/clase?subjectId=${id}&topicKey=${encodeURIComponent(item.key)}`)
+    setApunte(null); setApunteErr("");
+    fetch("/api/lesson/apunte", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subjectId: id, topicKey: item.key, title: item.title, p0: item.p0, p1: item.p1 }),
+    })
       .then(async (r) => {
-        if (!vivo) return;
-        if (!r.ok) { setClase(false); return; }
         const j = await r.json();
-        setClase(j.clase?.momentos?.length ? j.clase : false);
+        if (!vivo) return;
+        if (!r.ok || !j.apunte?.puntos?.length) {
+          setApunte(false);
+          // El MOTIVO importa: "esta parte son puras imágenes" y "probá de nuevo"
+          // piden cosas distintas del alumno.
+          setApunteErr(
+            j.error === "sin_material" || j.error === "sin_paginas" || j.error === "sin_libro"
+              ? "Esta parte del libro no la tengo en texto (son puras imágenes o el escaneo salió mal), así que no puedo armar el apunte."
+              : "No pude armar el apunte ahora. Probá de nuevo en un momento.",
+          );
+          return;
+        }
+        setApunte(j.apunte);
       })
-      .catch(() => { if (vivo) setClase(false); });
+      .catch(() => { if (vivo) { setApunte(false); setApunteErr("No hay conexión con el servidor."); } })
+      // Falló: se libera la clave para que "Probar de nuevo" pueda reintentar.
+      .finally(() => { if (vivo) setApunte((a) => { if (a === false) pedido.current = null; return a; }); });
     return () => { vivo = false; };
   }, [id, item?.key]);   // eslint-disable-line react-hooks/exhaustive-deps
 
-  // El apunte se resetea al cambiar de parada, pero NO se pide todavía: se pide
-  // cuando el alumno toca la pestaña. La primera visita de cada parada paga una
-  // generación, y pagarla por adelantado en todas —incluidas las que nadie va a
-  // abrir— sería gastar una llamada al modelo por cada parada que se toca.
-  useEffect(() => {
-    setApunte(null); setApunteErr(""); setVista("clase");
-  }, [id, item?.key]);
-
-  async function verApunte() {
-    setVista("apunte");
-    if (!item || apunte !== null) return;   // ya está pedido o ya está
-    setApunteErr("");
+  /** "Ya lo estudié" — la única señal de avance que queda sin preguntas. */
+  async function marcarHecho() {
+    if (!item || marcando || done.includes(tema)) return;
+    setMarcando(true);
     try {
-      const r = await fetch("/api/lesson/apunte", {
+      const r = await fetch("/api/plan/progress", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId: id, topicKey: item.key, title: item.title, p0: item.p0, p1: item.p1 }),
+        body: JSON.stringify({ subjectId: id, topicKey: item.key, done: true }),
       });
       const j = await r.json();
-      if (!r.ok || !j.apunte?.puntos?.length) {
-        setApunte(false);
-        // El MOTIVO importa: "esta parte del libro son puras imágenes" y "probá
-        // de nuevo" piden cosas distintas del alumno.
-        setApunteErr(
-          j.error === "sin_material" || j.error === "sin_paginas" || j.error === "sin_libro"
-            ? "Esta parte del libro no la tengo en texto, así que no puedo armar el apunte. Probá con la lección de al lado."
-            : "No pude armar el apunte ahora. Probá de nuevo en un momento.",
-        );
-        return;
-      }
-      setApunte(j.apunte);
-    } catch {
-      setApunte(false);
-      setApunteErr("No hay conexión con el servidor.");
-    }
+      if (r.ok) setDone(j.doneKeys ?? [...done, tema]);
+    } catch { /* que reintente */ }
+    finally { setMarcando(false); }
   }
 
-  async function corregir() {
-    if (!quiz || res || enviando) return;
-    setEnviando(true);
-    try {
-      const r = await fetch("/api/lesson/quiz/submit", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId: id, topicKey: tema, answers: ans }),
-      });
-      const j = await r.json();
-      if (!r.ok) { setErr(j.error ?? "No pude corregir."); return; }
-      // La corrección devuelve otra vez pregunta/opciones/explicación: también se
-      // pintan, así que también se limpian.
-      setRes({ ...j, items: (j.items ?? []).map(limpiarPregunta) });
-      setDone((d) => (d.includes(tema) ? d : [...d, tema]));
-    } catch { setErr("No hay conexión con el servidor."); }
-    finally { setEnviando(false); }
-  }
-
-  function repasar(pregunta?: string) {
+  /** "No entiendo esto": al chat con el tema cargado y estudio dirigido. */
+  function preguntar() {
     if (!item) return;
-    const q = pregunta
-      ? `En "${item.title}" me equivoqué en esto: "${pregunta}". Explicámelo de nuevo, simple y con un ejemplo, y después preguntame algo parecido para ver si entendí.`
-      : `Quiero estudiar: ${item.title}${item.focus ? ` (${item.focus})` : ""}. Enseñámelo desde el principio, paso a paso y con ejemplos.`;
+    const q = `Estoy estudiando "${item.title}"${item.focus ? ` (${item.focus})` : ""} y hay algo que no me cierra. Explicámelo desde el principio, simple y con un ejemplo.`;
     const p = new URLSearchParams({ q, unit: String(item.unit ?? ""), lesson: String(item.lesson ?? "") });
     router.push(`/materia/${id}/chat?${p}`);
   }
@@ -199,18 +156,11 @@ export default function LeccionPage() {
     );
   }
 
-  // La clase está en pantalla mientras exista, no haya terminado y no haya
-  // resultado. `clase === null` es "todavía buscando": no se pinta nada, para no
-  // hacer parpadear las preguntas y después taparlas con la clase.
-  const enClaseVisible = enClase && clase !== null && clase !== false && !res;
-
-  const q = quiz?.[paso];
-  const elegida = q ? ans[q.n] : undefined;
-  const total = quiz?.length ?? 0;
+  const hecho = done.includes(tema);
 
   return (
     <div style={{ maxWidth: 620, margin: "0 auto", padding: "14px 16px 32px" }}>
-      {/* Cabecera de la lección: qué es y dónde está en el libro. */}
+      {/* Cabecera: qué es y dónde está en el libro. */}
       <button onClick={volver}
         style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: C.dim, cursor: "pointer", padding: 0, fontSize: 13, fontFamily: FONT.sans }}>
         ← Volver al camino
@@ -221,191 +171,74 @@ export default function LeccionPage() {
       {item.focus && <div style={{ color: C.dim, fontSize: 13.5, marginTop: 2, lineHeight: 1.4 }}>{item.focus}</div>}
       {pages && <div style={{ fontFamily: FONT.mono, fontSize: 12, color: C.dim, marginTop: 3 }}>{pages}</div>}
 
-      {/* LAS DOS FORMAS DE USAR LA PARADA, SIEMPRE A LA VISTA.
-          ⚠️ Esto antes solo aparecía si la parada YA tenía apunte generado, y con
-          seis apuntes sobre 1.846 paradas eso hacía la función invisible: el
-          alumno abría una parada cualquiera y veía exactamente lo de antes, sin
-          ninguna señal de que el apunte existiera. Una función que hay que
-          adivinar no existe. */}
-      <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
-        <button onClick={() => setVista("clase")}
-          style={{ flex: 1, background: vista === "clase" ? C.accent : C.panel, color: vista === "clase" ? "#fff" : C.text, border: `2px solid ${C.ink}`, borderRadius: 11, padding: "9px 12px", fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
-          Estudiar y responder
-        </button>
-        <button onClick={verApunte}
-          style={{ flex: 1, background: vista === "apunte" ? C.accent : C.panel, color: vista === "apunte" ? "#fff" : C.text, border: `2px solid ${C.ink}`, borderRadius: 11, padding: "9px 12px", fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
-          Ver el apunte
-        </button>
-      </div>
-
-      {vista === "apunte" && apunte === null && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.dim, fontSize: 13.5, padding: "26px 0" }}>
+      {apunte === null && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.dim, fontSize: 13.5, padding: "30px 0" }}>
           <Dots /> Armando el apunte de esta lección…
         </div>
       )}
-      {vista === "apunte" && apunte === false && apunteErr && (
-        <div style={{ marginTop: 14, color: C.warnTx, background: C.warnBg, border: `1px solid ${C.warn}`, borderRadius: 10, padding: "10px 12px", fontSize: 13, lineHeight: 1.5 }}>
+
+      {apunte === false && (
+        <div style={{ marginTop: 16, color: C.warnTx, background: C.warnBg, border: `1px solid ${C.warn}`, borderRadius: 12, padding: "12px 14px", fontSize: 13.5, lineHeight: 1.55 }}>
           {apunteErr}
+          <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {/* Reintentar solo cuando el fallo es del modelo. Si el libro no
+                tiene texto en estas páginas, reintentar no arregla nada y el
+                botón sería una promesa falsa. */}
+            {!/no la tengo en texto/.test(apunteErr) && (
+              <button onClick={() => { pedido.current = null; setApunte(null); }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, background: C.panel, color: C.text, border: `1.5px solid ${C.ink}`, borderRadius: 10, padding: "8px 12px", fontFamily: FONT.round, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                Probar de nuevo
+              </button>
+            )}
+            <button onClick={preguntar}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, background: C.panel, color: C.text, border: `1.5px solid ${C.ink}`, borderRadius: 10, padding: "8px 12px", fontFamily: FONT.round, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+              <IconChat size={14} /> Preguntarle al tutor
+            </button>
+          </div>
         </div>
       )}
-      {vista === "apunte" && apunte !== null && apunte !== false && (
+
+      {apunte !== null && apunte !== false && (
         <ApunteParada apunte={apunte} titulo={item.title}
           materia={subject ? subjectLabel(subject) : ""} paginas={pages} />
       )}
 
-      {item.points && item.points.length > 0 && !res && !enClaseVisible && vista === "clase" && (
-        <div style={{ marginTop: 14, background: C.panel2, border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "11px 13px" }}>
-          <div style={{ fontSize: 12, color: C.dim, marginBottom: 6 }}>Cuando termines vas a poder explicar:</div>
-          {item.points.map((p, i) => (
-            <div key={i} style={{ display: "flex", gap: 7, alignItems: "flex-start", marginTop: i === 0 ? 0 : 4 }}>
-              <span style={{ width: 5, height: 5, borderRadius: "50%", background: C.accent, flexShrink: 0, marginTop: 6.5 }} />
-              <span style={{ fontSize: 12.5, lineHeight: 1.45 }}>{p}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* LA CLASE. Va antes que todo lo demás: el alumno lee y recién después
-          se le pregunta. Mientras no haya clase generada para esta parada, esto
-          no se pinta y la pantalla es la de siempre. */}
-      {enClaseVisible && vista === "clase" && (
-        <ClaseParada
-          clase={clase as Clase}
-          onTerminar={() => setEnClase(false)}
-          onPreguntar={() => repasar()}
-        />
-      )}
-
-      {cargando && !enClaseVisible && vista === "clase" && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.dim, fontSize: 13.5, padding: "26px 0" }}>
-          <Dots /> Armando las preguntas de esta lección…
-        </div>
-      )}
-      {err && (
-        <div style={{ marginTop: 14, color: C.badTx, background: C.badBg, border: `1px solid ${C.bad}`, borderRadius: 10, padding: "10px 12px", fontSize: 13 }}>{err}</div>
-      )}
-
-      {/* ── DE A UNA ─────────────────────────────────────────────────────── */}
-      {quiz && !res && q && !enClaseVisible && vista === "clase" && (
-        <div style={{ marginTop: 18 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
-            <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 13 }}>Pregunta {paso + 1} de {total}</span>
-            <span style={{ fontSize: 12, color: C.dim }}>{Object.keys(ans).length} respondidas</span>
-          </div>
-          <div style={{ display: "flex", gap: 3, marginBottom: 16 }}>
-            {quiz.map((x, i) => (
-              <span key={x.n} style={{ flex: 1, height: 6, borderRadius: 3, background: i === paso ? C.accent : ans[x.n] != null ? C.accentSoft : C.panel2, border: `1px solid ${i === paso || ans[x.n] != null ? "transparent" : C.border}` }} />
-            ))}
-          </div>
-
-          <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.4, marginBottom: 12 }}>{q.question}</div>
-          <div style={{ display: "grid", gap: 8 }}>
-            {q.options.map((o, i) => {
-              const sel = elegida === i;
-              return (
-                <button key={i} onClick={() => setAns((a) => ({ ...a, [q.n]: i }))}
-                  style={{ textAlign: "left", background: sel ? C.userBubble : C.panel, border: `2px solid ${sel ? C.accentSoft : C.border}`, borderRadius: 12, padding: "13px 14px", fontSize: 14.5, lineHeight: 1.35, cursor: "pointer", color: C.text }}>
-                  {o}
-                </button>
-              );
-            })}
-          </div>
-
-          <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
-            {paso > 0 && (
-              <button onClick={() => setPaso((p) => p - 1)}
-                style={{ background: C.panel, color: C.text, border: `2px solid ${C.ink}`, borderRadius: 12, padding: "12px 16px", fontFamily: FONT.round, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-                Anterior
-              </button>
-            )}
-            {paso < total - 1 ? (
-              <button onClick={() => setPaso((p) => p + 1)} disabled={elegida == null}
-                style={{ flex: 1, background: elegida == null ? C.panel2 : C.accent, color: elegida == null ? C.dim : "#fff", border: `2px solid ${C.ink}`, borderRadius: 12, padding: "12px 16px", fontFamily: FONT.round, fontWeight: 800, fontSize: 15, cursor: elegida == null ? "default" : "pointer" }}>
-                Siguiente
-              </button>
-            ) : (
-              <button onClick={corregir} disabled={Object.keys(ans).length < total || enviando}
-                style={{ flex: 1, background: Object.keys(ans).length < total ? C.panel2 : C.ok, color: Object.keys(ans).length < total ? C.dim : "#fff", border: `2px solid ${C.ink}`, borderRadius: 12, padding: "12px 16px", fontFamily: FONT.round, fontWeight: 800, fontSize: 15, cursor: Object.keys(ans).length < total ? "default" : "pointer" }}>
-                {enviando ? <Dots /> : Object.keys(ans).length < total ? `Faltan ${total - Object.keys(ans).length}` : "Terminar"}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── RESULTADO ────────────────────────────────────────────────────── */}
-      {res && vista === "clase" && (
-        <div style={{ marginTop: 18 }}>
-          <div style={{ border: `2px solid ${C.ink}`, borderRadius: 16, boxShadow: HARD(aprobado(res.score, res.total) ? C.ok : C.warn), background: aprobado(res.score, res.total) ? C.okBg : C.warnBg, padding: "16px 15px" }}>
-            <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 22, color: aprobado(res.score, res.total) ? C.okTx : C.warnTx }}>
-              {res.score} de {res.total}
-            </div>
-            <div style={{ fontSize: 13.5, color: aprobado(res.score, res.total) ? C.okTx : C.warnTx, marginTop: 3, lineHeight: 1.45 }}>
-              {aprobado(res.score, res.total)
-                ? "Lección dominada 🎉"
-                : `Quedaron ${res.items.filter((x) => !x.ok).length} para reforzar${pages ? `, en ${pages}` : ""}.`}
-            </div>
-          </div>
-
-          {/* Solo lo que falló. Repasar lo que ya sabe es tiempo que no tiene. */}
-          {res.items.filter((x) => !x.ok).map((x) => (
-            <div key={x.n} style={{ marginTop: 12, border: `1.5px solid ${C.warn}`, background: C.panel, borderRadius: 12, padding: "12px 13px" }}>
-              <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.4 }}>{x.question}</div>
-              <div style={{ fontSize: 13, color: C.okTx, marginTop: 6 }}>Era: {x.options[x.correct]}</div>
-              {x.explain && <div style={{ fontSize: 12.5, color: C.dim, marginTop: 4, lineHeight: 1.45 }}>{x.explain}</div>}
-              <button onClick={() => repasar(x.question)}
-                style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 9, background: C.panel, color: C.text, border: `1.5px solid ${C.ink}`, borderRadius: 9, padding: "7px 11px", fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
-                <IconChat size={14} /> Repasarlo en el chat
-              </button>
-            </div>
-          ))}
-
-          {/* SEGUIR DE CORRIDO. Sin esto, terminar una lección obliga a volver al
-              camino y buscar la próxima, y ahí es donde se corta la sesión. */}
-          <div style={{ display: "grid", gap: 8, marginTop: 18 }}>
-            {siguiente ? (
-              <button onClick={() => router.push(`/materia/${id}/camino/${siguiente.key}`)}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, textAlign: "left", background: C.accent, color: "#fff", border: `2px solid ${C.ink}`, borderRadius: 14, boxShadow: HARD(C.ink), padding: "14px 15px", cursor: "pointer" }}>
-                <span style={{ minWidth: 0 }}>
-                  {/* "la siguiente" y no "la {n}": con lecciones anidadas, dos
-                      seguidas comparten el número de SU unidad y "Seguir con la
-                      2" dos veces al hilo parecía un botón trabado. */}
-                  <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 15 }}>Seguir con la siguiente</span>
-                  <span style={{ display: "block", fontSize: 13, opacity: .85, marginTop: 1, lineHeight: 1.3 }}>{siguiente.title}</span>
-                </span>
-                <IconArrow size={20} />
-              </button>
-            ) : (
-              <div style={{ textAlign: "center", color: C.dim, fontSize: 13.5, padding: "6px 0" }}>
-                Era la última lección del camino. 🎉
-              </div>
-            )}
-            <button onClick={() => { setRes(null); setAns({}); setPaso(0); }}
-              style={{ background: C.panel, color: C.text, border: `2px solid ${C.ink}`, borderRadius: 12, padding: "12px 16px", fontFamily: FONT.round, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-              Volver a intentar
-            </button>
-            <button onClick={volver}
-              style={{ background: "transparent", color: C.dim, border: "none", padding: "8px 0", fontFamily: FONT.round, fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>
-              Volver al camino
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* "No entiendo" está siempre disponible: si se traba en la pregunta 3 no
-          tiene que terminar las diez para poder preguntar. */}
-      {!res && !enClaseVisible && vista === "clase" && (
-        <button onClick={() => repasar()}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 20, background: "transparent", color: C.text, border: `2px solid ${C.ink}`, borderRadius: 11, padding: "10px 14px", fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
-          <IconChat size={15} /> No entiendo esto
+      {/* ── EL PIE ──────────────────────────────────────────────────────────
+          Las dos cosas que la pantalla de preguntas daba y que no se pueden
+          perder: marcar el avance y SEGUIR DE CORRIDO. Sin lo segundo, terminar
+          una lección obliga a volver al camino y buscar la próxima, y ahí es
+          donde se corta la sesión. */}
+      <div style={{ display: "grid", gap: 8, marginTop: 20 }}>
+        <button onClick={marcarHecho} disabled={hecho || marcando}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: hecho ? C.okBg : C.ok, color: hecho ? C.okTx : "#fff", border: `2px solid ${hecho ? C.ok : C.ink}`, borderRadius: 12, padding: "12px 16px", fontFamily: FONT.round, fontWeight: 800, fontSize: 15, cursor: hecho ? "default" : "pointer" }}>
+          {marcando ? <Dots /> : <><IconCheck size={16} /> {hecho ? "Ya lo estudiaste" : "Ya lo estudié"}</>}
         </button>
-      )}
 
-      {done.includes(tema) && !res && !cargando && !enClaseVisible && (
-        <div style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 6, color: C.okTx, fontSize: 12.5 }}>
-          <IconCheck size={14} /> Ya hiciste esta lección antes
-        </div>
-      )}
+        {siguiente ? (
+          <button onClick={() => router.push(`/materia/${id}/camino/${siguiente.key}`)}
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, textAlign: "left", background: C.accent, color: "#fff", border: `2px solid ${C.ink}`, borderRadius: 14, boxShadow: HARD(C.ink), padding: "14px 15px", cursor: "pointer" }}>
+            <span style={{ minWidth: 0 }}>
+              {/* "la siguiente" y no "la {n}": con lecciones anidadas, dos
+                  seguidas comparten el número de SU unidad y "Seguir con la 2"
+                  dos veces al hilo parecía un botón trabado. */}
+              <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 15 }}>Seguir con la siguiente</span>
+              <span style={{ display: "block", fontSize: 13, opacity: .85, marginTop: 1, lineHeight: 1.3 }}>{siguiente.title}</span>
+            </span>
+            <IconArrow size={20} />
+          </button>
+        ) : (
+          <div style={{ textAlign: "center", color: C.dim, fontSize: 13.5, padding: "6px 0" }}>
+            Era la última lección del camino. 🎉
+          </div>
+        )}
+
+        {apunte !== null && apunte !== false && (
+          <button onClick={preguntar}
+            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, background: "transparent", color: C.text, border: `2px solid ${C.ink}`, borderRadius: 11, padding: "10px 14px", fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+            <IconChat size={15} /> No entiendo algo de esto
+          </button>
+        )}
+      </div>
     </div>
   );
 }

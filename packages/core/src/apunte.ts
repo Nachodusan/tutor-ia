@@ -158,7 +158,27 @@ export async function armarApunte(opts: {
 }): Promise<Apunte> {
   const { oraciones } = opts;
   if (oraciones.length < 4) throw new SinApunte("sin_material");
-  const usables = oraciones.slice(0, 240);
+
+  /**
+   * ⚠️ UNA MUESTRA REPARTIDA, NO LAS PRIMERAS. Acá había un `slice(0, 240)` y
+   * tenía los dos problemas juntos:
+   *
+   *  · COBERTURA — una lección de diez páginas (pág. 14-23 de Biología) da más
+   *    de 240 oraciones, así que el corte se quedaba con el principio y el
+   *    apunte no mencionaba la mitad final de la lección. Es el mismo error que
+   *    ya se corrigió dos veces en el generador de preguntas, con otro número.
+   *  · TIEMPO — 240 oraciones son unos 25.000 caracteres de prompt. Medido a
+   *    pedido: las paradas cortas salían en 7-17 s y las largas en 93-117 s, y
+   *    varias se pasaron del límite de 120 s y se perdieron enteras.
+   *
+   * 90 repartidas de punta a punta cubren la lección y entran holgadas. Los
+   * índices son los ORIGINALES: el apunte guarda de qué oración salió cada punto
+   * y esa referencia tiene que seguir valiendo contra el corpus.
+   */
+  const TOPE = 90;
+  const usables = oraciones.length <= TOPE
+    ? oraciones
+    : Array.from({ length: TOPE }, (_, k) => oraciones[Math.floor((k * oraciones.length) / TOPE)]!);
   const numeradas = usables.map((o) => `${o.i}. ${o.texto}`).join("\n");
 
   let out: {
@@ -183,7 +203,13 @@ export async function armarApunte(opts: {
         },
       ],
       SCHEMA,
-      { maxTokens: 2600 },
+      // 1.800 y no 2.600. El contenido real de un apunte —idea, 4 puntos de 90
+      // palabras, 5 definiciones, la analogía, el aviso y tres líneas— entra en
+      // ~1.100 tokens con el JSON encima. El techo viejo no lo llenaba nunca,
+      // pero sí alargaba la generación: medido a pedido, una tardó 92 s y otra
+      // se pasó del límite de 120 s de la llamada y se perdió. Con el alumno
+      // mirando la pantalla eso no sirve.
+      { maxTokens: 1800 },
     );
   } catch (e) {
     console.error(`[apunte] generación falló: ${e instanceof Error ? e.message : e}`);
