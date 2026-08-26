@@ -238,12 +238,26 @@ function entradasPorMarcador(texto: string): Entrada[] {
       const q = t.indexOf("?");
       if (q > 0) t = t.slice(0, q + 1);
     } else {
-      // (b) Cortar en la primera frase auxiliar.
+      // (b) Cortar en la primera frase auxiliar, POR PALABRA COMPLETA.
+      //
+      // ⚠️ ACÁ HABÍA UN `indexOf` A SECAS, y es el MISMO bug que este archivo ya
+      // documenta y resolvió doce líneas más arriba en `esAuxiliar()` por culpa
+      // de "fotoSÍNTESIS": el arreglo se aplicó a una de las dos funciones y no
+      // a la otra.
+      //
+      // Medido: "Funciones Concepto y representación" contiene "presentación"
+      // en la posición 23 —adentro de "re·presentación"— así que el título se
+      // guardaba como "Funciones Concepto y re". Y como el título mutilado ya no
+      // aparece en el cuerpo del libro, `ubicar()` no lo encuentra, la entrada se
+      // pierde y la parada anterior se come sus páginas: así salió una parada de
+      // SESENTA páginas que cubre funciones, reflexiones y probabilidad juntas.
       const n = norm(t);
       let corte = t.length;
       for (const a of AUXILIAR) {
-        const idx = n.indexOf(norm(a));
-        if (idx > 0) corte = Math.min(corte, idx);
+        const pat = norm(a).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const m = new RegExp(`(^|${DELIM})${pat}(${DELIM}|$)`).exec(n);
+        // +1 salta el delimitador que capturó el grupo, salvo al inicio.
+        if (m && m.index > 0) corte = Math.min(corte, m.index + (m[1] ? m[1].length : 0));
       }
       t = t.slice(0, corte).trim();
     }

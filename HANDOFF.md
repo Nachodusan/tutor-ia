@@ -2295,3 +2295,8 @@ psql "$DATABASE_URL" -f packages/db/schema_nivel_epja.sql
 niveles; 83 de 116 (72%) bien desarrollados. 27 pendientes en pantalla, **ninguno
 sin libro**. Documentos: `docs/contenidos-faltantes.md` y
 `docs/caminos-por-materia.html`, los dos regenerables.
+
+> ⚠️ **NOTA AL PIE, APRENDIDA TRES VECES**: nunca uses backticks dentro de un
+> template literal — ni en un comentario SQL (`scripts/sql-backticks.sh` lo
+> vigila), ni en el prompt de un workflow, que no tiene guardia. Rompe el parseo
+> y el mensaje de error apunta a la línea, no a la causa.
