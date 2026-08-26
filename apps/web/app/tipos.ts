@@ -66,7 +66,27 @@ export interface PlanItem { n: number; key: string; title: string; focus: string
 /** `correct`/`explain` NO llegan con la prueba: la clave vive en el servidor y
  *  se revela recién en la respuesta del submit (antes viajaba en el payload y
  *  cualquiera la veía en la pestaña Red). */
-export interface TestItem { n: number; key?: string; topic: string; question: string; options: string[]; correct?: number; explain?: string; unit: number | null; lesson: number | null; p0: number | null; p1: number | null }
+/**
+ * Una pregunta de la prueba. La clave (`correct`, `explain`, `referencia` y el
+ * resto de la corrección) NO viaja hasta después de rendir — llega en el submit
+ * y la pantalla la fusiona sobre el ítem.
+ */
+export interface TestItem {
+  n: number; key?: string; topic: string;
+  /** Ausente en pruebas viejas: se lee como "multiple". */
+  tipo?: "multiple" | "vf" | "abierta";
+  question: string; options: string[];
+  correct?: number; explain?: string;
+  /** Respuesta modelo. Solo después de rendir. */
+  referencia?: string | null;
+  /** Veredicto del servidor. Para `abierta` y `vf` no se puede derivar en el cliente. */
+  ok?: boolean;
+  /** Puntos de la respuesta modelo que le faltaron: el "podrías completarlo con esto". */
+  faltantes?: string[];
+  cubiertos?: string[];
+  sinEscribir?: boolean;
+  unit: number | null; lesson: number | null; p0: number | null; p1: number | null;
+}
 /** Pregunta de chequeo de UNA lección del camino. Igual que TestItem, la clave
  *  no viaja: llega recién en la corrección. */
 export interface QuizQ { n: number; topicKey: string; topic: string; question: string; options: string[] }

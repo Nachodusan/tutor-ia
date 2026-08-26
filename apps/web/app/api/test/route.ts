@@ -1,4 +1,4 @@
-import { generarPreguntas, SinPreguntas, type QuizItem } from "@tutor-ia/core";
+import { generarPreguntas, SinPreguntas, type QuizItem, type TipoPregunta } from "@tutor-ia/core";
 import { getSql, toJson } from "@tutor-ia/db";
 import { getPlanTopics, type PlanTopic } from "@tutor-ia/rag";
 import { requireCursoAbierto } from "@/lib/auth";
@@ -43,8 +43,11 @@ interface ItemPersistido {
   n: number;
   topic: string;
   question: string;
+  tipo: TipoPregunta;
   options: string[];
   correct: number;
+  /** Respuesta modelo de `vf` y `abierta`. ES CLAVE: nunca sale al cliente. */
+  referencia: string | null;
   explain: string;
   key: string;
   documentId: string;
@@ -125,7 +128,10 @@ export async function POST(req: Request) {
   // significar "me lo van a tomar". Con 5 temas por tanda el reparto le sale, y
   // de paso la prueba tarda lo que la tanda más lenta y no la suma de todas (76s
   // → ~35s en la prueba de 10).
-  const GRUPO = 5;
+  // CUATRO Y NO CINCO desde que entran los tres tipos: cada `vf` y cada
+  // `abierta` agrega su respuesta modelo a la salida, así que la misma tanda
+  // tarda bastante más y se acercaba al límite de 120 s de la llamada.
+  const GRUPO = 4;
   const grupos: PlanTopic[][] = [];
   for (let i = 0; i < temas.length; i += GRUPO) grupos.push(temas.slice(i, i + GRUPO));
 
@@ -133,7 +139,14 @@ export async function POST(req: Request) {
     grupos.map((g) =>
       generarPreguntas(
         g.map((t) => ({ key: t.key, title: t.title, sample: t.sample })),
-        { subjectName: body.subjectName ?? null, evalFocus, porTema: reparto.porTema },
+        {
+          subjectName: body.subjectName ?? null, evalFocus, porTema: reparto.porTema,
+          // LOS TRES TIPOS. La prueba de materia es el ensayo de la prueba de
+          // verdad, y esa no es toda de opción múltiple: pide justificar y pide
+          // desarrollar. El chequeo de una parada del camino sigue siendo solo
+          // múltiple, porque tiene que corregirse en el acto y sin modelo.
+          tipos: ["multiple", "vf", "abierta"],
+        },
       ),
     ),
   );
@@ -189,9 +202,11 @@ export async function POST(req: Request) {
     return [{
       n: k + 1,
       topic: q.topic,
+      tipo: q.tipo,
       question: q.question,
       options: q.options,
       correct: q.correct,
+      referencia: q.referencia ?? null,
       explain: q.explain,
       key: g.key,
       documentId: g.documentId,
@@ -223,10 +238,14 @@ export async function POST(req: Request) {
             ${toJson(sql, items)}::jsonb)
     returning id`;
 
-  // Al cliente: SIN `correct` ni `explain`. Se revelan en el submit.
+  // Al cliente: SIN `correct`, SIN `explain` y SIN `referencia`.
+  //
+  // `referencia` es la más peligrosa de las tres: en una pregunta abierta ES la
+  // respuesta escrita, así que mandarla sería servir la prueba con el
+  // solucionario adjunto. Se revela todo en el submit, después de rendir.
   return Response.json({
     testId: ex!.id,
     title: titulo,
-    items: items.map(({ correct: _c, explain: _e, ...rest }) => rest),
+    items: items.map(({ correct: _c, explain: _e, referencia: _r, ...rest }) => rest),
   });
 }

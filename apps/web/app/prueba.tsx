@@ -5,7 +5,7 @@ import type { Subject, TestItem } from "./tipos";
 
 const stripOptLetter = (o: string) => o.replace(/^\s*[A-Da-d1-4]\s*[)\.\-:]\s+/, "").trim();
 
-export function TestView({ items, loading, answers, submitted, subject, error, onAnswer, onSubmit, onRetake, onStudy, onClose }: { items: TestItem[] | null; loading: boolean; answers: Record<number, number>; submitted: boolean; subject?: Subject; error?: string | null; onAnswer: (n: number, i: number) => void; onSubmit: () => void; onRetake: () => void; onStudy: (it: TestItem) => void; onClose: () => void }) {
+export function TestView({ items, loading, answers, textos, corrigiendo, submitted, subject, error, onAnswer, onTexto, onSubmit, onRetake, onStudy, onClose }: { items: TestItem[] | null; loading: boolean; answers: Record<number, number>; textos: Record<number, string>; corrigiendo: boolean; submitted: boolean; subject?: Subject; error?: string | null; onAnswer: (n: number, i: number) => void; onTexto: (n: number, t: string) => void; onSubmit: () => void; onRetake: () => void; onStudy: (it: TestItem) => void; onClose: () => void }) {
   const area = subject ? subjectLabel(subject) : "";
   if (loading || items === null) {
     return (
@@ -36,8 +36,25 @@ export function TestView({ items, loading, answers, submitted, subject, error, o
       </div>
     );
   }
-  const answered = items.filter((it) => answers[it.n] != null).length;
-  const results = items.map((it) => ({ it, ok: answers[it.n] === it.correct }));
+  /**
+   * CUÁNDO UNA PREGUNTA ESTÁ RESPONDIDA, según su tipo.
+   *
+   * En `vf` hacen falta LAS DOS COSAS: marcar la opción y justificar. Si
+   * alcanzara con marcar, el alumno podría entregar sin escribir una sola
+   * justificación y la mitad de la prueba se resolvería tirando la moneda —
+   * que es exactamente lo que pedir justificación viene a evitar.
+   */
+  const respondida = (it: TestItem) => {
+    const tipo = it.tipo ?? "multiple";
+    const texto = (textos[it.n] ?? "").trim();
+    if (tipo === "multiple") return answers[it.n] != null;
+    if (tipo === "vf") return answers[it.n] != null && texto.length >= 8;
+    return texto.length >= 8;
+  };
+  const answered = items.filter(respondida).length;
+  // Tras corregir, el veredicto lo manda el SERVIDOR (`it.ok`): en las escritas
+  // no hay forma de derivarlo comparando índices en el navegador.
+  const results = items.map((it) => ({ it, ok: it.ok ?? (answers[it.n] === it.correct) }));
   const score = results.filter((r) => r.ok).length;
 
   // EL RESULTADO SE AGRUPA POR TEMA.
@@ -77,46 +94,166 @@ export function TestView({ items, loading, answers, submitted, subject, error, o
       {submitted && <ResultBanner score={score} total={items.length} weak={weak} strong={strong} onStudy={onStudy} onRetake={onRetake} />}
 
       <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
-        {items.map((it) => <QuestionCard key={it.n} item={it} chosen={answers[it.n]} submitted={submitted} onAnswer={onAnswer} />)}
+        {items.map((it) => (
+          <QuestionCard key={it.n} item={it} chosen={answers[it.n]} texto={textos[it.n] ?? ""}
+            submitted={submitted} onAnswer={onAnswer} onTexto={onTexto} />
+        ))}
       </div>
 
       {!submitted && (
         <div style={{ marginTop: 20, textAlign: "center" }}>
-          <BigBtn disabled={answered < items.length} onClick={onSubmit}>Corregir la prueba <IconCheck size={17} /></BigBtn>
-          {answered < items.length && <p style={{ color: C.dim, fontSize: 12.5, marginTop: 10 }}>Respondé las {items.length} preguntas para corregir.</p>}
+          <BigBtn disabled={answered < items.length || corrigiendo} onClick={onSubmit}>
+            {corrigiendo ? <>Leyendo lo que escribiste… <Dots /></> : <>Corregir la prueba <IconCheck size={17} /></>}
+          </BigBtn>
+          {corrigiendo && <p style={{ color: C.dim, fontSize: 12.5, marginTop: 10 }}>Las respuestas escritas las lee el tutor: tarda unos segundos.</p>}
+          {!corrigiendo && answered < items.length && (
+            <p style={{ color: C.dim, fontSize: 12.5, marginTop: 10 }}>
+              Te faltan {items.length - answered} de {items.length}. Las de verdadero o falso piden también la justificación.
+            </p>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-export function QuestionCard({ item, chosen, submitted, onAnswer }: { item: TestItem; chosen: number | undefined; submitted: boolean; onAnswer: (n: number, i: number) => void }) {
-  const shadow = submitted ? (chosen === item.correct ? HARD(C.ok) : HARD(C.bad)) : "none";
+/** El recuadro donde el alumno escribe. Mismo trato en `vf` y en `abierta`. */
+function CampoEscrito({ valor, placeholder, disabled, onChange }: { valor: string; placeholder: string; disabled: boolean; onChange: (t: string) => void }) {
+  return (
+    <textarea
+      value={valor} onChange={(e) => onChange(e.target.value)} disabled={disabled}
+      placeholder={placeholder} rows={3}
+      style={{ width: "100%", background: disabled ? C.panel2 : C.panel, color: C.text, border: `1.5px solid ${C.border}`, borderRadius: 11, padding: "10px 12px", fontSize: 14.5, fontFamily: FONT.sans, lineHeight: 1.5, resize: "vertical" }}
+    />
+  );
+}
+
+/**
+ * LO QUE LE FALTÓ, Y LO QUE SÍ DIJO.
+ *
+ * Los puntos NO los redacta nadie: son los puntos clave de la respuesta modelo,
+ * que a su vez salió del material. Por eso se pueden mostrar como "esto tenía
+ * que estar" sin riesgo de estar inventando una exigencia.
+ *
+ * Los cubiertos van primero y en verde a propósito. Un adulto que volvió a
+ * estudiar y ve solo la lista de lo que le faltó lee "no sabés nada"; ver
+ * primero lo que sí dijo es la diferencia entre una corrección y un reproche.
+ */
+function Devolucion({ item }: { item: TestItem }) {
+  const cubiertos = item.cubiertos ?? [];
+  const faltantes = item.faltantes ?? [];
+  if (item.sinEscribir) {
+    return (
+      <div style={{ marginTop: 11, fontSize: 13.5, color: C.warnTx, background: C.warnBg, borderRadius: 10, padding: "9px 12px", lineHeight: 1.5 }}>
+        No escribiste nada acá, así que no hay qué corregir. Mirá la respuesta de abajo y probá de nuevo.
+      </div>
+    );
+  }
+  if (cubiertos.length === 0 && faltantes.length === 0) return null;
+  const linea = (t: string, col: string, marca: React.ReactNode) => (
+    <div key={t} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 5 }}>
+      <span style={{ flexShrink: 0, marginTop: 2 }}>{marca}</span>
+      <span style={{ fontSize: 13.5, lineHeight: 1.45, color: col }}>{t}</span>
+    </div>
+  );
+  return (
+    <div style={{ marginTop: 11, background: C.panel2, borderRadius: 10, padding: "10px 12px" }}>
+      {cubiertos.length > 0 && (
+        <>
+          <div style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, color: C.okTx }}>Esto lo dijiste bien</div>
+          {cubiertos.map((t) => linea(t, C.text, <IconCheck size={14} color={C.ok} />))}
+        </>
+      )}
+      {faltantes.length > 0 && (
+        <>
+          <div style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 12.5, color: C.warnTx, marginTop: cubiertos.length ? 11 : 0 }}>
+            Podrías completarlo con esto
+          </div>
+          {faltantes.map((t) => linea(t, C.text, <span style={{ display: "block", width: 6, height: 6, borderRadius: "50%", background: C.warn, marginTop: 5 }} />))}
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * UNA PREGUNTA. Tres formas según el tipo:
+ *
+ *   multiple — cuatro opciones, como siempre.
+ *   vf       — Verdadero / Falso Y la justificación por escrito. Las dos cosas:
+ *              el veredicto del servidor exige acertar la opción y que la
+ *              justificación toque al menos un punto de la respuesta modelo.
+ *   abierta  — solo el recuadro. La corrige el tutor contra los puntos clave.
+ *
+ * ⚠️ Después de corregir, el acierto sale de `item.ok` (del SERVIDOR) y no de
+ * comparar índices: en una abierta no hay índice que comparar, y en una `vf`
+ * comparar solo la opción diría "correcta" en una respuesta cuya justificación
+ * el tutor rechazó.
+ */
+export function QuestionCard({ item, chosen, texto, submitted, onAnswer, onTexto }: { item: TestItem; chosen: number | undefined; texto: string; submitted: boolean; onAnswer: (n: number, i: number) => void; onTexto: (n: number, t: string) => void }) {
+  const tipo = item.tipo ?? "multiple";
+  const ok = item.ok ?? (chosen === item.correct);
+  const shadow = submitted ? (ok ? HARD(C.ok) : HARD(C.bad)) : "none";
+  const opciones = tipo === "vf" ? ["Verdadero", "Falso"] : item.options;
+  const ETIQUETA: Record<string, string> = { vf: "Verdadero o falso", abierta: "Respuesta escrita" };
+
   return (
     <div style={{ background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 14, padding: "14px 16px", boxShadow: shadow }}>
       <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
         <span style={{ width: 26, height: 26, flexShrink: 0, borderRadius: 8, display: "grid", placeItems: "center", background: C.accent, color: "#fff", border: `2px solid ${C.ink}`, fontFamily: FONT.round, fontWeight: 800, fontSize: 13 }}>{item.n}</span>
-        <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 15.5, color: C.text, lineHeight: 1.35 }}>{item.question}</span>
+        <span style={{ minWidth: 0 }}>
+          {ETIQUETA[tipo] && (
+            <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 700, fontSize: 10.5, letterSpacing: .7, textTransform: "uppercase", color: C.dim, marginBottom: 3 }}>
+              {ETIQUETA[tipo]}
+            </span>
+          )}
+          <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 15.5, color: C.text, lineHeight: 1.35 }}>{item.question}</span>
+        </span>
       </div>
-      <div style={{ display: "grid", gap: 8 }}>
-        {item.options.map((o, idx) => {
-          const isChosen = chosen === idx;
-          const isCorrect = idx === item.correct;
-          let bg = C.panel, bd = C.border, col = C.text, dot = C.border, mark: React.ReactNode = null;
-          if (submitted) {
-            if (isCorrect) { bg = "rgba(31,157,87,.10)"; bd = C.ok; col = C.okTx; dot = C.ok; mark = <IconCheck size={15} color={C.ok} />; }
-            else if (isChosen) { bg = "rgba(212,36,25,.08)"; bd = C.bad; col = C.badTx; dot = C.bad; mark = <IconX size={14} color={C.bad} />; }
-          } else if (isChosen) { bg = "rgba(43,68,255,.10)"; bd = C.accent; col = C.accent; dot = C.accent; }
-          return (
-            <button key={idx} onClick={() => onAnswer(item.n, idx)} disabled={submitted}
-              style={{ display: "flex", alignItems: "center", gap: 11, textAlign: "left", background: bg, border: `1.5px solid ${bd}`, borderRadius: 11, padding: "10px 12px", cursor: submitted ? "default" : "pointer", fontFamily: FONT.sans, fontSize: 14.5, color: col }}>
-              <span style={{ width: 18, height: 18, flexShrink: 0, borderRadius: "50%", border: `2px solid ${dot}`, background: (isChosen || (submitted && isCorrect)) ? dot : "transparent" }} />
-              <span style={{ flex: 1, minWidth: 0 }}>{stripOptLetter(o)}</span>
-              {mark}
-            </button>
-          );
-        })}
-      </div>
+
+      {tipo !== "abierta" && (
+        <div style={{ display: "grid", gap: 8, gridTemplateColumns: tipo === "vf" ? "1fr 1fr" : "1fr" }}>
+          {opciones.map((o, idx) => {
+            const isChosen = chosen === idx;
+            const isCorrect = idx === item.correct;
+            let bg = C.panel, bd = C.border, col = C.text, dot = C.border, mark: React.ReactNode = null;
+            if (submitted) {
+              if (isCorrect) { bg = "rgba(31,157,87,.10)"; bd = C.ok; col = C.okTx; dot = C.ok; mark = <IconCheck size={15} color={C.ok} />; }
+              else if (isChosen) { bg = "rgba(212,36,25,.08)"; bd = C.bad; col = C.badTx; dot = C.bad; mark = <IconX size={14} color={C.bad} />; }
+            } else if (isChosen) { bg = "rgba(43,68,255,.10)"; bd = C.accent; col = C.accent; dot = C.accent; }
+            return (
+              <button key={idx} onClick={() => onAnswer(item.n, idx)} disabled={submitted}
+                style={{ display: "flex", alignItems: "center", gap: 11, textAlign: "left", background: bg, border: `1.5px solid ${bd}`, borderRadius: 11, padding: "10px 12px", cursor: submitted ? "default" : "pointer", fontFamily: FONT.sans, fontSize: 14.5, color: col }}>
+                <span style={{ width: 18, height: 18, flexShrink: 0, borderRadius: "50%", border: `2px solid ${dot}`, background: (isChosen || (submitted && isCorrect)) ? dot : "transparent" }} />
+                <span style={{ flex: 1, minWidth: 0 }}>{stripOptLetter(o)}</span>
+                {mark}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {tipo !== "multiple" && (
+        <div style={{ marginTop: tipo === "vf" ? 11 : 0 }}>
+          {tipo === "vf" && (
+            <div style={{ fontSize: 12.5, color: C.dim, marginBottom: 5 }}>¿Por qué? Explicalo con tus palabras.</div>
+          )}
+          <CampoEscrito
+            valor={texto} disabled={submitted}
+            placeholder={tipo === "vf" ? "porque…" : "escribí tu respuesta, dos o tres renglones alcanzan…"}
+            onChange={(t) => onTexto(item.n, t)}
+          />
+        </div>
+      )}
+
+      {submitted && tipo !== "multiple" && <Devolucion item={item} />}
+
+      {submitted && tipo !== "multiple" && item.referencia && (
+        <div style={{ marginTop: 9, fontSize: 13, color: C.dim, lineHeight: 1.5, background: C.panel2, borderRadius: 10, padding: "9px 12px" }}>
+          <b style={{ color: C.text, fontFamily: FONT.round }}>Una respuesta completa:</b> {item.referencia}
+        </div>
+      )}
+
       {submitted && item.explain && (
         <div style={{ marginTop: 11, fontSize: 13, color: C.dim, lineHeight: 1.5, background: C.panel2, borderRadius: 10, padding: "9px 12px" }}>
           <b style={{ color: C.text, fontFamily: FONT.round }}>Por qué:</b> {item.explain}

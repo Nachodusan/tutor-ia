@@ -27,6 +27,10 @@ export default function RendirPage() {
   const [items, setItems] = useState<TestItem[] | null>(null);
   const [testId, setTestId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<number, number>>({});
+  /** Lo que el alumno ESCRIBE: justificación de un v/f o respuesta abierta. */
+  const [textos, setTextos] = useState<Record<number, string>>({});
+  /** Corregir lo escrito son dos llamadas al modelo por respuesta: se avisa. */
+  const [corrigiendo, setCorrigiendo] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +46,7 @@ export default function RendirPage() {
 
   async function generar() {
     if (loading) return;
-    setLoading(true); setItems(null); setTestId(null); setAnswers({}); setSubmitted(false); setError(null);
+    setLoading(true); setItems(null); setTestId(null); setAnswers({}); setTextos({}); setSubmitted(false); setError(null);
     try {
       const topicKeys = temas.split(",").map((k) => k.trim()).filter(Boolean);
       const r = await fetch("/api/test", {
@@ -69,21 +73,30 @@ export default function RendirPage() {
   }
 
   async function corregir() {
-    if (!items || !testId) return;
+    if (!items || !testId || corrigiendo) return;
+    setCorrigiendo(true);
     try {
-      // La clave vive en el servidor: se mandan SOLO las respuestas.
+      // La clave vive en el servidor: se mandan SOLO las respuestas y lo escrito.
       const r = await fetch("/api/test/submit", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ testId, answers: items.map((it) => answers[it.n] ?? null) }),
+        body: JSON.stringify({
+          testId,
+          answers: items.map((it) => answers[it.n] ?? null),
+          textos: items.map((it) => textos[it.n] ?? ""),
+        }),
       });
       if (!r.ok) return;
       const j = await r.json();
-      const porN = new Map<number, { correct: number; explain: string }>(
-        (j.key ?? []).map((k: { n: number; correct: number; explain: string }) => [k.n, k]),
+      // La corrección de lo escrito NO se puede derivar en el cliente: `ok`,
+      // `faltantes` y la referencia llegan resueltos del servidor y se fusionan
+      // sobre cada pregunta.
+      const porN = new Map<number, Partial<TestItem>>(
+        (j.key ?? []).map((k: Partial<TestItem> & { n: number }) => [k.n, k]),
       );
       setItems((prev) => (prev ?? []).map((it) => ({ ...it, ...(porN.get(it.n) ?? {}) })));
       setSubmitted(true);
     } catch { /* que reintente */ }
+    finally { setCorrigiendo(false); }
   }
 
   /** "Estudiar esto" desde el resultado: va al chat con la pregunta armada. */
@@ -97,8 +110,9 @@ export default function RendirPage() {
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 16px 28px" }}>
       <TestView
         items={items} loading={loading} answers={answers} submitted={submitted} subject={subject}
-        error={error}
+        error={error} textos={textos} corrigiendo={corrigiendo}
         onAnswer={(n, i) => { if (!submitted) setAnswers((a) => ({ ...a, [n]: i })); }}
+        onTexto={(n, t) => { if (!submitted) setTextos((x) => ({ ...x, [n]: t })); }}
         onSubmit={corregir}
         onRetake={generar}
         onStudy={estudiar}

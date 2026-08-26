@@ -31,16 +31,62 @@ export interface QuizTopic {
   sample: string;
 }
 
+/**
+ * LOS TRES TIPOS DE PREGUNTA.
+ *
+ *   multiple — cuatro opciones. Se corrige sola, sin modelo.
+ *   vf       — una AFIRMACIÓN que el alumno marca verdadera o falsa Y JUSTIFICA
+ *              por escrito. La mitad V/F se corrige sola; la justificación se
+ *              lee contra una referencia.
+ *   abierta  — el alumno escribe la respuesta y se corrige contra los PUNTOS
+ *              CLAVE de una respuesta modelo.
+ *
+ * La diferencia que importa para el diseño: `multiple` no necesita al modelo
+ * para corregirse y las otras dos sí. Por eso `referencia` existe — sin una
+ * respuesta modelo contra la cual medir, corregir texto libre sería preguntarle
+ * al modelo "¿esto está bien?" a secas, y está MEDIDO (exp2) que esa corrección
+ * holística es demasiado severa: marca como incorrectas respuestas correctas.
+ */
+export type TipoPregunta = "multiple" | "vf" | "abierta";
+
 /** Pregunta ya validada, verificada y con las opciones mezcladas. */
 export interface QuizItem {
   n: number;
   /** `key` del tema del que salió: permite enlazar "estudiar esto". */
   topicKey: string;
   topic: string;
+  tipo: TipoPregunta;
   question: string;
+  /** multiple: las 4 opciones. vf: vacío (la pantalla pone Verdadero/Falso). abierta: vacío. */
   options: string[];
+  /** multiple: 0-3. vf: 0 = Verdadero, 1 = Falso. abierta: -1 (no hay clave de opción). */
   correct: number;
+  /**
+   * LA RESPUESTA MODELO — de acá salen los puntos clave contra los que se corrige
+   * lo que el alumno escribe. NUNCA viaja al navegador: es la clave.
+   * vf: por qué la afirmación es verdadera o falsa. abierta: la respuesta completa.
+   */
+  referencia?: string | null;
   explain: string;
+}
+
+/**
+ * Cómo se reparten los tipos en una prueba.
+ *
+ * Con menos de tres preguntas no hay reparto que valga: se toma la que se
+ * corrige sola. De ahí en adelante, la mitad de opción múltiple y el resto
+ * partido entre las dos que se escriben.
+ *
+ * Por qué la múltiple sigue siendo la mitad: es la que el alumno va a enfrentar
+ * en la prueba de validación de estudios, y la única que se corrige sin modelo
+ * —o sea, la única que no puede fallar por un juicio equivocado.
+ */
+export function repartoTipos(total: number): Record<TipoPregunta, number> {
+  if (total <= 2) return { multiple: total, vf: 0, abierta: 0 };
+  const multiple = Math.max(1, Math.round(total * 0.5));
+  const resto = total - multiple;
+  const vf = Math.ceil(resto / 2);
+  return { multiple, vf, abierta: resto - vf };
 }
 
 export interface QuizOptions {
@@ -52,6 +98,12 @@ export interface QuizOptions {
   porTema?: number;
   /** Techo de tokens de la generación. */
   maxTokens?: number;
+  /**
+   * Qué tipos entran. Por omisión SOLO opción múltiple, y eso es a propósito:
+   * el chequeo de una parada del camino tiene que corregirse en el acto y sin
+   * llamar al modelo. La prueba de materia sí pide los tres.
+   */
+  tipos?: TipoPregunta[];
 }
 
 /** El modelo no cumplió con lo pedido y no hay pregunta confiable que servir. */
@@ -73,15 +125,19 @@ const SCHEMA = {
       type: "array",
       items: {
         type: "object", additionalProperties: false,
-        required: ["topicIndex", "topic", "question", "options", "correct", "explain"],
+        required: ["tipo", "topicIndex", "topic", "question", "options", "correct", "referencia", "explain"],
         properties: {
           // Con varias preguntas por tema el orden posicional deja de alcanzar:
           // el modelo puede devolver 5 donde se pidieron 6 y a partir de ahí
           // TODAS quedarían atribuidas al tema equivocado — y el alumno vería
           // "estudiá la lección 7" por algo que falló de la 6.
+          tipo: { type: "string", enum: ["multiple", "vf", "abierta"] },
           topicIndex: { type: "integer" },
           topic: { type: "string" },
           question: { type: "string" },
+          // Nullable y no opcional: el modo estricto no tiene campos opcionales.
+          // Va null en las de opción múltiple, que no necesitan respuesta modelo.
+          referencia: { type: ["string", "null"] },
           // Sin minItems/maxItems/minimum/maximum: el modo estricto de
           // Structured Outputs no los soporta. No se pierde garantía — abajo se
           // DESCARTA la pregunta si no trae 4 opciones o si `correct` se sale
@@ -123,7 +179,21 @@ const SISTEMA =
   "###): la app muestra el texto TAL CUAL y el alumno lee esos símbolos en la pantalla.\n" +
   "Que las preguntas NO se contesten reconociendo la frase textual del libro: pedí aplicar, " +
   "comparar, ordenar o elegir el caso que corresponde. Si solo se puede preguntar por una " +
-  "definición literal, hacelo con las palabras cambiadas.";
+  "definición literal, hacelo con las palabras cambiadas.\n\n" +
+  "HAY TRES TIPOS DE PREGUNTA y cada una llena campos distintos:\n" +
+  "· tipo `multiple`: como siempre. `options` con EXACTAMENTE 4, `correct` de 0 a 3, " +
+  "`referencia` en null.\n" +
+  "· tipo `vf`: `question` es una AFIRMACIÓN para marcar verdadera o falsa (no una pregunta). " +
+  "`options` vacío, `correct` 0 si es verdadera y 1 si es falsa, y `referencia` con POR QUÉ lo " +
+  "es, en 25-45 palabras. Que la afirmación NO se resuelva por el tono: nada de 'siempre', " +
+  "'nunca' ni 'todos' puestos para delatar la falsa. Alterná verdaderas y falsas.\n" +
+  "· tipo `abierta`: el alumno ESCRIBE la respuesta. `options` vacío, `correct` -1, y " +
+  "`referencia` con la RESPUESTA MODELO completa, 40-80 palabras, que diga TODOS los puntos " +
+  "que una buena respuesta tiene que tocar. Pedí algo que se conteste en 2-4 renglones: " +
+  "explicá, compará, justificá. Nada de 'escribí un ensayo'.\n\n" +
+  "LA REFERENCIA SE CORRIGE CONTRA EL MATERIAL, así que solo puede contener lo que el " +
+  "fragmento dice. Si el material no alcanza para una respuesta modelo completa, hacé esa " +
+  "pregunta de opción múltiple.";
 
 /**
  * RECORTA UNA MUESTRA SIN PERDER SUS VENTANAS.
@@ -189,13 +259,29 @@ export async function generarPreguntas(
   // un pedazo cada uno. El piso de 340 garantiza que nunca sea peor que antes.
   const porMuestra = Math.max(340, Math.min(3000, Math.floor(9000 / temas.length)));
 
+  // QUÉ TIPOS Y CUÁNTOS. El reparto lo calcula el CÓDIGO y el prompt lo pide
+  // explícito: decir "mezclá tipos" y esperar que salga parejo no funciona —
+  // el modelo se va a lo más barato, que es la opción múltiple.
+  const tipos = opts.tipos?.length ? opts.tipos : (["multiple"] as TipoPregunta[]);
+  const soloMultiple = tipos.length === 1 && tipos[0] === "multiple";
+  const reparto = soloMultiple ? null : repartoTipos(total);
+  const ETIQUETA: Record<TipoPregunta, string> = {
+    multiple: "de opción múltiple", vf: "de verdadero o falso (con su referencia)", abierta: "abiertas",
+  };
+  const pedido = reparto
+    ? (Object.entries(reparto) as [TipoPregunta, number][])
+        .filter(([t, n]) => n > 0 && tipos.includes(t))
+        .map(([t, n]) => `${n} ${ETIQUETA[t]}`)
+        .join(", ")
+    : null;
+
   const toc = temas
     .map((t, i) => `Tema ${i} (${t.title}): ${recortarMuestra(t.sample, porMuestra)}`)
     .join("\n\n");
 
   let gen: {
-    topicIndex: number; topic: string; question: string;
-    options: string[]; correct: number; explain: string;
+    tipo?: string; topicIndex: number; topic: string; question: string;
+    options: string[]; correct: number; referencia?: string | null; explain: string;
   }[] = [];
   try {
     const out = await chatJSON<{ items: typeof gen }>(
@@ -209,11 +295,22 @@ export async function generarPreguntas(
               ? `\n\nQUÉ EVALÚA EL PROFESOR (del libro del docente; priorizá preguntas alineadas a este foco):\n${opts.evalFocus}`
               : "") +
             `\n\nDevolvé JSON { items: [...] } con ${porTema} pregunta(s) por CADA tema (${total} en total). ` +
-            `El campo topicIndex va de 0 a ${temas.length - 1}.`,
+            `El campo topicIndex va de 0 a ${temas.length - 1}.` +
+            (pedido ? `\n\nDE ESAS ${total}: ${pedido}. Repartilas entre los temas, no las amontones en uno.` : ""),
         },
       ],
       SCHEMA,
-      { maxTokens: opts.maxTokens ?? Math.min(2400, 500 + total * 190) },
+      // EL PRESUPUESTO DEPENDE DE LOS TIPOS, no solo de la cantidad. Una `vf` y
+      // una `abierta` llevan `referencia` —25-80 palabras de respuesta modelo—
+      // que una múltiple no tiene. Con la fórmula vieja (500 + 190·n, techo
+      // 2400) la salida se cortaba o pasaba los 120 s de la llamada, y la prueba
+      // entera se perdía: medido, cuatro tandas seguidas caídas por deadline.
+      {
+        maxTokens: opts.maxTokens ?? Math.min(
+          3800,
+          500 + total * 190 + (reparto ? (reparto.vf + reparto.abierta) * 170 : 0),
+        ),
+      },
     );
     gen = out.items ?? [];
   } catch (e) {
@@ -221,14 +318,31 @@ export async function generarPreguntas(
     throw new SinPreguntas("generacion");
   }
 
-  // FORMA: se descarta lo inválido, no se "arregla" en silencio.
+  // FORMA: se descarta lo inválido, no se "arregla" en silencio. Cada tipo tiene
+  // su propio contrato, y una pregunta que no lo cumple no se puede ni mostrar ni
+  // corregir — una `vf` sin referencia no tiene contra qué medir la justificación,
+  // y una `abierta` sin respuesta modelo obligaría a corregir preguntándole al
+  // modelo "¿esto está bien?", que es justo la corrección severa que se descartó.
   const candidatos = gen
     .map((q) => {
       const t = temas[q.topicIndex];
       if (!t) return null;
-      if (!q.question?.trim() || !Array.isArray(q.options) || q.options.length !== 4) return null;
-      if (!Number.isInteger(q.correct) || q.correct < 0 || q.correct > 3) return null;
-      return { q, t };
+      if (!q.question?.trim()) return null;
+      const tipo: TipoPregunta =
+        q.tipo === "vf" || q.tipo === "abierta" || q.tipo === "multiple" ? q.tipo : "multiple";
+      if (!tipos.includes(tipo)) return null;
+      if (tipo === "multiple") {
+        if (!Array.isArray(q.options) || q.options.length !== 4) return null;
+        if (!Number.isInteger(q.correct) || q.correct < 0 || q.correct > 3) return null;
+      } else if (tipo === "vf") {
+        if (!Number.isInteger(q.correct) || (q.correct !== 0 && q.correct !== 1)) return null;
+        if (!q.referencia?.trim()) return null;
+      } else {
+        // Una referencia de una línea no tiene puntos clave que extraer, y sin
+        // puntos clave `gradeDecomposed` devuelve 0 y reprueba a cualquiera.
+        if ((q.referencia?.trim().length ?? 0) < 40) return null;
+      }
+      return { q, t, tipo };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
 
@@ -244,15 +358,24 @@ export async function generarPreguntas(
     // veces: el presupuesto se lo comía la repetición y por eso el corte tenía
     // que ser tan chico. Con los fragmentos arriba y una referencia por pregunta,
     // el verificador ve el MISMO texto que vio el generador.
-    const usados = [...new Set(candidatos.map(({ t }) => temas.indexOf(t)))];
+    // Solo lo que tiene clave de OPCIÓN se puede verificar así: se le pide al
+    // modelo que conteste sin ver la clave y se descarta lo que no coincide. Una
+    // `abierta` no tiene opción que elegir, así que no entra — su control de
+    // calidad es otro: que la referencia salga del material, que es lo que le
+    // exige el prompt.
+    const conClave = candidatos.filter((c) => c.tipo !== "abierta");
+    if (conClave.length === 0) throw new Error("nada que verificar");
+    const usados = [...new Set(conClave.map(({ t }) => temas.indexOf(t)))];
     const material = usados
       .map((i) => `--- Material ${i} (${temas[i]!.title}) ---\n${recortarMuestra(temas[i]!.sample, porMuestra)}`)
       .join("\n\n");
-    const enunciado = candidatos
+    const enunciado = conClave
       .map(
-        ({ q, t }, k) =>
+        ({ q, t, tipo }, k) =>
           `Pregunta ${k + 1} (usá el Material ${temas.indexOf(t)})\n${q.question}\n` +
-          q.options.map((o, j) => `${j}: ${o}`).join("\n"),
+          (tipo === "vf"
+            ? "0: Verdadero\n1: Falso"
+            : q.options.map((o, j) => `${j}: ${o}`).join("\n")),
       )
       .join("\n\n");
     const v = await chatJSON<{ answers: number[] }>(
@@ -268,13 +391,14 @@ export async function generarPreguntas(
         { role: "user", content: `${material}\n\n=== PREGUNTAS ===\n\n${enunciado}` },
       ],
       V_SCHEMA,
-      { maxTokens: 60 + candidatos.length * 8 },
+      { maxTokens: 60 + conClave.length * 8 },
     );
     const respuestas = v.answers ?? [];
-    verificados = candidatos.filter(({ q }, k) => respuestas[k] === q.correct);
+    const ok = new Set(conClave.filter(({ q }, k) => respuestas[k] === q.correct));
+    verificados = candidatos.filter((c) => c.tipo === "abierta" || ok.has(c));
     if (verificados.length < candidatos.length) {
       console.warn(
-        `[quiz] clave no verificada en ${candidatos.length - verificados.length}/${candidatos.length}: descartadas`,
+        `[quiz] clave no verificada en ${candidatos.length - verificados.length}/${conClave.length} con clave: descartadas`,
       );
     }
   } catch (e) {
@@ -283,16 +407,23 @@ export async function generarPreguntas(
 
   if (verificados.length === 0) throw new SinPreguntas("vacio");
 
-  return verificados.map(({ q, t }, k) => {
-    const m = mezclar(q.options.map((o) => String(o)), q.correct);
+  return verificados.map(({ q, t, tipo }, k) => {
+    // Mezclar SOLO la opción múltiple. En `vf` el orden es fijo (0 = Verdadero,
+    // 1 = Falso) y mezclarlo daría vuelta la clave contra un rótulo que la
+    // pantalla escribe por su cuenta.
+    const m = tipo === "multiple"
+      ? mezclar(q.options.map((o) => String(o)), q.correct)
+      : { options: [] as string[], correct: tipo === "vf" ? q.correct : -1 };
     return {
       n: k + 1,
       topicKey: t.key,
       // El título del índice es mejor fallback que "Unidad 1 · Lección 2".
       topic: q.topic?.trim() || t.title,
+      tipo,
       question: q.question.trim(),
       options: m.options,
       correct: m.correct,
+      referencia: tipo === "multiple" ? null : (q.referencia?.trim() ?? null),
       explain: q.explain?.trim() || "",
     };
   });
