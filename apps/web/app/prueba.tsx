@@ -1,11 +1,12 @@
 "use client";
+import { useEffect, useState } from "react";
 import { C, FONT, HARD, Dots, IconCheck, IconX, IconPrueba, IconArrow, subjectLabel, scoreTone, AuroraDot, BigBtn, IconBack, IconSpark } from "./ui";
 import { aprobado } from "./nota";
 import type { Subject, TestItem } from "./tipos";
 
 const stripOptLetter = (o: string) => o.replace(/^\s*[A-Da-d1-4]\s*[)\.\-:]\s+/, "").trim();
 
-export function TestView({ items, loading, answers, textos, corrigiendo, submitted, subject, error, onAnswer, onTexto, onSubmit, onRetake, onStudy, onClose }: { items: TestItem[] | null; loading: boolean; answers: Record<number, number>; textos: Record<number, string>; corrigiendo: boolean; submitted: boolean; subject?: Subject; error?: string | null; onAnswer: (n: number, i: number) => void; onTexto: (n: number, t: string) => void; onSubmit: () => void; onRetake: () => void; onStudy: (it: TestItem) => void; onClose: () => void }) {
+export function TestView({ items, loading, answers, textos, corrigiendo, submitted, subject, error, onAnswer, onTexto, onSubmit, onRetake, onReforzar, onClose }: { items: TestItem[] | null; loading: boolean; answers: Record<number, number>; textos: Record<number, string>; corrigiendo: boolean; submitted: boolean; subject?: Subject; error?: string | null; onAnswer: (n: number, i: number) => void; onTexto: (n: number, t: string) => void; onSubmit: () => void; onRetake: () => void; onReforzar: (its: TestItem[]) => void; onClose: () => void }) {
   const area = subject ? subjectLabel(subject) : "";
   if (loading || items === null) {
     return (
@@ -91,7 +92,7 @@ export function TestView({ items, loading, answers, textos, corrigiendo, submitt
         </button>
       </div>
 
-      {submitted && <ResultBanner score={score} total={items.length} weak={weak} strong={strong} onStudy={onStudy} onRetake={onRetake} />}
+      {submitted && <ResultBanner score={score} total={items.length} weak={weak} strong={strong} onReforzar={onReforzar} onRetake={onRetake} />}
 
       <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
         {items.map((it) => (
@@ -263,7 +264,32 @@ export function QuestionCard({ item, chosen, texto, submitted, onAnswer, onTexto
   );
 }
 
-export function ResultBanner({ score, total, weak, strong, onStudy, onRetake }: { score: number; total: number; weak: { it: TestItem; bien: number; total: number }[]; strong: TestItem[]; onStudy: (it: TestItem) => void; onRetake: () => void }) {
+export function ResultBanner({ score, total, weak, strong, onReforzar, onRetake }: { score: number; total: number; weak: { it: TestItem; bien: number; total: number }[]; strong: TestItem[]; onReforzar: (its: TestItem[]) => void; onRetake: () => void }) {
+  /**
+   * QUÉ SE VA A REFORZAR — arranca TODO marcado.
+   *
+   * Antes cada tema tenía su propio botón "Estudiar", y eso obligaba al alumno a
+   * ir al chat, volver a la prueba, buscar el siguiente y entrar de nuevo, una
+   * vez por tema. Con seis temas flojos eso son seis viajes de ida y vuelta
+   * entre dos pantallas, y en la práctica se estudia el primero y se abandona.
+   *
+   * Ahora se eligen los que sean y se van TODOS al chat de una, que los recorre
+   * uno por uno sin que el alumno tenga que volver acá.
+   *
+   * Todo marcado por omisión, igual que en la pantalla de elegir qué entra en la
+   * prueba: el que quiere reforzar todo aprieta una sola vez, y desmarcar es la
+   * opción — no el peaje.
+   */
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const idDe = (it: TestItem) => it.key || String(it.n);
+  useEffect(() => { setSel(new Set(weak.map(({ it }) => idDe(it)))); }, [weak]);
+  const elegidos = weak.filter(({ it }) => sel.has(idDe(it))).map(({ it }) => it);
+  const alternar = (k: string) => setSel((s) => {
+    const n = new Set(s);
+    if (!n.delete(k)) n.add(k);
+    return n;
+  });
+
   const pct = Math.round((score / total) * 100);
   const tone = pct >= 80 ? C.ok : pct >= 50 ? C.warn : C.bad;
   const msg = pct >= 80 ? "¡Muy bien! Dominás casi todo." : pct >= 50 ? "¡Buen trabajo! Reforcemos algunas cosas." : "Tranqui, repasemos juntos lo que cuesta.";
@@ -282,8 +308,14 @@ export function ResultBanner({ score, total, weak, strong, onStudy, onRetake }: 
         <div style={{ marginTop: 18 }}>
           <div style={lbl}>📌 Para reforzar</div>
           <div style={{ display: "grid", gap: 8 }}>
-            {weak.map(({ it, bien, total: n }) => (
-              <div key={it.key || it.n} style={{ display: "flex", alignItems: "center", gap: 10, background: C.panel2, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 12px" }}>
+            {weak.map(({ it, bien, total: n }) => {
+              const marcado = sel.has(idDe(it));
+              return (
+              <button key={idDe(it)} onClick={() => alternar(idDe(it))}
+                style={{ display: "flex", alignItems: "center", gap: 10, textAlign: "left", width: "100%", background: marcado ? C.userBubble : C.panel2, border: `1.5px solid ${marcado ? C.accentSoft : C.border}`, borderRadius: 12, padding: "10px 12px", cursor: "pointer" }}>
+                <span style={{ width: 20, height: 20, flexShrink: 0, borderRadius: 6, border: `2px solid ${marcado ? C.accentSoft : C.border}`, background: marcado ? C.accentSoft : "transparent", display: "grid", placeItems: "center" }}>
+                  {marcado && <IconCheck size={13} color="#fff" />}
+                </span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 700, fontSize: 14.5, color: C.text }}>{it.topic}</span>
                   <span style={{ display: "block", fontFamily: FONT.mono, fontSize: 11.5, color: C.dim }}>
@@ -295,13 +327,27 @@ export function ResultBanner({ score, total, weak, strong, onStudy, onRetake }: 
                     {it.p0 != null ? `pág. ${it.p0}${it.p1 && it.p1 !== it.p0 ? `–${it.p1}` : ""}` : ""}
                   </span>
                 </span>
-                <button onClick={() => onStudy(it)}
-                  style={{ display: "inline-flex", alignItems: "center", gap: 5, background: C.accent, color: "#fff", border: `2px solid ${C.ink}`, borderRadius: 10, padding: "7px 13px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 700, fontSize: 13, flexShrink: 0, boxShadow: HARD(C.coral) }}>
-                  Estudiar <IconArrow size={14} />
-                </button>
-              </div>
-            ))}
+              </button>
+              );
+            })}
           </div>
+
+          {/* EL VIAJE ÚNICO. El chat recibe la lista entera y la recorre; el
+              alumno no vuelve acá entre tema y tema. */}
+          <button onClick={() => onReforzar(elegidos)} disabled={elegidos.length === 0}
+            style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 12, background: elegidos.length ? C.accent : C.panel2, color: elegidos.length ? "#fff" : C.dim, border: `2px solid ${C.ink}`, borderRadius: 13, padding: "13px 15px", cursor: elegidos.length ? "pointer" : "default", boxShadow: elegidos.length ? HARD(C.coral) : "none" }}>
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 15 }}>
+                {elegidos.length === weak.length ? "Reforzar todo con el tutor" : `Reforzar ${elegidos.length} con el tutor`}
+              </span>
+              <span style={{ display: "block", fontSize: 12.5, opacity: .85, marginTop: 1, lineHeight: 1.3 }}>
+                {elegidos.length === 0
+                  ? "Marcá al menos uno"
+                  : "Los ve uno por uno, sin que vuelvas acá"}
+              </span>
+            </span>
+            <IconArrow size={20} />
+          </button>
         </div>
       )}
 

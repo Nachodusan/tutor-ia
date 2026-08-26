@@ -99,10 +99,23 @@ export default function RendirPage() {
     finally { setCorrigiendo(false); }
   }
 
-  /** "Estudiar esto" desde el resultado: va al chat con la pregunta armada. */
-  function estudiar(it: TestItem) {
-    const q = `Quiero repasar: ${it.topic}. Explicámelo simple, desde el principio y con un ejemplo.`;
-    const p = new URLSearchParams({ q, unit: String(it.unit ?? ""), lesson: String(it.lesson ?? "") });
+  /**
+   * REFORZAR LO ELEGIDO — un solo viaje al chat con TODA la lista.
+   *
+   * Antes cada tema tenía su botón y el alumno hacía un viaje de ida y vuelta
+   * por tema: estudiar el primero, volver a la prueba, buscar el segundo, entrar
+   * de nuevo. Con seis temas flojos eso son seis viajes entre dos pantallas, y
+   * lo que pasa de verdad es que se estudia el primero y se abandona.
+   *
+   * La lista viaja en la URL y no en memoria ni en sessionStorage: así el repaso
+   * sobrevive a un recargado y a compartir el enlace consigo mismo en otro
+   * momento. Solo lo mínimo para retomarlo —título, y unit/lesson para el
+   * estudio dirigido—, que con ocho temas son unos 600 caracteres.
+   */
+  function reforzar(its: TestItem[]) {
+    if (its.length === 0) return;
+    const cola = its.map((it) => ({ t: it.topic, u: it.unit, l: it.lesson }));
+    const p = new URLSearchParams({ repaso: JSON.stringify(cola) });
     router.push(`/materia/${id}/chat?${p}`);
   }
 
@@ -115,7 +128,7 @@ export default function RendirPage() {
         onTexto={(n, t) => { if (!submitted) setTextos((x) => ({ ...x, [n]: t })); }}
         onSubmit={corregir}
         onRetake={generar}
-        onStudy={estudiar}
+        onReforzar={reforzar}
         // Salir vuelve a ELEGIR, no al listado: el que sale de una prueba a
         // medio hacer casi siempre quiere otra, y ahí decide de qué.
         onClose={() => router.push(`/materia/${id}/prueba/nueva`)}

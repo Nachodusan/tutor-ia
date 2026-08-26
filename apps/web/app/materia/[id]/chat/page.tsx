@@ -15,7 +15,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Bubble, VozLuces, estadoVoz } from "../../../chat-ui";
-import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, IconCalculadora, subjectLabel } from "../../../ui";
+import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, IconCalculadora, subjectLabel, HARD, IconArrow } from "../../../ui";
 import { TecladoMate, esMatematica } from "../../../teclado-mate";
 import { esEjercicio } from "@tutor-ia/core/mate";
 import { TarjetaEjercicioView, type Tarjeta } from "../../../tarjeta-ejercicio";
@@ -94,6 +94,14 @@ export default function ChatPage() {
   const cortarVozRef = useRef<(() => void) | null>(null);
   /** Lo que el chico va diciendo, mientras lo dice. Se limpia al mandarlo. */
   const [parcial, setParcial] = useState("");
+  /**
+   * EL REPASO EN FILA — los temas que el alumno falló en la prueba.
+   *
+   * Llegan por URL desde el resultado y el chat los recorre acá, sin que tenga
+   * que volver a la prueba entre uno y otro. `paso` es cuál se está viendo.
+   */
+  const [repaso, setRepaso] = useState<{ t: string; u: number | null; l: number | null }[]>([]);
+  const [paso, setPaso] = useState(0);
   const parcialEnVueloRef = useRef(false);
 
   // Salir de la página con el micrófono abierto deja la luz del micro prendida
@@ -136,6 +144,23 @@ export default function ChatPage() {
   // estado el chico veía su pregunta duplicada.
   useEffect(() => {
     if (arrancado.current || !subject) return;
+
+    // REPASO EN FILA: viene del resultado de la prueba con todos los temas que
+    // falló. Se arranca por el primero; los demás esperan su turno acá mismo.
+    const cola = params.get("repaso");
+    if (cola) {
+      try {
+        const lista = JSON.parse(cola) as { t: string; u: number | null; l: number | null }[];
+        const limpia = lista.filter((x) => x?.t).slice(0, 12);
+        if (limpia.length > 0) {
+          arrancado.current = true;
+          setRepaso(limpia); setPaso(0);
+          void send(preguntaDeRepaso(limpia[0]!.t, limpia.length), { unit: limpia[0]!.u, lesson: limpia[0]!.l });
+          return;
+        }
+      } catch { /* si viene roto, sigue el camino normal de abajo */ }
+    }
+
     const q = params.get("q");
     if (!q) return;
     arrancado.current = true;
@@ -143,6 +168,36 @@ export default function ChatPage() {
     void send(q, { unit: u ? Number(u) : null, lesson: l ? Number(l) : null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subject]);
+
+  /**
+   * Lo que se le pide al tutor por cada tema de la fila.
+   *
+   * Dice EXPLÍCITAMENTE que es un repaso de algo que falló en una prueba, y no
+   * un "explicame X" a secas: el tutor tiene que empezar por lo que se
+   * confunde, no por la introducción del capítulo. Y en el primero avisa cuántos
+   * son, para que el alumno sepa en qué se está metiendo antes de arrancar.
+   */
+  function preguntaDeRepaso(tema: string, total: number): string {
+    return (
+      `Me fue mal en "${tema}" en una prueba y lo quiero repasar` +
+      (total > 1 ? ` (es el primero de ${total} temas que voy a repasar)` : "") +
+      `. Explicámelo desde el principio, simple y con un ejemplo, ` +
+      `y al final preguntame algo para ver si me quedó claro.`
+    );
+  }
+
+  /** El siguiente de la fila, sin salir del chat. */
+  function siguienteRepaso() {
+    const i = paso + 1;
+    const t = repaso[i];
+    if (!t || loading) return;
+    setPaso(i);
+    void send(
+      `Listo con el anterior. Ahora repasemos "${t.t}", que también me fue mal. ` +
+      `Igual que antes: desde el principio, simple y con un ejemplo.`,
+      { unit: t.u, lesson: t.l },
+    );
+  }
 
   async function send(
     text?: string,
@@ -431,6 +486,28 @@ export default function ChatPage() {
       {/* Leer en voz alta lo que el tutor responde, sin entrar en conversación:
           sirve para el que quiere escuchar mientras lee. También flota: es un
           control de la pantalla, no parte de la conversación. */}
+      {/* LA FILA DEL REPASO. Sin esto el alumno no sabe que hay más temas
+          esperando, y "reforzar todo" se sentiría igual que reforzar uno. */}
+      {repaso.length > 1 && (
+        <div style={{ background: C.panel2, borderBottom: `1px solid ${C.border}`, padding: "9px 16px" }}>
+          <div style={{ maxWidth: 720, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+              <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 13, color: C.text, minWidth: 0 }}>
+                Repaso de la prueba · {paso + 1} de {repaso.length}
+              </span>
+              <span style={{ fontSize: 12, color: C.dim, flexShrink: 0 }}>
+                {repaso.length - paso - 1 > 0 ? `faltan ${repaso.length - paso - 1}` : "último"}
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: 3, marginTop: 6 }}>
+              {repaso.map((_, i) => (
+                <span key={i} style={{ flex: 1, height: 5, borderRadius: 3, background: i === paso ? C.accent : i < paso ? C.accentSoft : C.border }} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "flex", justifyContent: "flex-end", padding: "10px 16px 0" }}>
         <button onClick={() => setTtsOn((v) => !v)} title={ttsOn ? "Dejar de leer en voz alta" : "Leer las respuestas en voz alta"}
           aria-label={ttsOn ? "Dejar de leer en voz alta" : "Leer las respuestas en voz alta"}
@@ -453,6 +530,32 @@ export default function ChatPage() {
             m.tarjeta
               ? <TarjetaEjercicioView key={i} t={m.tarjeta} />
               : <Bubble key={i} m={m} />)}
+
+          {/* SEGUIR CON EL SIGUIENTE, acá mismo. Este botón es el punto entero
+              del cambio: sin él el alumno tendría que volver a la prueba, buscar
+              el próximo tema y entrar de nuevo, una vez por tema.
+
+              Aparece cuando el tutor terminó de responder, no antes: ofrecer el
+              siguiente mientras todavía está escribiendo el actual invita a
+              saltearse justo lo que se vino a estudiar. */}
+          {repaso.length > 0 && paso < repaso.length - 1 && !loading && messages.length > 0 && (
+            <button onClick={siguienteRepaso}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, textAlign: "left", background: C.accent, color: "#fff", border: `2px solid ${C.ink}`, borderRadius: 14, boxShadow: HARD(C.ink), padding: "13px 15px", cursor: "pointer" }}>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 14.5 }}>Seguir con el siguiente</span>
+                <span style={{ display: "block", fontSize: 12.5, opacity: .85, marginTop: 1, lineHeight: 1.3 }}>{repaso[paso + 1]!.t}</span>
+              </span>
+              <IconArrow size={19} />
+            </button>
+          )}
+
+          {/* El final de la fila. Sin este cartel, el repaso simplemente deja de
+              ofrecer botón y no se entiende si terminó o si se rompió algo. */}
+          {repaso.length > 1 && paso === repaso.length - 1 && !loading && (
+            <div style={{ textAlign: "center", color: C.okTx, background: C.okBg, border: `1px solid ${C.ok}`, borderRadius: 12, padding: "11px 13px", fontSize: 13.5, lineHeight: 1.5 }}>
+              Repasaste los {repaso.length} temas que te habían costado. Si quedó alguno flojo, preguntá acá mismo.
+            </div>
+          )}
           {/* LO QUE EL CHICO ESTÁ DICIENDO, mientras lo dice. Va del lado del
               alumno y con el mismo color de sus burbujas, pero a media tinta y
               con borde punteado: todavía no es un mensaje, es lo que se oyó
