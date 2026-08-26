@@ -135,3 +135,24 @@ export interface Clase {
   momentos: ClaseMomento[];
   errorFrecuente: string | null;
 }
+
+// ── EL APUNTE DE UNA PARADA ─────────────────────────────────────────────────
+// Espejo de las formas de `packages/core/src/apunte.ts`. Se declara acá para que
+// la pantalla no importe del paquete de servidor.
+//
+// A diferencia de la clase, el apunte NO tiene pasajes literales: un apunte
+// hecho de citas textuales es una transcripción, que es justo la mala costumbre
+// que esto viene a reemplazar. Lo que sostiene cada punto es su PÁGINA (para ir
+// a verificarlo) y el gate de NLI que corrió al generarlo.
+export interface Apunte {
+  idea: string;
+  puntos: { titulo: string; texto: string; pagina: number | null }[];
+  palabras: { palabra: string; definicion: string; pagina: number | null }[];
+  /** La analogía del tutor. NO sale del libro y se muestra aparte. */
+  comoAcordarse: string;
+  /** Del libro del profesor, reescrito para el alumno. */
+  ojo: string | null;
+  /** Lo que la guía docente dice que se evalúa. */
+  seEvalua: string[];
+  tresLineas: string[];
+}

@@ -18,7 +18,8 @@ import { aprobado } from "../../../../camino";
 import { C, FONT, HARD, Dots, IconCheck, IconChat, IconArrow, subjectLabel } from "../../../../ui";
 import { limpiarPregunta } from "../../../../limpiar-texto";
 import { ClaseParada } from "../../../../clase-parada";
-import type { Clase, PlanItem, QuizQ, QuizResult, Subject } from "../../../../tipos";
+import { ApunteParada } from "../../../../apunte-parada";
+import type { Apunte, Clase, PlanItem, QuizQ, QuizResult, Subject } from "../../../../tipos";
 
 export default function LeccionPage() {
   const { id, tema } = useParams<{ id: string; tema: string }>();
@@ -44,6 +45,13 @@ export default function LeccionPage() {
    */
   const [clase, setClase] = useState<Clase | null | false>(null);
   const [enClase, setEnClase] = useState(true);
+  /**
+   * EL APUNTE — de acá se estudia, y se vuelve. `false` = esta parada todavía no
+   * tiene apunte generado, y entonces la pestaña ni aparece.
+   */
+  const [apunte, setApunte] = useState<Apunte | null | false>(null);
+  /** Qué está mirando: la clase/preguntas o el apunte. */
+  const [vista, setVista] = useState<"clase" | "apunte">("clase");
 
   /**
    * EL PLAN, APLANADO A PASOS ABRIBLES. Desde que el camino es de UNIDADES,
@@ -97,6 +105,23 @@ export default function LeccionPage() {
         setClase(j.clase?.momentos?.length ? j.clase : false);
       })
       .catch(() => { if (vivo) setClase(false); });
+    return () => { vivo = false; };
+  }, [id, item?.key]);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  // El apunte, igual que la clase: sale de una tabla, no cuesta una llamada al
+  // modelo y no bloquea nada de lo demás.
+  useEffect(() => {
+    if (!item) return;
+    let vivo = true;
+    setApunte(null); setVista("clase");
+    fetch(`/api/lesson/apunte?subjectId=${id}&topicKey=${encodeURIComponent(item.key)}`)
+      .then(async (r) => {
+        if (!vivo) return;
+        if (!r.ok) { setApunte(false); return; }
+        const j = await r.json();
+        setApunte(j.apunte?.puntos?.length ? j.apunte : false);
+      })
+      .catch(() => { if (vivo) setApunte(false); });
     return () => { vivo = false; };
   }, [id, item?.key]);   // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -190,7 +215,25 @@ export default function LeccionPage() {
       {item.focus && <div style={{ color: C.dim, fontSize: 13.5, marginTop: 2, lineHeight: 1.4 }}>{item.focus}</div>}
       {pages && <div style={{ fontFamily: FONT.mono, fontSize: 12, color: C.dim, marginTop: 3 }}>{pages}</div>}
 
-      {item.points && item.points.length > 0 && !res && !enClaseVisible && (
+      {/* LAS DOS FORMAS DE USAR LA PARADA. Solo aparecen si hay apunte: sin él,
+          una pestaña sola no es una elección, es ruido. */}
+      {apunte !== null && apunte !== false && (
+        <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+          {(["clase", "apunte"] as const).map((v) => (
+            <button key={v} onClick={() => setVista(v)}
+              style={{ flex: 1, background: vista === v ? C.accent : C.panel, color: vista === v ? "#fff" : C.text, border: `2px solid ${C.ink}`, borderRadius: 11, padding: "9px 12px", fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+              {v === "clase" ? "Estudiar y responder" : "Ver el apunte"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {vista === "apunte" && apunte !== null && apunte !== false && (
+        <ApunteParada apunte={apunte} titulo={item.title}
+          materia={subject ? subjectLabel(subject) : ""} paginas={pages} />
+      )}
+
+      {item.points && item.points.length > 0 && !res && !enClaseVisible && vista === "clase" && (
         <div style={{ marginTop: 14, background: C.panel2, border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "11px 13px" }}>
           <div style={{ fontSize: 12, color: C.dim, marginBottom: 6 }}>Cuando termines vas a poder explicar:</div>
           {item.points.map((p, i) => (
@@ -205,7 +248,7 @@ export default function LeccionPage() {
       {/* LA CLASE. Va antes que todo lo demás: el alumno lee y recién después
           se le pregunta. Mientras no haya clase generada para esta parada, esto
           no se pinta y la pantalla es la de siempre. */}
-      {enClaseVisible && (
+      {enClaseVisible && vista === "clase" && (
         <ClaseParada
           clase={clase as Clase}
           onTerminar={() => setEnClase(false)}
@@ -213,7 +256,7 @@ export default function LeccionPage() {
         />
       )}
 
-      {cargando && !enClaseVisible && (
+      {cargando && !enClaseVisible && vista === "clase" && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.dim, fontSize: 13.5, padding: "26px 0" }}>
           <Dots /> Armando las preguntas de esta lección…
         </div>
@@ -223,7 +266,7 @@ export default function LeccionPage() {
       )}
 
       {/* ── DE A UNA ─────────────────────────────────────────────────────── */}
-      {quiz && !res && q && !enClaseVisible && (
+      {quiz && !res && q && !enClaseVisible && vista === "clase" && (
         <div style={{ marginTop: 18 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
             <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 13 }}>Pregunta {paso + 1} de {total}</span>
@@ -271,7 +314,7 @@ export default function LeccionPage() {
       )}
 
       {/* ── RESULTADO ────────────────────────────────────────────────────── */}
-      {res && (
+      {res && vista === "clase" && (
         <div style={{ marginTop: 18 }}>
           <div style={{ border: `2px solid ${C.ink}`, borderRadius: 16, boxShadow: HARD(aprobado(res.score, res.total) ? C.ok : C.warn), background: aprobado(res.score, res.total) ? C.okBg : C.warnBg, padding: "16px 15px" }}>
             <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 22, color: aprobado(res.score, res.total) ? C.okTx : C.warnTx }}>
@@ -331,7 +374,7 @@ export default function LeccionPage() {
 
       {/* "No entiendo" está siempre disponible: si se traba en la pregunta 3 no
           tiene que terminar las diez para poder preguntar. */}
-      {!res && !enClaseVisible && (
+      {!res && !enClaseVisible && vista === "clase" && (
         <button onClick={() => repasar()}
           style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 20, background: "transparent", color: C.text, border: `2px solid ${C.ink}`, borderRadius: 11, padding: "10px 14px", fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <IconChat size={15} /> No entiendo esto

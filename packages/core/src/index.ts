@@ -18,6 +18,7 @@ export * from "./study-plan";
 export * from "./quiz";
 export * from "./leccion";
 export * from "./corregir-escrito";
+export * from "./apunte";
 export * from "./mate-normalizar";
 export * from "./mate-sympy";
 export * from "./mate-ejercicio";
