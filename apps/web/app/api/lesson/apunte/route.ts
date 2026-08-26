@@ -74,9 +74,12 @@ export async function POST(req: Request) {
   // se buscan por PALABRAS del título porque la guía no se puede ligar por
   // índice (`heading_path` dice "Unidad ? Lección ?"). Lo que no matchea se
   // queda sin bloque, que es mejor que mostrar el de otra lección.
+  // ⚠️ "lección" y "unidad" NO son temas: dejarlas traía el aviso de cualquier
+  // otra lección (medido: "Lección 2 Mundos familiares" sacó el suyo de la guía
+  // de otro cuento, por la palabra "lección").
   const palabras = (body.title ?? "")
-    .toLowerCase().replace(/[¿?¡!.,:;()]/g, " ").split(/\s+/)
-    .filter((w) => w.length > 4 && !/^(sobre|para|como|cual|cuales|nuestro|nuestra|manera|parte|mundo)$/.test(w));
+    .toLowerCase().replace(/[¿?¡!.,:;()"“”]/g, " ").split(/\s+/)
+    .filter((w) => w.length > 4 && !/^(sobre|para|como|cual|cuales|nuestro|nuestra|manera|parte|mundo|mundos|lecci[oó]n|unidad|m[oó]dulo|cap[ií]tulo|tema|temas|texto|textos|primera|segunda|tercera)$/.test(w));
   const guia = async (tipo: string, max: number): Promise<string | null> => {
     if (palabras.length === 0) return null;
     const rows = (await sql`
@@ -84,7 +87,11 @@ export async function POST(req: Request) {
       where d.subject_id = ${subjectId} and ch.corpus_role = 'pedagogy'
         and ch.pedagogy_type = ${tipo} and length(ch.content) > 200
         and ch.content not like '%......%'
-        and ch.content ilike any(${palabras.map((w) => `%${w}%`)})
+        -- DOS palabras del título como mínimo, y la que más matchea primero.
+        and (select count(*) from unnest(${palabras}::text[]) w
+             where ch.content ilike '%' || w || '%') >= ${Math.min(2, palabras.length)}
+      order by (select count(*) from unnest(${palabras}::text[]) w
+                where ch.content ilike '%' || w || '%') desc, ch.page
       limit 1`) as unknown as { content: string }[];
     const t = rows[0]?.content;
     if (!t) return null;

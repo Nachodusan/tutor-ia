@@ -61,13 +61,21 @@ export async function materiasConPlan(): Promise<string[]> {
   return rows.map((r) => r.name);
 }
 
-/** Palabras del título que sirven para buscar en la guía del docente. */
+/**
+ * Palabras del título que sirven para buscar en la guía del docente.
+ *
+ * ⚠️ "LECCIÓN" Y "UNIDAD" NO SON TEMAS, y dejarlas adentro traía el aviso de
+ * cualquier otra lección. Medido: la parada "Lección 2 Mundos familiares" sacó
+ * su recuadro de la guía de Lengua p.286, que habla de identificar conflictos en
+ * un texto literario — de otro cuento y de otra unidad. Matcheó por la palabra
+ * "lección", que aparece en media guía.
+ */
 function palabrasDe(titulo: string): string[] {
   return titulo
     .toLowerCase()
-    .replace(/[¿?¡!.,:;()]/g, " ")
+    .replace(/[¿?¡!.,:;()"“”]/g, " ")
     .split(/\s+/)
-    .filter((w) => w.length > 4 && !/^(sobre|para|como|cual|cuales|nuestro|nuestra|manera|parte|mundo)$/.test(w));
+    .filter((w) => w.length > 4 && !/^(sobre|para|como|cual|cuales|nuestro|nuestra|manera|parte|mundo|mundos|lecci[oó]n|unidad|m[oó]dulo|cap[ií]tulo|tema|temas|texto|textos|primera|segunda|tercera)$/.test(w));
 }
 
 /**
@@ -108,7 +116,15 @@ async function pedagogia(subjectId: string, titulo: string, tipo: string, max: n
       and length(ch.content) > 200
       -- Los índices del libro entran como pedagogía y son puro relleno de puntos.
       and ch.content not like '%......%'
-      and ch.content ilike any(${palabras.map((w) => `%${w}%`)})
+      -- DOS palabras del título como mínimo, y ordenado por cuántas matchean.
+      -- Con UNA sola y sin orden, "limit 1" devolvía el primer chunk que rozara
+      -- cualquier palabra: así fue como dos paradas distintas de Matemática
+      -- terminaron mostrando EL MISMO aviso, y la que le correspondía a una de
+      -- ellas ("la confusión entre -2⁴ y (-2)⁴") quedó sin usar en el corpus.
+      and (select count(*) from unnest(${palabras}::text[]) w
+           where ch.content ilike '%' || w || '%') >= ${Math.min(2, palabras.length)}
+    order by (select count(*) from unnest(${palabras}::text[]) w
+              where ch.content ilike '%' || w || '%') desc, ch.page
     limit 1`) as unknown as { content: string }[];
   const t = rows[0]?.content;
   return t ? limpiarGuia(t, max) : null;

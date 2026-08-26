@@ -218,6 +218,15 @@ export async function armarApunte(opts: {
 
   const porIndice = new Map(usables.map((o) => [o.i, o]));
 
+  /** De dónde sale de verdad el punto: la página que aporta más oraciones. */
+  function paginaMayoritaria(paginas: (number | null)[]): number | null {
+    const cuenta = new Map<number, number>();
+    for (const p of paginas) if (p != null) cuenta.set(p, (cuenta.get(p) ?? 0) + 1);
+    let mejor: number | null = null, max = 0;
+    for (const [p, n] of cuenta) if (n > max || (n === max && mejor != null && p < mejor)) { mejor = p; max = n; }
+    return mejor;
+  }
+
   // Un punto sin fuentes no se puede verificar ni mandar a la página: se cae. Es
   // el mismo criterio que en la clase — lo que no se puede respaldar no se
   // muestra, sobre todo acá, que es de donde el alumno va a estudiar.
@@ -229,7 +238,16 @@ export async function armarApunte(opts: {
         titulo: sinIndices(p.titulo),
         texto: sinIndices(p.texto),
         fuentes,
-        pagina: fuentes.map((i) => porIndice.get(i)?.pagina).find((x) => x != null) ?? null,
+        // LA PÁGINA MAYORITARIA, no la de la primera fuente.
+        //
+        // ⚠️ Acá se tomaba la primera, y medido sobre los 226 puntos publicados:
+        // 44 mostraban una página que ni siquiera era la más frecuente de sus
+        // fuentes, y 31 tenían como primera fuente una CONSIGNA o un encabezado
+        // —o sea, la página que se le mostraba al alumno era la de la actividad,
+        // no la del contenido—. La página es LA garantía de este diseño: es lo
+        // único que le permite ir al libro a verificar. Una que falla una de
+        // cada cinco veces enseña a no chequear ninguna.
+        pagina: paginaMayoritaria(fuentes.map((i) => porIndice.get(i)?.pagina ?? null)),
       };
     })
     .filter((p) => p.fuentes.length > 0);
@@ -249,7 +267,14 @@ export async function armarApunte(opts: {
       })),
     comoAcordarse: sinIndices(out.comoAcordarse ?? ""),
     ojo: ojo && !HABLA_AL_DOCENTE.test(ojo) ? ojo : null,
-    seEvalua: (out.seEvalua ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 8),
+    // MISMA REGLA para "Te lo pueden preguntar así": la pantalla dice "lo que se
+    // evalúa" y eso solo es cierto si la lista salió de la guía docente. Medido:
+    // 10 apuntes mostraban chips en materias sin ningún chunk `evaluacion`, y en
+    // Lengua los chips eran "alcachofa", "abuela", "padre" — palabras del cuento,
+    // presentadas como los conceptos que se toman en la prueba.
+    seEvalua: opts.evaluacion?.trim()
+      ? (out.seEvalua ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 8)
+      : [],
     tresLineas: (out.tresLineas ?? []).map(sinIndices).filter(Boolean).slice(0, 3),
   };
 }
