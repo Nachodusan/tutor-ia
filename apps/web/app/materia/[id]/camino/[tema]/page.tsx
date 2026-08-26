@@ -50,6 +50,7 @@ export default function LeccionPage() {
    * tiene apunte generado, y entonces la pestaña ni aparece.
    */
   const [apunte, setApunte] = useState<Apunte | null | false>(null);
+  const [apunteErr, setApunteErr] = useState("");
   /** Qué está mirando: la clase/preguntas o el apunte. */
   const [vista, setVista] = useState<"clase" | "apunte">("clase");
 
@@ -90,6 +91,22 @@ export default function LeccionPage() {
 
   useEffect(() => { void traerMateria(id).then(setSubject); }, [id]);
 
+  /**
+   * EL PLAN — de acá sale la lección que se está abriendo.
+   *
+   * ⚠️ SIN ESTO LA PANTALLA QUEDA EN BLANCO. `item` se busca dentro de `plan`, y
+   * con `plan` vacío el componente cae en su rama `!item`, que pinta los tres
+   * puntitos de "cargando" para siempre: no hay error, no hay cartel, no hay
+   * nada. Se borró sin querer al reacomodar los efectos de al lado y el síntoma
+   * fue una parada muda — que es la peor forma de romper algo, porque parece
+   * lentitud y no falla.
+   */
+  useEffect(() => {
+    fetch(`/api/plan?subjectId=${id}`).then((r) => r.json())
+      .then((j) => { setPlan(j.items ?? []); setDone(j.doneKeys ?? []); })
+      .catch(() => setPlan([]));
+  }, [id]);
+
   // La clase se pide aparte de las preguntas y no las bloquea: son dos fetch
   // independientes que corren juntos. La clase sale de una tabla (0 llamadas al
   // modelo), así que vuelve enseguida y casi siempre gana la carrera.
@@ -108,52 +125,41 @@ export default function LeccionPage() {
     return () => { vivo = false; };
   }, [id, item?.key]);   // eslint-disable-line react-hooks/exhaustive-deps
 
-  // El apunte, igual que la clase: sale de una tabla, no cuesta una llamada al
-  // modelo y no bloquea nada de lo demás.
+  // El apunte se resetea al cambiar de parada, pero NO se pide todavía: se pide
+  // cuando el alumno toca la pestaña. La primera visita de cada parada paga una
+  // generación, y pagarla por adelantado en todas —incluidas las que nadie va a
+  // abrir— sería gastar una llamada al modelo por cada parada que se toca.
   useEffect(() => {
-    if (!item) return;
-    let vivo = true;
-    setApunte(null); setVista("clase");
-    fetch(`/api/lesson/apunte?subjectId=${id}&topicKey=${encodeURIComponent(item.key)}`)
-      .then(async (r) => {
-        if (!vivo) return;
-        if (!r.ok) { setApunte(false); return; }
-        const j = await r.json();
-        setApunte(j.apunte?.puntos?.length ? j.apunte : false);
-      })
-      .catch(() => { if (vivo) setApunte(false); });
-    return () => { vivo = false; };
-  }, [id, item?.key]);   // eslint-disable-line react-hooks/exhaustive-deps
+    setApunte(null); setApunteErr(""); setVista("clase");
+  }, [id, item?.key]);
 
-  useEffect(() => {
-    fetch(`/api/plan?subjectId=${id}`).then((r) => r.json())
-      .then((j) => { setPlan(j.items ?? []); setDone(j.doneKeys ?? []); })
-      .catch(() => setPlan([]));
-  }, [id]);
-
-  // Las preguntas se piden en cuanto se conoce la lección. Con el plan ya
-  // cargado esto es una sola llamada; la primera vez de cada lección paga la
-  // generación y por eso la pantalla lo dice en vez de quedarse muda.
-  useEffect(() => {
-    if (!item) return;
-    let vivo = true;
-    setCargando(true); setErr(""); setQuiz(null); setAns({}); setRes(null); setPaso(0);
-    fetch("/api/lesson/quiz", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subjectId: id, topicKey: item.key, title: item.title, unit: item.unit, lesson: item.lesson, p0: item.p0, p1: item.p1 }),
-    })
-      .then(async (r) => {
-        const j = await r.json();
-        if (!vivo) return;
-        if (!r.ok) { setErr(j.error ?? "No pude armar las preguntas."); return; }
-        // Limpio al RECIBIR: lo generado se cachea, así que las tandas viejas con
-        // LaTeX crudo solo se arreglan del lado de la pantalla.
-        setQuiz((j.items ?? []).map(limpiarPregunta));
-      })
-      .catch(() => { if (vivo) setErr("No hay conexión con el servidor."); })
-      .finally(() => { if (vivo) setCargando(false); });
-    return () => { vivo = false; };
-  }, [id, item?.key]);   // eslint-disable-line react-hooks/exhaustive-deps
+  async function verApunte() {
+    setVista("apunte");
+    if (!item || apunte !== null) return;   // ya está pedido o ya está
+    setApunteErr("");
+    try {
+      const r = await fetch("/api/lesson/apunte", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subjectId: id, topicKey: item.key, title: item.title, p0: item.p0, p1: item.p1 }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.apunte?.puntos?.length) {
+        setApunte(false);
+        // El MOTIVO importa: "esta parte del libro son puras imágenes" y "probá
+        // de nuevo" piden cosas distintas del alumno.
+        setApunteErr(
+          j.error === "sin_material" || j.error === "sin_paginas" || j.error === "sin_libro"
+            ? "Esta parte del libro no la tengo en texto, así que no puedo armar el apunte. Probá con la lección de al lado."
+            : "No pude armar el apunte ahora. Probá de nuevo en un momento.",
+        );
+        return;
+      }
+      setApunte(j.apunte);
+    } catch {
+      setApunte(false);
+      setApunteErr("No hay conexión con el servidor.");
+    }
+  }
 
   async function corregir() {
     if (!quiz || res || enviando) return;
@@ -215,19 +221,33 @@ export default function LeccionPage() {
       {item.focus && <div style={{ color: C.dim, fontSize: 13.5, marginTop: 2, lineHeight: 1.4 }}>{item.focus}</div>}
       {pages && <div style={{ fontFamily: FONT.mono, fontSize: 12, color: C.dim, marginTop: 3 }}>{pages}</div>}
 
-      {/* LAS DOS FORMAS DE USAR LA PARADA. Solo aparecen si hay apunte: sin él,
-          una pestaña sola no es una elección, es ruido. */}
-      {apunte !== null && apunte !== false && (
-        <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
-          {(["clase", "apunte"] as const).map((v) => (
-            <button key={v} onClick={() => setVista(v)}
-              style={{ flex: 1, background: vista === v ? C.accent : C.panel, color: vista === v ? "#fff" : C.text, border: `2px solid ${C.ink}`, borderRadius: 11, padding: "9px 12px", fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
-              {v === "clase" ? "Estudiar y responder" : "Ver el apunte"}
-            </button>
-          ))}
+      {/* LAS DOS FORMAS DE USAR LA PARADA, SIEMPRE A LA VISTA.
+          ⚠️ Esto antes solo aparecía si la parada YA tenía apunte generado, y con
+          seis apuntes sobre 1.846 paradas eso hacía la función invisible: el
+          alumno abría una parada cualquiera y veía exactamente lo de antes, sin
+          ninguna señal de que el apunte existiera. Una función que hay que
+          adivinar no existe. */}
+      <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+        <button onClick={() => setVista("clase")}
+          style={{ flex: 1, background: vista === "clase" ? C.accent : C.panel, color: vista === "clase" ? "#fff" : C.text, border: `2px solid ${C.ink}`, borderRadius: 11, padding: "9px 12px", fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+          Estudiar y responder
+        </button>
+        <button onClick={verApunte}
+          style={{ flex: 1, background: vista === "apunte" ? C.accent : C.panel, color: vista === "apunte" ? "#fff" : C.text, border: `2px solid ${C.ink}`, borderRadius: 11, padding: "9px 12px", fontFamily: FONT.round, fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+          Ver el apunte
+        </button>
+      </div>
+
+      {vista === "apunte" && apunte === null && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.dim, fontSize: 13.5, padding: "26px 0" }}>
+          <Dots /> Armando el apunte de esta lección…
         </div>
       )}
-
+      {vista === "apunte" && apunte === false && apunteErr && (
+        <div style={{ marginTop: 14, color: C.warnTx, background: C.warnBg, border: `1px solid ${C.warn}`, borderRadius: 10, padding: "10px 12px", fontSize: 13, lineHeight: 1.5 }}>
+          {apunteErr}
+        </div>
+      )}
       {vista === "apunte" && apunte !== null && apunte !== false && (
         <ApunteParada apunte={apunte} titulo={item.title}
           materia={subject ? subjectLabel(subject) : ""} paginas={pages} />
