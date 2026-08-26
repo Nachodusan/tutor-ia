@@ -273,6 +273,58 @@ export async function documentoDeTema(
   return null;
 }
 
+/**
+ * ¿ESTA SECCIÓN DEL LIBRO SE PUEDE ESTUDIAR, O SOLO SE RESPONDE?
+ *
+ * Un libro escolar no es todo lecciones. Trae páginas de EVALUACIÓN, de
+ * navegación y de metacognición, y el índice las lista igual que a las demás —
+ * así que entraban al camino como paradas y generaban su apunte.
+ *
+ * Medido sobre las secciones de nivel 2 del corpus: "Evaluación" aparece 35
+ * veces, "Repaso" 18, "Desarrolla tus habilidades" 16, "Antes de continuar" 14,
+ * "¿Qué necesito saber?" 10, "Mi proceso" 9. Y adentro no hay nada que enseñar:
+ * el primer chunk de una "Evaluación" real dice "deberá responder,
+ * individualmente, cada una de las siguientes preguntas". Un apunte de eso es un
+ * apunte de preguntas.
+ *
+ * ⚠️ LA LISTA ES CORTA Y EXACTA A PROPÓSITO, y varias que PARECEN relleno se
+ * quedan afuera del filtro porque SÍ tienen contenido:
+ *   · "Leo e imagino", "Leo y opino", "Me expreso" — traen el texto del cuento;
+ *   · "Modelación paso a paso", "Investigación paso a paso" — son el ejercicio
+ *     resuelto y el experimento, que es de lo mejor que tiene el libro;
+ *   · "En resumen", "Síntesis" — son la síntesis del contenido, no una consigna.
+ * El título feo no es el criterio: el criterio es si adentro hay algo que
+ * aprender.
+ *
+ * Y el match es contra el título COMPLETO, no una subcadena: "Evaluación de
+ * impacto ambiental" es un tema de Ciencias y tiene que sobrevivir.
+ */
+const NO_ES_LECCION = new RegExp(
+  "^(" + [
+    // Evaluación
+    "evaluaci[oó]n( (final|de unidad|diagn[oó]stica|integradora|inicial|intermedia|de proceso))?",
+    "creo y comunico ?/? ?actividades de evaluaci[oó]n",
+    "mock test", "autoevaluaci[oó]n", "coevaluaci[oó]n",
+    // Diagnóstico y cierre
+    "¿?qu[eé] necesito saber\\??", "¿?c[oó]mo vas\\??", "¿?qu[eé] s[eé]\\??",
+    "¿?qu[eé] sabes\\??", "¿?qu[eé] aprend(iste|í)\\??", "¿?cu[aá]nto aprend(iste|í)\\??",
+    "antes de continuar", "antes de empezar", "para finalizar", "punto de llegada",
+    "punto de partida", "para terminar",
+    // Metacognición y navegación
+    "mi proceso", "reflexiono sobre mi aprendizaje", "recomendaciones",
+    "recortables?", "complementa tu aprendizaje", "repaso",
+    "desarrolla tus habilidades", "habilidades? y actitudes?",
+  ].join("|") + ")\\s*\\.?$",
+  "i",
+);
+
+/** Título de sección que vale como parada del camino. */
+export function esParadaEnsenable(title: string): boolean {
+  const t = title.replace(/\s+/g, " ").trim();
+  if (t.length < 3) return false;
+  return !NO_ES_LECCION.test(t);
+}
+
 /** Identidad estable de un tema: no depende del uuid de la fila (que cambia en
  *  cada rebuild) ni de la posición en la lista. */
 function claveTema(documentId: string, ord: number, title: string): string {
@@ -546,7 +598,11 @@ export async function getPlanUnits(subjectId: string): Promise<PlanUnit[]> {
     source: "index" as const,
     lecciones: lecciones
       .filter((l) => l.document_id === u.document_id
-                  && l.page_start >= u.page_start && l.page_start <= u.page_end)
+                  && l.page_start >= u.page_start && l.page_start <= u.page_end
+                  // Las páginas de evaluación y navegación no son paradas: no hay
+                  // nada que estudiar ahí y el apunte salía siendo un apunte de
+                  // preguntas. Ver `esParadaEnsenable`.
+                  && esParadaEnsenable(l.title))
       .map((l) => ({
         key: claveTema(l.document_id, l.ord, l.title),
         title: l.title,
@@ -582,7 +638,7 @@ export async function getPlanTopics(
    */
   const pedidas = opts.keys?.length ? new Set(opts.keys) : null;
 
-  const secciones = await sql<{
+  const todasLasSecciones = await sql<{
     document_id: string; subject_id: string; doc_title: string; ord: number; title: string;
     unit_no: number | null; lesson_no: number | null;
     page_start: number; page_end: number;
@@ -593,6 +649,11 @@ export async function getPlanTopics(
     join documents d on d.id = bs.document_id
     where bs.subject_id = ${subjectId} and bs.level = 2
     order by d.title, bs.page_start`;
+
+  // Fuera las páginas de evaluación y navegación, acá también: ofrecerle al
+  // alumno "tomame Evaluación de unidad" es ofrecerle una prueba armada sobre
+  // las preguntas de otra prueba.
+  const secciones = todasLasSecciones.filter((s) => esParadaEnsenable(s.title));
 
   /**
    * ⚠️ LAS CLAVES PEDIDAS SON DE UNIDAD, NO DE LECCIÓN — y por eso la prueba
