@@ -37,7 +37,16 @@ export default function ElegirPuntosPage() {
       .then((r) => r.json())
       .then((j: { items?: PlanItem[]; doneKeys?: string[]; scores?: Record<string, { score: number; total: number }> }) => {
         if (!vivo) return;
-        const its = Array.isArray(j.items) ? j.items : [];
+        // LA UNIDAD DEL PROGRAMA NO ENTRA EN LA PRUEBA. Es la lista de lo que el
+        // currículum exige y el libro NO trae: no tiene páginas ni material, así
+        // que no hay de dónde sacarle preguntas. Ofrecerla igual hacía dos daños
+        // chicos y uno grande — inflaba el conteo del botón ("Elegiste 15: entran
+        // 10") con un punto que aporta cero, y sobre todo le prometía al alumno
+        // que le iban a tomar algo que nadie le puede tomar.
+        //
+        // Se estudia desde el CAMINO, donde cada parada del programa abre el
+        // tutor con la cascada de alcance. Acá simplemente no está.
+        const its = (Array.isArray(j.items) ? j.items : []).filter((i) => !i.esPrograma);
         setItems(its);
         // Arranca TODO elegido: es lo que hacía el botón antes de esta pantalla,
         // así que quien solo quiere rendir sigue apretando una vez. Elegir es la

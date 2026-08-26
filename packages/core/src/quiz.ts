@@ -125,6 +125,30 @@ const SISTEMA =
   "comparar, ordenar o elegir el caso que corresponde. Si solo se puede preguntar por una " +
   "definición literal, hacelo con las palabras cambiadas.";
 
+/**
+ * RECORTA UNA MUESTRA SIN PERDER SUS VENTANAS.
+ *
+ * ⚠️ Las muestras NO son texto corrido: las arman `muestraRepresentativa` (rag,
+ * separador " … ") y `muestraRepartida` (la ruta de la lección, separador salto
+ * doble) tomando VARIAS ventanas repartidas a lo largo del tema, justamente para
+ * que las preguntas no salgan todas del primer párrafo.
+ *
+ * Un `slice(0, n)` sobre eso se queda con la primera ventana y tira el resto —
+ * que es exactamente el bug que este archivo tenía con el corte fijo de 340. Si
+ * se recorta desde el frente, el recorte vuelve a introducirlo con otro número.
+ *
+ * Así que el presupuesto se REPARTE entre las ventanas: cada una entrega su
+ * parte y el tema sigue recorriéndose de punta a punta.
+ */
+export function recortarMuestra(muestra: string, max: number): string {
+  if (muestra.length <= max) return muestra;
+  const sep = muestra.includes("\n\n") ? "\n\n" : " … ";
+  const partes = muestra.split(sep).filter((p) => p.trim());
+  if (partes.length <= 1) return muestra.slice(0, max);
+  const porParte = Math.max(80, Math.floor((max - sep.length * (partes.length - 1)) / partes.length));
+  return partes.map((p) => p.slice(0, porParte)).join(sep);
+}
+
 /** Mezcla las opciones y reubica el índice de la correcta. */
 function mezclar(options: string[], correct: number): { options: string[]; correct: number } {
   const idx = options.map((_, i) => i);
@@ -166,7 +190,7 @@ export async function generarPreguntas(
   const porMuestra = Math.max(340, Math.min(3000, Math.floor(9000 / temas.length)));
 
   const toc = temas
-    .map((t, i) => `Tema ${i} (${t.title}): ${t.sample.slice(0, porMuestra)}`)
+    .map((t, i) => `Tema ${i} (${t.title}): ${recortarMuestra(t.sample, porMuestra)}`)
     .join("\n\n");
 
   let gen: {
@@ -222,7 +246,7 @@ export async function generarPreguntas(
     // el verificador ve el MISMO texto que vio el generador.
     const usados = [...new Set(candidatos.map(({ t }) => temas.indexOf(t)))];
     const material = usados
-      .map((i) => `--- Material ${i} (${temas[i]!.title}) ---\n${temas[i]!.sample.slice(0, porMuestra)}`)
+      .map((i) => `--- Material ${i} (${temas[i]!.title}) ---\n${recortarMuestra(temas[i]!.sample, porMuestra)}`)
       .join("\n\n");
     const enunciado = candidatos
       .map(

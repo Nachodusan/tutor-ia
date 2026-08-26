@@ -594,10 +594,68 @@ export async function getPlanTopics(
     where bs.subject_id = ${subjectId} and bs.level = 2
     order by d.title, bs.page_start`;
 
+  /**
+   * ⚠️ LAS CLAVES PEDIDAS SON DE UNIDAD, NO DE LECCIÓN — y por eso la prueba
+   * estaba MUERTA.
+   *
+   * La pantalla "¿Qué te tomamos?" lista lo que devuelve `/api/plan`, que desde
+   * que el camino es de unidades son UNIDADES (nivel 1) con sus lecciones
+   * anidadas. Esta función buscaba las claves solo en el nivel 2, así que
+   * ninguna coincidía nunca: `getPlanTopics` devolvía vacío, la ruta contestaba
+   * 422 y el alumno veía "No encontré esos puntos en el libro de esta materia"
+   * eligiera lo que eligiera. La prueba a medida no funcionaba para NADIE.
+   *
+   * Una clave de unidad se expande a SUS lecciones, que es lo que el alumno
+   * quiso decir al marcarla ("tomame esta unidad"). Y si la unidad no tiene
+   * lecciones —los módulos EPJA entran como unidad suelta, sin índice interno—
+   * entra ella misma como tema, con su propio rango de páginas: material tiene
+   * igual, y descartarla dejaría materias enteras sin prueba posible.
+   */
+  const unidades = pedidas
+    ? await sql<{
+        document_id: string; subject_id: string; doc_title: string; ord: number; title: string;
+        unit_no: number | null; lesson_no: number | null;
+        page_start: number; page_end: number;
+      }[]>`
+        select bs.document_id, bs.subject_id, d.title as doc_title, bs.ord, bs.title,
+               bs.unit_no, null::int as lesson_no, bs.page_start, bs.page_end
+        from book_sections bs
+        join documents d on d.id = bs.document_id
+        where bs.subject_id = ${subjectId} and bs.level = 1
+        order by d.title, bs.page_start`
+    : [];
+
+  const expandidas = (() => {
+    if (!pedidas) return secciones;
+    const directas = secciones.filter((s) => pedidas.has(claveTema(s.document_id, s.ord, s.title)));
+    const pedidasUnidades = unidades.filter((u) => pedidas.has(claveTema(u.document_id, u.ord, u.title)));
+    const yaEsta = new Set(directas.map((s) => `${s.document_id}|${s.ord}`));
+    for (const u of pedidasUnidades) {
+      const suyas = secciones.filter((s) => s.document_id === u.document_id
+        && s.page_start >= u.page_start && s.page_start <= u.page_end);
+      if (suyas.length === 0) {
+        // Unidad sin lecciones: entra ella. `lesson_no` queda en null y el
+        // estudio dirigido cae al rango de páginas, igual que en el camino.
+        if (!yaEsta.has(`${u.document_id}|${u.ord}`)) {
+          directas.push(u);
+          yaEsta.add(`${u.document_id}|${u.ord}`);
+        }
+        continue;
+      }
+      for (const s of suyas) {
+        const id = `${s.document_id}|${s.ord}`;
+        if (yaEsta.has(id)) continue;
+        directas.push(s);
+        yaEsta.add(id);
+      }
+    }
+    return directas.sort((a, b) => a.doc_title.localeCompare(b.doc_title) || a.page_start - b.page_start);
+  })();
+
   if (secciones.length >= 3) {
     const variosTomos = new Set(secciones.map((s) => s.document_id)).size > 1;
     const candidatas = pedidas
-      ? secciones.filter((s) => pedidas.has(claveTema(s.document_id, s.ord, s.title)))
+      ? expandidas
       : secciones;
     // `spread` reparte por todo el libro (prueba); sin él, el ORDEN del índice
     // manda (plan de estudio: las primeras `limit` lecciones, como siempre).
@@ -826,7 +884,14 @@ function tomo(docTitle: string): string {
 
 /** Cuántos fragmentos se toman a lo largo de la lección, y cuánto de cada uno. */
 const MUESTRAS_POR_TEMA = 4;
-const CHARS_POR_MUESTRA = 240;
+/**
+ * 420 y no 240. El techo viejo se fijó cuando `generarPreguntas` cortaba la
+ * muestra en 340 caracteres y daba igual cuánto se mandara: la muestra entera
+ * eran 960 caracteres de los que llegaban 340. Arreglado ese corte, la muestra
+ * volvió a ser el cuello de botella — una prueba de un solo punto tiene
+ * presupuesto para 3.000 caracteres y recibía 960.
+ */
+const CHARS_POR_MUESTRA = 420;
 
 /**
  * Un fragmento que RECORRE la lección, no solo su comienzo.
