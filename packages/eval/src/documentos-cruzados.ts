@@ -123,4 +123,51 @@ if (VER) {
   const noJuzgados = docs.length - juzgados;
   console.log(`\n${noJuzgados} libros no se juzgaron (Inglés y materias sin disciplina en el léxico).`);
 }
+
+/**
+ * SEGUNDO EJE: EL NIVEL.
+ *
+ * La disciplina no es la única forma de estar en la materia equivocada. Un
+ * material de I Ciclo Media (1º-2º) colgado de una materia de 3º-4º le ofrece al
+ * alumno una parada que no es de su año.
+ *
+ * ⚠️ PERO ESTO NO ES NECESARIAMENTE UN BUG, y por eso se lista aparte y no se
+ * cuenta como cruce. El ingestor EPJA arma su plan "a partir de los huecos
+ * reales del camino de cada materia, no por regla general": si el camino de
+ * Matemática 4º tenía un hueco en proporcionalidad, la guía de I Ciclo lo llena
+ * a propósito. Y el currículum EPJA comprime años, así que pedir contenido de
+ * otro año es parte del diseño.
+ *
+ * La diferencia con el cruce de disciplina es la que importa: un alumno de
+ * física NUNCA necesita biología celular COMO física. Un adulto de 4º Medio sí
+ * puede necesitar razones y proporciones.
+ */
+const nivel = (t: string) =>
+  // ⚠️ II PRIMERO: "I Ciclo Media" es SUBSTRING de "II Ciclo Media", y buscarlo
+  // antes clasifica mal TODOS los de segundo ciclo. Cuarta vez que este
+  // repositorio tropieza con un substring.
+  /II Ciclo Media|Segundo Nivel Media/i.test(t) ? [3, 4]
+  : /I Ciclo Media|Primer Nivel Media/i.test(t) ? [1, 2]
+  : /Nivel 3 B[aá]sica/i.test(t) ? [7, 8]
+  : /Nivel 2 B[aá]sica/i.test(t) ? [6] : null;
+
+const gradoDe = (n: string) => {
+  const m = n.match(/([1-4])º Medio/) ?? n.match(/([6-8])º/);
+  return m ? Number(m[1]) : null;
+};
+
+const desnivel = docs
+  .map((d) => ({ d, esperado: nivel(d.title), g: gradoDe(d.materia) }))
+  .filter((x) => x.esperado && x.g != null && !x.esperado.includes(x.g!));
+
+console.log(`\n── MATERIAL DE OTRO NIVEL (${desnivel.length}) ──`);
+if (desnivel.length === 0) {
+  console.log("   Ninguno.");
+} else {
+  console.log(`   No es un bug por sí solo: el plan de ingesta EPJA se armó por HUECOS del`);
+  console.log(`   camino, no por nivel. Se lista para decidir, no para borrar.\n`);
+  for (const x of desnivel) {
+    console.log(`  ${x.d.materia.slice(0, 30).padEnd(30)}  ${x.d.title.slice(0, 52)}`);
+  }
+}
 await sql.end();
