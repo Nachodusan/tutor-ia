@@ -1,6 +1,6 @@
 # HANDOFF — Tutor IA (para retomar en un chat nuevo)
 
-> Estado al **2026-08-25**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
+> Estado al **2026-08-26**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
 > Proyecto en `/Users/dusan/Documents/ia`. Rama **`main`**.
 > **El código ya está en git remoto**: `github.com/Nachodusan/tutor-ia`, PRIVADO, `main` por
 > defecto. El corpus NO está en git — va como asset de release
@@ -2296,7 +2296,169 @@ niveles; 83 de 116 (72%) bien desarrollados. 27 pendientes en pantalla, **ningun
 sin libro**. Documentos: `docs/contenidos-faltantes.md` y
 `docs/caminos-por-materia.html`, los dos regenerables.
 
-> ⚠️ **NOTA AL PIE, APRENDIDA TRES VECES**: nunca uses backticks dentro de un
+> ⚠️ **NOTA AL PIE, APRENDIDA CUATRO VECES**: nunca uses backticks dentro de un
 > template literal — ni en un comentario SQL (`scripts/sql-backticks.sh` lo
 > vigila), ni en el prompt de un workflow, que no tiene guardia. Rompe el parseo
 > y el mensaje de error apunta a la línea, no a la causa.
+
+---
+
+## 10. LA PARADA PASA A SER UN APUNTE (2026-08-25/26)
+
+Sigue al §9. El camino dejó de preguntar, después dejó de enseñar, y terminó
+siendo **un apunte**. Y en el camino se destaparon cuatro bugs de datos que
+llevaban meses sirviéndole al alumno material equivocado.
+
+### 10.1 El recorrido, en orden, porque importa
+
+1. **La parada enseña** (`leccion.ts`): clase de 1-4 momentos, cada uno con un
+   PASAJE LITERAL del libro. El modelo no escribe ese texto: devuelve ÍNDICES DE
+   ORACIÓN y el sistema pega el pasaje. Coincidencia con el corpus del 100% por
+   construcción — medido que cuando se le pide citar, parafrasea (36% de citas
+   verificadas en la auditoría A2).
+2. **Solo el apunte** (`apunte.ts`): a pedido del dueño, la parada dejó de tener
+   clase y preguntas. El código de las dos SIGUE ENTERO y con sus datos
+   (`clase-parada.tsx`, `/api/lesson/clase`, `lesson_classes`, `/api/lesson/quiz`)
+   — simplemente no se entra desde ahí. Volver a colgarlas es agregar la pestaña.
+
+⚠️ **Y ESO SE LLEVÓ PUESTO LO QUE MARCABA EL AVANCE.** Era el submit del quiz el
+que escribía `student_plan_progress`. Sin preguntas el camino no avanzaría nunca
+y la barra quedaría clavada. Por eso el apunte cierra con **"Ya lo estudié"**, que
+usa `/api/plan/progress`: lo dice el alumno. Es más floja que un 7 de 10 y no se
+disfraza de otra cosa.
+
+### 10.2 Por qué el apunte NO recorta el libro (y la clase sí)
+
+La clase muestra pasajes literales. El apunte **no puede**, por la misma razón por
+la que existe: **un apunte hecho de citas textuales ES una transcripción**, que es
+justo la mala costumbre que viene a reemplazar. Comprimir con palabras propias es
+lo que define a un apunte.
+
+Entonces lo sostiene otra red, y se ve en la pantalla: cada punto declara de qué
+oraciones sale, pasa el gate de NLI (VETO, no sello), **lleva su página** para
+poder ir a verificarlo, y la analogía va en recuadro punteado sin página.
+
+La FORMA es el producto, no el texto: idea principal → puntos numerados con
+página → palabras → cómo acordarse → ojo con esto → qué se evalúa → tres líneas.
+El pie se lo dice al alumno: *copiá esa forma en tu cuaderno*. Se baja como .txt
+—no PDF— porque se estudia en la micro, no frente a la app.
+
+### 10.3 ⚠️ LA AUDITORÍA QUE HAY QUE VOLVER A CORRER
+
+Precomputar prometía que un humano podría leer los apuntes ANTES que un alumno.
+Se hizo, sobre 12 de los 55, con cuatro lentes. Encontró lo peor de todo el
+producto:
+
+**El recuadro "OJO CON ESTO — del libro del profesor" estaba INVENTADO en 25 de
+los 38 que lo mostraban.** El prompt dice "si no te paso aviso, devolvé null" y el
+modelo no obedece: Historia 1º Medio y Química 2º Medio no tienen NI UN chunk
+`errores_frecuentes` en todo el corpus, y sus apuntes mostraban el recuadro
+firmado. Ídem "Te lo pueden preguntar así": en Lengua los chips eran "alcachofa",
+"abuela", "padre".
+
+Es la peor forma de mentir que tiene este producto: `comoAcordarse` se declara
+honestamente, y estos dos atribuían prosa inventada a un docente que nunca la
+escribió.
+
+**LA REGLA QUE QUEDÓ**: no se le pide al prompt, se DECIDE CON EL DATO. Si no
+entró aviso, no sale bloque. `limpiar-apuntes` repasa lo guardado fila por fila.
+
+### 10.4 Los cuatro bugs de datos, y por qué ninguno se veía
+
+| Qué | Cuánto | Cómo se encontró |
+|---|---|---|
+| Páginas de evaluación como paradas | **176** de 1.846 | mirar los títulos repetidos del corpus |
+| Rangos de página corridos | 8 | comparar TÍTULO contra palabras del rango |
+| Módulos EPJA en la materia equivocada | 4 (de 7 docs de Física) | el alumno lo vio en la prueba |
+| La prueba a medida, muerta | todas | abrirla |
+
+**Las evaluaciones**: "Evaluación" ×35, "Repaso" ×18, "¿Qué necesito saber?" ×10.
+Adentro no hay nada que enseñar — el primer chunk de una dice *"deberá responder
+cada una de las siguientes preguntas"*. Generaban su apunte igual. La lista de
+`esParadaEnsenable` es corta a propósito: "Leo e imagino" y "Modelación paso a
+paso" SE QUEDAN, porque traen el cuento y el ejercicio resuelto. **El título feo
+no es el criterio.**
+
+**Los rangos**: `page_end` sale de "hasta donde empieza la que sigue", así que
+toda entrada que el parser no detecta se la come la parada anterior, en silencio
+y con confidence 1. "Funciones" de Matemática 8º tenía SESENTA páginas que
+cruzaban tres unidades. Se corrigieron A MANO (`schema_rangos_corregidos.sql`)
+porque el arreglo del parser reescribe los `ord` y eso deja **371 claves
+huérfanas** en SIETE tablas más un jsonb.
+
+**Los módulos EPJA**: la ingesta asignó por NIVEL y no por disciplina. El delator
+fue que Biología no tenía NI UNO. La clasificación salió del SUBTÍTULO de
+portada: "Módulo 7: Fuentes de energía" suena a física y su portada dice *"Bases
+de la vida… EN LOS SERES VIVOS"*. Física pasó de 7 documentos de contenido a 3.
+
+**La prueba**: la pantalla mandaba claves de UNIDAD y `getPlanTopics` las buscaba
+entre las LECCIONES. Cero coincidencias, 422 siempre.
+
+### 10.5 La prueba, ahora
+
+Tres tipos: opción múltiple (mitad), verdadero/falso JUSTIFICADO y respuesta
+escrita. El reparto lo calcula el CÓDIGO — decir "mezclá tipos" y esperar que
+salga parejo no funciona.
+
+Lo escrito se corrige con `gradeDecomposed`, que ya existía y solo usaba
+/api/exams: saca los PUNTOS CLAVE de una respuesta modelo y chequea cada uno.
+**Los puntos no cubiertos SON el "podrías completarlo con esto"** — sin una
+llamada más, y sin poder exigir algo que el libro no dice.
+
+⚠️ Umbrales flojos a propósito (vf: un punto; abierta: la mitad) y **el modelo
+caído NO reprueba**: decirle a un adulto que se equivocó cuando no se equivocó es
+la forma más rápida de que no vuelva.
+
+Y "Reforzar todo con el tutor": la lista de lo que falló viaja entera al chat, que
+la RECORRE con su barra y su botón de siguiente. Antes era un viaje de ida y
+vuelta por tema.
+
+### 10.6 Herramientas nuevas
+
+```bash
+pnpm --filter @tutor-ia/eval apuntes --todas --aplicar     # el batch de apuntes
+pnpm --filter @tutor-ia/eval limpiar-apuntes --aplicar     # saca lo que no tiene fuente
+pnpm --filter @tutor-ia/eval podar-paradas --aplicar       # saca las evaluaciones
+pnpm --filter @tutor-ia/eval refrescar-rangos --aplicar    # sincroniza el plan
+pnpm --filter @tutor-ia/eval paradas-coherentes --ver      # título vs páginas
+pnpm --filter @tutor-ia/eval materias-cruzadas --ver       # unidad vs disciplina
+pnpm --filter @tutor-ia/eval documentos-cruzados --ver     # libro vs materia Y nivel
+psql "$DATABASE_URL" -f packages/db/schema_lesson_notes.sql
+```
+
+⚠️ **VALIDÁ EL DETECTOR CONTRA EL BUG QUE LO MOTIVÓ, SIEMPRE.** El primer
+`paradas-coherentes` daba 137 marcadas de ruido y **no marcaba el caso de Química
+que motivó todo el test** — un `\s` que en un template literal de JS se vuelve
+`s`, así que el SQL partía los títulos por la letra "S". Se vio solo porque
+verifiqué que encontrara el caso conocido. Con el número solo, habría entregado
+una lista inventada.
+
+⚠️ **EL SUBSTRING, CUATRO VECES EN ESTE REPOSITORIO**: `foto·SÍNTESIS` en el
+parser de índices, `re·PRESENTACIÓN` en el corte de títulos auxiliares,
+`uni·VERSO` en el detector de disciplinas, y `I Ciclo` adentro de `II Ciclo` en el
+de niveles. El archivo `book-index.ts` ya tenía la solución escrita (`DELIM`, que
+no es `\b` porque `\b` se define sobre `\w` y no hay frontera antes de una "í") —
+aplicada a UNA de las dos funciones que la necesitaban.
+
+### 10.7 Estado al 2026-08-26
+
+**1.670 paradas** (eran 1.846), **56 apuntes** generados, 15 clases. De los
+apuntes: 16 con recuadro del profesor y 23 con "qué se evalúa" — **todos con
+fuente real verificada fila por fila**.
+
+Corpus verificado en los dos ejes: **122 libros de contenido, ninguno colgado de
+la materia equivocada**. Quedan 6 filas de material de otro NIVEL (I Ciclo en
+materias de 3º-4º) que se dejan a propósito: el plan de ingesta EPJA se armó por
+huecos reales del camino, y el currículum EPJA comprime años.
+
+### 10.8 Lo que sigue abierto
+
+- **1.614 paradas sin apunte.** Se generan solas al abrirlas (30-60 s la primera
+  vez, instantáneo después). El batch completo es una noche.
+- **El título de "¿amigos o enemigos?"** (Ciencias 7º) quedó decapitado: el parser
+  toma la ÚLTIMA ancla y ahí la última es el signo de apertura. El título entra en
+  la clave, así que exige migrar las siete tablas.
+- **Matemática y el corpus roto**: las fórmulas vivían en la maquetación y el
+  extractor las aplanó ("a c a d b c b d" era a/b + c/d). `notacionRota` lo
+  detecta y esas oraciones no entran. No se arregla sin re-extraer.
+- **1.614 paradas sin auditar a mano.** La auditoría cubrió 12.
