@@ -192,10 +192,48 @@ export default function LeccionPage() {
    * principal si figura en el nivel de arriba, punto.
    */
   const esPrincipal = plan.some((p) => p.key === tema);
-  const fondoPagina = esPrincipal ? C.accentTint : C.bg;
+
+  /**
+   * EL FONDO ES EL PAPEL PUNTEADO DEL CAMINO, en el color del nivel.
+   *
+   * El lienzo del camino es papel punteado (`radial-gradient` cada 26 px). Traer
+   * esa MISMA textura acá es lo que hace que la parada se sienta un zoom del
+   * camino y no otra pantalla: el alumno tocó una moneda y siguió sobre el mismo
+   * papel. Un color plano no dice eso; dice "cambiaste de pantalla".
+   *
+   * El degradado va de más saturado arriba a casi nada abajo. No es decorativo:
+   * concentra el peso donde está la baldosa del número —que es lo que hay que
+   * mirar primero— y lo suelta donde empieza la hoja, para que la hoja no pelee
+   * con el fondo por la atención.
+   *
+   * Los dos niveles comparten la textura y se separan por el TONO: cobalto para
+   * la unidad, el neutro cálido de la app para la lección. Misma familia,
+   * distinto peldaño.
+   */
+  const fondo = esPrincipal
+    ? {
+        backgroundColor: "#EEF1FF",
+        backgroundImage:
+          `radial-gradient(rgba(43,68,255,.16) 1.5px, transparent 1.5px), ` +
+          `linear-gradient(180deg, #D9E1FF 0%, #EAEEFF 42%, #F6F8FF 100%)`,
+      }
+    : {
+        backgroundColor: C.bg,
+        backgroundImage:
+          `radial-gradient(rgba(94,87,105,.13) 1.5px, transparent 1.5px), ` +
+          `linear-gradient(180deg, ${C.panel2} 0%, #FAF8F4 46%, ${C.bg} 100%)`,
+      };
 
   return (
-    <div style={{ background: fondoPagina, minHeight: "100%", transition: "background .2s" }}>
+    <div style={{
+      ...fondo,
+      backgroundSize: "26px 26px, 100% 100%",
+      // El degradado NO se repite con los puntos: sin esto, el `backgroundSize`
+      // de 26 px se le aplica también y el fondo sale a rayas.
+      backgroundRepeat: "repeat, no-repeat",
+      backgroundAttachment: "local, local",
+      minHeight: "100%", transition: "background-color .2s",
+    }}>
     <div style={{ maxWidth: 620, margin: "0 auto", padding: "14px 16px 32px" }}>
       {/* Cabecera: qué es y dónde está en el libro. */}
       <button onClick={volver}
