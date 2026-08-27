@@ -177,8 +177,25 @@ export default function LeccionPage() {
   }
 
   const hecho = done.includes(tema);
+  /**
+   * EL FONDO DICE EN QUÉ NIVEL ESTÁS.
+   *
+   * Una parada principal —la unidad 1, la 2, la 3— llega con el fondo COBALTO
+   * apagado; sus lecciones (1.1, 1.2) llegan con el papel neutro de siempre.
+   *
+   * El color no es decorativo: es el MISMO cobalto que en el camino significa
+   * "unidad", así que el alumno que viene de tocar el nodo grande reconoce el
+   * mismo mundo, y el que baja a una lección ve que bajó un nivel sin leer
+   * ningún número. Es la señal que el número solo puede dar leyéndolo.
+   *
+   * `esPrincipal` se deduce del PLAN y no del formato del número: una parada es
+   * principal si figura en el nivel de arriba, punto.
+   */
+  const esPrincipal = plan.some((p) => p.key === tema);
+  const fondoPagina = esPrincipal ? C.accentTint : C.bg;
 
   return (
+    <div style={{ background: fondoPagina, minHeight: "100%", transition: "background .2s" }}>
     <div style={{ maxWidth: 620, margin: "0 auto", padding: "14px 16px 32px" }}>
       {/* Cabecera: qué es y dónde está en el libro. */}
       <button onClick={volver}
@@ -280,6 +297,7 @@ export default function LeccionPage() {
           </button>
         )}
       </div>
+    </div>
     </div>
   );
 }
