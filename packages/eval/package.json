@@ -60,7 +60,8 @@
     "paradas-coherentes": "tsx --env-file-if-exists=../../.env src/paradas-coherentes.ts",
     "podar-paradas": "tsx --env-file-if-exists=../../.env src/podar-paradas.ts",
     "refrescar-rangos": "tsx --env-file-if-exists=../../.env src/refrescar-rangos.ts",
-    "materias-cruzadas": "tsx --env-file-if-exists=../../.env src/materias-cruzadas.ts"
+    "materias-cruzadas": "tsx --env-file-if-exists=../../.env src/materias-cruzadas.ts",
+    "documentos-cruzados": "tsx --env-file-if-exists=../../.env src/documentos-cruzados.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",
