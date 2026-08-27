@@ -435,9 +435,25 @@ export function CaminoView({
              el bloque de pendientes ya usa para eso— para que se lea distinta
              sin necesidad de tocarla. */
           const esProgUnidad = p.item.esPrograma === true;
+          /**
+           * LA UNIDAD SE VE COMO UNIDAD SIEMPRE, no solo cuando le toca.
+           *
+           * ⚠️ ACÁ LA JERARQUÍA ESTABA DADA VUELTA. Una unidad todavía no
+           * alcanzada se pintaba blanca, con tinta gris y borde fino de 2 px;
+           * una LECCIÓN todavía no alcanzada se pinta blanca con borde de
+           * 2,5 px de tinta. O sea que el hito pesaba MENOS que cada uno de sus
+           * pasos, y el camino se leía como una fila de monedas parejas donde el
+           * "1" no se distinguía del "1.1".
+           *
+           * Ahora la unidad lleva el COBALTO en los tres estados —pleno cuando
+           * es la actual, tinte y borde cuando falta— y el cobalto pasa a
+           * significar UNIDAD en todo el camino. Por eso la lección "siguiente"
+           * se muda a tinta abajo: si las dos son cobalto, el color no
+           * distingue nada.
+           */
           const fondo = hecho ? (bien ? C.ok : C.warn)
-            : esProgUnidad ? C.coral : esActual ? C.accent : C.panel;
-          const tinta = hecho || esActual || esProgUnidad ? "#fff" : C.dim;
+            : esProgUnidad ? C.coral : esActual ? C.accent : C.accentTint;
+          const tinta = hecho || esActual || esProgUnidad ? "#fff" : C.accent;
           return (
             <div key={p.item.key}>
               <div style={etiquetaPos}>
@@ -505,7 +521,11 @@ export function CaminoView({
                 style={{
                   ...nodoPos,
                   width: NODO, height: NODO, borderRadius: "50%",
-                  border: futuro ? `2px solid ${C.border}` : `3px solid ${C.ink}`,
+                  // El borde de la unidad que falta ya no es el gris del papel:
+                  // es cobalto, del mismo peso que el resto. Lo que dice "todavía
+                  // no llegaste" es el relleno pálido y la falta de sombra dura,
+                  // no un contorno desvaído.
+                  border: futuro && !esProgUnidad ? `3px solid ${C.accent}` : `3px solid ${C.ink}`,
                   background: fondo, color: tinta, fontFamily: FONT.round, fontWeight: 800, fontSize: 21,
                   display: "grid", placeItems: "center", cursor: "pointer",
                   boxShadow: esActual ? HARD(C.ink) : "none",
@@ -571,7 +591,12 @@ export function CaminoView({
                       position: "absolute", top: q.y, left: `calc(50% + ${q.x}px)`,
                       transform: "translate(-50%,-50%)",
                       width: PUNTO, height: PUNTO, borderRadius: "50%", padding: 0,
-                      background: lh ? C.ok : esProg ? colProg : sig ? C.accent : C.panel,
+                      // La lección siguiente va en TINTA, no en cobalto: el
+                      // cobalto quedó reservado para las unidades, que son el
+                      // hito. Sigue siendo la más visible de las monedas —tiene
+                      // el relleno oscuro y el latido— pero ya no compite con el
+                      // nodo grande por el mismo color.
+                      background: lh ? C.ok : esProg ? colProg : sig ? C.ink : C.panel,
                       border: `2.5px solid ${esProg ? C.ink : futuro ? C.dim : C.ink}`,
                       // Sobre el SOL (incompleto) la tinta va oscura, no gris de
                       // "futuro": el gris sobre amarillo se lee apagado y estas

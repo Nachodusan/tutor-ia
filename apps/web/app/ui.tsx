@@ -22,6 +22,9 @@ export const C = {
   bg: "#FFFFFF", panel: "#FFFFFF", panel2: "#F4F2EC", ink: "#191621", border: "#EAE4D8",
   text: "#201C2B", dim: "#5E5769",
   accent: "#2B44FF",        // COBALTO — marca / estructura (mundo Panel)
+  // Cobalto al 8%: el tinte que le da identidad a un nodo de UNIDAD todavía no
+  // alcanzado, sin competir con el pleno del nodo actual.
+  accentTint: "#E7ECFF",
   accentSoft: "#6C5CE7",    // LAVANDA — conversación (mundo Aurora)
   coral: "#FF5C3A", sun: "#FFC63D", peach: "#FF9E7B",
   ok: "#1F9D57", okBg: "#E7F6EE", okTx: "#0A6B52",
