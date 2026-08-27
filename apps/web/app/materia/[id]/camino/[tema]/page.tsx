@@ -219,7 +219,7 @@ export default function LeccionPage() {
       )}
 
       {apunte !== null && apunte !== false && (
-        <ApunteParada apunte={apunte} titulo={item.title}
+        <ApunteParada apunte={apunte} titulo={item.title} numero={numero}
           materia={subject ? subjectLabel(subject) : ""} paginas={pages} />
       )}
 

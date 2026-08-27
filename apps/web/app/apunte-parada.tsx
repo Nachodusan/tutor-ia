@@ -44,13 +44,15 @@ function Seccion({ titulo, nota, children }: { titulo: string; nota?: string; ch
 }
 
 /** El apunte en texto plano, para bajarlo. Espeja `apunteATexto` del servidor. */
-function aTexto(a: Apunte, titulo: string, materia: string, paginas: string): string {
-  const L: string[] = [titulo.toUpperCase(), `${materia}${paginas ? ` · ${paginas}` : ""}`, "=".repeat(50), ""];
+function aTexto(a: Apunte, titulo: string, materia: string, paginas: string, numero?: string): string {
+  const enc = numero ? `${numero}. ${titulo}` : titulo;
+  const L: string[] = [enc.toUpperCase(), `${materia}${paginas ? ` · ${paginas}` : ""}`, "=".repeat(50), ""];
   if (a.idea) L.push("LA IDEA PRINCIPAL", a.idea, "");
   if (a.puntos.length) {
     L.push("PARA ENTENDER");
     a.puntos.forEach((p, i) => {
-      L.push(`${i + 1}. ${p.titulo}${p.pagina != null ? `  (pág. ${p.pagina})` : ""}`, `   ${p.texto}`, "");
+      const n = numero ? `${numero}.${i + 1}` : String(i + 1);
+      L.push(`${n}  ${p.titulo}${p.pagina != null ? `  (pág. ${p.pagina})` : ""}`, `   ${p.texto}`, "");
     });
   }
   if (a.palabras.length) {
@@ -73,7 +75,16 @@ function aTexto(a: Apunte, titulo: string, materia: string, paginas: string): st
   return L.join("\n");
 }
 
-export function ApunteParada({ apunte, titulo, materia, paginas }: { apunte: Apunte; titulo: string; materia: string; paginas: string }) {
+export function ApunteParada({ apunte, titulo, materia, paginas, numero }: { apunte: Apunte; titulo: string; materia: string; paginas: string; numero?: string }) {
+  /**
+   * LOS PUNTOS SIGUEN LA NUMERACIÓN DE LA PARADA.
+   *
+   * Si esta parada es la 1, sus puntos son 1.1, 1.2, 1.3. Si es la 2.1, son
+   * 2.1.1 y siguientes. Antes eran 1, 2, 3 sueltos, y adentro de un apunte de la
+   * unidad 3 el punto "1" no se podía nombrar ni ubicar: es el mismo problema
+   * que tenían las monedas del camino, una pantalla más adentro.
+   */
+  const numeroPunto = (i: number) => (numero ? `${numero}.${i + 1}` : String(i + 1));
   /**
    * BAJARLO COMO ARCHIVO. El apunte se estudia fuera de la app —en el colectivo,
    * en el trabajo, con el teléfono en modo avión— y ahí no hay app que valga.
@@ -81,7 +92,7 @@ export function ApunteParada({ apunte, titulo, materia, paginas }: { apunte: Apu
    * teléfono, se puede pegar en WhatsApp y se imprime igual.
    */
   function bajar() {
-    const txt = aTexto(apunte, titulo, materia, paginas);
+    const txt = aTexto(apunte, titulo, materia, paginas, numero);
     const url = URL.createObjectURL(new Blob([txt], { type: "text/plain;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
@@ -108,7 +119,12 @@ export function ApunteParada({ apunte, titulo, materia, paginas }: { apunte: Apu
             <div style={{ display: "grid", gap: 12 }}>
               {apunte.puntos.map((p, i) => (
                 <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <span style={{ width: 22, height: 22, flexShrink: 0, borderRadius: 7, display: "grid", placeItems: "center", background: C.accent, color: "#fff", fontFamily: FONT.round, fontWeight: 800, fontSize: 12 }}>{i + 1}</span>
+                  {/* Pastilla y no círculo: "2.1.3" no entra en 22 px de ancho.
+                      El `minWidth` mantiene alineada la columna cuando conviven
+                      números de distinto largo. */}
+                  <span style={{ minWidth: 22, height: 22, flexShrink: 0, borderRadius: 7, display: "grid", placeItems: "center", padding: "0 6px", background: C.accent, color: "#fff", fontFamily: FONT.round, fontWeight: 800, fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
+                    {numeroPunto(i)}
+                  </span>
                   <span style={{ minWidth: 0 }}>
                     <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 700, fontSize: 14.5 }}>
                       {p.titulo}
