@@ -185,11 +185,32 @@ export default function LeccionPage() {
         style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: C.dim, cursor: "pointer", padding: 0, fontSize: 13, fontFamily: FONT.sans }}>
         ← Volver al camino
       </button>
-      <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 20, lineHeight: 1.25, marginTop: 6 }}>
-        {numero ? `${numero}. ` : ""}{item.title}
+      {/* LA CABECERA: el número como PIEZA, no como prefijo del título.
+          Antes era "1. Evolución y registro fósil" en una sola línea, y el
+          número se perdía adentro del texto — que es justo lo que había que
+          destacar. Ahora es una baldosa cobalto con borde de tinta y sombra
+          dura: el mismo idioma de Bloques que usan los nodos del camino, para
+          que el alumno reconozca el "1" de la pantalla anterior. */}
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginTop: 10 }}>
+        {numero && (
+          <span style={{
+            flexShrink: 0, minWidth: 46, height: 46, padding: "0 9px",
+            display: "grid", placeItems: "center", borderRadius: 13,
+            background: C.accent, color: "#fff", border: `2px solid ${C.ink}`,
+            boxShadow: HARD(C.ink), fontFamily: FONT.round, fontWeight: 800,
+            // El cuerpo cede con el largo: "3.1.1" no entra al tamaño de "1".
+            fontSize: numero.length <= 1 ? 24 : numero.length <= 3 ? 19 : 15,
+            fontVariantNumeric: "tabular-nums", letterSpacing: -0.5,
+          }}>{numero}</span>
+        )}
+        <span style={{ minWidth: 0, paddingTop: 2 }}>
+          <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 21, lineHeight: 1.2, textWrap: "balance" }}>
+            {item.title}
+          </span>
+          {item.focus && <span style={{ display: "block", color: C.dim, fontSize: 13.5, marginTop: 3, lineHeight: 1.4 }}>{item.focus}</span>}
+          {pages && <span style={{ display: "block", fontFamily: FONT.mono, fontSize: 11.5, color: C.dim, marginTop: 3 }}>{pages}</span>}
+        </span>
       </div>
-      {item.focus && <div style={{ color: C.dim, fontSize: 13.5, marginTop: 2, lineHeight: 1.4 }}>{item.focus}</div>}
-      {pages && <div style={{ fontFamily: FONT.mono, fontSize: 12, color: C.dim, marginTop: 3 }}>{pages}</div>}
 
       {apunte === null && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.dim, fontSize: 13.5, padding: "30px 0" }}>

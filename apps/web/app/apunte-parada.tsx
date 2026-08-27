@@ -29,6 +29,11 @@
  * se presenta como si lo fuera.
  */
 import { C, FONT, HARD } from "./ui";
+
+/** El papel del apunte: cálido, un punto más claro que el panel de la app. */
+const PAPEL = "#FCFBF7";
+/** El renglón, casi invisible: textura de cuaderno, no pauta para escribir. */
+const RENGLON = "rgba(94,87,105,.09)";
 import type { Apunte } from "./tipos";
 
 function Seccion({ titulo, nota, children }: { titulo: string; nota?: string; children: React.ReactNode }) {
@@ -103,7 +108,29 @@ export function ApunteParada({ apunte, titulo, materia, paginas, numero }: { apu
 
   return (
     <div style={{ marginTop: 16 }}>
-      <div style={{ background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 16, boxShadow: HARD(C.sun), padding: "16px 17px 20px" }}>
+      {/* LA HOJA DE CUADERNO.
+          El apunte existe para enseñar UNA FORMA que el alumno pueda copiar a
+          mano, así que la pantalla se parece a la hoja donde la va a copiar:
+          papel cálido, renglones y el margen coral de un cuaderno de verdad.
+          No es adorno — es el mismo argumento que el pie de página escribe con
+          palabras, dicho con el material.
+
+          Los renglones van al 55% de opacidad sobre un paso de 30 px y NO se
+          alinean con el texto a propósito: si se alinearan, cada cambio de
+          interlínea los desfasaría y se leerían como un error de maquetado. A
+          esta intensidad son textura, no pauta. */}
+      <div style={{
+        background: PAPEL,
+        backgroundImage:
+          `repeating-linear-gradient(${PAPEL} 0 28px, ${RENGLON} 28px 29px)`,
+        border: `2px solid ${C.ink}`, borderRadius: 16, boxShadow: HARD(C.sun),
+        // El texto arranca DESPUÉS del margen, como en un cuaderno: pegado al
+        // filete coral se lee apretado y deja de parecer una hoja.
+        padding: "16px 17px 20px 28px", position: "relative", overflow: "hidden",
+      }}>
+        {/* El margen del cuaderno. */}
+        <span aria-hidden style={{ position: "absolute", top: 0, bottom: 0, left: 13, width: 2, background: C.peach, opacity: .55 }} />
+
         <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 11.5, letterSpacing: .8, textTransform: "uppercase", color: C.dim }}>
           Apunte para estudiar
         </div>
