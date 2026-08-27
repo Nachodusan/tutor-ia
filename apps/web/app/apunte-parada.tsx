@@ -28,12 +28,28 @@
  * las que dijo salir. No es la garantía determinística del pasaje literal, y no
  * se presenta como si lo fuera.
  */
-import { C, FONT, HARD } from "./ui";
+import { C, FONT } from "./ui";
 
-/** El papel del apunte: cálido, un punto más claro que el panel de la app. */
-const PAPEL = "#FCFBF7";
-/** El renglón, casi invisible: textura de cuaderno, no pauta para escribir. */
-const RENGLON = "rgba(94,87,105,.09)";
+/**
+ * EL PAPEL DEL APUNTE.
+ *
+ * ⚠️ ACÁ HABÍA UNA SOMBRA DURA AMARILLA (`HARD(C.sun)`) Y SE SACÓ. En el resto de
+ * la app esa sombra es el lenguaje de "Bloques": un bloque recortado y pegado
+ * sobre la hoja. Pero acá el objeto ES la hoja, y un filo amarillo de 4 px al
+ * costado no se leía como profundidad: se leía como una franja de color pegada
+ * al borde.
+ *
+ * Ahora es una hoja de verdad: crema cálido con un degradado suave —arriba más
+ * claro, como el papel bajo una luz— y una sombra en dos capas. La difusa da la
+ * altura y la corta apoya el borde; con una sola, o flota como calcomanía o no
+ * se despega del fondo.
+ */
+const PAPEL_ALTO = "#FFFEFB";
+const PAPEL_BAJO = "#F7F4EC";
+/** El renglón: textura de cuaderno, no pauta para escribir. */
+const RENGLON = "rgba(94,87,105,.10)";
+/** La hoja apoyada sobre la mesa, no recortada y pegada. */
+const SOMBRA_HOJA = "0 14px 34px -18px rgba(40,30,60,.34), 0 2px 6px -3px rgba(40,30,60,.14)";
 import type { Apunte } from "./tipos";
 
 function Seccion({ titulo, nota, children }: { titulo: string; nota?: string; children: React.ReactNode }) {
@@ -120,10 +136,12 @@ export function ApunteParada({ apunte, titulo, materia, paginas, numero }: { apu
           interlínea los desfasaría y se leerían como un error de maquetado. A
           esta intensidad son textura, no pauta. */}
       <div style={{
-        background: PAPEL,
+        // Los renglones van PRIMERO y el degradado del papel debajo: al revés,
+        // el degradado los tapa.
         backgroundImage:
-          `repeating-linear-gradient(${PAPEL} 0 28px, ${RENGLON} 28px 29px)`,
-        border: `2px solid ${C.ink}`, borderRadius: 16, boxShadow: HARD(C.sun),
+          `repeating-linear-gradient(transparent 0 28px, ${RENGLON} 28px 29px), ` +
+          `linear-gradient(180deg, ${PAPEL_ALTO}, ${PAPEL_BAJO})`,
+        border: `1.5px solid ${C.border}`, borderRadius: 16, boxShadow: SOMBRA_HOJA,
         // El texto arranca DESPUÉS del margen, como en un cuaderno: pegado al
         // filete coral se lee apretado y deja de parecer una hoja.
         padding: "16px 17px 20px 28px", position: "relative", overflow: "hidden",
