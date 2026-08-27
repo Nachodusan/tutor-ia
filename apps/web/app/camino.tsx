@@ -557,7 +557,7 @@ export function CaminoView({
                       : l.title}
                     aria-label={esProg
                       ? `${l.estado === "parcial" ? "Contenido incompleto" : "Contenido que no está en tu libro"}: ${l.title}`
-                      : `Lección ${j + 1}: ${l.title}`}
+                      : `Lección ${numeroParada(p.i + 1, j + 1)}: ${l.title}`}
                     className={sig ? "camino-sig" : undefined}
                     onClick={() => onAbrir({
                       ...p.item, key: l.key, title: l.title, p0: l.p0, p1: l.p1,
@@ -578,7 +578,8 @@ export function CaminoView({
                       // paradas no son "todavía no llegaste", son "esto falta".
                       color: lh || sig || (esProg && l.estado !== "parcial") ? "#fff"
                         : esProg ? C.ink : futuro ? C.dim : C.text,
-                      fontFamily: FONT.round, fontWeight: 800, fontSize: 11.5,
+                      fontFamily: FONT.round, fontWeight: 800,
+                      fontSize: esProg || lh ? 11.5 : tamañoNumero(numeroParada(p.i + 1, j + 1)),
                       display: "grid", placeItems: "center", cursor: "pointer",
                       // El aro: separa la moneda de las huellas que pasan por
                       // debajo. Sin él, punto y huella comparten fondo y borde.
@@ -588,7 +589,13 @@ export function CaminoView({
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.transform = "translate(-50%,-50%) scale(1.22)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = "translate(-50%,-50%)"; }}>
-                    {lh ? <IconCheck size={13} /> : esProg ? (l.estado === "parcial" ? "!" : "?") : j + 1}
+                    {lh ? <IconCheck size={13} />
+                      // La parada del PROGRAMA conserva su símbolo: el coral "?"
+                      // ("no está en tu libro") y el sol "!" ("está incompleto")
+                      // dicen algo que un número no puede decir, y esa unidad es
+                      // la única que no se recorre en orden.
+                      : esProg ? (l.estado === "parcial" ? "!" : "?")
+                      : numeroParada(p.i + 1, j + 1)}
                   </button>
                 );
               })}
@@ -731,6 +738,25 @@ export function CaminoView({
  * círculo decorativo, porque la textura no tiene números.
  */
 const PUNTO = 24;
+
+/**
+ * EL NÚMERO DE CADA PARADA — "1", "1.1", "1.2", "2", "2.1"…
+ *
+ * Antes la unidad mostraba su número y sus lecciones mostraban 1, 2, 3…
+ * REINICIANDO en cada unidad. Con el camino serpenteando y las monedas todas
+ * iguales, "estoy en la 3" no decía nada: había una 3 en cada unidad del libro.
+ * Numerar la lección con su unidad adelante es lo que convierte al camino en una
+ * secuencia que se puede nombrar.
+ *
+ * El tamaño de letra se achica con el largo porque la moneda mide 24 px y "1.1"
+ * no ocupa lo mismo que "10.12". Achicar la moneda no era opción: el alto de
+ * cada tramo se calcula a partir de PUNTO, así que tocarlo mueve el camino
+ * entero.
+ */
+const numeroParada = (unidad: number, leccion?: number) =>
+  leccion == null ? String(unidad) : `${unidad}.${leccion}`;
+const tamañoNumero = (txt: string) =>
+  txt.length <= 2 ? 11.5 : txt.length === 3 ? 9.5 : txt.length === 4 ? 8.5 : 7.5;
 /** Aire entre monedas vecinas sobre el tramo. */
 const GAP_PUNTO = 8;
 /** Aire entre una moneda y el nodo de la punta del tramo. */

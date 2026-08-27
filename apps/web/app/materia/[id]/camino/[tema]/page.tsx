@@ -58,6 +58,26 @@ export default function LeccionPage() {
     [plan, pasos, tema],
   );
   const idx = useMemo(() => pasos.findIndex((p) => p.key === tema), [pasos, tema]);
+
+  /**
+   * EL NÚMERO DE ESTA PARADA — "1", "1.3", "2.1"…
+   *
+   * ⚠️ ACÁ SE MOSTRABA `item.n`, QUE ES EL NÚMERO DE LA UNIDAD. Como las
+   * lecciones heredan el ítem de su unidad al aplanarse, TODAS las lecciones de
+   * la unidad 2 se anunciaban como "2." — abrir tres lecciones seguidas mostraba
+   * "2. …", "2. …", "2. …" y no había forma de saber en cuál estabas. Es la misma
+   * numeración que ahora pinta el camino, para que las dos pantallas digan lo
+   * mismo.
+   */
+  const numero = useMemo(() => {
+    const u = plan.findIndex((p) => p.key === tema);
+    if (u >= 0) return String(u + 1);            // es el nodo de una unidad
+    for (let i = 0; i < plan.length; i++) {
+      const j = (plan[i]!.lecciones ?? []).findIndex((l) => l.key === tema);
+      if (j >= 0) return `${i + 1}.${j + 1}`;
+    }
+    return item?.n != null ? String(item.n) : "";
+  }, [plan, tema, item?.n]);
   /** Para una clave de UNIDAD, "la siguiente" es SU primera lección. */
   const siguiente = useMemo(() => {
     if (idx >= 0) return pasos[idx + 1];
@@ -166,7 +186,7 @@ export default function LeccionPage() {
         ← Volver al camino
       </button>
       <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 20, lineHeight: 1.25, marginTop: 6 }}>
-        {item.n}. {item.title}
+        {numero ? `${numero}. ` : ""}{item.title}
       </div>
       {item.focus && <div style={{ color: C.dim, fontSize: 13.5, marginTop: 2, lineHeight: 1.4 }}>{item.focus}</div>}
       {pages && <div style={{ fontFamily: FONT.mono, fontSize: 12, color: C.dim, marginTop: 3 }}>{pages}</div>}
