@@ -11,7 +11,7 @@
  */
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { C, FONT, HARD, Dots, IconPrueba, IconChevron, IconArrow, scoreTone } from "../../../ui";
+import { C, FONT, HARD, Dots, IconPrueba, IconChevron, IconArrow, scoreTone, ANCHO } from "../../../ui";
 
 interface Intento { id: string; at: string; score: number; total: number; title?: string }
 /** El título por defecto no aporta nada en una lista que ya se llama así. */
@@ -34,7 +34,7 @@ export default function PruebasPage() {
   }, [id]);
 
   return (
-    <div style={{ maxWidth: 620, margin: "0 auto", padding: "16px 16px 32px" }}>
+    <div style={{ maxWidth: ANCHO.lista, margin: "0 auto", padding: "16px 16px 32px" }}>
       <div style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 21 }}>Simulación de prueba</div>
       <div style={{ color: C.dim, fontSize: 13.5, marginTop: 2, lineHeight: 1.45 }}>
         Preguntas de opción múltiple armadas con tu material. Podés volver a mirar

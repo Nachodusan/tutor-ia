@@ -9,7 +9,7 @@
  */
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { C, FONT, HARD, Dots, IconChat, scoreTone } from "../../../../ui";
+import { C, FONT, HARD, Dots, IconChat, scoreTone, ANCHO } from "../../../../ui";
 import { limpiarPregunta } from "../../../../limpiar-texto";
 
 interface Pregunta {
@@ -54,7 +54,7 @@ export default function IntentoPage() {
   const falladas = dato.preguntas.filter((p) => !p.ok).length;
 
   return (
-    <div style={{ maxWidth: 620, margin: "0 auto", padding: "16px 16px 32px" }}>
+    <div style={{ maxWidth: ANCHO.lectura, margin: "0 auto", padding: "16px 16px 32px" }}>
       <button onClick={() => router.push(`/materia/${id}/prueba`)}
         style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: C.dim, cursor: "pointer", padding: 0, fontSize: 13, fontFamily: FONT.sans }}>
         ← Todas las pruebas

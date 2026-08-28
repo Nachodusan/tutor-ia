@@ -13,7 +13,7 @@
  *    quiso corregir: son actividades distintas, no capas de la misma.
  */
 import { useRouter, usePathname, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { C, FONT, AuroraDot, IconBack, IconCamino, IconPrueba, gradeLabel, subjectLabel } from "../../ui";
 import { CLASE_HUECO_RELOJ } from "../../pomodoro";
 import { traerMateria } from "../../datos";
@@ -25,6 +25,44 @@ export default function MateriaLayout({ children }: { children: React.ReactNode 
   const { id } = useParams<{ id: string }>();
   const [subject, setSubject] = useState<Subject | null>(null);
   const [grade, setGrade] = useState("");
+
+  /**
+   * EL ENCABEZADO ES UNA CAPA, y el `main` le reserva su altura MEDIDA.
+   *
+   * La transparencia solo se ve si hay algo detrás. Mientras encabezado y `main`
+   * eran hermanos en el flex, el contenido empezaba justo debajo y no se
+   * superponían nunca: un fondo translúcido habría sido blanco sobre blanco.
+   *
+   * Por qué no `position: sticky` adentro del `main`, que sería lo obvio: el
+   * chat es `height: 100%` y scrollea por dentro (`chat/page.tsx:485`), así que
+   * un encabezado ocupando lugar ahí adentro lo dejaría midiendo de más y
+   * empujaría el compositor fuera de la pantalla. Camino y prueba sí scrollean
+   * en el `main`. Con el encabezado en capa, los dos casos funcionan igual: lo
+   * que sube pasa por detrás.
+   *
+   * Y la altura se MIDE en vez de clavarla: son dos renglones de texto que
+   * cambian de largo (un título que envuelve, un curso que falta todavía) y
+   * abajo de 560px el reloj se achica. Un número fijo se desfasa en silencio y
+   * el síntoma es un recorte del contenido, que es difícil de atribuir a esto.
+   */
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [altoHeader, setAltoHeader] = useState(59);
+
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    // `borderBoxSize` y NO `contentRect`: éste último excluye el borde, y el
+    // encabezado tiene `borderBottom: 1px`. Con contentRect el `main` reservaba
+    // 62,5px para una barra de 63,5 y el contenido arrancaba un pelo tapado —
+    // invisible en el camino, pero es justo la primera línea de un apunte.
+    const ro = new ResizeObserver(([e]) => {
+      if (!e) return;
+      const caja = e.borderBoxSize?.[0]?.blockSize;
+      setAltoHeader(caja ?? el.getBoundingClientRect().height);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     void traerMateria(id).then((s) => setSubject(s ?? null));
@@ -51,8 +89,24 @@ export default function MateriaLayout({ children }: { children: React.ReactNode 
   const otras = ACTIVIDADES.filter((a) => !pathname.startsWith(a.href));
 
   return (
-    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: C.bg, color: C.text, fontFamily: FONT.sans }}>
-      <header style={{ borderBottom: `1px solid ${C.border}`, background: C.bg, flexShrink: 0 }}>
+    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", position: "relative", background: C.bg, color: C.text, fontFamily: FONT.sans }}>
+      {/* El VIDRIO: translúcido con desenfoque, para que se vea pasar por debajo
+          lo que el alumno está leyendo. `saturate` va con el blur y no es
+          decoración suelta — sin él los colores que pasan detrás se lavan y el
+          efecto se lee como "gris sucio" en vez de vidrio.
+
+          El `-webkit-` duplicado hace falta: Safari todavía no toma
+          `backdrop-filter` sin prefijo, y es el navegador de la mitad de los
+          teléfonos del piloto. Sin él, ahí el encabezado se ve simplemente
+          semitransparente y el texto queda ilegible sobre el contenido. */}
+      <header ref={headerRef}
+        style={{
+          position: "absolute", top: 0, left: 0, right: 0, zIndex: 5,
+          borderBottom: `1px solid ${C.border}`,
+          background: "rgba(255,255,255,0.72)",
+          backdropFilter: "blur(14px) saturate(160%)",
+          WebkitBackdropFilter: "blur(14px) saturate(160%)",
+        }}>
         {/* El `paddingRight` es el hueco del RELOJ FLOTANTE (esquina superior
             derecha, en todas las pantallas). Un elemento `fixed` no empuja a
             nadie: si este encabezado no le reserva el lugar, el reloj se sienta
@@ -91,7 +145,7 @@ export default function MateriaLayout({ children }: { children: React.ReactNode 
           )}
         </div>
       </header>
-      <main style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>{children}</main>
+      <main style={{ flex: 1, minHeight: 0, overflowY: "auto", paddingTop: altoHeader }}>{children}</main>
     </div>
   );
 }

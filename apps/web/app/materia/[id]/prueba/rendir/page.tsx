@@ -13,7 +13,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { TestView } from "../../../../prueba";
-import { subjectLabel } from "../../../../ui";
+import { subjectLabel, ANCHO } from "../../../../ui";
 import { traerMateria } from "../../../../datos";
 import { limpiarPregunta } from "../../../../limpiar-texto";
 import type { Subject, TestItem } from "../../../../tipos";
@@ -120,7 +120,7 @@ export default function RendirPage() {
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 16px 28px" }}>
+    <div style={{ maxWidth: ANCHO.lectura, margin: "0 auto", padding: "14px 16px 28px" }}>
       <TestView
         items={items} loading={loading} answers={answers} submitted={submitted} subject={subject}
         error={error} textos={textos} corrigiendo={corrigiendo}

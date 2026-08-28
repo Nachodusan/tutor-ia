@@ -39,6 +39,30 @@ export const FONT = {
   sans: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif",
   mono: "ui-monospace, 'SF Mono', Menlo, Monaco, monospace",
 };
+/**
+ * ANCHOS DE COLUMNA — el criterio, para que no lo elija cada pantalla sola.
+ *
+ * Había cuatro topes distintos puestos a ojo (420, 560, 620, 720) y el efecto se
+ * notaba al navegar: pasando de "Camino" (1100) a "Prueba" (620) el contenido
+ * saltaba de 780px a 652px en la misma tablet, y ninguna de las dos aprovechaba
+ * la pantalla. Un ancho por pantalla no es una decisión, es la ausencia de una.
+ *
+ * Los tres valen para algo distinto y por eso son tres, no uno:
+ *
+ *  · `lectura` — texto que se lee de corrido (el apunte, la corrección de una
+ *    prueba). El tope es TIPOGRÁFICO: pasadas las ~70 letras por renglón el ojo
+ *    pierde el salto de línea. Acá estirar hasta el borde EMPEORA la pantalla.
+ *  · `lista`   — listas, controles y tarjetas. No hay renglón largo que
+ *    proteger, así que en una tablet tiene que llenar: 820 es el ancho de un
+ *    iPad en vertical.
+ *  · `tablero` — el camino, que dibuja un sendero y necesita amplitud para
+ *    serpentear (la amplitud es elástica, ver camino.tsx).
+ *
+ * Van CENTRADOS siempre (`margin: 0 auto`): sin eso el sobrante se acumula de un
+ * solo lado y se lee como un layout roto en vez de un margen.
+ */
+export const ANCHO = { lectura: 680, lista: 820, tablero: 1100 } as const;
+
 /** Sombra dura (Bloques): el bloque parece recortado y pegado sobre la hoja. */
 export const HARD = (c: string) => `4px 4px 0 0 ${c}`;
 /** Sombra difusa (Aurora): la burbuja flota. */

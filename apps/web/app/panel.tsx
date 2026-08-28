@@ -220,6 +220,7 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
   const router = useRouter();
   const pathname = usePathname();
   const [configAbierta, setConfigAbierta] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const enPanel = pathname === "/";
   const enReforzar = pathname === "/reforzar";
   const enApuntes = pathname === "/apuntes";
@@ -232,7 +233,7 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
           logros y la elección del avatar. Y es el ÚNICO lugar donde se dicen el
           usuario y el curso — el saludo del panel ya no los repite. */}
       <button onClick={() => router.push("/perfil")} title="Tu perfil"
-        className="pnl-yo" aria-current={enPerfil ? "page" : undefined}
+        className="pnl-yo pnl-yo-ancho" aria-current={enPerfil ? "page" : undefined}
         style={{
           background: enPerfil ? C.panel : "none",
           border: `1.5px solid ${enPerfil ? C.border : "transparent"}`,
@@ -249,16 +250,16 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
         </span>
       </button>
 
-      <div className="pnl-grupo">
+      <div className="pnl-grupo pnl-grupo-principal">
         {/* PRIMERO, arriba de las materias: al entrar, lo que el alumno quiere
             saber es cómo viene —qué lleva hecho y qué le sale— y recién después
             elegir dónde ponerse. Antes iba en el medio, como paso entre "dónde
             estudio" y "qué me falta". */}
-        <NavItem activo={enResumen} icono={<IconResumen size={15} />}
+        <NavItem activo={enResumen} icono={<IconResumen size={15} />} corto="Resumen"
           onClick={() => router.push("/resumen")}>
           Tu resumen
         </NavItem>
-        <NavItem activo={enPanel} icono={<IconBook size={15} />}
+        <NavItem activo={enPanel} icono={<IconBook size={15} />} corto="Materias"
           // Estando en el panel, baja a las tarjetas; desde otra pantalla, vuelve.
           onClick={() => (enPanel
             ? document.getElementById("mis-materias")?.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -281,7 +282,7 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
             curso, que es lo que el alumno tiene siempre; esta arranca cuando él
             trae algo suyo. Es una maqueta y lo dice adentro, no acá: un renglón
             del nav que se disculpa no se puede ni tocar para ver qué era. */}
-        <NavItem activo={enApuntes} icono={<IconSpark size={15} />}
+        <NavItem activo={enApuntes} icono={<IconSpark size={15} />} corto="Apuntes"
           onClick={() => router.push("/apuntes")}>
           Repasá con tus apuntes
         </NavItem>
@@ -289,9 +290,9 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
 
       {/* El empujón: en columna manda las acciones al pie, en fila las manda al
           final de la tira. Es la misma regla leída en los dos sentidos. */}
-      <div style={{ flex: 1 }} />
+      <div className="pnl-espacio" style={{ flex: 1 }} />
 
-      <div className="pnl-grupo">
+      <div className="pnl-grupo pnl-pie">
         {teacher && (
           <NavItem onClick={() => router.push("/docente")} icono={<IconUsers size={15} />}>
             Panel del curso
@@ -307,6 +308,33 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
         </NavItem>
         <NavItem onClick={onLogout} icono={<IconPuerta size={15} />}>Salir</NavItem>
       </div>
+
+      {/* EL QUINTO DESTINO DE LA BARRA DE ABAJO.
+          Es OTRO botón y no el mismo con un `if`: decidir por ancho en JS obliga
+          a medir la ventana, y medir en JS pinta primero el layout equivocado.
+          Acá los dos se renderizan siempre y el CSS muestra uno.
+          Y hace otra cosa: en columna el avatar LLEVA al perfil, pero en la barra
+          tiene que abrir el menú, porque Configuración y Salir no tienen dónde
+          más vivir cuando el pie se esconde. */}
+      <button onClick={() => setMenuAbierto(true)} title="Vos"
+        className="pnl-item pnl-yo-angosto"
+        style={{
+          background: "none", border: "1.5px solid transparent", borderRadius: 11,
+          cursor: "pointer", font: "inherit", color: C.text,
+          fontFamily: FONT.round, fontWeight: 600, alignItems: "center",
+        }}>
+        <span className="pnl-icono" style={{ display: "flex" }}><Avatar id={profile.avatar} size={20} /></span>
+        <span className="pnl-corto">Vos</span>
+      </button>
+
+      {menuAbierto && (
+        <MenuAlumno profile={profile} teacher={teacher}
+          onPerfil={() => { setMenuAbierto(false); router.push("/perfil"); }}
+          onConfig={() => { setMenuAbierto(false); setConfigAbierta(true); }}
+          onDocente={() => { setMenuAbierto(false); router.push("/docente"); }}
+          onLogout={onLogout}
+          onCerrar={() => setMenuAbierto(false)} />
+      )}
 
       {configAbierta && (
         <Configuracion grade={profile.grade}
@@ -439,36 +467,126 @@ const NAV_CSS = `
   color: ${C.dim}; font-family: ${FONT.round}; font-weight: 700; font-size: 11px;
   text-transform: uppercase; letter-spacing: 0.9px; padding: 4px 10px 4px;
 }
-.pnl-main { padding: 26px 22px 60px; max-width: 900px; }
+/* CENTRADO y con más aire que 900px.
+   El tope existe para que una línea de texto no cruce media pantalla, y eso
+   sigue valiendo. Lo que estaba mal era que el sobrante caía TODO del lado
+   derecho: medido a 1366px, el contenido terminaba a los 1192 y quedaban 174px
+   de vacío pegados a un costado, que se lee como un layout roto y no como un
+   margen.
+   1040 y no 900: a 1180-1366 (una tablet en horizontal) 900 deja el hueco
+   grande y encima corta la grilla en 3 columnas cuando entrarían 4. Con 1040
+   entran las cuatro y el sobrante se reparte a los dos lados. */
+.pnl-main { padding: 26px 22px 60px; max-width: 1040px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 
+/* En columna, la etiqueta larga; la corta no existe. */
+.pnl-corto { display: none; }
+/* En columna el avatar es el de arriba; el de la barra no existe. */
+.pnl-yo-angosto { display: none; }
+
+/* ── ANGOSTO: LA BARRA SE VA ABAJO ──────────────────────────────────────────
+   Antes acá la barra se acostaba arriba con overflow-x: auto, y ése era el
+   problema: MEDIDO a 375px se veían 1,5 opciones de 6, el resto vivía en un
+   scroll horizontal sin ninguna señal de que existiera, y el reloj flotante
+   —que vive arriba a la derecha— tapaba lo poco que asomaba. Un nav cuyas
+   opciones hay que descubrir deslizando no es un nav.
+
+   Abajo y fija se resuelven las tres cosas de una: entran las cinco sin
+   deslizar, el pulgar llega, y deja de pelear con el reloj por el borde
+   superior. Es además el patrón que el alumno ya conoce de cualquier app del
+   teléfono, así que no hay nada que aprender. */
 @media (max-width: 880px) {
   .pnl { grid-template-columns: minmax(0, 1fr); }
   .pnl-aside {
-    position: static; height: auto; flex-direction: row; align-items: center; gap: 8px;
-    overflow-x: auto; overflow-y: hidden;
-    /* El 68 de la derecha es el hueco del reloj flotante: acostada, la barra le
-       pasa por debajo, y sin ese aire final el último ítem no se puede sacar de
-       abajo del reloj por más que se deslice. */
-    padding: 10px 68px 10px 12px;
-    border-right: none; border-bottom: 1.5px solid ${C.border};
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 40;
+    height: auto; overflow: visible;
+    flex-direction: row; align-items: stretch; gap: 0;
+    /* Centrada: con el tope de ancho por celda, en una tablet las cinco no
+       llenan los 820px y pegadas a la izquierda dejaban un vacío raro a la
+       derecha. Centradas se leen como un grupo, no como una fila truncada. */
+    justify-content: center;
+    padding: 6px 4px;
+    /* La franja de gestos del iPhone se come el último renglón de cualquier
+       barra pegada al borde. env() vale 0 donde no hay muesca. */
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    background: ${C.panel2};
+    border-right: none; border-top: 1.5px solid ${C.border};
   }
-  .pnl-grupo { flex-direction: row; gap: 6px; }
+  /* Los dos grupos se funden en UNA sola fila repartida: en columna el hueco
+     elástico manda las acciones al pie, y acá ese mismo hueco no tiene sentido
+     porque no hay "pie". */
+  .pnl-espacio { display: none; }
+  /* flex: 4 y no 1. El grupo lleva CUATRO destinos y el avatar es UNO; con
+     ambos en flex:1 se repartían mitad y mitad, así que las cuatro primeras
+     celdas medían un octavo cada una y "Vos" flotaba solo en media pantalla.
+     Con 4 contra 1, las cinco celdas miden lo mismo. */
+  .pnl-grupo { flex-direction: row; gap: 0; flex: 4 1 0; min-width: 0; }
+  /* Cada destino se lleva su parte del ancho: cinco iguales, sin que el texto
+     más largo empuje a los demás. */
+  .pnl-grupo > * { flex: 1 1 0; min-width: 0; }
+  .pnl-item {
+    flex-direction: column; gap: 3px; padding: 7px 2px 5px; justify-content: center;
+  }
+  /* Etiqueta CORTA: "Repasá con tus apuntes" no entra en un quinto de 375px, y
+     recortada con ellipsis obliga a adivinar. */
+  .pnl-largo { display: none; }
+  .pnl-corto { display: block; font-size: 10.5px; line-height: 1.15; text-align: center; }
+  .pnl-icono { flex-shrink: 0; }
+  /* EL CONTADOR PASA A SER UNA INSIGNIA EN LA ESQUINA DEL ICONO.
+     Al costado del texto rompía el ancho de la celda; centrado encima lo TAPABA
+     — medido: el chip iba de x=13 a x=56 y el icono de 29 a 44, o sea lo cubría
+     entero. Tiene que verse el número Y verse de qué es.
+     Va arriba a la derecha, apenas montado sobre el icono, que es donde el ojo
+     ya busca un contador. */
+  .pnl-chip { position: absolute; top: 1px; left: 50%; margin-left: 3px; padding: 0; }
+  /* Los estilos EN LÍNEA del chip (minWidth 21, padding 1px 7px, 11.5px) le
+     ganan a la hoja, así que acá hace falta !important. Es la misma trampa que
+     el hueco del reloj: en línea vs hoja gana el de línea, y no es negociable
+     desde el CSS sin esto. */
+  .pnl-chip > * {
+    min-width: 15px !important; padding: 0 4px !important;
+    font-size: 9.5px !important; line-height: 15px !important;
+    /* El aro del color de la barra despega la insignia del icono: sin él, los
+       dos trazos oscuros se tocan y se leen como una sola mancha. */
+    box-shadow: 0 0 0 2px ${C.panel2};
+  }
   .pnl-solo-ancho, .pnl-rotulo { display: none; }
-  .pnl-main { padding: 20px 14px 60px; }
+  .pnl-yo { width: auto; padding: 0; justify-content: center; }
+  /* El avatar es el QUINTO destino, así que va último. Con la propiedad order y
+     no reordenando el DOM: en columna el nombre y el curso son lo primero que se
+     lee, y moverlos en el HTML se lo cambiaría al lector de pantalla también. */
+  .pnl-yo-ancho { display: none; }
+  .pnl-yo-angosto { display: flex; order: 2; flex: 1 1 0; min-width: 0; }
+  /* La barra no se estira sin límite en tablet: pasados los 560px, cinco celdas
+     repartidas en todo el ancho dejan los iconos tan separados que dejan de
+     leerse como un grupo. */
+  .pnl-aside > * { max-width: 132px; }
+  .pnl-grupo { max-width: 528px; }
+  .pnl-grupo-principal { order: 1; }
+  /* Configuración, Salir y el panel del docente no caben como celdas propias:
+     serían 8 destinos en 375px. Viven adentro del menú del avatar. */
+  .pnl-pie { display: none; }
+  /* El contenido termina ARRIBA de la barra. Sin esto, la última tarjeta queda
+     debajo y no hay forma de tocarla. */
+  .pnl-main { padding: 20px 14px calc(86px + env(safe-area-inset-bottom, 0px)); }
 }
 `;
 
 /** Un renglón del nav. Mismo componente en columna y en fila: lo único que
  *  cambia con el ancho es el contenedor, no el ítem. */
-function NavItem({ children, icono, chip, onClick, disabled, title, activo }: {
-  children: React.ReactNode; icono: React.ReactNode; chip?: React.ReactNode;
+function NavItem({ children, corto, icono, chip, onClick, disabled, title, activo }: {
+  children: React.ReactNode;
+  /** La etiqueta de la barra INFERIOR (angosto). Sin ella se usa la larga —
+   *  válido solo para las que ya son de una palabra, como "Reforzar". */
+  corto?: string;
+  icono: React.ReactNode; chip?: React.ReactNode;
   onClick?: () => void; disabled?: boolean; title?: string; activo?: boolean;
 }) {
   return (
     <button onClick={disabled ? undefined : onClick} disabled={disabled} title={title}
       aria-current={activo ? "page" : undefined}
+      className="pnl-item"
       style={{
-        display: "flex", alignItems: "center", gap: 9, flexShrink: 0,
+        display: "flex", alignItems: "center", gap: 9, flexShrink: 0, position: "relative",
         background: activo ? C.panel : "none",
         border: `1.5px solid ${activo ? C.border : "transparent"}`, borderRadius: 11,
         // Apagado = MEDIA TINTA, no el gris del borde: con `C.border` el
@@ -483,13 +601,17 @@ function NavItem({ children, icono, chip, onClick, disabled, title, activo }: {
       // El que YA está activo no vuelve a "apagarse" al sacar el mouse: si el
       // hover se lo borra, el renglón de la pantalla en la que estás parpadea.
       onMouseLeave={(e) => { if (activo) return; e.currentTarget.style.background = "none"; e.currentTarget.style.borderColor = "transparent"; }}>
-      <span style={{ display: "flex", flexShrink: 0, color: C.dim }}>{icono}</span>
-      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{children}</span>
+      <span className="pnl-icono" style={{ display: "flex", flexShrink: 0, color: activo ? C.accent : C.dim }}>{icono}</span>
+      <span className="pnl-largo" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{children}</span>
+      {/* La corta solo existe en la barra de abajo (ver NAV_CSS). Se renderiza
+          SIEMPRE y la esconde el CSS, en vez de decidir con JS: medir la ventana
+          en JavaScript pinta primero el layout equivocado y después salta. */}
+      <span className="pnl-corto">{corto ?? children}</span>
       {/* El contador va como HERMANO de la etiqueta, no adentro. Metido adentro
           del mismo `span` —que no es flex— su `margin-left: auto` no hacía nada
           y el número quedaba pegado a la palabra: "Reforzar(9)". Acá sí empuja
           hasta el borde. */}
-      {chip != null && <span style={{ marginLeft: "auto", paddingLeft: 8, display: "flex", flexShrink: 0 }}>{chip}</span>}
+      {chip != null && <span className="pnl-chip" style={{ marginLeft: "auto", paddingLeft: 8, display: "flex", flexShrink: 0 }}>{chip}</span>}
     </button>
   );
 }
@@ -669,6 +791,76 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
  * ajuste — es su cara. Y no hay nada más para configurar a propósito: las
  * cuentas son anónimas y no hay datos que editar.
  */
+/**
+ * EL MENÚ DEL AVATAR — solo existe en la barra de abajo (pantallas angostas).
+ *
+ * Recoge lo que en columna vive en el pie del nav: el perfil, la configuración,
+ * el panel del docente y salir. En 375px esos cuatro no pueden ser celdas
+ * propias —serían ocho destinos en una barra— y tampoco pueden desaparecer:
+ * "Salir" tiene que estar siempre a un toque.
+ *
+ * Sube desde abajo y no aparece en el centro: nace del botón que lo abrió, que
+ * está en el borde inferior, y así el pulgar queda sobre las opciones en vez de
+ * tener que subir a la mitad de la pantalla.
+ *
+ * ⚠️ VA EN UN PORTAL AL BODY, como el modal de Configuración y por lo mismo: la
+ * barra es `position: fixed` con z-index, o sea que CREA UN CONTEXTO DE
+ * APILAMIENTO. Un menú dibujado adentro solo puede competir contra sus
+ * hermanos, y subirle el z-index no sirve porque el techo lo pone el ancestro.
+ */
+function MenuAlumno({ profile, teacher, onPerfil, onConfig, onDocente, onLogout, onCerrar }: {
+  profile: Profile; teacher?: boolean;
+  onPerfil: () => void; onConfig: () => void; onDocente: () => void;
+  onLogout: () => void; onCerrar: () => void;
+}) {
+  const fila = (icono: React.ReactNode, texto: string, onClick: () => void) => (
+    <button onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 11, width: "100%",
+        background: "none", border: "none", borderRadius: 12, padding: "13px 12px",
+        cursor: "pointer", font: "inherit", color: C.text, textAlign: "left",
+        fontFamily: FONT.round, fontWeight: 600, fontSize: 15,
+      }}>
+      <span style={{ display: "flex", color: C.dim }}>{icono}</span>
+      {texto}
+    </button>
+  );
+
+  const hoja = (
+    <div onClick={onCerrar}
+      style={{
+        position: "fixed", inset: 0, zIndex: 60, background: "rgba(25,22,33,.34)",
+        display: "flex", alignItems: "flex-end",
+      }}>
+      <div onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%", background: C.panel, borderTopLeftRadius: 18, borderTopRightRadius: 18,
+          borderTop: `2px solid ${C.ink}`, padding: "10px 12px",
+          paddingBottom: "calc(14px + env(safe-area-inset-bottom, 0px))",
+        }}>
+        {/* El tirador: dice "esto se arrastra o se toca afuera para cerrar" sin
+            gastar un renglón en un botón de cerrar. */}
+        <div aria-hidden style={{ width: 38, height: 4, borderRadius: 999, background: C.border, margin: "2px auto 10px" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 11, padding: "4px 12px 12px" }}>
+          <Avatar id={profile.avatar} size={40} />
+          <span style={{ minWidth: 0 }}>
+            <span style={{ display: "block", fontFamily: FONT.round, fontSize: 16, fontWeight: 800 }}>
+              {profile.username || "Hola"}
+            </span>
+            <span style={{ display: "block", color: C.dim, fontSize: 13 }}>{gradeLabel(profile.grade)}</span>
+          </span>
+        </div>
+        <div style={{ height: 1, background: C.border, margin: "0 0 6px" }} />
+        {fila(<IconUser size={17} />, "Tu perfil", onPerfil)}
+        {teacher && fila(<IconUsers size={17} />, "Panel del curso", onDocente)}
+        {fila(<IconSettings size={17} />, "Configuración", onConfig)}
+        {fila(<IconPuerta size={17} />, "Salir", onLogout)}
+      </div>
+    </div>
+  );
+  return typeof document === "undefined" ? null : createPortal(hoja, document.body);
+}
+
 function Configuracion({ grade, onEditarCurso, onCerrar }: {
   grade: string; onEditarCurso: () => void; onCerrar: () => void;
 }) {

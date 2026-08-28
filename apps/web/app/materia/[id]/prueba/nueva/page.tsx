@@ -17,7 +17,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { C, FONT, HARD, Dots, IconCheck, IconArrow, IconAlert, IconBack } from "../../../../ui";
+import { C, FONT, HARD, Dots, IconCheck, IconArrow, IconAlert, IconBack, ANCHO } from "../../../../ui";
 import { aprobado } from "../../../../nota";
 import { repartoPrueba, TOPE_TEMAS } from "../../../../reparto-prueba";
 import type { PlanItem } from "../../../../tipos";
@@ -88,7 +88,7 @@ export default function ElegirPuntosPage() {
   }
 
   return (
-    <div style={{ maxWidth: 620, margin: "0 auto", padding: "16px 16px 0" }}>
+    <div style={{ maxWidth: ANCHO.lista, margin: "0 auto", padding: "16px 16px 0" }}>
       <button onClick={() => router.push(`/materia/${id}/prueba`)} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: C.dim, cursor: "pointer", fontFamily: FONT.round, fontWeight: 600, fontSize: 13.5, padding: 0, marginBottom: 12 }}>
         <IconBack size={15} /> Las pruebas que rendiste
       </button>

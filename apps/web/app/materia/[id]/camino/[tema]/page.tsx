@@ -20,7 +20,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { traerMateria } from "../../../../datos";
 import { ApunteParada } from "../../../../apunte-parada";
-import { C, FONT, HARD, Dots, IconCheck, IconChat, IconArrow, subjectLabel } from "../../../../ui";
+import { C, FONT, HARD, Dots, IconCheck, IconChat, IconArrow, subjectLabel, ANCHO } from "../../../../ui";
 import type { Apunte, PlanItem, Subject } from "../../../../tipos";
 
 export default function LeccionPage() {
@@ -234,7 +234,7 @@ export default function LeccionPage() {
       backgroundAttachment: "local, local",
       minHeight: "100%", transition: "background-color .2s",
     }}>
-    <div style={{ maxWidth: 620, margin: "0 auto", padding: "14px 16px 32px" }}>
+    <div style={{ maxWidth: ANCHO.lectura, margin: "0 auto", padding: "14px 16px 32px" }}>
       {/* Cabecera: qué es y dónde está en el libro. */}
       <button onClick={volver}
         style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: C.dim, cursor: "pointer", padding: 0, fontSize: 13, fontFamily: FONT.sans }}>

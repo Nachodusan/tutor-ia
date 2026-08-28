@@ -15,7 +15,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Bubble, VozLuces, estadoVoz } from "../../../chat-ui";
-import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, IconCalculadora, subjectLabel, HARD, IconArrow } from "../../../ui";
+import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, IconCalculadora, subjectLabel, HARD, IconArrow, ANCHO } from "../../../ui";
 import { TecladoMate, esMatematica } from "../../../teclado-mate";
 import { esEjercicio } from "@tutor-ia/core/mate";
 import { TarjetaEjercicioView, type Tarjeta } from "../../../tarjeta-ejercicio";
@@ -490,7 +490,7 @@ export default function ChatPage() {
           esperando, y "reforzar todo" se sentiría igual que reforzar uno. */}
       {repaso.length > 1 && (
         <div style={{ background: C.panel2, borderBottom: `1px solid ${C.border}`, padding: "9px 16px" }}>
-          <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <div style={{ maxWidth: ANCHO.lectura, margin: "0 auto" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
               <span style={{ fontFamily: FONT.round, fontWeight: 700, fontSize: 13, color: C.text, minWidth: 0 }}>
                 Repaso de la prueba · {paso + 1} de {repaso.length}
