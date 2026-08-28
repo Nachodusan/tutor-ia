@@ -1,11 +1,57 @@
 # HANDOFF — Tutor IA (para retomar en un chat nuevo)
 
-> Estado al **2026-08-26**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
+> Estado al **2026-08-27**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
 > Proyecto en `/Users/dusan/Documents/ia`. Rama **`main`**.
 > **El código ya está en git remoto**: `github.com/Nachodusan/tutor-ia`, PRIVADO, `main` por
 > defecto. El corpus NO está en git — va como asset de release
 > (`corpus-2026-08-23`, 205 MB, verificado por sha256). Ver §8.
 > **Leé también la memoria del proyecto** (`tutor-ia-estado.md` y las notas por feature).
+>
+> 🔴 **LO DE HOY (2026-08-27) ESTÁ SIN COMMITEAR.** 23 archivos entre modificados y
+> nuevos. La frase de arriba —"el código ya está en git remoto"— vale para todo lo
+> anterior, no para §11-§13. Antes de cualquier `git checkout .` o de clonar en otra
+> máquina, mirá `git status`: se pierde el trabajo del día entero.
+>
+> **Lo último es §11, §12 y §13** (2026-08-27). Antes de tocar el camino o los apuntes,
+> leelas: §12.8 explica un filtro que se revirtió DOS veces y por qué, y §13 el criterio de
+> anchos que reemplazó cuatro números puestos a ojo.
+
+### El estado en números (verificado el 2026-08-27 con psql)
+
+| | |
+|---|---:|
+| chunks (contenido + pedagogía) | 37.920 · 25.482 de contenido |
+| materias vivas | 35 |
+| paradas del camino (`book_sections` nivel 2) | 1.895 |
+| apuntes de lección | 60 |
+| paradas del programa con apunte | 38 |
+| clases | 15 |
+| `curriculum_map` método `lector-v1` | 266 (39 sin `document_id`, a propósito) |
+
+### Lo próximo, en orden de retorno
+
+1. 🔴 **La aritmética del tutor no la verifica nadie.** Resuelve ejercicios desde el
+   2026-08-16 y si se equivoca el error sale con el mismo tono seguro. SymPy sigue parkeado
+   (`grading.ts` / `sympy_check.py`). Es el único lugar del producto donde el alumno puede
+   recibir algo falso sin ninguna red. Ver §1.
+2. 🟡 **1.835 paradas sin apunte** (60 de 1.895). Se generan solas al abrirlas, pero el batch
+   completo es una noche: `pnpm --filter @tutor-ia/eval apuntes --todas --aplicar`.
+3. 🟡 **`buscar-componentes` sobre las filas sin medir** (87 de 133 no tienen componentes).
+   Desbloquea DOS cosas a la vez: las 6 paradas del programa que quedaron sin apunte por una
+   corrida fallada (§12.7) y el filtro anti-duplicados de §12.8, que no se puede reponer sin
+   ese dato.
+4. 🟡 **6 apuntes marcados "por revisar"** (§12.6): menos de la mitad de sus puntos
+   respaldados. Quedan publicados con aviso hasta que alguien los lea. La consulta que los
+   lista está en §12.6.
+5. 🟡 **16 filas viejas con el bloque "ojo"**: `limpiar-apuntes --aplicar` (§12.4).
+6. 🟡 **43 lecciones con el rango de páginas mal puesto** — tienen material a ±3 páginas, no
+   les falta contenido (§12.7).
+7. 🟡 **19 de los 60 apuntes de LECCIÓN están por debajo de la mitad de respaldo** y nadie
+   los miró. Llevan el aviso ámbar igual (§12.6), pero la revisión falta.
+8. 🟡 **El apunte de "creación del universo" en Física no menciona las cosmovisiones**,
+   teniendo el artículo del Museo Precolombino colgado de esa misma materia (§12.6).
+9. 🔴 **`a3-set.jsonl` sigue muerto** y sin él no se le puede creer a la tasa de alucinación
+   (§7).
 
 ---
 
@@ -99,10 +145,18 @@ que el chico tiene sobre la mesa.
 ```bash
 cd /Users/dusan/Documents/ia
 export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"   # Postgres es keg-only
+# ⚠️ DATABASE_URL no está seteada por defecto en la shell, y SIETE comandos de este
+#    documento son `psql "$DATABASE_URL" -f …`. Sin esta línea, todos fallan:
+export DATABASE_URL="postgresql://localhost:5432/tutor"
+
+# 0) Dependencias, solo en un árbol recién clonado (pnpm 9, Node 24):
+#    pnpm install
+#    Y si la base NO existe todavía, el arranque desde cero es:
+#    bash scripts/setup-local.sh    (instala Postgres+pgvector y aplica TODO el esquema)
 
 # 1) Postgres 17 (nativo, SIN Docker). Base 'tutor' con TODO ingestado.
 brew services start postgresql@17
-# psql "postgresql://localhost:5432/tutor" -tAc "select count(*) from chunks"  # ~30k
+psql "$DATABASE_URL" -tAc "select count(*) from chunks"   # 37.920 al 2026-08-27
 
 # 2) DEEPINFRA_API_KEY en el .env de la raíz + conexión a internet.
 #    Es requisito DURO: sin eso no hay generación NI embeddings, y sin embeddings
@@ -329,6 +383,9 @@ supuesto. Se abre cuando lo revise alguien que sepa de desarrollo infantil.
   puede leer como "el colegio no lo inscribió".
 
 **PANEL DEL ALUMNO: NAV LATERAL + "PARA REFORZAR" POR MATERIA (2026-08-14)**
+> ⚠️ **La parte del nav ANGOSTO de acá quedó vieja: §13 (2026-08-27) reemplazó la tira
+> horizontal de arriba por una barra INFERIOR fija de cinco destinos.** Lo de abajo
+> vale para la columna (>880px) y como registro de por qué el nav tiene tres entradas.
 - El panel pasó a `nav` a la izquierda + contenido a la derecha (`panel.tsx`, `NAV_CSS`).
   Es el único lugar del panel con CSS de verdad y no estilos en línea, porque la misma
   barra es **columna** en el computador y **tira horizontal** en el teléfono (≤880 px), y
@@ -1397,6 +1454,11 @@ Probar los tres órdenes (lectura, columna, `y`) y quedarse con el de mejor mono
 
 ## 7. Deuda conocida / próximos pasos
 
+> ⚠️ **LA LISTA VIGENTE DE QUÉ HACER ESTÁ EN LA CABECERA DE ESTE DOCUMENTO**, no acá.
+> Esta sección es el inventario de deuda —útil para entender POR QUÉ algo está como
+> está— y arrastra entradas de varias fechas. §8.12, §9.10, §12.7 y §13 tienen cada
+> una su propia cola. Si venís a elegir en qué trabajar, volvé arriba.
+
 > ⚠️ **Leé el §8 antes de actuar sobre esta lista.** Varios puntos de acá se resolvieron el
 > 2026-08-23/24 —los índices se reconstruyeron, los títulos se limpiaron, `curriculum_map`
 > tiene consumidores— y el §8 tiene el estado real. Lo que sigue vigente acá es lo de UI y
@@ -1431,7 +1493,9 @@ Probar los tres órdenes (lectura, columna, `y`) y quedarse con el de mejor mono
   contenido paralelos con estructuras incompatibles (136 clases vs 4 unidades), no concatenar.
 - 🟡 **"Lengua 8vo" es una materia fantasma**: 0 documentos, 0 chunks. Cuenta como agujero
   en todos los inventarios. Borrarla (con respaldo).
-- 🔵 **Pomodoro — pedido, no empezado.** El alumno define bloque de foco y descanso y a qué
+- ✅ **Pomodoro — HECHO** (ver §4, "RELOJ DE ESTUDIO"). Lo que sigue es el texto de
+  cuando se pidió, que quedó acá sin actualizar:
+- 🔵 ~~Pomodoro — pedido, no empezado.~~ El alumno define bloque de foco y descanso y a qué
   hora estudia. Va en `student_profiles` junto a `tts_voice`/`tts_on`, se guarda con
   `PUT /api/me/profile`. Dos decisiones de producto abiertas: ¿el temporizador corre dentro
   del camino o es pantalla aparte?, ¿el descanso es sugerencia o el tutor deja de responder?
@@ -2017,6 +2081,10 @@ Dos correcciones medidas:
 `curriculum_map`: **266 filas `lector-v1`** (124 correcto, 88 parcial, 26 no_esta, 1 otro_año)
 sobre materias vivas y cursos abiertos.
 
+> ⚠️ Ese desglose es del 2026-08-24 y ya no cierra: al 2026-08-27 son 127 correcto,
+> 86 parcial, 25 no_esta, 1 otro_año (las reverificaciones movieron filas de un
+> casillero a otro). El "88 incompletos" de §8.12 arrastra el número viejo.
+
 | Nivel EPJA | conocimientos | en algún libro | BIEN desarrollado |
 |---|---|---|---|
 | Nivel 2 Básica (6º) | 27 | **100%** | 16 |
@@ -2232,6 +2300,10 @@ porque el artículo cubre etnoastronomía y no los relatos de creación.
 
 ### 9.7 El camino es el programa, no el libro
 
+> ⚠️ **Dos cosas de acá las cambió §12 (2026-08-27):** el símbolo ya NO sale del estado
+> curricular —una parada con apunte respaldado lleva su NÚMERO, ver §12.6— y las que
+> tienen apunte abren su pantalla en vez del tutor. Lo que sigue vale para el resto.
+
 `programaPendienteDe()` + `/api/plan` agregan una unidad final con TODO lo
 no-correcto del currículum: cada conocimiento es una PARADA con su etiqueta
 (coral "?" = no está · sol "!" = incompleto), su destino y los componentes que
@@ -2250,7 +2322,10 @@ faltan.
 Hoy la parada **solo pregunta**: abre `/api/lesson/quiz` y presenta diez
 preguntas. El diseño completo está en el artifact "La parada que enseña".
 
-⚠️ **BUG VERIFICADO Y SIN ARREGLAR — el mayor retorno por línea del repo.**
+✅ **BUG YA ARREGLADO (el 340 salió de `quiz.ts`; el comentario del archivo lo
+documenta). Lo que sigue se deja como registro de cómo se encontró.**
+
+⚠️ Lo que decía cuando estaba abierto:
 `packages/core/src/quiz.ts:151` hace `t.sample.slice(0, 340)` sobre una muestra
 que `apps/web/app/api/lesson/quiz/route.ts:102` armó con
 `muestraRepartida(f, 4, 320)` ≈ 1.286 caracteres: **sobrevive la primera ventana
@@ -2440,11 +2515,18 @@ de niveles. El archivo `book-index.ts` ya tenía la solución escrita (`DELIM`, 
 no es `\b` porque `\b` se define sobre `\w` y no hay frontera antes de una "í") —
 aplicada a UNA de las dos funciones que la necesitaban.
 
-### 10.7 Estado al 2026-08-26
+### 10.7 Estado al 2026-08-26 (⚠️ los números los actualiza la cabecera)
 
-**1.670 paradas** (eran 1.846), **56 apuntes** generados, 15 clases. De los
+**1.670 paradas** (eran 1.846), **56 apuntes** generados, 15 clases.
+*Al 2026-08-27: 1.895 paradas nivel 2, 60 apuntes de lección + 38 de parada del programa.
+La cifra de arriba se deja como registro de aquel día; para el número vigente, la cabecera.* De los
 apuntes: 16 con recuadro del profesor y 23 con "qué se evalúa" — **todos con
 fuente real verificada fila por fila**.
+
+⚠️ **Esa verificación fue de UNA corrida de `limpiar-apuntes`, no una propiedad del
+sistema.** §12.4 encontró que la regla vivía solo en ese script y no en
+`armarApunte`, así que cualquier generador posterior volvía a producir el recuadro
+inventado. Las 16 filas siguen pendientes de repasar con `limpiar-apuntes --aplicar`.
 
 Corpus verificado en los dos ejes: **122 libros de contenido, ninguno colgado de
 la materia equivocada**. Quedan 6 filas de material de otro NIVEL (I Ciclo en
@@ -2462,3 +2544,550 @@ huecos reales del camino, y el currículum EPJA comprime años.
   extractor las aplanó ("a c a d b c b d" era a/b + c/d). `notacionRota` lo
   detecta y esas oraciones no entran. No se arregla sin re-extraer.
 - **1.614 paradas sin auditar a mano.** La auditoría cubrió 12.
+
+---
+
+## 11. GENERAR CON EL MODELO LO QUE FALTA — medido de nuevo, y el patrón cambió (2026-08-27)
+
+La cobertura por IA estaba **descartada** desde el 2026-08-21 (0/5 y 1/5). Esta
+corrida no la revive por capricho: mide **otra cosa**, sobre **otro recorte**.
+
+### 11.1 Qué se midió, y por qué no es la corrida anterior
+
+El piloto viejo medía *leer una fuente web y redactar*. Su peor defecto era la
+**copia** (el investigador calcaba la estructura de la fuente y el redactor la
+reproducía) y su peor error salió en prosa interpretativa — invirtió lo que dice
+el DL 3.516. Acá **no hay fuente que calcar**: se le pide al modelo lo que ya
+sabe, sobre contenido canónico. El riesgo baja de "plagio + error" a solo
+"error".
+
+El recorte sale de la base, no de una lista a mano
+(`pnpm --filter @tutor-ia/eval generacion-canonica`):
+
+```
+39 componentes distintos SIN material en ningún libro del corpus
+   (no 56: había repetidos dentro del mismo ítem)
+ ├─ 25 canónicos      → los que se midieron
+ ├─  7 interpretación → "impacto en la vida cotidiana", tono, ritmo…
+ ├─  3 salud          → drogas, autocuidado, medidas de protección
+ └─  4 locales        → cosmovisiones, riesgos socio-naturales
+```
+
+> ⚠️ **DOS DE ESOS "HUECOS" NO LO ERAN.** "trabajo mecánico" y "potencia mecánica"
+> figuran sin material en Física 1º y están en su PROPIO libro, pp. 179-185 (§12.8). El
+> recorte de 39 está inflado por fallas de medición, no solo por huecos reales — otra cara
+> de lo mismo que §12.7 encontró en las 5 paradas de Física.
+
+**Y afectan a 13 conocimientos, de los cuales 10 son `parcial`**: el libro trae
+parte y falta un pedazo. Solo 3 dejan el punto realmente vacío. El titular "39
+huecos" es más grande que el problema.
+
+### 11.2 El resultado, y por qué el número del instrumento NO es el resultado
+
+| | |
+|---|---|
+| medidos | **21** de 25 — 4 se perdieron: el proveedor devolvió JSON inválido |
+| "limpios" según el instrumento | 15/21 |
+| errores de hecho confirmados | 2/21 |
+| registro (chilenismo) | **0/21** — el prompt lo resuelve |
+| nivel inadecuado | 4/21 |
+| **ruido del juez** | 13 acusados → 2 confirmados (**85% descartado por el escéptico**) |
+
+⚠️ **LEER LOS TEXTOS CAMBIÓ EL VEREDICTO, y en la dirección peligrosa.**
+
+- **Ciencias Naturales: bien.** Ocho textos leídos enteros (trabajo mecánico,
+  ADN, endocrino, evidencias de evolución, reacciones químicas, formación de
+  compuestos, sistema nervioso) son correctos, incluidos los matices donde es
+  fácil errar: distingue homólogas de análogas, y acierta que cargar una mochila
+  caminando no realiza trabajo. El único error confirmado —atribuir a Lavoisier
+  la reorganización *atómica*, que es Dalton— aparece igual en libros escolares
+  reales.
+- **Lenguaje: mal, y la clasificación previa estaba equivocada.** "Normas
+  ortográficas" se había puesto en el bucket canónico. El texto de **ortografía
+  literal** tiene ≥3 errores graves: *vivir* como ejemplo de verbos en `-bir`
+  (va con v, es la excepción clásica), *"la z se emplea antes de e o i, como en
+  zapato o zona"* (falso y contradictorio consigo mismo), y *"cambia a s al
+  pluralizar: zapatos"* (la regla es z→c, lápiz→lápices). Acentual y puntual sí
+  salieron correctos.
+
+**EL HALLAZGO QUE MÁS PESA: el juez vio 1 de esos 4 errores.** En el único texto
+realmente malo detectó el más discutible y dejó pasar los tres claros. O sea que
+**15/21 es un techo optimista, no una tasa**, y ninguna versión de esto puede
+apoyarse en revisión automática.
+
+### 11.3 El patrón, corregido
+
+El viejo decía "funciona en lo formal y canónico, falla en prosa e
+interpretación". Sigue valiendo, pero **la ortografía NO es formal en el sentido
+que importa**: es un campo de excepciones, y el modelo mezcla reglas con
+seguridad. La línea real pasa por otro lado:
+
+> funciona donde el hecho es **uno y estable** (el ADN, una ley física);
+> falla donde la regla **tiene excepciones que hay que memorizar**.
+
+### 11.4 Veredicto
+
+| | |
+|---|---|
+| Ciencias Naturales 1º-2º Medio (~15 comp.) | **Sí**, como BORRADOR con revisión humana |
+| Ortografía Lenguaje 6º | **No** |
+| Interpretación · salud · local (14) | **No** |
+
+Y dos condiciones que no son opcionales:
+1. **El texto no puede llevar el sello "está en tu libro"**, porque no está.
+   Necesita marca propia, como la que ya tiene el modo `general`.
+2. **El nivel hay que arreglarlo**: 4 de 21 salieron demasiado densos, incluidos
+   los dos de EPJA (adultos), donde el prompt tiene que decir que son adultos.
+
+⚠️ **Trampa del instrumento, encontrada midiendo:** pasarle `2M` crudo al juez lo
+hizo razonar sobre **"2º de Bachillerato"** español (17-18 años) en vez de 2º
+Medio chileno (15-16). Por eso existe `cursoLegible()`, que escribe el curso con
+su país y su edad. Es el §8.13 otra vez: medir con una entrada que no es la real.
+
+⚠️ **Limitación viva:** juez y generador son el MISMO modelo salvo que se pase
+`JUEZ_MODEL`. El escéptico atenúa, no elimina. Los 21 textos completos quedan en
+`generacion-canonica.json` para releerlos sin volver a generar.
+
+---
+
+## 12. LAS PARADAS DEL PROGRAMA YA TIENEN APUNTE (2026-08-27)
+
+Sigue al §11. La conclusión de aquella medición ("generar lo que no existe rinde
+poco") tapaba una pregunta mejor, que apareció mirando una captura del camino de
+Biología: **de esas paradas, ¿cuántas necesitan contenido nuevo y cuántas ya
+tienen material en otro libro del alumno?**
+
+### 12.1 El dato que reordena todo
+
+| situación | paradas | componentes con material |
+|---|---:|---:|
+| **todo tiene material** | **21** | 103 |
+| material parcial | **18** | 61 |
+| sin nada | 4 | 0 |
+
+**39 de 43 se podían apuntar HOY**, con material real del corpus. La discusión de
+§11 —generar de la nada, con revisión humana— es para las 4 de la última fila.
+
+En Biología, "Movimiento y conservación de la energía" figuraba con el coral "?"
+(*tu libro no lo cubre*) y sus TRES componentes estaban en Física 1º p.181 y
+Física 2º p.184/193. El alumno tenía el material; lo que faltaba era el ALCANCE.
+
+### 12.2 Qué se hizo
+
+- **`materialDeParada`** (`packages/rag/src/curriculum.ts`) junta los pedacitos
+  de los N tomos donde vive cada componente, usando el destino que
+  `buscar-componentes` ya había resuelto. No vuelve a buscar.
+- **`apuntes-programa`** genera el apunte con la MISMA tubería que el batch
+  normal: `armarApunte` + gate de NLI. No inventa: los componentes sin material
+  quedan declarados, no rellenados.
+- **El camino rutea con el dato**: `/api/plan` marca `tieneApunte` por parada; la
+  que lo tiene abre su pantalla, la que no sigue yendo al tutor. Abrir a ciegas
+  mostraría "no hay apunte", que es peor que el chat.
+
+Biología: **8/8 generadas, 0 fallidas, 39/39 puntos citando su tomo.** De las 6
+que ve el alumno de 1º Medio, 5 tienen apunte; la sexta es "creación del universo
+según cosmovisiones de pueblos originarios" — el caso LOCAL, donde está medido
+que el modelo inventa, y sigue yendo al tutor.
+
+### 12.3 ⚠️ LA CITA TIENE QUE DECIR EL TOMO, NO SOLO LA PÁGINA
+
+Es la parte que más código costó y la que sostiene todo lo demás. En estas
+paradas el material viene de dos o tres libros SIEMPRE, y **cada tomo empieza en
+su página 1**: un apunte que dice "pág. 193" bajo una cabecera que dice "Biología
+1º Medio" manda al alumno a abrir el libro equivocado. Es el mismo error de los
+158 pilares falsos (§8.5) y del puntero de §9.4.
+
+`Oracion.libro` viaja desde `materialDeParada` hasta la pantalla. Y el par
+**(libro, página) se vota junto** en `origenMayoritario`: con dos votaciones
+separadas, un punto que mezcla Física 1º p.181 y Física 2º p.193 podía quedarse
+con el libro de una y la página de la otra — una cita que existe, se ve bien y
+manda a leer cualquier cosa. Con un solo tomo el resultado es idéntico al de antes.
+
+Medido en los 8 apuntes: **9 tomos distintos citados**.
+
+### 12.4 🔴 EL BUG QUE APARECIÓ DE PASO, Y VALE MÁS QUE TODO ESTO
+
+**El recuadro "OJO CON ESTO — del libro del profesor" salía INVENTADO otra vez.**
+Generé una parada sin pasarle `errorFrecuente` y el modelo devolvió un aviso
+perfectamente redactado y firmado.
+
+Es el bug de §10.3 —25 de 38 apuntes con el recuadro inventado— que se creía
+resuelto. Y la causa es de método: **la regla estaba implementada como LIMPIEZA
+POSTERIOR** (`limpiar-apuntes`), no como invariante. Cualquier generador nuevo
+volvía a producirla y dependía de que alguien se acordara de correr el script.
+
+Peor: `seEvalua`, dos líneas más abajo en el mismo archivo, SÍ decidía con el
+dato (`opts.evaluacion?.trim() ? … : []`), y su comentario dice *"MISMA REGLA"* —
+describía algo que la de arriba nunca tuvo.
+
+Ahora `armarApunte` fuerza `ojo = null` si no entró aviso. Verificado: 0 de 8
+apuntes nuevos con recuadro. **Quedan 16 filas viejas con `ojo`** que hay que
+repasar con `limpiar-apuntes --aplicar`.
+
+> **La lección, que es reutilizable:** una regla que solo vive en un script de
+> limpieza no es una regla, es una costumbre. Va en la función que produce el
+> dato, o vuelve con el próximo generador.
+
+### 12.5 La corrida completa (43 paradas)
+
+```
+35 apuntes generados · 8 sin material · 0 fallados
+160 puntos publicados, 160 citando su tomo, 0 con el recuadro inventado
+```
+
+> ⚠️ **Estos números son de ANTES del backfill de `document_id`.** Después de
+> arreglarlo y regenerar (§12.8) son **38 apuntes · 178/178 puntos citando su tomo ·
+> 69,4% de respaldo · 5 contradichos vetados**. La tabla de abajo también quedó vieja.
+
+El batch es RESUMIBLE: saltea lo ya hecho salvo `--forzar`.
+
+**Los veredictos del gate, que es el número que importa:**
+
+| | puntos | |
+|---|---:|---|
+| respaldados | 118 | 73,8% |
+| neutrales | 42 | 26,3% — la fuente no los confirma |
+| contradichos | 0 | el gate los ELIMINA (`filter` en `verificarApunte`) |
+
+⚠️ **Los neutrales se concentran donde el corpus está peor**: Matemática 6º (5 de
+7), Física 2º (4 de 5), Matemática 1º (3 de 4). Es coherente con el problema
+conocido de Matemática —las fórmulas vivían en la maquetación y el extractor las
+aplanó (§10.8)—: si el material de origen es pobre, el apunte se sostiene menos.
+
+⚠️ **Y LEYENDO UNO APARECIÓ UN ERROR QUE EL GATE NO PUEDE VER.** En "Medidas de
+tendencia central" (Matemática 6º), el punto 1 afirma que la mediana *"es la
+única medida que sirve para datos cualitativos, como colores"* — falso: para
+datos nominales sirve la MODA, y el punto 2 del mismo apunte dice justamente eso.
+Dos puntos del mismo apunte contradiciéndose. El gate lo marcó `neutral`, no
+`contradicho`, porque la fuente no dice ni una cosa ni la otra.
+
+**Es la demostración de que el gate es veto y no sello**: veta lo que su fuente
+contradice, no certifica lo que su fuente calla. Un 26% de neutrales es un 26%
+sin red.
+
+### 12.6 Los flojos se DESTACAN, no se borran
+
+Decisión del dueño (2026-08-27): los 5 apuntes con menos de la mitad de sus
+puntos respaldados se quedan publicados, con un aviso visible; los demás quedan
+con apariencia normal.
+
+`apunteFlojo()` (`apps/web/app/apunte-parada.tsx`) es el criterio, en un solo
+lugar: `corrido && respaldados*2 < puntos`. El corte en la MITAD y no en un
+porcentaje fino porque no hay nada medido que justifique 60% ni 70%, y un umbral
+inventado con precisión falsa es peor que uno redondo y declarado.
+
+⚠️ Un gate que NO corrió (sidecar caído) **no** es flojo: es desconocido. Avisar
+ahí diría algo falso.
+
+**⚠️ Y EL SÍMBOLO DEL MAPA CAMBIÓ DE PREGUNTA** (decisión del dueño, 2026-08-27).
+
+Contestaba *"¿mi libro cubre esto?"* — el "?" salía de `no_esta` y el "!" de
+`parcial`, directo del estado curricular. Eso quedó viejo el día que estas
+paradas pasaron a tener apunte propio: una parada con apunte completo se seguía
+anunciando con un "?" de alarma **cuando ya tenía todo lo necesario adentro**. La
+marca señalaba una carencia que había dejado de existir.
+
+Ahora contesta *"¿tengo con qué estudiar esto?"*:
+
+| | símbolo | color |
+|---|---|---|
+| con apunte respaldado | **su número** (10.1, 10.3…) | normal, como cualquier parada |
+| con apunte a medias | **!** | sol |
+| sin apunte | **?** | coral |
+
+La información curricular NO se pierde: el encabezado de la unidad ("Lo que el
+programa pide y tu libro no cubre") y el bloque de pendientes al pie ya la dicen.
+**Cada cosa se dice una vez**, y el mapa es el lugar de "qué toco ahora", no el
+de "qué opina el currículum".
+
+Efecto en Biología 1º Medio (verificado tras la regeneración de §12.8): **10.1, 10.4 y
+10.6 con su número**, "La creación y evolución del universo" con "?" (local, sin apunte),
+y **10.3 y 10.5 con "!"** — "Movimiento" quedó en 1/4 y "Química orgánica" en 2/5, así que
+por el propio criterio se dibujan como a medias.
+
+> 🔴 **Y EL CASO LOCAL NO QUEDA FUERA EN TODAS LAS MATERIAS, COMO DICE §12.2.**
+> "La creación y evolución del universo según teorías científicas **y cosmovisiones de
+> pueblos originarios**" SÍ tiene apunte en Física 1º (`pk3wiey`, 5/5) y Física 2º
+> (`p6tro2g`, 3/4). Leídos: **no inventan nada** —los cinco puntos son Big Bang, citando
+> Física 1º pp. 112-117— pero **no mencionan las cosmovisiones en ninguna línea**, y el
+> alumno no ve que falta esa mitad.
+>
+> Lo que lo vuelve accionable: **el artículo del Museo Chileno de Arte Precolombino
+> (etnoastronomía mapuche-pewenche, CC BY 4.0) ESTÁ colgado de Física 1º y 2º** (§9.6) y no
+> se usó, porque `componentes_cobertura` marca ese componente `ok=false` sin destino. Es el
+> mismo problema de medición de §12.7, y acá tiene el material a mano.
+
+Se sacó el borde punteado que esta marca había tenido primero: el "!" ya dice
+"a medias", y dos señales para lo mismo es ruido, no énfasis.
+
+**Adentro del apunte** (`apunte-parada.tsx`) va el aviso completo.
+
+El aviso está escrito para el ALUMNO, sin jerga —"Chequealo con el libro. De los
+4 puntos de este apunte pudimos confirmar 1 contra las páginas que cita"— y va
+ARRIBA de todo: al pie llegaría después de que ya lo estudió. **También viaja en
+el .txt que se baja**: el apunte se estudia en la micro, sin señal, y dejar la
+advertencia solo en pantalla es dejarla donde no va a estar cuando haga falta.
+
+Para encontrarlos sin abrirlos uno por uno:
+
+```sql
+-- ⚠️ El `topic_key like 'p%'` NO es opcional: sin él salen 25 filas, porque
+-- los apuntes de LECCIÓN también tienen gate y 19 de ellos quedan por debajo
+-- de la mitad. Estos son los 6 de las paradas del PROGRAMA.
+select s.name, ln.topic_title, (ln.gate->>'respaldados')||'/'||(ln.gate->>'puntos')
+from lesson_notes ln join subjects s on s.id = ln.subject_id
+where ln.topic_key like 'p%'
+  and ln.gate->>'corrido' = 'true'
+  and (ln.gate->>'respaldados')::int * 2 < (ln.gate->>'puntos')::int;
+```
+
+> Y el dato que la consulta sin filtrar destapa: **19 de los 60 apuntes de LECCIÓN
+> también están por debajo de la mitad**, y a ésos nadie los miró. El aviso ámbar
+> les sale igual (`apunteFlojo` no distingue tipo), así que el alumno está
+> avisado; lo que falta es la revisión.
+
+### 12.7 Lo que queda
+1. **Los 5 flojos, pendientes de revisión a mano** (decisión: quedan publicados
+   con el aviso hasta que alguien los lea).
+2. **Nadie leyó los 35 a mano.** Se leyeron 2: "Movimiento" (Biología, correcto)
+   y "Medidas de tendencia central" (con el error de arriba).
+3. **Las 16 filas viejas con `ojo`**: `limpiar-apuntes --aplicar`.
+4. **8 paradas sin material** siguen mandando al tutor, y está bien: incluyen
+   "Normas ortográficas" (0 componentes con material) y las locales.
+5. El reintento por JSON inválido del proveedor vive en `apuntes-programa`, no en
+   `withRetry`: es un 200 con el cuerpo roto, no un 429.
+
+### 12.8 ⚠️ LA UNIDAD FINAL REPITE TÍTULOS — y el arreglo se REVIRTIÓ dos veces
+
+El problema es real y sigue abierto. Lo que se escribió acá es por qué las dos
+soluciones que parecían obvias borraban contenido.
+
+**Cómo se duplica.** No hay dos filas: hay UNA de `curriculum_map` que dos
+funciones leen con filtros que se pisan.
+
+```
+tramosCurriculares  (la CHAPA sobre la lección) → correcto, parcial
+programaPendienteDe (la PARADA del final)      → no_esta, otro_año, parcial
+                                                            ▲
+                                        parcial cae en LAS DOS
+```
+
+correcto 127 → solo chapa · no_esta 25, otro_año 1 → solo parada · **parcial 86 →
+las dos**. Cada pantalla hizo su corte binario ("¿el libro lo cubre?" / "¿deja
+algo afuera?") y las dos reclamaron el estado del medio, que es legítimamente
+ambas. Las dos se dibujan en el camino; lo que no pasa nunca es que entren en el
+mismo golpe de vista (la chapa en la unidad 1, la parada diez unidades abajo).
+
+**Intento 1 — sacar las `parcial` ya cubiertas por una lección: BORRÓ CONTENIDO.**
+Se repite el TÍTULO, no el contenido. La chapa ETIQUETA una lección del libro; la
+parada ES una parada con apunte propio armado de VARIOS tomos. "Evolución" en
+Biología 1º tiene 8 componentes: **3** en su libro (los de la chapa) y **5** en
+Biología 2º y un módulo EPJA — ADN, Mendel, organismo/población. De las 63 que
+sacaba, 19 aportaban material de otro libro y 18 ya tenían apunte.
+
+**Intento 2 — sumar "y que no tenga componentes en otro libro": TAMBIÉN FALLÓ**, y
+el motivo es más difícil de ver. Medido: **37 de las 39 filas que seguía sacando
+tienen `componentes_cobertura` NULL** —nunca pasaron por `buscar-componentes`— y
+su mismo ítem aparece con páginas en libros que esa materia no tiene. El filtro
+leía "sin componentes anotados" como "no aporta nada", cuando era **"nadie lo
+midió todavía"**.
+
+> **La lección, que es la parte reutilizable:** dos veces seguidas el filtro
+> confundió *ausencia de dato* con *evidencia de ausencia*. Primero asumiendo que
+> compartir el título implicaba compartir el contenido; después asumiendo que un
+> `NULL` significaba "no hay". Antes de borrar por duplicado hay que preguntar qué
+> APORTA cada copia — y si la respuesta es "no está medido", la respuesta no es
+> cero, es "no sé".
+
+**Estado: revertido.** Un título repetido es un costo menor que quitarle al alumno
+la única puerta a sus otros libros.
+
+**Para retomarlo, EN ESTE ORDEN:**
+1. `pnpm --filter @tutor-ia/eval buscar-componentes --aplicar` sobre las filas sin
+   medir (87 de 133 en todo el mapa no tienen componentes).
+2. Recién con el dato lleno, aplicar el filtro de los dos criterios.
+3. Verificar contra Biología: "Evolución" TIENE que seguir en el camino.
+
+Hallazgos del barrido que quedan para ese día:
+- **2 huecos declarados son falsos**: "trabajo mecánico" y "potencia mecánica"
+  figuran sin material en Física 1º y están en su propio libro, pp.179-185.
+- **`faltan` no se muestra en ninguna pantalla**: viaja de `/api/plan` a `tipos.ts`
+  y ningún componente lo lee. Los huecos por componente son invisibles hoy.
+- ✅ **RESUELTO (2026-08-27): `curriculum_map.document_id` estaba NULL en 182 de
+  266 filas y DEGRADÓ 22 de los 35 apuntes.** `materialDeParada` resuelve los
+  componentes `ok=true` (los que están en el PROPIO libro) contra
+  `cm.document_id`; con NULL, `destino.doc` es null y el `continue` los descarta a
+  todos. Esos 22 apuntes se armaron SOLO con material de otros tomos y perdieron
+  **34 componentes de su propio libro**. El gate no lo delata (0,73 contra 0,70):
+  lo que entró está bien respaldado, falta lo que nunca entró.
+  Era backfill, no código: `schema_curriculum_tramos_doc.sql` llenó el tomo en
+  `curriculum_map_tramos` y no en la tabla madre.
+  **`packages/db/schema_curriculum_map_doc.sql`** lo rellena con TRES condiciones,
+  y la tercera es la que no se puede omitir:
+    1. `document_id` NULL (nunca pisa un puntero existente),
+    2. sus tramos apuntan a UN solo tomo (8 ambiguas se dejan: se resuelven
+       leyendo, no con un UPDATE),
+    3. ⚠️ ese tomo es **de su misma materia** — `schema_epja_por_disciplina.sql`
+       había anulado a propósito los punteros a módulos EPJA mudados de
+       disciplina ("una fila de Física que apunta a un módulo de Biología manda
+       al alumno a material que ya no es suyo"). Sin ese `where`, el backfill
+       revertía esa corrección en silencio. Son 2 filas y siguen NULL.
+  Aplicado: **143 de 182**; quedan 39 NULL a propósito. La tabla
+  `curriculum_map_doc_backfill` registra cuáles se tocaron, para poder deshacerlo.
+  Los 38 apuntes se regeneraron: **178/178 puntos citan su tomo, 32 tomos
+  distintos, 69,4% de respaldo, 5 puntos contradichos vetados, 0 con el recuadro
+  del profesor inventado.**
+- **"cosmovisiones de pueblos originarios"** figura `ok=false` en Física 1º y
+  `ok=true` en Física 2º con el MISMO documento del Museo Precolombino colgado de
+  las dos materias.
+
+
+---
+
+## 13. EL NAV EN TABLET Y TELÉFONO — la barra se fue abajo (2026-08-27)
+
+Pedido del dueño: *"cada vez que cambio de computadora a tablet y de tablet a
+celular es muy confuso; que se visualicen todas las opciones"*.
+
+### 13.1 Qué estaba mal, medido
+
+El nav se acostaba arriba con `overflow-x: auto` bajo los 880px. **A 375px se
+veían 1,5 opciones de 6.** Las otras vivían en un scroll horizontal sin ninguna
+señal de que existiera, y el reloj flotante —que vive arriba a la derecha— tapaba
+lo poco que asomaba. En tablet, "Repasá con tus apuntes" quedaba cortado y
+`Configuración`/`Salir` estaban al final del deslizamiento, invisibles.
+
+Un nav cuyas opciones hay que descubrir deslizando no es un nav.
+
+### 13.2 Qué hace ahora
+
+| ancho | forma |
+|---|---|
+| > 880px | columna lateral, **sin cambios** |
+| ≤ 880px | **barra INFERIOR fija**, cinco destinos siempre visibles |
+
+`Resumen · Materias · Reforzar · Apuntes · Vos`
+
+- **Abajo y no arriba** resuelve tres cosas de una: entran las cinco sin
+  deslizar, el pulgar llega, y deja de pelear con el reloj por el borde superior.
+  Es además el patrón que el alumno ya conoce de cualquier app del teléfono.
+- **Etiqueta corta** (`corto` en `NavItem`): "Repasá con tus apuntes" no entra en
+  un quinto de 375px, y recortada con ellipsis obliga a adivinar. Se renderizan
+  las DOS y el CSS esconde una — medir la ventana en JS pinta primero el layout
+  equivocado y después salta.
+- **`flex: 4` al grupo y `1` al avatar.** Con ambos en `flex: 1` se repartían
+  mitad y mitad: las cuatro primeras celdas medían un octavo y "Vos" flotaba solo
+  en media pantalla. Verificado: las cinco miden 132px.
+- **Tope de 132px por celda y barra centrada**: en tablet, cinco celdas repartidas
+  en 820px dejan los iconos tan separados que dejan de leerse como un grupo.
+- **`env(safe-area-inset-bottom)`**: la franja de gestos del iPhone se come el
+  último renglón de cualquier barra pegada al borde. Vale 0 donde no hay muesca.
+- **`.pnl-main` reserva el alto de la barra**: sin eso la última tarjeta queda
+  debajo y no se puede tocar.
+
+### 13.3 El quinto destino y `MenuAlumno`
+
+`Configuración`, `Salir` y el panel del docente no pueden ser celdas propias
+—serían ocho destinos en 375px— ni pueden desaparecer: "Salir" tiene que estar
+siempre a un toque. Viven en un **bottom sheet** que abre el avatar.
+
+- Es **otro botón**, no el mismo con un `if`: decidir por ancho en JS obliga a
+  medir la ventana. Los dos se renderizan y el CSS muestra uno. Y hacen cosas
+  distintas — en columna el avatar LLEVA al perfil; en la barra abre el menú.
+- El avatar va último con la propiedad `order`, no reordenando el DOM: en columna
+  el nombre y el curso son lo primero que se lee, y moverlos en el HTML se lo
+  cambiaría también al lector de pantalla.
+- ⚠️ **Va en un portal al body**, como el modal de Configuración y por lo mismo:
+  la barra es `position: fixed` con z-index, o sea que **crea un contexto de
+  apilamiento**, y un menú dibujado adentro solo compite contra sus hermanos.
+  Subirle el z-index no sirve: el techo lo pone el ancestro.
+
+### 13.4 El contenido va CENTRADO, y el tope pasó a 1040
+
+Segundo pedido, sobre tablet: *"los costados no se ajustan, me queda espacio para
+correr a la derecha"*. Medido a 1366px: el contenido terminaba a los 1192 y
+quedaban **174px de vacío pegados al costado derecho**. No era scroll horizontal
+(`scrollWidth - clientWidth` daba 0): era `max-width: 900px` sin centrar, así que
+TODO el sobrante caía de un lado y se leía como un layout roto en vez de un margen.
+
+`.pnl-main` ahora es `max-width: 1040px; margin: 0 auto`.
+
+**1040 y no 900** porque entre 1180 y 1366 —una tablet en horizontal— 900 deja el
+hueco grande y encima corta la grilla en 3 columnas cuando entrarían 4. **1040 y
+no más** porque pasando ese ancho la grilla arma 5 columnas y, con 6 materias,
+deja una huérfana en la fila de abajo.
+
+Barrido de verificación (hueco a la derecha · columnas · scroll horizontal):
+
+| ancho | forma | hueco der | columnas | scroll |
+|---|---|---:|---:|---:|
+| 375 | barra abajo | 0 | 1 | 0 |
+| 768 | barra abajo | 0 | 3 | 0 |
+| 1024 | columna | 0 | 3 | 0 |
+| 1180 | columna | 0 | 4 | 0 |
+| 1366 | columna | **39** (y 39 a la izquierda) | 4 | 0 |
+
+A 1366 el sobrante existe pero está REPARTIDO: eso es un margen, no un hueco.
+
+### 13.5 UN CRITERIO DE ANCHO, en vez de un número por pantalla
+
+Tercer pedido: *"en la simulación de prueba no encuadra bien para tablet"*, visto
+achicando la ventana de Chrome.
+
+Medido: **había cuatro topes puestos a ojo** —420, 560, 620, 720— y el efecto se
+notaba navegando. En una tablet de 820px, pasar de "Camino" a "Prueba" saltaba de
+780px de contenido a **652, con 84px de aire muerto a cada lado**. Ninguna
+pantalla aprovechaba la tablet, y cada una la desaprovechaba distinto. Un ancho
+por pantalla no es una decisión: es la ausencia de una.
+
+`ANCHO` en `ui.tsx` — tres valores, porque hay tres casos distintos:
+
+| token | px | para qué |
+|---|---:|---|
+| `lectura` | 680 | texto que se lee de corrido (apunte, corrección, chat) |
+| `lista` | 820 | listas, controles, tarjetas (prueba, elegir prueba) |
+| `tablero` | 1100 | el camino, que necesita amplitud para serpentear |
+
+**El de `lectura` es un tope TIPOGRÁFICO, no un capricho**: pasadas las ~70
+letras por renglón el ojo pierde el salto de línea, así que ahí estirar hasta el
+borde EMPEORA la pantalla. En `lista` no hay renglón que proteger, y 820 es
+justamente el ancho de un iPad en vertical.
+
+Todos van **centrados** (`margin: 0 auto`): sin eso el sobrante se acumula de un
+lado, que es el mismo bug de §13.4.
+
+Verificado a 820 (tablet) y 1440 (escritorio):
+
+| pantalla | 820px | 1440px |
+|---|---|---|
+| prueba | 820 de 820, sin aire | 852 centrado (294 por lado) |
+| camino | 820 de 820 | centrado |
+| apunte | 712 centrado, **párrafo de 632px** | 712 centrado (364 por lado) |
+| chat | sin desborde | — |
+
+⚠️ Y algo que costó media hora: **la captura del panel del navegador escala la
+página cuando el viewport emulado no entra**, y a simple vista parece que el
+contenido está encajonado a la izquierda. Dos veces creí ver un layout roto que
+las medidas del DOM desmentían. Para esto se mide `getBoundingClientRect()` y
+`scrollWidth - clientWidth`, no se mira la captura.
+
+### 13.6 ⚠️ Los backticks, otra vez — y por qué NO se extendió el guardián
+
+Caí DOS veces en la misma sesión escribiendo comentarios de CSS adentro de
+`NAV_CSS`: «con `overflow-x: auto`» y «con `order`». Un backtick adentro de un
+template literal lo CIERRA, y el error (`Expected a semicolon`) apunta a una línea
+cualquiera del bloque.
+
+**No es un problema de SQL: es de los bloques largos con prosa adentro**, y en
+prosa técnica uno cita identificadores con backticks.
+
+Se intentó ampliar `scripts/sql-backticks.sh` a cualquier template literal de
+200+ caracteres y **se revirtió**: la heurística confunde el cierre de un literal
+con la apertura del siguiente y escupió cientos de falsos positivos. Un detector
+que grita 400 veces se ignora, que es peor que no tenerlo — la misma lección que
+§10.6 deja escrita ("validá el detector contra el bug que lo motivó").
+
+**Lo que sí atrapa el caso es `pnpm --filter @tutor-ia/web typecheck`**, en
+segundos y sin falsos positivos. La regla práctica: nunca backticks adentro de un
+literal; si el typecheck tira "Expected a semicolon" en un bloque de CSS o SQL,
+buscá el backtick antes que cualquier otra cosa.
