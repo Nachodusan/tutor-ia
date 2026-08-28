@@ -559,33 +559,67 @@ export function CaminoView({
                 // tramo que llega a la 6.
                 const q = puntoEnTramo(k, t, amp, ys);
                 const lh = done.includes(l.key);
-                /* PARADA DEL PROGRAMA: lo que el Estado exige y este libro no
-                   desarrolla. Se distingue del punto de lección porque no es lo
-                   mismo "andá a leer la página 40" que "esto te lo van a exigir
-                   y acá no está": el color del estado (coral si no está, sol si
-                   está incompleto) y el símbolo lo dicen sin abrir nada. */
+                /**
+                 * PARADA DEL PROGRAMA: lo que el Estado exige y este libro no
+                 * desarrolla.
+                 *
+                 * ⚠️ EL SÍMBOLO CONTESTA "¿TENGO CON QUÉ ESTUDIAR ESTO?", NO
+                 * "¿MI LIBRO LO CUBRE?".
+                 *
+                 * Antes el "?" y el "!" salían del estado curricular
+                 * (`no_esta` / `parcial`), y eso quedó viejo el día que estas
+                 * paradas pasaron a tener apunte propio armado con material de
+                 * los OTROS libros del alumno. Una parada con apunte completo se
+                 * seguía anunciando con un "?" de alarma cuando ya tenía todo lo
+                 * necesario adentro: la marca señalaba una carencia que había
+                 * dejado de existir.
+                 *
+                 * Y la información curricular no se pierde: el encabezado de la
+                 * unidad ("Lo que el programa pide y tu libro no cubre") y el
+                 * bloque de pendientes al pie ya lo dicen. Cada cosa se dice UNA
+                 * vez, y el mapa es el lugar de "qué toco ahora", no el de "qué
+                 * opina el currículum".
+                 *
+                 *   con apunte y respaldado  → NÚMERO, como cualquier parada
+                 *   con apunte a medias      → "!"  (hay algo, pero chequealo)
+                 *   sin apunte               → "?"  (esto no está en ningún lado)
+                 */
                 const esProg = p.item.esPrograma === true;
-                const colProg = l.estado === "parcial" ? C.sun : C.coral;
+                const sinApunte = esProg && l.tieneApunte !== true;
+                const aMedias = esProg && l.tieneApunte === true && l.apunteFlojo === true;
+                /** Solo estas dos merecen destacarse: son las que le FALTAN al alumno. */
+                const progMarcada = sinApunte || aMedias;
+                const colProg = aMedias ? C.sun : C.coral;
                 // La PRÓXIMA lección de la unidad actual late en cobalto, igual
                 // que el nodo grande: es la respuesta a "¿y ahora qué toco?".
                 const sig = esActual && !lh && lecciones.slice(0, j).every((x) => done.includes(x.key));
                 return (
                   <button key={l.key}
                     title={esProg
-                      ? `${l.estado === "parcial" ? "Incompleto en tu libro" : "No está en tu libro"}: ${l.title}` +
-                        (l.enHermana ? ` — está en ${l.enHermana.tomo ?? l.enHermana.materia}${l.enHermana.paginaDesde ? ` p.${l.enHermana.paginaDesde}` : ""}` : "")
+                      ? (sinApunte
+                          ? `Sin apunte todavía: ${l.title}` +
+                            (l.enHermana ? ` — está en ${l.enHermana.tomo ?? l.enHermana.materia}${l.enHermana.paginaDesde ? ` p.${l.enHermana.paginaDesde}` : ""}` : "") +
+                            " — te lo explica el tutor"
+                          : aMedias
+                            ? `Apunte a medias: ${l.title} — chequealo con el libro`
+                            : l.title)
                       : l.title}
                     aria-label={esProg
-                      ? `${l.estado === "parcial" ? "Contenido incompleto" : "Contenido que no está en tu libro"}: ${l.title}`
+                      ? (sinApunte
+                          ? `Sin apunte todavía: ${l.title}. Te lo explica el tutor`
+                          : aMedias
+                            ? `Apunte a medias, por revisar: ${l.title}`
+                            : `Parada ${numeroParada(p.i + 1, j + 1)}: ${l.title}`)
                       : `Lección ${numeroParada(p.i + 1, j + 1)}: ${l.title}`}
                     className={sig ? "camino-sig" : undefined}
                     onClick={() => onAbrir({
                       ...p.item, key: l.key, title: l.title, p0: l.p0, p1: l.p1,
                       unit: l.unit, lesson: l.lesson, lecciones: undefined,
                       // La parada del programa NO tiene página de la que salga
-                      // una lección: se abre en el tutor con el tema. Quien
-                      // navega decide, mirando `esPrograma`.
+                      // una lección. Quien navega decide con estos dos: con
+                      // apunte generado va a su pantalla, sin él al tutor.
                       esPrograma: p.item.esPrograma,
+                      tieneApunte: l.tieneApunte,
                     })}
                     style={{
                       position: "absolute", top: q.y, left: `calc(50% + ${q.x}px)`,
@@ -596,15 +630,20 @@ export function CaminoView({
                       // hito. Sigue siendo la más visible de las monedas —tiene
                       // el relleno oscuro y el latido— pero ya no compite con el
                       // nodo grande por el mismo color.
-                      background: lh ? C.ok : esProg ? colProg : sig ? C.ink : C.panel,
-                      border: `2.5px solid ${esProg ? C.ink : futuro ? C.dim : C.ink}`,
+                      background: lh ? C.ok : progMarcada ? colProg : sig ? C.ink : C.panel,
+                      // Sin trazo punteado: el "!" ya dice "a medias", y dos
+                      // señales para la misma cosa es ruido, no énfasis.
+                      border: `2.5px solid ${progMarcada ? C.ink : futuro ? C.dim : C.ink}`,
                       // Sobre el SOL (incompleto) la tinta va oscura, no gris de
                       // "futuro": el gris sobre amarillo se lee apagado y estas
                       // paradas no son "todavía no llegaste", son "esto falta".
-                      color: lh || sig || (esProg && l.estado !== "parcial") ? "#fff"
-                        : esProg ? C.ink : futuro ? C.dim : C.text,
+                      // Sobre el SOL (a medias) la tinta va oscura; sobre el
+                      // coral, blanca. Una parada con apunte bueno se pinta como
+                      // cualquier otra del camino.
+                      color: lh || sig || sinApunte ? "#fff"
+                        : aMedias ? C.ink : futuro ? C.dim : C.text,
                       fontFamily: FONT.round, fontWeight: 800,
-                      fontSize: esProg || lh ? 11.5 : tamañoNumero(numeroParada(p.i + 1, j + 1)),
+                      fontSize: progMarcada || lh ? 11.5 : tamañoNumero(numeroParada(p.i + 1, j + 1)),
                       display: "grid", placeItems: "center", cursor: "pointer",
                       // El aro: separa la moneda de las huellas que pasan por
                       // debajo. Sin él, punto y huella comparten fondo y borde.
@@ -615,11 +654,13 @@ export function CaminoView({
                     onMouseEnter={(e) => { e.currentTarget.style.transform = "translate(-50%,-50%) scale(1.22)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = "translate(-50%,-50%)"; }}>
                     {lh ? <IconCheck size={13} />
-                      // La parada del PROGRAMA conserva su símbolo: el coral "?"
-                      // ("no está en tu libro") y el sol "!" ("está incompleto")
-                      // dicen algo que un número no puede decir, y esa unidad es
-                      // la única que no se recorre en orden.
-                      : esProg ? (l.estado === "parcial" ? "!" : "?")
+                      // El símbolo queda SOLO para lo que le falta al alumno:
+                      // "?" sin apunte, "!" con apunte a medias. La parada del
+                      // programa que ya tiene apunte respaldado lleva su número,
+                      // como cualquier otra: destacarla señalaría una carencia
+                      // que dejó de existir.
+                      : sinApunte ? "?"
+                      : aMedias ? "!"
                       : numeroParada(p.i + 1, j + 1)}
                   </button>
                 );

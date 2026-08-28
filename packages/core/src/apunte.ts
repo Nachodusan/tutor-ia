@@ -41,6 +41,8 @@ export interface PuntoApunte {
   /** Índices de las oraciones del libro que lo respaldan. */
   fuentes: number[];
   pagina: number | null;
+  /** El TOMO del que salió, si la parada mezcla varios libros. Ver `Oracion.libro`. */
+  libro?: string | null;
   veredicto?: "respaldado" | "neutral" | "contradicho";
 }
 
@@ -48,7 +50,7 @@ export interface Apunte {
   /** De qué se trata todo esto, en una línea. Un apunte arranca por el punto. */
   idea: string;
   puntos: PuntoApunte[];
-  palabras: { palabra: string; definicion: string; pagina: number | null }[];
+  palabras: { palabra: string; definicion: string; pagina: number | null; libro?: string | null }[];
   /** La analogía del tutor. NO sale del libro y se dice. */
   comoAcordarse: string;
   /** Del libro del profesor, reescrito para el alumno. */
@@ -218,13 +220,34 @@ export async function armarApunte(opts: {
 
   const porIndice = new Map(usables.map((o) => [o.i, o]));
 
-  /** De dónde sale de verdad el punto: la página que aporta más oraciones. */
-  function paginaMayoritaria(paginas: (number | null)[]): number | null {
-    const cuenta = new Map<number, number>();
-    for (const p of paginas) if (p != null) cuenta.set(p, (cuenta.get(p) ?? 0) + 1);
-    let mejor: number | null = null, max = 0;
-    for (const [p, n] of cuenta) if (n > max || (n === max && mejor != null && p < mejor)) { mejor = p; max = n; }
-    return mejor;
+  /**
+   * De dónde sale de verdad el punto: el (libro, página) que aporta más oraciones.
+   *
+   * ⚠️ EL PAR SE VOTA JUNTO, no cada cosa por su lado. Con dos votaciones
+   * independientes un punto que mezcla Física 1º p.181 y Física 2º p.193 podía
+   * quedarse con el libro de una y la página de la otra: una cita que existe,
+   * que se ve bien y que manda al alumno a leer cualquier cosa. En una lección
+   * normal (un solo tomo) el resultado es idéntico al de antes.
+   */
+  function origenMayoritario(
+    ors: (Oracion | undefined)[],
+  ): { pagina: number | null; libro: string | null } {
+    const cuenta = new Map<string, { n: number; pagina: number; libro: string | null }>();
+    for (const o of ors) {
+      if (!o || o.pagina == null) continue;
+      const libro = o.libro ?? null;
+      const clave = `${libro ?? ""}|${o.pagina}`;
+      const e = cuenta.get(clave);
+      if (e) e.n++;
+      else cuenta.set(clave, { n: 1, pagina: o.pagina, libro });
+    }
+    let mejor: { n: number; pagina: number; libro: string | null } | null = null;
+    for (const e of cuenta.values()) {
+      // Mismo desempate que antes: gana la página más baja, para que la cita
+      // apunte al principio de lo que respalda el punto y no a su cola.
+      if (!mejor || e.n > mejor.n || (e.n === mejor.n && e.pagina < mejor.pagina)) mejor = e;
+    }
+    return { pagina: mejor?.pagina ?? null, libro: mejor?.libro ?? null };
   }
 
   // Un punto sin fuentes no se puede verificar ni mandar a la página: se cae. Es
@@ -247,7 +270,7 @@ export async function armarApunte(opts: {
         // no la del contenido—. La página es LA garantía de este diseño: es lo
         // único que le permite ir al libro a verificar. Una que falla una de
         // cada cinco veces enseña a no chequear ninguna.
-        pagina: paginaMayoritaria(fuentes.map((i) => porIndice.get(i)?.pagina ?? null)),
+        ...origenMayoritario(fuentes.map((i) => porIndice.get(i))),
       };
     })
     .filter((p) => p.fuentes.length > 0);
@@ -264,9 +287,29 @@ export async function armarApunte(opts: {
         palabra: sinIndices(w.palabra),
         definicion: sinIndices(w.definicion),
         pagina: porIndice.get(w.fuente)?.pagina ?? null,
+        libro: porIndice.get(w.fuente)?.libro ?? null,
       })),
     comoAcordarse: sinIndices(out.comoAcordarse ?? ""),
-    ojo: ojo && !HABLA_AL_DOCENTE.test(ojo) ? ojo : null,
+    /**
+     * ⚠️ SIN AVISO NO HAY BLOQUE, y eso se decide ACÁ con el dato de entrada.
+     *
+     * El prompt dice "sin aviso, devolvé null" y el modelo NO obedece: probado
+     * el 2026-08-27 generando una parada sin pasarle `errorFrecuente`, devolvió
+     * un "ojo" perfectamente redactado y firmado "del libro del profesor". Es el
+     * bug de §10.3 —25 de 38 apuntes con el recuadro INVENTADO— y es la peor
+     * forma de mentir que tiene este producto: le atribuye a un docente una
+     * prosa que nunca escribió.
+     *
+     * La regla existía, pero solo como LIMPIEZA POSTERIOR (`limpiar-apuntes`),
+     * o sea que cualquier generador nuevo volvía a producirla y dependía de que
+     * alguien se acordara de correr el script. `seEvalua`, dos líneas más abajo,
+     * sí la tenía en la fuente — y su comentario dice "MISMA REGLA", que era
+     * justamente lo que faltaba.
+     *
+     * El filtro de tono (`HABLA_AL_DOCENTE`) se conserva: resuelve otro
+     * problema (el aviso existe pero está escrito para el profe).
+     */
+    ojo: opts.errorFrecuente?.trim() && ojo && !HABLA_AL_DOCENTE.test(ojo) ? ojo : null,
     // MISMA REGLA para "Te lo pueden preguntar así": la pantalla dice "lo que se
     // evalúa" y eso solo es cierto si la lista salió de la guía docente. Medido:
     // 10 apuntes mostraban chips en materias sin ningún chunk `evaluacion`, y en
@@ -328,8 +371,43 @@ export async function verificarApunte(
  * cuaderno. Sin markdown: se lee igual en el bloc de notas del teléfono, que es
  * donde va a terminar.
  */
+/**
+ * El nombre del tomo como para una cita: sin el sufijo genérico que no
+ * distingue nada.
+ *
+ * "Biología 2º Medio — texto del estudiante" → "Biología 2º Medio".
+ *
+ * ⚠️ Se saca SOLO el sufijo genérico, no todo lo que sigue al guión. Los módulos
+ * EPJA se llaman "EPJA II Ciclo Media · Ciencias Naturales — Módulo 4: Recepción
+ * y flujo de información": ahí lo que viene después del guión es lo ÚNICO que
+ * distingue un módulo del siguiente, y cortarlo dejaría dos tomos distintos con
+ * el mismo nombre en la misma página del apunte.
+ */
+function tomoCorto(titulo: string): string {
+  return titulo.replace(/\s*[—-]\s*(texto del estudiante|texto estudiante|libro del estudiante)\s*$/i, "").trim();
+}
+
 export function apunteATexto(a: Apunte, meta: { titulo: string; materia: string; p0?: number | null; p1?: number | null }): string {
   const L: string[] = [];
+
+  /**
+   * La cita de un punto: la página, y EL TOMO cuando el apunte mezcla varios.
+   *
+   * ⚠️ Sin el tomo esto es una cita que MIENTE, no una cita incompleta. En una
+   * parada del programa el material viene de dos o tres libros del alumno, y sus
+   * páginas se pisan: en el apunte de "Evolución" la pág. 38 es de Biología 2º
+   * Medio y la 41 de un módulo EPJA, bajo una cabecera que dice "Biología 1º
+   * Medio". El alumno abre su libro en la 38 y encuentra otra cosa — y aprende
+   * a no chequear ninguna, que es justo lo que la página existe para provocar.
+   *
+   * Cuando hay un solo tomo (la lección normal) `libro` viene vacío y la cita
+   * queda exactamente como antes.
+   */
+  const cita = (pagina: number | null, libro?: string | null): string => {
+    if (pagina == null) return "";
+    return libro ? `  (${tomoCorto(libro)}, pág. ${pagina})` : `  (pág. ${pagina})`;
+  };
+
   const paginas = meta.p0 != null ? (meta.p1 && meta.p1 !== meta.p0 ? `págs. ${meta.p0}-${meta.p1}` : `pág. ${meta.p0}`) : "";
   L.push(meta.titulo.toUpperCase());
   L.push(`${meta.materia}${paginas ? ` · ${paginas}` : ""}`);
@@ -338,13 +416,13 @@ export function apunteATexto(a: Apunte, meta: { titulo: string; materia: string;
   if (a.puntos.length) {
     L.push("PARA ENTENDER");
     a.puntos.forEach((p, i) => {
-      L.push(`${i + 1}. ${p.titulo}${p.pagina != null ? `  (pág. ${p.pagina})` : ""}`);
+      L.push(`${i + 1}. ${p.titulo}${cita(p.pagina, p.libro)}`);
       L.push(`   ${p.texto}`, "");
     });
   }
   if (a.palabras.length) {
     L.push("PALABRAS QUE HAY QUE SABER");
-    a.palabras.forEach((w) => L.push(`· ${w.palabra}: ${w.definicion}${w.pagina != null ? ` (pág. ${w.pagina})` : ""}`));
+    a.palabras.forEach((w) => L.push(`· ${w.palabra}: ${w.definicion}${cita(w.pagina, w.libro)}`));
     L.push("");
   }
   if (a.comoAcordarse) L.push("CÓMO ACORDARSE  (no está en el libro)", a.comoAcordarse, "");

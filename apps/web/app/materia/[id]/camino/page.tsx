@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CaminoView } from "../../../camino";
-import { C, Dots, FONT, HARD, IconSpark, subjectLabel } from "../../../ui";
+import { C, Dots, FONT, HARD, IconSpark, subjectLabel, ANCHO } from "../../../ui";
 import { traerMateria } from "../../../datos";
 import type { Pendiente, PlanItem, Subject } from "../../../tipos";
 
@@ -108,17 +108,23 @@ export default function CaminoPage() {
     // Ancho generoso: el camino serpentea más cuanto más ancho es su contenedor
     // (la amplitud es elástica, ver camino.tsx). 1100 y no "sin tope": en un
     // monitor ultra-ancho un vaivén de pantalla completa marea en vez de guiar.
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 20px 40px" }}>
+    <div style={{ maxWidth: ANCHO.tablero, margin: "0 auto", padding: "14px 20px 40px" }}>
       <CaminoView
         items={plan} done={done} scores={scores} subject={subject} loading={planLoading}
         pendientes={pendientes}
         onAbrir={(it) =>
-          /* La parada del PROGRAMA no tiene lección que abrir —no está en este
-             libro—, así que va al tutor con el tema como pregunta. El tutor sí
-             puede enseñarlo: si el material está en otro libro del alumno la
-             cascada lo alcanza, y si no está en ninguno responde en modo
-             general con su sello. Mandarla a /camino/<key> daría un 404. */
-          it.esPrograma
+          /* La parada del PROGRAMA tiene DOS destinos, y el que decide es el
+             dato: si ya tiene apunte generado (`tieneApunte`) va a su pantalla,
+             como cualquier otra parada. Ese apunte está armado con material real
+             de los OTROS libros del alumno —medido: de 43 paradas, 21 tienen
+             todo su material y 18 la mayor parte—, con cada punto citando su
+             tomo.
+
+             Sin apunte sigue yendo al tutor: la cascada alcanza el libro hermano
+             si lo hay, y si no responde en modo general con su sello. Abrir a
+             ciegas la pantalla de parada mostraría "no hay apunte para esto",
+             que es peor que el chat — el chat al menos le contesta. */
+          it.esPrograma && !it.tieneApunte
             ? router.push(`/materia/${id}/chat?${new URLSearchParams({ q: `Explicame ${it.title}` })}`)
             : router.push(`/materia/${id}/camino/${it.key}`)}
         onExamen={() => router.push(`/materia/${id}/prueba`)}

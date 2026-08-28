@@ -59,10 +59,17 @@ export interface PlanItem { n: number; key: string; title: string; focus: string
     enHermana?: Pendiente["enHermana"];
     repartido?: boolean;
     faltan?: string[];
+    /** Solo paradas del PROGRAMA: si ya tiene apunte generado, se puede abrir. */
+    tieneApunte?: boolean;
+    /** Su apunte se sostiene poco contra el libro: el camino lo marca. */
+    apunteFlojo?: boolean;
   }[];
   /** true = la unidad sintética con lo que el programa pide y el libro no trae.
    *  Sus paradas no tienen páginas: no están en este tomo. */
-  esPrograma?: boolean }
+  esPrograma?: boolean;
+  /** Ver `lecciones[].tieneApunte`. Va también acá porque el camino APLANA la
+   *  lección sobre el ítem al abrirla, y quien navega lee el aplanado. */
+  tieneApunte?: boolean }
 /** `correct`/`explain` NO llegan con la prueba: la clave vive en el servidor y
  *  se revela recién en la respuesta del submit (antes viajaba en el payload y
  *  cualquiera la veía en la pestaña Red). */
@@ -146,8 +153,10 @@ export interface Clase {
 // a verificarlo) y el gate de NLI que corrió al generarlo.
 export interface Apunte {
   idea: string;
-  puntos: { titulo: string; texto: string; pagina: number | null }[];
-  palabras: { palabra: string; definicion: string; pagina: number | null }[];
+  /** `libro` va solo en las paradas del PROGRAMA, que mezclan varios tomos:
+   *  ahí la página sola manda al libro equivocado. */
+  puntos: { titulo: string; texto: string; pagina: number | null; libro?: string | null }[];
+  palabras: { palabra: string; definicion: string; pagina: number | null; libro?: string | null }[];
   /** La analogía del tutor. NO sale del libro y se muestra aparte. */
   comoAcordarse: string;
   /** Del libro del profesor, reescrito para el alumno. */
@@ -155,4 +164,7 @@ export interface Apunte {
   /** Lo que la guía docente dice que se evalúa. */
   seEvalua: string[];
   tresLineas: string[];
+  /** El resultado del gate de NLI que corrió al generarlo. Lo usa la pantalla
+   *  para avisar cuando el apunte se sostiene poco (ver `apunteFlojo`). */
+  gate?: { corrido: boolean; puntos: number; respaldados: number; contradichos: number; motivo?: string };
 }

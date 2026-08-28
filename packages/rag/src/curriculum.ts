@@ -407,6 +407,52 @@ export async function programaPendienteDe(subjectId: string): Promise<ParadaPend
     where cm.subject_id = ${subjectId}::uuid
       and cm.metodo = 'lector-v1'
       and cm.verificado in ('no_esta', 'otro_año', 'parcial')
+      -- ⚠️ LO QUE YA ESTÁ ARRIBA EN EL CAMINO NO SE REPITE ACÁ.
+      --
+      -- Medido el 2026-08-27: de 112 paradas de esta unidad, 63 tenían tramos
+      -- que caen sobre lecciones REALES del camino, o sea que ya se muestran
+      -- como chapa de pilar sobre esas lecciones. No era solo repetirse: era
+      -- CONTRADECIRSE. En Biología, "Evolución" aparecía marcado sobre SEIS
+      -- lecciones ("¿Como cambian las poblaciones en la naturaleza?"...) y al
+      -- mismo tiempo al final, bajo el titulo "Lo que el programa pide y tu
+      -- libro no cubre". El libro lo cubre: por eso está arriba.
+      --
+      -- El criterio es EL MISMO que dibuja las chapas (tramosCurriculares +
+      -- pilaresDe): verificado in (correcto, parcial), solapamiento de páginas y
+      -- DEL MISMO TOMO. Si cambia allá, cambia acá — dos criterios distintos
+      -- para "¿está en el camino?" es como se vuelve a duplicar.
+      --
+      -- otro_año NO entra en el filtro a propósito: tramosCurriculares lo
+      -- excluye, así que no se dibuja como chapa y sacarlo de acá lo haría
+      -- desaparecer del producto.
+      -- ⚠️ ACÁ HUBO UN FILTRO ANTI-DUPLICADOS Y SE REVIRTIÓ. NO LO REPONGAS
+      -- SIN LEER ESTO.
+      --
+      -- El problema es real: un conocimiento 'parcial' se dibuja DOS veces en el
+      -- camino — como chapa de pilar sobre las lecciones que lo cubren
+      -- (tramosCurriculares toma correcto+parcial) y como parada acá
+      -- (no_esta+otro_año+parcial). 'parcial' cae en las dos listas porque
+      -- "a medias" es legítimamente ambas cosas, y nadie decidió a quién le tocaba.
+      --
+      -- Pero el filtro que sacaba las 'parcial' ya cubiertas por una lección
+      -- BORRABA CONTENIDO. Se repetía el TÍTULO, no el contenido: la chapa
+      -- ETIQUETA una lección del libro, la parada ES una parada con apunte propio
+      -- armado de VARIOS tomos. "Evolución" en Biología 1º tiene 8 componentes:
+      -- 3 en su libro (los de la chapa) y 5 en Biología 2º y un módulo EPJA.
+      --
+      -- La segunda versión sumó "…y que no tenga componentes en otro libro", y
+      -- también falló, por una razón más difícil de ver: MEDIDO, 37 de las 39
+      -- filas que seguía sacando tienen componentes_cobertura NULL — nunca pasaron
+      -- por buscar-componentes— y su mismo ítem aparece con páginas en libros que
+      -- esa materia no tiene. El filtro leía "sin componentes anotados" como "no
+      -- aporta nada", cuando era "nadie lo midió todavía". Ausencia de dato no es
+      -- evidencia de ausencia.
+      --
+      -- PARA REPONERLO HAY QUE MEDIR PRIMERO:
+      --   pnpm --filter @tutor-ia/eval buscar-componentes --aplicar
+      -- y recién con componentes_cobertura lleno decidir. Mientras tanto, un
+      -- título repetido es un costo menor que quitarle al alumno la única puerta
+      -- que tiene al material de sus otros libros.
     order by
       case cm.verificado when 'no_esta' then 0 when 'otro_año' then 1 else 2 end,
       cm.item`;
@@ -458,4 +504,93 @@ function claveParada(subjectId: string, item: string): string {
   let h = 0;
   for (let i = 0; i < base.length; i++) h = (Math.imul(31, h) + base.charCodeAt(i)) | 0;
   return `p${(h >>> 0).toString(36)}`;
+}
+
+/** Un fragmento de material para una parada del PROGRAMA, con su tomo a la vista. */
+export interface FragmentoParada {
+  content: string;
+  page: number | null;
+  /** El TÍTULO del documento. Va SIEMPRE, aunque sea el libro propio. */
+  libro: string;
+  /** Qué componente del currículum lo trajo. Para poder declarar la cobertura. */
+  componente: string;
+}
+
+/**
+ * EL MATERIAL DE UNA PARADA DEL PROGRAMA, juntado de todos los libros del alumno.
+ *
+ * ── Por qué esta función existe aparte de `fetchLessonMaterial` ─────────────
+ * Una lección normal es UN rango de páginas de UN tomo, y con eso alcanza. Una
+ * parada del programa es un conocimiento del currículum que el libro de la
+ * materia NO cubre entero: sus componentes están repartidos entre el libro
+ * propio y otros libros del alumno (medido: de 43 paradas, 21 tienen TODO su
+ * material y 18 la mayor parte). Traerlo es juntar N pedacitos de N tomos.
+ *
+ * ⚠️ CADA FRAGMENTO SE LLEVA SU TOMO, y no es un adorno: cada libro empieza en
+ * su página 1, así que una cita "pág. 181" sin decir de cuál manda a leer
+ * cualquier cosa. Es el mismo error que produjo los 158 pilares falsos (§8.5) y
+ * el puntero de §9.4 —"Física 1º Medio p.17" que era la p.17 de un módulo EPJA
+ * colgado de esa materia—. Acá el riesgo es mayor porque el material viene de
+ * varios tomos SIEMPRE, no por accidente.
+ *
+ * El destino de cada componente ya está resuelto y guardado por
+ * `buscar-componentes`; esto NO vuelve a buscar. Si un componente no tiene
+ * material, no aparece: el que llama sabe qué falta mirando `componentes_cobertura`.
+ */
+export async function materialDeParada(
+  subjectId: string,
+  item: string,
+  opts: { radioPaginas?: number; topePorComponente?: number } = {},
+): Promise<FragmentoParada[]> {
+  const sql = getSql();
+  // ±2 páginas: el destino guardado es UNA página (donde el lector encontró la
+  // evidencia) y una idea rara vez entra entera ahí. Más ancho empieza a traer
+  // la lección de al lado, que es de otro tema.
+  const radio = opts.radioPaginas ?? 2;
+  const tope = opts.topePorComponente ?? 6;
+
+  const [fila] = await sql<{ cobertura: CompCobertura[] | null; doc: string | null }[]>`
+    select cm.componentes_cobertura cobertura, d.title doc
+      from curriculum_map cm
+      left join documents d on d.id = cm.document_id
+     where cm.subject_id = ${subjectId}::uuid
+       and cm.metodo = 'lector-v1'
+       and cm.item = ${item}
+     order by cm.updated_at desc nulls last
+     limit 1`;
+  if (!fila?.cobertura) return [];
+
+  const out: FragmentoParada[] = [];
+  const vistos = new Set<string>();
+
+  for (const comp of fila.cobertura) {
+    // Dónde está: en su propio libro (`ok`, con `pag`) o en otro (`en`).
+    const destino = comp.ok
+      ? { doc: fila.doc, pag: comp.pag }
+      : comp.en
+        ? { doc: comp.en.doc ?? null, pag: comp.en.pag }
+        : null;
+    if (!destino?.doc || destino.pag == null) continue;
+
+    const filas = await sql<{ content: string; page: number | null; title: string }[]>`
+      select ch.content, ch.page, d.title
+        from chunks ch join documents d on d.id = ch.document_id
+       where d.title = ${destino.doc}
+         and ch.corpus_role = 'content'
+         and ch.page between ${destino.pag - radio} and ${destino.pag + radio}
+         and length(ch.content) > 120
+       order by abs(ch.page - ${destino.pag}), ch.page
+       limit ${tope}`;
+
+    for (const f of filas) {
+      // Dedup por (tomo, página, prefijo): dos componentes vecinos apuntan a
+      // páginas solapadas y el mismo chunk entraría dos veces, gastando lugar
+      // en la muestra que `armarApunte` reparte.
+      const clave = `${f.title}|${f.page}|${f.content.slice(0, 60)}`;
+      if (vistos.has(clave)) continue;
+      vistos.add(clave);
+      out.push({ content: f.content, page: f.page, libro: f.title, componente: comp.c });
+    }
+  }
+  return out;
 }

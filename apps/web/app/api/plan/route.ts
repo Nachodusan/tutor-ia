@@ -88,6 +88,32 @@ export async function GET(req: Request) {
    * congelaría en el estado del mapa del día que se armó.
    */
   const programa = await programaPendienteDe(subjectId);
+  /**
+   * Cuáles de esas paradas YA tienen apunte.
+   *
+   * Sin este dato el camino no puede decidir a dónde mandarlas: la que tiene
+   * apunte va a su pantalla y la que no, al tutor. Abrir a ciegas la pantalla de
+   * parada dejaría al alumno frente a un "no hay apunte para esto", que es peor
+   * que el chat — el chat al menos le contesta.
+   */
+  const apuntes = programa.length
+    ? await sql<{ topic_key: string; flojo: boolean }[]>`
+        select topic_key,
+               -- MISMO criterio que apunteFlojo() en apps/web/app/apunte-parada.tsx.
+               -- Va en SQL y no importando aquella (es un modulo "use client")
+               -- para no arrastrar el arbol del cliente al servidor. Si cambia
+               -- el umbral, cambia en los dos lados.
+               -- (sin backticks: adentro de un template literal lo CIERRAN)
+               (gate->>'corrido' = 'true'
+                and (gate->>'puntos')::int > 0
+                and (gate->>'respaldados')::int * 2 < (gate->>'puntos')::int) as flojo
+          from lesson_notes
+         where subject_id = ${subjectId}::uuid
+           and topic_key in ${sql(programa.map((x) => x.key))}`
+    : [];
+  const conApunte = new Set(apuntes.map((r) => r.topic_key));
+  const apunteFlojo = new Set(apuntes.filter((r) => r.flojo).map((r) => r.topic_key));
+
   const unidadPrograma = programa.length
     ? [{
         n: conPilares.length + 1,
@@ -103,7 +129,8 @@ export async function GET(req: Request) {
           key: x.key, title: x.item.replace(/\.$/, ""),
           p0: null, p1: null, unit: null, lesson: null, pilares: [],
           estado: x.estado, enHermana: x.enHermana, repartido: x.repartido,
-          faltan: x.faltan,
+          faltan: x.faltan, tieneApunte: conApunte.has(x.key),
+          apunteFlojo: apunteFlojo.has(x.key),
         })),
       }]
     : [];

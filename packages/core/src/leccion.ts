@@ -53,6 +53,17 @@ export interface Oracion {
   i: number;
   texto: string;
   pagina: number | null;
+  /**
+   * De qué TOMO salió, cuando no es el libro de la parada.
+   *
+   * Opcional porque en una lección normal todas las oraciones vienen del mismo
+   * documento y repetir el título en cada una sería ruido. Se llena en las
+   * paradas del PROGRAMA, que juntan material de varios libros del alumno: ahí
+   * "pág. 181" a secas manda al libro equivocado, y ése es exactamente el bug
+   * que produjo los 158 pilares falsos (§8.5) y el puntero de §9.4 — cada tomo
+   * empieza en su página 1.
+   */
+  libro?: string | null;
 }
 
 /** Una afirmación de la glosa con las oraciones que la respaldan. */
@@ -331,7 +342,9 @@ function esBasura(s: string): boolean {
  * y el recuadro "En tu libro" mostraría otra oración.
  */
 export function partirEnOraciones(
-  fragmentos: { content: string; page: number | null }[],
+  // `libro` es opcional: una lección normal viene de un solo tomo y no lo
+  // necesita. Las paradas del programa juntan varios y ahí sí (ver Oracion.libro).
+  fragmentos: { content: string; page: number | null; libro?: string | null }[],
 ): Oracion[] {
   const out: Oracion[] = [];
   for (const f of fragmentos) {
@@ -341,7 +354,7 @@ export function partirEnOraciones(
       for (const sub of despegarTitulos(pieza)) {
         const t = podarCola(podarGlosario(sub.replace(FILA_DE_TABLA, "").trim()));
         if (!t || esBasura(t)) continue;
-        out.push({ i: out.length, texto: t, pagina: f.page });
+        out.push({ i: out.length, texto: t, pagina: f.page, libro: f.libro ?? null });
       }
     }
   }

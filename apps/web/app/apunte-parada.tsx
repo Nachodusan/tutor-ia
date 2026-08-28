@@ -28,7 +28,7 @@
  * las que dijo salir. No es la garantía determinística del pasaje literal, y no
  * se presenta como si lo fuera.
  */
-import { C, FONT } from "./ui";
+import { C, FONT, IconAlert } from "./ui";
 
 /**
  * EL PAPEL DEL APUNTE.
@@ -64,21 +64,79 @@ function Seccion({ titulo, nota, children }: { titulo: string; nota?: string; ch
   );
 }
 
+/**
+ * El nombre del tomo para una cita, sin el sufijo genérico.
+ * Espeja `tomoCorto` de `packages/core/src/apunte.ts` — si cambia allá, acá también.
+ *
+ * ⚠️ Se saca SOLO el sufijo genérico: los módulos EPJA se distinguen por lo que
+ * viene DESPUÉS del guión ("— Módulo 4: Recepción y flujo…"), así que cortar ahí
+ * dejaría dos tomos distintos con el mismo nombre.
+ */
+const tomoCorto = (t: string) =>
+  t.replace(/\s*[—-]\s*(texto del estudiante|texto estudiante|libro del estudiante)\s*$/i, "").trim();
+
+/**
+ * La cita de un punto: la página, y el TOMO cuando el apunte mezcla varios.
+ *
+ * En una parada del PROGRAMA el material viene de dos o tres libros del alumno y
+ * sus páginas se pisan —cada tomo empieza en su página 1—, así que "pág. 193"
+ * sin decir de cuál manda a abrir el libro equivocado. En una lección normal
+ * `libro` viene vacío y la cita queda igual que siempre.
+ */
+const cita = (pagina: number | null, libro?: string | null): string =>
+  pagina == null ? "" : libro ? `  (${tomoCorto(libro)}, pág. ${pagina})` : `  (pág. ${pagina})`;
+
+/**
+ * ¿Este apunte se sostiene poco contra el libro?
+ *
+ * El gate de NLI ELIMINA los puntos que su fuente contradice, así que lo que
+ * queda nunca es falso-según-el-libro. Pero "neutral" significa que la fuente no
+ * dice ni una cosa ni la otra, y eso NO es respaldo: medido sobre las paradas
+ * del programa, 42 de 160 puntos (26%) quedaron neutrales, concentrados en
+ * Matemática y Física, que es donde el corpus está peor (las fórmulas vivían en
+ * la maquetación y el extractor las aplanó).
+ *
+ * Y hay un caso leído a mano que muestra por qué el aviso hace falta: en
+ * "Medidas de tendencia central" un punto afirma que la mediana es la única
+ * medida que sirve para datos cualitativos —falso, es la moda— y el punto
+ * siguiente del MISMO apunte dice lo contrario. El gate no lo vio porque la
+ * fuente no habla del tema.
+ *
+ * El corte en la MITAD y no en un porcentaje fino: no hay nada medido que
+ * justifique 60% ni 70%, y un umbral inventado con precisión falsa es peor que
+ * uno redondo y declarado.
+ *
+ * ⚠️ Un gate que NO corrió (el sidecar estaba caído) no es "flojo": es
+ * desconocido. Avisar ahí diría algo falso sobre el apunte.
+ */
+export function apunteFlojo(gate: Apunte["gate"]): boolean {
+  return !!gate?.corrido && gate.puntos > 0 && gate.respaldados * 2 < gate.puntos;
+}
+
 /** El apunte en texto plano, para bajarlo. Espeja `apunteATexto` del servidor. */
 function aTexto(a: Apunte, titulo: string, materia: string, paginas: string, numero?: string): string {
   const enc = numero ? `${numero}. ${titulo}` : titulo;
   const L: string[] = [enc.toUpperCase(), `${materia}${paginas ? ` · ${paginas}` : ""}`, "=".repeat(50), ""];
+  // El aviso viaja EN EL ARCHIVO. El apunte se estudia fuera de la app —en la
+  // micro, sin señal—, así que dejar la advertencia solo en la pantalla es
+  // dejarla justo donde el alumno no la va a tener cuando la necesita.
+  if (apunteFlojo(a.gate)) {
+    L.push(
+      `!! CHEQUEALO CON EL LIBRO: de los ${a.gate!.puntos} puntos de este apunte`,
+      `   pudimos confirmar ${a.gate!.respaldados} contra las páginas que cita.`,
+      "", "");
+  }
   if (a.idea) L.push("LA IDEA PRINCIPAL", a.idea, "");
   if (a.puntos.length) {
     L.push("PARA ENTENDER");
     a.puntos.forEach((p, i) => {
       const n = numero ? `${numero}.${i + 1}` : String(i + 1);
-      L.push(`${n}  ${p.titulo}${p.pagina != null ? `  (pág. ${p.pagina})` : ""}`, `   ${p.texto}`, "");
+      L.push(`${n}  ${p.titulo}${cita(p.pagina, p.libro)}`, `   ${p.texto}`, "");
     });
   }
   if (a.palabras.length) {
     L.push("PALABRAS QUE HAY QUE SABER");
-    a.palabras.forEach((w) => L.push(`· ${w.palabra}: ${w.definicion}${w.pagina != null ? ` (pág. ${w.pagina})` : ""}`));
+    a.palabras.forEach((w) => L.push(`· ${w.palabra}: ${w.definicion}${cita(w.pagina, w.libro)}`));
     L.push("");
   }
   if (a.comoAcordarse) L.push("CÓMO ACORDARSE  (no está en el libro)", a.comoAcordarse, "");
@@ -106,6 +164,7 @@ export function ApunteParada({ apunte, titulo, materia, paginas, numero }: { apu
    * que tenían las monedas del camino, una pantalla más adentro.
    */
   const numeroPunto = (i: number) => (numero ? `${numero}.${i + 1}` : String(i + 1));
+  const flojo = apunteFlojo(apunte.gate);
   /**
    * BAJARLO COMO ARCHIVO. El apunte se estudia fuera de la app —en el colectivo,
    * en el trabajo, con el teléfono en modo avión— y ahí no hay app que valga.
@@ -153,6 +212,24 @@ export function ApunteParada({ apunte, titulo, materia, paginas, numero }: { apu
           Apunte para estudiar
         </div>
 
+        {flojo && (
+          /* El aviso va ARRIBA DE TODO y no al pie: si aparece después de que el
+             alumno leyó el apunte entero, llega tarde — ya lo estudió. */
+          <div style={{
+            marginTop: 10, padding: "10px 12px", borderRadius: 10,
+            background: C.warnBg, border: `1.5px solid ${C.sun}`,
+            display: "flex", gap: 9, alignItems: "flex-start",
+          }}>
+            <span aria-hidden style={{ color: C.warn, flexShrink: 0, marginTop: 1 }}><IconAlert size={16} /></span>
+            <span style={{ fontSize: 13, lineHeight: 1.5, color: C.warnTx }}>
+              <b style={{ fontFamily: FONT.round }}>Chequealo con el libro.</b>{" "}
+              De los {apunte.gate!.puntos} puntos de este apunte pudimos confirmar{" "}
+              {apunte.gate!.respaldados} contra las páginas que cita. Los otros pueden estar
+              bien igual, pero acá conviene ir a mirarlas.
+            </span>
+          </div>
+        )}
+
         {apunte.idea && (
           <div style={{ marginTop: 9, fontFamily: FONT.round, fontWeight: 700, fontSize: 16.5, lineHeight: 1.4 }}>
             {apunte.idea}
@@ -177,7 +254,7 @@ export function ApunteParada({ apunte, titulo, materia, paginas, numero }: { apu
                           mostrar, así que lo que le permite al alumno verificar
                           —y volver al libro cuando algo no le cierra— es esto. */}
                       {p.pagina != null && (
-                        <span style={{ fontFamily: FONT.mono, fontWeight: 400, fontSize: 11, color: C.dim, marginLeft: 7 }}>pág. {p.pagina}</span>
+                        <span style={{ fontFamily: FONT.mono, fontWeight: 400, fontSize: 11, color: C.dim, marginLeft: 7 }}>{p.libro ? `${tomoCorto(p.libro)}, pág. ${p.pagina}` : `pág. ${p.pagina}`}</span>
                       )}
                     </span>
                     <span style={{ display: "block", fontSize: 14, lineHeight: 1.55, marginTop: 2 }}>{p.texto}</span>
@@ -194,7 +271,7 @@ export function ApunteParada({ apunte, titulo, materia, paginas, numero }: { apu
               {apunte.palabras.map((w, i) => (
                 <div key={i} style={{ fontSize: 13.5, lineHeight: 1.5, marginTop: i === 0 ? 0 : 6 }}>
                   <b>{w.palabra}</b> <span style={{ color: C.dim }}>— {w.definicion}</span>
-                  {w.pagina != null && <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim }}> (p.{w.pagina})</span>}
+                  {w.pagina != null && <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim }}> ({w.libro ? `${tomoCorto(w.libro)} ` : ""}p.{w.pagina})</span>}
                 </div>
               ))}
             </div>
