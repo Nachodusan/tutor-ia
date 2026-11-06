@@ -65,7 +65,8 @@
     "generacion-canonica": "tsx --env-file-if-exists=../../.env src/generacion-canonica.ts",
     "apuntes-programa": "tsx --env-file-if-exists=../../.env src/apuntes-programa.ts",
     "latencia": "tsx --env-file-if-exists=../../.env src/latencia-chat.ts",
-    "prueba-diag": "tsx --env-file-if-exists=../../.env src/prueba-diag.ts"
+    "prueba-diag": "tsx --env-file-if-exists=../../.env src/prueba-diag.ts",
+    "golden-texto": "tsx --env-file-if-exists=../../.env src/golden-texto.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",

@@ -1,0 +1,19 @@
+#!/bin/sh
+# Rechaza el commit si un golden volvió a tener texto de los libros adentro.
+#
+# Pasa de una forma muy concreta: corrés `golden-texto --rehidratar` para
+# trabajar local, el texto vuelve a los archivos, y después commiteás sin
+# acordarte de pelarlos. Sin este guardián eso devuelve 1,7 MB de los textos
+# del Mineduc al repo, y en un repo público eso no se puede deshacer.
+#
+# Instalar (una vez):  git config core.hooksPath .githooks
+# Saltear a propósito: git commit --no-verify
+pnpm --filter @tutor-ia/eval golden-texto --verificar >/dev/null 2>&1 && exit 0
+
+echo ""
+echo "  ✗ Hay texto de los libros en los golden y este repo es público."
+echo ""
+echo "    pnpm --filter @tutor-ia/eval golden-texto --pelar"
+echo ""
+echo "  Para ver qué archivo:  pnpm --filter @tutor-ia/eval golden-texto --verificar"
+exit 1

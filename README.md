@@ -108,3 +108,26 @@ pnpm dev
 scope. El script se borró junto con el proveedor local que medía; la conclusión queda.
 
 Anti-alucinaciones: [docs/anti-alucinaciones.md](docs/anti-alucinaciones.md) · Estado detallado: `HANDOFF.md`
+
+## Licencia y material de terceros
+
+El **código** va con [licencia MIT](LICENSE).
+
+Los **textos escolares** sobre los que trabaja el sistema son del Ministerio de
+Educación de Chile y de sus editoriales: **no están en este repositorio** y no
+se distribuyen con él. El corpus vive fuera de git y los fixtures de evaluación
+guardan solo el ancla de cada fragmento —documento, página y un hash— nunca el
+texto. Para correr el proyecto hay que conseguir el material por cuenta propia.
+
+Si trabajás con el corpus cargado y necesitás los fixtures completos:
+
+```bash
+pnpm --filter @tutor-ia/eval golden-texto --rehidratar   # trae el texto desde tu base
+pnpm --filter @tutor-ia/eval golden-texto --pelar        # lo saca antes de commitear
+```
+
+Para que lo rehidratado no vuelva al repo por descuido, instalá el guardián una vez:
+
+```bash
+git config core.hooksPath .githooks
+```
