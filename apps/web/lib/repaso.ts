@@ -55,6 +55,19 @@ async function candidatos(userId: string): Promise<Candidato[]> {
     from student_weak_topics w
     join subjects s on s.id = w.subject_id and s.disabled_at is null
     where w.user_id = ${userId}::uuid
+      -- SOLO DE SU CURSO. Un alumno cursa UN año, y mandarlo a reforzar temas
+      -- de otro es mandarlo a estudiar de un libro que no es suyo. Medido el
+      -- 2026-08-29 sobre el usuario de demo: 229 temas fallados, los 229 de 1º
+      -- Medio, con el alumno en 4º — o sea que la pantalla de Reforzar estaba
+      -- hecha ENTERA de material ajeno. El curso de una materia sale de sus
+      -- documentos, igual que en /api/resumen: la tabla subjects no lo guarda.
+      and exists (
+        select 1
+        from documents d, student_profiles sp
+        where d.subject_id = w.subject_id
+          and sp.user_id = w.user_id
+          and d.grade = sp.grade
+      )
       and exists (
         select 1
         from subject_plans p,
@@ -166,8 +179,20 @@ export async function repasoDeHoy(userId: string): Promise<{ temas: TemaDelDia[]
     filas = await leer();
   }
 
+  // El total que se muestra en la chapita: MISMO recorte que los candidatos.
+  // Sin el filtro de curso decía 229 mientras la lista de abajo mostraba 3, y
+  // los 229 eran de otro año.
   const [{ n }] = await sql<{ n: string }[]>`
-    select count(*)::text as n from student_weak_topics where user_id = ${userId}::uuid`;
+    select count(*)::text as n
+    from student_weak_topics w
+    where w.user_id = ${userId}::uuid
+      and exists (
+        select 1
+        from documents d, student_profiles sp
+        where d.subject_id = w.subject_id
+          and sp.user_id = w.user_id
+          and d.grade = sp.grade
+      )`;
 
   return {
     temas: filas.map((f) => ({

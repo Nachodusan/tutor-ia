@@ -12,10 +12,11 @@
  *    manda sola al abrir: el alumno ya dijo lo que quería al tocar el botón, y
  *    hacerlo escribirlo de nuevo sería cobrarle dos veces.
  */
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Bubble, VozLuces, estadoVoz } from "../../../chat-ui";
-import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, IconCalculadora, subjectLabel, HARD, IconArrow, ANCHO } from "../../../ui";
+import { C, CTA, FONT, FLOAT, SOFT, Dots, IconSend, IconWave, IconVolume, IconVolumeOff, IconCalculadora, subjectLabel, HARD, IconArrow, ANCHO, IconHistorial } from "../../../ui";
+import { HistorialChats, useHistorial, HISTORIAL_CSS } from "../../../historial-chats";
 import { TecladoMate, esMatematica } from "../../../teclado-mate";
 import { esEjercicio } from "@tutor-ia/core/mate";
 import { TarjetaEjercicioView, type Tarjeta } from "../../../tarjeta-ejercicio";
@@ -75,6 +76,57 @@ export default function ChatPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const arrancado = useRef(false);
 
+  // ── EL HISTORIAL ─────────────────────────────────────────────────────────
+  /**
+   * `sessionRef` es un ref porque lo lee `send()` en medio del stream, donde un
+   * estado llegaría viejo. Pero la lista necesita SABER cuál está abierta para
+   * marcarla, y eso sí es estado. Los dos se mueven juntos por `fijarSesion`:
+   * separarlos fue lo primero que se rompió (la fila marcada se quedaba en la
+   * charla anterior mientras el chat ya estaba en otra).
+   */
+  const [sesionActiva, setSesionActiva] = useState<string | null>(null);
+  const [historialAbierto, setHistorialAbierto] = useState(false);
+  const [cargandoCharla, setCargandoCharla] = useState(false);
+  const historial = useHistorial(subject?.id ?? (typeof id === "string" ? id : undefined));
+
+  const fijarSesion = useCallback((sid: string | null) => {
+    sessionRef.current = sid;
+    setSesionActiva(sid);
+  }, []);
+
+  /** Abre una charla guardada. Los mensajes vienen de la base, no de memoria:
+   *  el alumno puede volver semanas después y desde otro aparato. */
+  const abrirCharla = useCallback(async (cid: string) => {
+    if (cid === sessionRef.current) return;
+    setCargandoCharla(true);
+    try {
+      const r = await fetch(`/api/conversations?id=${cid}`);
+      if (!r.ok) return;
+      const j = (await r.json()) as { messages: { role: string; content: string; citations: unknown; grounded: boolean | null; verification: unknown }[] };
+      setMessages(j.messages.map((m) => ({
+        role: m.role === "user" ? "user" : "assistant",
+        content: m.content,
+        citations: (m.citations as Msg["citations"]) ?? [],
+        grounded: m.grounded ?? undefined,
+        verification: (m.verification as Msg["verification"]) ?? null,
+      })));
+      fijarSesion(cid);
+      // La cola de repaso pertenece a la charla que la abrió: arrastrarla a otra
+      // haría aparecer "Seguir con el siguiente" en una conversación ajena.
+      setRepaso([]); setPaso(0);
+    } catch { /* si falla, el chat se queda donde estaba */ }
+    finally { setCargandoCharla(false); }
+  }, [fijarSesion]);
+
+  /** Empezar de cero. Es lo que faltaba para que no se amontone todo en una. */
+  const nuevaCharla = useCallback(() => {
+    setMessages([]);
+    fijarSesion(null);
+    setRepaso([]); setPaso(0);
+    setQuestion("");
+    inputRef.current?.focus();
+  }, [fijarSesion]);
+
   // ── VOZ ──────────────────────────────────────────────────────────────────
   // Se quedó afuera cuando el chat pasó a ser una ruta propia: son ~150 líneas
   // de MediaRecorder y AudioContext y moverlas de arrastre en un refactor de
@@ -131,6 +183,18 @@ export default function ChatPage() {
   }, [callState]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  /**
+   * La lista se recarga cuando el tutor TERMINÓ de responder, no cuando empieza.
+   * El contador de mensajes y la fecha salen de filas que `/api/chat` escribe
+   * al cerrar el stream: pedirla antes devuelve la charla con un mensaje menos,
+   * y la fila queda mintiendo hasta la próxima recarga.
+   */
+  const recargarHistorial = historial.recargar;
+  useEffect(() => {
+    if (loading || !sesionActiva) return;
+    void recargarHistorial();
+  }, [loading, sesionActiva, recargarHistorial]);
   // También con `parcial`: si no, lo que el chico está diciendo aparece debajo
   // del borde y hay que arrastrar para verlo.
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages, parcial]);
@@ -249,7 +313,10 @@ export default function ChatPage() {
           if (nl !== -1) {
             try {
               const meta = JSON.parse(buffer.slice(1, nl));
-              if (meta.sessionId) sessionRef.current = meta.sessionId;
+              // El servidor devuelve el id de la sesión que abrió. Se fija por
+              // `fijarSesion` para que la fila del historial se marque sola en
+              // el primer mensaje de una charla nueva.
+              if (meta.sessionId) fijarSesion(meta.sessionId);
               patch({ citations: meta.citations ?? [], grounded: meta.grounded !== false, mode: meta.mode, scope: meta.scope });
             } catch { /* */ }
             buffer = buffer.slice(nl + 1); citationsParsed = true;
@@ -482,7 +549,31 @@ export default function ChatPage() {
   }
 
   return (
-    <div style={{ position: "relative", display: "flex", flexDirection: "column", height: "100%" }}>
+    /* LA FILA: el historial al costado y la conversación al lado.
+       Arriba de 1024 la columna se ve siempre; abajo la esconde la hoja y queda
+       el cajón, que se abre con el botón de la barra de arriba. */
+    <div style={{ display: "flex", height: "100%", minHeight: 0 }}>
+      <style>{HISTORIAL_CSS}</style>
+
+      <HistorialChats
+        charlas={historial.charlas}
+        cargando={historial.cargando}
+        activa={sesionActiva}
+        abierto={historialAbierto}
+        onCerrar={() => setHistorialAbierto(false)}
+        onAbrir={(cid) => void abrirCharla(cid)}
+        onNueva={nuevaCharla}
+        onRenombrar={historial.renombrar}
+        onBorrar={(cid) => {
+          // Si borrás la que estás leyendo, la pantalla tiene que quedar en un
+          // estado válido: sin esto el chat seguía mostrando los mensajes de una
+          // charla que ya no existe y el próximo turno abría una sesión huérfana.
+          if (cid === sessionRef.current) nuevaCharla();
+          void historial.borrar(cid);
+        }}
+      />
+
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", height: "100%", flex: 1, minWidth: 0 }}>
       {/* Leer en voz alta lo que el tutor responde, sin entrar en conversación:
           sirve para el que quiere escuchar mientras lee. También flota: es un
           control de la pantalla, no parte de la conversación. */}
@@ -508,7 +599,16 @@ export default function ChatPage() {
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "flex-end", padding: "10px 16px 0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "10px 16px 0" }}>
+        {/* La puerta al historial en pantalla angosta. Arriba de 1024 la
+            esconde la hoja, porque ahí la columna ya está a la vista y un botón
+            que abre lo que ya se ve es ruido. */}
+        <button className="hc-abrir" onClick={() => setHistorialAbierto(true)}
+          aria-label="Ver tus conversaciones" title="Tus conversaciones"
+          style={{ alignItems: "center", gap: 6, background: C.panel, color: C.dim, border: `1px solid ${C.border}`, borderRadius: 999, padding: "7px 13px", fontSize: 12, fontFamily: FONT.round, fontWeight: 600, cursor: "pointer", boxShadow: SOFT, flexShrink: 0 }}>
+          <IconHistorial size={14} /> Conversaciones
+        </button>
+        <span style={{ flex: 1 }} />
         <button onClick={() => setTtsOn((v) => !v)} title={ttsOn ? "Dejar de leer en voz alta" : "Leer las respuestas en voz alta"}
           aria-label={ttsOn ? "Dejar de leer en voz alta" : "Leer las respuestas en voz alta"}
           style={{ display: "inline-flex", alignItems: "center", gap: 6, background: ttsOn ? C.userBubble : C.panel, color: ttsOn ? C.accentSoft : C.dim, border: `1px solid ${ttsOn ? C.accentSoft : C.border}`, borderRadius: 999, padding: "7px 13px", fontSize: 12, fontFamily: FONT.round, fontWeight: 600, cursor: "pointer", boxShadow: SOFT }}>
@@ -522,8 +622,14 @@ export default function ChatPage() {
         <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
           {messages.length === 0 && (
             <div style={{ textAlign: "center", color: C.dim, padding: "36px 12px", fontSize: 14.5, lineHeight: 1.6 }}>
-              Preguntale lo que quieras sobre {subject ? subjectLabel(subject) : "la materia"}.<br />
-              Si algo no está en tu libro, te lo avisa.
+              {cargandoCharla ? (
+                "Abriendo la conversación…"
+              ) : (
+                <>
+                  Preguntale lo que quieras sobre {subject ? subjectLabel(subject) : "la materia"}.<br />
+                  Si algo no está en tu libro, te lo avisa.
+                </>
+              )}
             </div>
           )}
           {messages.map((m, i) =>
@@ -681,6 +787,7 @@ export default function ChatPage() {
               era apretar la barra contra el borde — en pantalla angosta se
               partía en dos líneas. */}
         </div>
+      </div>
       </div>
     </div>
   );

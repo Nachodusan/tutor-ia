@@ -27,12 +27,25 @@ export const runtime = "nodejs";
  * materia— está sin resolver y se decide aparte; cuando llegue, se cambia acá y
  * la pantalla no se entera.
  */
+/** Un paso del plan, en orden, con si el alumno ya lo hizo. */
+export interface ResumenPaso {
+  key: string;
+  /** El número que el alumno ve en el camino. */
+  n: number;
+  title: string;
+  done: boolean;
+  /** Cuándo lo terminó (ISO), si lo terminó. */
+  doneAt: string | null;
+}
+
 export interface ResumenMateria {
   id: string;
   name: string;
   grade: string | null;
   planDone: number;
   planTotal: number;
+  /** Los pasos EN ORDEN. Es lo que dibuja la pista de avance. */
+  pasos: ResumenPaso[];
   /** Temas con chequeo aprobado y sin refuerzo pendiente. */
   fuertes: { topicKey: string; topic: string; score: number; total: number }[];
   /** Cuántos temas tiene para reforzar (el detalle vive en /reforzar). */
@@ -44,6 +57,11 @@ export interface ResumenResponse {
   /** Lo hecho, en números. Todos salen de filas que ya existen. */
   hechas: { lecciones: number; chequeos: number; pruebas: number };
   materias: ResumenMateria[];
+  /**
+   * Avance guardado que el plan de hoy YA NO RECONOCE. Ver el comentario de
+   * `hechos` abajo: no se cuenta como avance, pero tampoco se esconde.
+   */
+  huerfanos: number;
 }
 
 export async function GET(req: Request) {
@@ -52,7 +70,7 @@ export async function GET(req: Request) {
   const sql = getSql();
   const uid = auth.userId;
 
-  const [materias, hechos, intentos, debiles, examenes, rendidas, secciones, cacheados] = await Promise.all([
+  const [materias, hechos, intentos, debiles, examenes, rendidas, secciones, cacheados, pasos, huerfanos] = await Promise.all([
     // Las materias VISIBLES para este alumno, con su curso. Mismo criterio que
     // /api/subjects: el currículo es global (user_id null) y las apagadas no van.
     sql<{ id: string; name: string; grade: string | null }[]>`
@@ -62,9 +80,36 @@ export async function GET(req: Request) {
       where (s.user_id is null or s.user_id = ${uid}::uuid)
         and s.disabled_at is null
       group by s.id, s.name`,
+    /**
+     * ⚠️ EL AVANCE SE CUENTA CONTRA EL PLAN VIGENTE, NO CONTANDO FILAS.
+     *
+     * Antes era `count(*) from student_plan_progress`, y eso hacía que esta
+     * pantalla y el camino dijeran cosas distintas de la misma materia: el
+     * camino "0 de 12" y el resumen "5 de 11 · 45%". El camino tiene razón —
+     * marca hecho lo que encuentra por `topic_key` en el plan de hoy— y acá se
+     * contaban filas que ese plan ya no conoce.
+     *
+     * POR QUÉ PASA: `claveTema(document_id, ord, title)` depende del `ord`, y
+     * reconstruir `book_sections` lo reasigna. Medido el 2026-08-29: el avance
+     * se marcó entre el 5 y el 16 de agosto, las secciones se reconstruyeron
+     * entre el 23 y el 26, y quedaron huérfanas las 99 filas — el 100%. No se
+     * pudo recuperar: 89 conservan su título en `lesson_notes` pero ninguna
+     * coincide con un título del plan (los escribe el modelo, no el índice).
+     *
+     * El arreglo de raíz es que la clave sobreviva al rebuild, y es de otra
+     * sesión. Esto es lo que corresponde igual: una pantalla no puede reportar
+     * como avance algo que el alumno no puede ver en ningún lado.
+     */
     sql<{ subject_id: string; n: number }[]>`
-      select subject_id, count(*)::int as n from student_plan_progress
-      where user_id = ${uid}::uuid group by subject_id`,
+      select spp.subject_id, count(*)::int as n
+      from student_plan_progress spp
+      join subject_plans sp on sp.subject_id = spp.subject_id
+      where spp.user_id = ${uid}::uuid
+        and exists (
+          select 1 from jsonb_array_elements(sp.items) i
+          where i->>'key' = spp.topic_key
+        )
+      group by spp.subject_id`,
     // El ÚLTIMO intento de cada chequeo, con su título legible. El título vive
     // en `lesson_quizzes` y no en el intento: si el quiz se regenera, el nombre
     // sigue siendo el de la lección.
@@ -92,6 +137,36 @@ export async function GET(req: Request) {
     planSizes(),
     sql<{ subject_id: string; n: string }[]>`
       select subject_id, jsonb_array_length(items)::text as n from subject_plans`,
+    /**
+     * LOS PASOS DEL PLAN, EN ORDEN, con la fecha en que el alumno los terminó.
+     *
+     * Es lo que dibuja la pista de avance. El orden lo da `ordinality` sobre el
+     * array y NO el campo `n` del ítem: `n` es el número que el alumno ve, pero
+     * sale del índice del libro y puede repetirse o saltar. Para pintar la
+     * pista lo que importa es la SECUENCIA, y esa es la del array.
+     */
+    sql<{ subject_id: string; key: string; n: number; title: string; done_at: Date | null }[]>`
+      select sp.subject_id,
+             i.item->>'key'                        as key,
+             i.ord::int                            as n,
+             coalesce(i.item->>'title', 'Sin título') as title,
+             spp.done_at
+      from subject_plans sp
+      cross join lateral jsonb_array_elements(sp.items) with ordinality as i(item, ord)
+      left join student_plan_progress spp
+        on spp.user_id = ${uid}::uuid
+       and spp.subject_id = sp.subject_id
+       and spp.topic_key = i.item->>'key'
+      order by sp.subject_id, i.ord`,
+    /** El avance que el plan de hoy ya no reconoce. Se informa, no se suma. */
+    sql<{ n: string }[]>`
+      select count(*)::text as n
+      from student_plan_progress spp
+      where spp.user_id = ${uid}::uuid
+        and not exists (
+          select 1 from subject_plans sp, jsonb_array_elements(sp.items) i
+          where sp.subject_id = spp.subject_id and i->>'key' = spp.topic_key
+        )`,
   ]);
 
   const porMateria = new Map<string, ResumenMateria>();
@@ -99,13 +174,22 @@ export async function GET(req: Request) {
     porMateria.set(m.id, {
       id: m.id, name: m.name, grade: m.grade,
       planDone: 0, planTotal: secciones[m.id] ?? 0,
-      fuertes: [], pendientes: 0, lastScore: null,
+      pasos: [], fuertes: [], pendientes: 0, lastScore: null,
     });
   }
   // La cache del plan manda sobre el estimado del índice: es el plan exacto que
   // vio el alumno. Mismo orden que en /api/progress.
   for (const r of cacheados) { const m = porMateria.get(r.subject_id); if (m) m.planTotal = Number(r.n); }
   for (const r of hechos) { const m = porMateria.get(r.subject_id); if (m) m.planDone = r.n; }
+  for (const p of pasos) {
+    const m = porMateria.get(p.subject_id);
+    if (!m) continue;
+    m.pasos.push({
+      key: p.key, n: p.n, title: p.title,
+      done: p.done_at != null,
+      doneAt: p.done_at ? new Date(p.done_at).toISOString() : null,
+    });
+  }
   for (const r of examenes) {
     const m = porMateria.get(r.subject_id);
     if (m) m.lastScore = { score: Number(r.score), total: r.total };
@@ -136,11 +220,17 @@ export async function GET(req: Request) {
 
   const body: ResumenResponse = {
     hechas: {
+      // El mismo criterio que `planDone`, y por la misma razón: si el número
+      // grande de arriba contara filas sueltas y las filas de abajo contaran
+      // pasos del plan, la pantalla se contradiría consigo misma a dos dedos
+      // de distancia. Es lo que pasaba: decía "9 lecciones terminadas" con
+      // todas las materias en 0.
       lecciones: hechos.reduce((n, r) => n + r.n, 0),
       chequeos: intentos.length,
       pruebas: Number(rendidas[0]?.n ?? 0),
     },
     materias: [...porMateria.values()],
+    huerfanos: Number(huerfanos[0]?.n ?? 0),
   };
   return Response.json(body);
 }

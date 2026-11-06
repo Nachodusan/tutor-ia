@@ -156,9 +156,88 @@ export async function POST(req: Request) {
   if (generadas.length === 0) {
     const primera = tandas.find((t) => t.status === "rejected") as PromiseRejectedResult | undefined;
     const razon = primera?.reason;
+    // ── RESCATE: servir una prueba YA ARMADA de esta materia ────────────────
+    //
+    // Si el modelo no puede generar, una prueba real que ya existe es
+    // infinitamente mejor que un 503. El material es el mismo libro y las
+    // preguntas ya pasaron el verificador de clave el día que se armaron.
+    //
+    // SE CLONA, no se reusa la fila: `/api/test/submit` corrige con
+    // `where user_id = …`, así que servir la prueba de otro alumno daría 404 al
+    // entregar. La copia queda a nombre de quien la rinde y todo lo demás
+    // funciona igual.
+    //
+    // ⚠️ Se avisa que es reutilizada (`reutilizada: true`). Una prueba vieja
+    // servida como nueva es una mentira chica que se paga cara: el alumno que
+    // reconoce las preguntas deja de creerle a la nota.
+    // ⚠️ SE ELIGE LA MÁS COMPLETA Y, A IGUALDAD, LA MÁS VIEJA — no la más
+    // reciente, que era lo primero que escribí y estaba mal.
+    //
+    // Cada rescate INSERTA una fila (hace falta: `submit` corrige con
+    // `where user_id`, así que cada alumno necesita la suya). Con `order by
+    // created_at desc`, a partir del segundo rescate la "previa" que encontraba
+    // era su propio clon del rato anterior: medido, 6 clones encadenados en una
+    // tarde. Las preguntas son las mismas —clonar un clon no las cambia— pero
+    // el origen se iba desplazando y la fecha que se mostraba dejaba de
+    // significar algo.
+    //
+    // Con este orden la fuente es SIEMPRE la misma fila mientras exista, y de
+    // paso se sirve la prueba más larga que haya en vez de una de cuatro
+    // preguntas que casualmente sea la última.
+    const [previa] = await sql<{ questions: ItemPersistido[]; title: string; created_at: Date }[]>`
+      select questions, title, created_at from exams
+      where subject_id = ${subjectId}::uuid
+        and jsonb_array_length(questions) >= 4
+      order by jsonb_array_length(questions) desc, created_at asc
+      limit 1`;
+
+    if (previa) {
+      const [copia] = await sql<{ id: string }[]>`
+        insert into exams (user_id, subject_id, title, questions)
+        values (${auth.userId}::uuid, ${subjectId}::uuid, ${previa.title},
+                ${toJson(sql, previa.questions)}::jsonb)
+        returning id`;
+      console.warn(
+        `[test] generación caída — se sirve una prueba previa de ${subjectId} ` +
+        `(${previa.questions.length} preguntas, del ${new Date(previa.created_at).toISOString().slice(0, 10)})`,
+      );
+      return Response.json({
+        testId: copia!.id,
+        title: previa.title,
+        reutilizada: true,
+        armadaEl: new Date(previa.created_at).toISOString(),
+        // EXACTAMENTE el mismo destructuring que el return normal, no una lista
+        // de campos a mano: con una lista, el día que se agregue un campo al
+        // item esta rama lo pierde en silencio y solo falla la prueba
+        // reutilizada, que es el caso que nadie prueba.
+        items: previa.questions.map(({ correct: _c, explain: _e, referencia: _r, ...rest }) => rest),
+      });
+    }
+
     if (razon instanceof SinPreguntas) {
       // Antes esto devolvía `items: []` con 200: una prueba vacía sin error, que
       // la UI mostraba como "no hay preguntas". Un fallo del modelo es un fallo.
+      //
+      // ⚠️ Y las tres razones dicen cosas DISTINTAS, porque se arreglan distinto:
+      //  · proveedor  → no hay nada que reintentar; el que tiene que hacer algo
+      //                 es el dueño, no el alumno. Decirle "probá de nuevo" lo
+      //                 manda a golpear una puerta cerrada. Pasó el 2026-08-31:
+      //                 un 402 por cuenta sin crédito se mostró como "no pude
+      //                 armar una prueba confiable con este material", que
+      //                 además acusaba al libro.
+      //  · vacio      → el material o el verificador; reintentar puede servir.
+      //  · generacion → el modelo se cayó; reintentar suele servir.
+      if (razon.razon === "proveedor") {
+        console.error(`[test] proveedor rechazó la generación: ${razon.causa}`);
+        return Response.json(
+          {
+            error:
+              "El servicio que arma las pruebas no está disponible en este momento. " +
+              "No es tu material ni tu conexión: avisale a tu profe.",
+          },
+          { status: 503 },
+        );
+      }
       return Response.json(
         {
           error:

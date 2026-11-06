@@ -26,9 +26,11 @@ import { CLASE_HUECO_RELOJ } from "../pomodoro";
 import { cursoBloqueado } from "@/lib/cursos";
 import { useAlumno, cerrarSesion } from "../usar-alumno";
 
+interface ResumenPaso { key: string; n: number; title: string; done: boolean; doneAt: string | null }
 interface ResumenMateria {
   id: string; name: string; grade: string | null;
   planDone: number; planTotal: number;
+  pasos: ResumenPaso[];
   fuertes: { topicKey: string; topic: string; score: number; total: number }[];
   pendientes: number;
   lastScore: { score: number; total: number } | null;
@@ -36,11 +38,12 @@ interface ResumenMateria {
 interface Resumen {
   hechas: { lecciones: number; chequeos: number; pruebas: number };
   materias: ResumenMateria[];
+  huerfanos: number;
 }
 
 export default function ResumenPage() {
   const router = useRouter();
-  const { loaded, profile, subjects, stats, role } = useAlumno();
+  const { loaded, profile, subjects, stats } = useAlumno();
   const [datos, setDatos] = useState<Resumen | null>(null);
 
   useEffect(() => {
@@ -55,19 +58,29 @@ export default function ResumenPage() {
   if (!loaded || !profile) return <Centered><span style={{ color: C.dim }}><Dots /></span></Centered>;
 
   const hechas = datos?.hechas ?? { lecciones: 0, chequeos: 0, pruebas: 0 };
-  // Las de SU curso primero; las de otro curso solo si hizo algo ahí (rindió una
-  // prueba de 1º Medio y esos temas también son suyos).
-  const materias = (datos?.materias ?? []).filter((m) =>
-    m.grade === profile.grade || m.planDone > 0 || m.fuertes.length > 0 || m.pendientes > 0);
-  const delCurso = materias.filter((m) => m.grade === profile.grade);
-  const deOtro = materias.filter((m) => m.grade !== profile.grade);
+  /**
+   * SOLO LAS MATERIAS DE SU CURSO. Un alumno cursa UN año, y punto.
+   *
+   * Acá había una excepción —"las de otro curso también, si hizo algo ahí"— y
+   * producía una sección "De otros cursos" con Física 1º y Biología 1º colgando
+   * de un alumno de 4º Medio. La excepción se apoyaba en un caso que no existe:
+   * el alumno no cursa dos años a la vez, y si tiene trabajo registrado en otro
+   * curso es porque se equivocó de año al arrancar o porque cambió de curso —
+   * dos cosas que se arreglan en el perfil, no mostrándole materias que no son
+   * suyas.
+   *
+   * Es además la regla que ya usan el panel (`panel.tsx:382`) y el perfil
+   * (`perfil/page.tsx:60`), los dos con este mismo `===`. Esta pantalla era la
+   * única que se salía, y por eso el panel decía "5 materias" y el resumen
+   * listaba siete.
+   */
+  const materias = (datos?.materias ?? []).filter((m) => m.grade === profile.grade);
   const fuertes = materias.flatMap((m) => m.fuertes.map((f) => ({ m, f })));
-  const pendientes = contarReforzar(subjects, stats);
+  const pendientes = contarReforzar(subjects, stats, profile.grade);
 
   return (
     <PanelShell nav={
       <PanelNav profile={profile} pendientes={pendientes}
-        teacher={role === "teacher" || role === "admin"}
         onEdit={() => router.push("/?editar=1")}
         onLogout={() => { void cerrarSesion().then(() => router.replace("/login")); }} />
     }>
@@ -77,6 +90,9 @@ export default function ResumenPage() {
           Todo lo que llevás hecho, y lo que ya te sale.
         </p>
       </header>
+
+      {/* ── TODO EL CAMINO, DE UN VISTAZO ─────────────────────────────────── */}
+      <AvanceTotal materias={materias} />
 
       {/* ── LO HECHO ──────────────────────────────────────────────────────
           Tres números y nada más. Son cuentas de filas que existen: lecciones
@@ -127,24 +143,90 @@ export default function ResumenPage() {
 
       {/* ── MATERIA POR MATERIA ───────────────────────────────────────────── */}
       <Titulo>Materia por materia</Titulo>
-      <div style={{ display: "grid", gap: 10, marginBottom: deOtro.length ? 26 : 34 }}>
-        {delCurso.map((m) => <FilaMateria key={m.id} m={m} onReforzar={() => router.push("/reforzar")} />)}
-        {delCurso.length === 0 && (
+      <div style={{ display: "grid", gap: 10, marginBottom: 34 }}>
+        {materias.map((m) => <FilaMateria key={m.id} m={m} onReforzar={() => router.push("/reforzar")} />)}
+        {materias.length === 0 && (
           <p style={{ color: C.dim, fontSize: 14 }}>Todavía no hay materias cargadas para tu curso.</p>
         )}
       </div>
-
-      {deOtro.length > 0 && (
-        <>
-          <p style={{ color: C.dim, fontFamily: FONT.round, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>
-            De otros cursos
-          </p>
-          <div style={{ display: "grid", gap: 10, marginBottom: 34 }}>
-            {deOtro.map((m) => <FilaMateria key={m.id} m={m} otro onReforzar={() => router.push("/reforzar")} />)}
-          </div>
-        </>
-      )}
     </PanelShell>
+  );
+}
+
+/**
+ * EL AVANCE TOTAL — todo el camino del alumno en una sola tira.
+ *
+ * Arriba había tres números sueltos (lecciones, chequeos, pruebas) y ninguno
+ * contestaba "¿cuánto me falta?". Esto sí, y con la misma pieza que las filas de
+ * abajo: un segmento por paso, agrupados por materia y con su color. La pantalla
+ * queda leyéndose como una sola cosa —el total arriba, el detalle abajo— en vez
+ * de dos aparatos que no se hablan.
+ *
+ * ⚠️ NO ES UN PORCENTAJE SOLO. El número se dice completo ("3 de 41 pasos")
+ * porque un 7% no le dice nada a alguien que empieza: 41 pasos sí, son
+ * contables y se ven en la tira. El porcentaje va al lado, chico.
+ *
+ * ⚠️ Y NO SE ORDENA POR AVANCE. Las materias van en el orden en que aparecen
+ * abajo: si acá se reordenaran por porcentaje, la misma materia estaría en dos
+ * lugares distintos de la misma pantalla.
+ */
+function AvanceTotal({ materias }: { materias: ResumenMateria[] }) {
+  const conPasos = materias.filter((m) => (m.pasos ?? []).length > 0);
+  const total = conPasos.reduce((n, m) => n + m.pasos.length, 0);
+  if (total === 0) return null;
+  const hechos = conPasos.reduce((n, m) => n + m.pasos.filter((p) => p.done).length, 0);
+  const pct = Math.round((hechos / total) * 100);
+
+  return (
+    <div style={{ minWidth: 0, background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 16, boxShadow: HARD(C.accent), padding: "16px 18px", marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+        <span style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 15 }}>Todo tu camino</span>
+        <span style={{ marginLeft: "auto", fontFamily: FONT.round, fontWeight: 800, fontSize: 20, letterSpacing: -0.3, color: hechos > 0 ? C.text : C.dim }}>
+          {hechos} <span style={{ fontSize: 14, fontWeight: 700, color: C.dim }}>de {total} pasos</span>
+        </span>
+        {hechos > 0 && (
+          <span style={{ fontFamily: FONT.round, fontWeight: 800, fontSize: 13, color: C.accent }}>{pct}%</span>
+        )}
+      </div>
+
+      {/* Un grupo por materia, separados por un hueco más grande que el que hay
+          entre pasos: sin eso, 41 segmentos seguidos se leen como una sola
+          barra y se pierde de qué materia es cada tramo. */}
+      <div style={{ display: "flex", gap: 7, marginTop: 12 }}>
+        {conPasos.map((m) => {
+          const col = subjectColor(m);
+          return (
+            <span key={m.id} title={`${subjectLabel(m)} — ${m.pasos.filter((p) => p.done).length} de ${m.pasos.length}`}
+              style={{ display: "flex", gap: 2, flex: m.pasos.length, minWidth: 0 }}>
+              {m.pasos.map((p) => (
+                <span key={p.key}
+                  style={{
+                    flex: 1, minWidth: 0, height: 12, borderRadius: 3,
+                    // Lo que falta va en el color de la materia MUY tenue y no en
+                    // gris: así, aun sin nada hecho, la tira muestra de qué está
+                    // compuesto el año y cuánto pesa cada materia.
+                    background: p.done ? col : `${col}22`,
+                  }} />
+              ))}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* El curso NO se muestra: todas las materias son del mismo año, así que
+          repetirlo siete veces es ruido. `subjectLabel` ya se lo saca al nombre. */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 11 }}>
+        {conPasos.map((m) => (
+          <span key={m.id} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: C.dim }}>
+            <span style={{ width: 9, height: 9, borderRadius: 3, background: subjectColor(m), flexShrink: 0 }} />
+            {subjectLabel(m)}
+            <b style={{ fontFamily: FONT.round, color: C.text }}>
+              {m.pasos.filter((p) => p.done).length}/{m.pasos.length}
+            </b>
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -174,39 +256,124 @@ function Numero({ n, que, color }: { n: number; que: string; color: string }) {
  * quedan. Los pendientes NO se listan acá —viven en Reforzar— pero se cuentan y
  * se puede saltar: es la costura por donde estas dos pantallas se van a unir.
  */
-function FilaMateria({ m, otro, onReforzar }: { m: ResumenMateria; otro?: boolean; onReforzar: () => void }) {
+/**
+ * LA PISTA — el camino de la materia, estirado y visto de arriba.
+ *
+ * Reemplaza a "0 de 9 temas · 0%". Un porcentaje contesta *cuánto*; esto
+ * contesta *dónde*, que es la pregunta con la que el alumno abre esta pantalla.
+ * Y no es una metáfora nueva: son las mismas paradas del camino, en el mismo
+ * orden, con el mismo color de la materia. Lo único que cambia es que acá el
+ * sendero está enderezado para que entre entero de un vistazo.
+ *
+ * TRES ESTADOS Y NADA MÁS: hecho, el que sigue, y lo que falta. Se resistió la
+ * tentación de traer los símbolos del camino (número · ! · ?), que contestan
+ * otra pregunta —"¿tengo con qué estudiar esto?" (§12.6)— y acá serían ruido:
+ * en una tira de 9 px no hay lugar para dos significados.
+ *
+ * ⚠️ Los segmentos son `flex: 1` y no un ancho fijo: los planes van de 2 a 23
+ * pasos, y con ancho fijo los de 23 se salían de la fila en el teléfono.
+ */
+function PistaAvance({ pasos, col }: { pasos: ResumenPaso[]; col: string }) {
+  const siguiente = pasos.findIndex((p) => !p.done);
+  return (
+    <span role="img"
+      aria-label={`${pasos.filter((p) => p.done).length} de ${pasos.length} pasos hechos`}
+      style={{ display: "flex", gap: 3, marginTop: 9 }}>
+      {pasos.map((p, i) => {
+        const esSiguiente = i === siguiente;
+        return (
+          <span key={p.key}
+            title={`${p.n}. ${p.title}${p.done ? " — hecho" : esSiguiente ? " — vas por acá" : ""}`}
+            style={{
+              flex: 1, minWidth: 0, height: 9, borderRadius: 3,
+              background: p.done ? col : esSiguiente ? "transparent" : C.border,
+              // El que sigue va HUECO con borde y no relleno a media tinta: a
+              // 9 px de alto un relleno claro se lee como "hecho a medias", y
+              // no es eso — es el que todavía no empezó.
+              border: esSiguiente ? `2px solid ${col}` : "none",
+              boxSizing: "border-box",
+            }} />
+        );
+      })}
+    </span>
+  );
+}
+
+const fechaCorta = (iso: string) =>
+  new Date(iso).toLocaleDateString("es-CL", { day: "numeric", month: "short" });
+
+function FilaMateria({ m, onReforzar }: { m: ResumenMateria; onReforzar: () => void }) {
   const col = subjectColor(m);
   const onCol = isLight(col) ? C.ink : "#fff";
-  const pct = m.planTotal > 0 ? Math.round((m.planDone / m.planTotal) * 100) : 0;
+  // `?? []` y no `m.pasos` a secas: si el bundle del navegador queda una
+  // versión adelante de la API —pasa en cada despliegue, y pasó acá mismo con
+  // una respuesta cacheada— la pantalla entera se caía con "cannot read
+  // properties of undefined". Un resumen sin pista es una degradación; un
+  // resumen en blanco es un bug.
+  const pasos = m.pasos ?? [];
+  const hechos = pasos.filter((p) => p.done);
+  const siguiente = pasos.find((p) => !p.done);
+  // La última vez que avanzó. Sale de `doneAt`, así que dice algo real y no
+  // "activo hace 3 días", que mide asistencia.
+  const ultimo = hechos.reduce<string | null>(
+    (max, p) => (p.doneAt && (!max || p.doneAt > max) ? p.doneAt : max), null);
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 14, padding: "12px 14px" }}>
-      <span style={{ width: 32, height: 32, flexShrink: 0, borderRadius: 10, background: col, color: onCol, display: "grid", placeItems: "center" }}>
-        <IconBook size={17} />
-      </span>
-
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 15, lineHeight: 1.25 }}>
-          {subjectLabel(m)}{otro && m.grade && <span style={{ color: C.dim, fontWeight: 700 }}> · {m.grade}</span>}
+    /* ⚠️ `minWidth: 0` NO es decorativo. La tarjeta es un ítem de grilla, y un
+       ítem de grilla no baja de su ancho MÍNIMO DE CONTENIDO. El renglón "Seguís
+       por 1. Estructura y función de la noticia" va en `nowrap`, así que ese
+       mínimo pasaba a ser el título entero y estiraba la tarjeta: medido, 64 px
+       de scroll horizontal a 375. El `overflow: hidden` del renglón recorta lo
+       que se ve, pero no achica el mínimo — eso lo hace esto. */
+    <div style={{ minWidth: 0, background: C.panel, border: `2px solid ${C.ink}`, borderRadius: 14, padding: "12px 14px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <span style={{ width: 32, height: 32, flexShrink: 0, borderRadius: 10, background: col, color: onCol, display: "grid", placeItems: "center" }}>
+          <IconBook size={17} />
         </span>
-        <span style={{ display: "block", color: C.dim, fontSize: 12.5, marginTop: 1 }}>
-          {m.planTotal > 0 ? <>{m.planDone} de {m.planTotal} temas · {pct}%</> : "Sin camino armado"}
-          {m.lastScore && <> · última prueba {m.lastScore.score}/{m.lastScore.total}</>}
-        </span>
-      </span>
 
-      <span style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
-        {m.fuertes.length > 0 && (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: C.okBg, color: C.okTx, borderRadius: 999, padding: "3px 9px", fontFamily: FONT.round, fontWeight: 800, fontSize: 12 }}>
-            <IconCheck size={11} /> {m.fuertes.length}
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontFamily: FONT.round, fontWeight: 800, fontSize: 15, lineHeight: 1.25 }}>
+            {subjectLabel(m)}
           </span>
-        )}
-        {m.pendientes > 0 && (
-          <button onClick={onReforzar} title="Ver qué te falta reforzar"
-            style={{ display: "inline-flex", alignItems: "center", gap: 4, background: C.badBg, color: C.badTx, border: "none", borderRadius: 999, padding: "3px 9px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 800, fontSize: 12 }}>
-            <IconReforzar size={11} /> {m.pendientes} <IconArrow size={11} />
-          </button>
-        )}
-      </span>
+          <span style={{ display: "block", color: C.dim, fontSize: 12.5, marginTop: 1 }}>
+            {pasos.length > 0
+              ? <><b style={{ color: hechos.length > 0 ? C.text : C.dim, fontFamily: FONT.round }}>{hechos.length}</b> de {pasos.length} pasos</>
+              : "Sin camino armado"}
+            {ultimo && <> · último el {fechaCorta(ultimo)}</>}
+            {m.lastScore && <> · última prueba {m.lastScore.score}/{m.lastScore.total}</>}
+          </span>
+        </span>
+
+        <span style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
+          {m.fuertes.length > 0 && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: C.okBg, color: C.okTx, borderRadius: 999, padding: "3px 9px", fontFamily: FONT.round, fontWeight: 800, fontSize: 12 }}>
+              <IconCheck size={11} /> {m.fuertes.length}
+            </span>
+          )}
+          {m.pendientes > 0 && (
+            <button onClick={onReforzar} title="Ver qué te falta reforzar"
+              style={{ display: "inline-flex", alignItems: "center", gap: 4, background: C.badBg, color: C.badTx, border: "none", borderRadius: 999, padding: "3px 9px", cursor: "pointer", fontFamily: FONT.round, fontWeight: 800, fontSize: 12 }}>
+              <IconReforzar size={11} /> {m.pendientes} <IconArrow size={11} />
+            </button>
+          )}
+        </span>
+      </div>
+
+      {pasos.length > 0 && <PistaAvance pasos={pasos} col={col} />}
+
+      {/* EL PASO QUE SIGUE, CON NOMBRE. Es lo que convierte la pista en algo
+          accionable: sin esto el alumno ve dónde está pero no qué le toca. */}
+      {siguiente && (
+        <div style={{ marginTop: 7, fontSize: 12.5, color: C.dim, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {hechos.length === 0 ? "Empezás por" : "Seguís por"}{" "}
+          <b style={{ color: C.text, fontFamily: FONT.round }}>{siguiente.n}. {siguiente.title}</b>
+        </div>
+      )}
+      {!siguiente && pasos.length > 0 && (
+        <div style={{ marginTop: 7, fontSize: 12.5, color: C.okTx, fontFamily: FONT.round, fontWeight: 700 }}>
+          Terminaste el camino de esta materia.
+        </div>
+      )}
     </div>
   );
 }

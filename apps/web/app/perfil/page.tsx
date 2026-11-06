@@ -25,7 +25,7 @@ import { useAlumno, cerrarSesion } from "../usar-alumno";
 
 export default function PerfilPage() {
   const router = useRouter();
-  const { loaded, profile, setProfile, subjects, stats, role, pomodoroLastAt } = useAlumno();
+  const { loaded, profile, setProfile, subjects, stats, pomodoroLastAt } = useAlumno();
   const [guardando, setGuardando] = useState<string | null>(null);
 
   useEffect(() => {
@@ -64,8 +64,7 @@ export default function PerfilPage() {
 
   return (
     <PanelShell nav={
-      <PanelNav profile={profile} pendientes={contarReforzar(subjects, stats)}
-        teacher={role === "teacher" || role === "admin"}
+      <PanelNav profile={profile} pendientes={contarReforzar(subjects, stats, profile.grade)}
         onEdit={() => router.push("/?editar=1")}
         onLogout={() => { void cerrarSesion().then(() => router.replace("/login")); }} />
     }>

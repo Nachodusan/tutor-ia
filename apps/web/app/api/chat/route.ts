@@ -15,7 +15,7 @@ import {
 } from "@tutor-ia/core";
 import { getSql } from "@tutor-ia/db";
 import { rechazarMateriaApagada, requireCursoAbierto } from "@/lib/auth";
-import { ensureSession, insertMessage } from "@/lib/conversations";
+import { ensureSession, insertMessage, tituloDeConversacion } from "@/lib/conversations";
 import { randomUUID } from "node:crypto";
 
 export const runtime = "nodejs";
@@ -106,7 +106,12 @@ export async function POST(req: Request) {
   // El id se genera acá y NO se espera a la base: el insert corre en paralelo
   // con el retrieval.
   const sessionId = body.sessionId ?? randomUUID();
-  const persistUsuario = ensureSession(sessionId, userId, body.subjectId ?? null, body.question.slice(0, 80))
+  // El título sale de la primera pregunta, pero LIMPIA: sin el saludo ni el
+  // "explicame" delante y cortada en un espacio. En una lista de veinte
+  // charlas, treinta y ocho que empiezan con "Explicame" no se distinguen.
+  // `ensureSession` es idempotente, así que en los turnos siguientes de la
+  // misma charla este título no pisa nada.
+  const persistUsuario = ensureSession(sessionId, userId, body.subjectId ?? null, tituloDeConversacion(body.question))
     .then(() => insertMessage(sessionId, "user", body.question!));
 
   // Mensaje social (saludo, gracias, chau) o pedido VAGO sin tema ("dame un

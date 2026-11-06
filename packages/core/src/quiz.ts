@@ -107,15 +107,53 @@ export interface QuizOptions {
 }
 
 /** El modelo no cumplió con lo pedido y no hay pregunta confiable que servir. */
+/**
+ * ⚠️ `proveedor` EXISTE PORQUE UN MENSAJE QUE MIENTE CUESTA HORAS.
+ *
+ * El 2026-08-31 la simulación de prueba falló en las 6 materias de 1º Medio, y
+ * la pantalla decía *"No pude armar una prueba confiable con este material.
+ * Probá de nuevo"*. Las dos mitades eran falsas: el material estaba perfecto
+ * (6/6 temas con muestra usable) y reintentar no podía funcionar nunca, porque
+ * la causa real era un **402 de la API: la cuenta sin método de pago**.
+ *
+ * El error del proveedor se logueaba en el servidor y se tiraba a la basura al
+ * envolverlo, así que desde el navegador el fallo era indistinguible de un
+ * problema de contenido. Ahora la causa viaja y la pantalla puede decir la
+ * verdad. Es la misma disciplina que el 503 del reranker, que distingue
+ * "saturado" de "no está corriendo": dos cosas que se arreglan al revés.
+ */
 export class SinPreguntas extends Error {
-  constructor(public razon: "generacion" | "vacio") {
+  constructor(
+    public razon: "generacion" | "vacio" | "proveedor",
+    /** El mensaje crudo del proveedor. Para el log y para el panel del dueño;
+     *  NUNCA se le muestra al alumno tal cual. */
+    public causa?: string,
+  ) {
     super(
       razon === "generacion"
         ? "La generación de preguntas falló."
-        : "No quedó ninguna pregunta con la clave verificada.",
+        : razon === "proveedor"
+          ? `El proveedor del modelo rechazó la llamada: ${causa ?? "sin detalle"}`
+          : "No quedó ninguna pregunta con la clave verificada.",
     );
     this.name = "SinPreguntas";
   }
+}
+
+/**
+ * ¿El error viene del PROVEEDOR y no de nuestro material?
+ *
+ * 402 = sin crédito o sin método de pago · 401/403 = clave mala o revocada ·
+ * 429 = cuota agotada. Los cuatro tienen en común lo único que importa acá:
+ * **reintentar no sirve** y no hay nada que arreglar en el libro ni en el
+ * prompt. Se detecta por el código en el texto porque el provider los envuelve
+ * en un Error genérico ("api.deepinfra.com 402: …").
+ */
+export function esFalloDeProveedor(e: unknown): string | null {
+  const m = e instanceof Error ? e.message : String(e);
+  return /\b(401|402|403|429)\b/.test(m) || /payment|billing|quota|credit|insufficient/i.test(m)
+    ? m.slice(0, 200)
+    : null;
 }
 
 const SCHEMA = {
@@ -315,6 +353,8 @@ export async function generarPreguntas(
     gen = out.items ?? [];
   } catch (e) {
     console.error(`[quiz] generación falló: ${e instanceof Error ? e.message : e}`);
+    const delProveedor = esFalloDeProveedor(e);
+    if (delProveedor) throw new SinPreguntas("proveedor", delProveedor);
     throw new SinPreguntas("generacion");
   }
 

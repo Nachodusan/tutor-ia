@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconUsers, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconResumen, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, IconReforzar, scoreTone, IconCamino, IconPrueba, IconVolume, IconCheck, IconSpark, IconPuerta } from "./ui";
+import { C, FONT, HARD, CTA, AURORA, AuroraDot, Dots, Pill, BigBtn, SectionTitle, IconUser, IconSettings, IconBook, IconSwap, IconArrow, IconStar, IconResumen, IconLock, gradeLabel, gradeSort, subjectLabel, subjectColor, isLight, backLink, IconBack, IconBtn, IconAlert, IconReforzar, scoreTone, IconCamino, IconPrueba, IconVolume, IconCheck, IconSpark, IconPuerta } from "./ui";
 import { VOCES, VOZ_POR_DEFECTO, CLAVE_VOZ, type Voz } from "./voces";
 import { buscarAvatar } from "./avatares";
 import { CLASE_HUECO_RELOJ } from "./pomodoro";
@@ -214,8 +214,8 @@ export function PanelShell({ nav, children }: { nav: React.ReactNode; children: 
  * forma de que agregar una pantalla nueva no obligue a acordarse de pasarle un
  * `activo` desde cada una.
  */
-export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
-  profile: Profile; pendientes: number; teacher?: boolean; onEdit: () => void; onLogout: () => void;
+export function PanelNav({ profile, pendientes, onEdit, onLogout }: {
+  profile: Profile; pendientes: number; onEdit: () => void; onLogout: () => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -292,12 +292,13 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
           final de la tira. Es la misma regla leída en los dos sentidos. */}
       <div className="pnl-espacio" style={{ flex: 1 }} />
 
+      {/* ⚠️ ACÁ HABÍA UN ATAJO "Panel del curso" y SE SACÓ (2026-08-31).
+          El panel del alumno es el panel del alumno: no tiene por qué anunciar
+          una pantalla que no es suya. El docente entra por `/login/docente`,
+          que es su puerta, o escribiendo `/docente` si ya tiene sesión.
+          Se sacaba también del menú del teléfono, unas líneas más abajo: eran
+          la misma entrada dibujada en los dos layouts (ver §13.3). */}
       <div className="pnl-grupo pnl-pie">
-        {teacher && (
-          <NavItem onClick={() => router.push("/docente")} icono={<IconUsers size={15} />}>
-            Panel del curso
-          </NavItem>
-        )}
         {/* UNA sola entrada de ajustes. Antes eran dos renglones —"Voz del
             tutor" y "Mi curso"— que son la misma cosa: preferencias de la
             cuenta. El pie del nav es lo último que uno quiere leer, y tres
@@ -328,10 +329,9 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
       </button>
 
       {menuAbierto && (
-        <MenuAlumno profile={profile} teacher={teacher}
+        <MenuAlumno profile={profile}
           onPerfil={() => { setMenuAbierto(false); router.push("/perfil"); }}
           onConfig={() => { setMenuAbierto(false); setConfigAbierta(true); }}
-          onDocente={() => { setMenuAbierto(false); router.push("/docente"); }}
           onLogout={onLogout}
           onCerrar={() => setMenuAbierto(false)} />
       )}
@@ -348,18 +348,36 @@ export function PanelNav({ profile, pendientes, teacher, onEdit, onLogout }: {
 /**
  * LOS TEMAS PARA REFORZAR, AGRUPADOS POR MATERIA.
  *
- * De TODAS las materias —el alumno pudo rendir una prueba en cualquiera— y sin
- * las apagadas, porque mandarlo a repasar algo que no puede abrir es un
- * callejón sin salida.
+ * ⚠️ SOLO DEL CURSO DEL ALUMNO. Acá decía "de TODAS las materias —el alumno
+ * pudo rendir una prueba en cualquiera—" y esa premisa es falsa: un alumno
+ * cursa UN año. Medido el 2026-08-29 sobre el usuario de demo: la chapita del
+ * nav decía 40 y los 40 eran de otro curso (Física 1º 23 · Biología 1º 17),
+ * mientras que de su propio 4º Medio tenía 0. Un chico de 4º con un "Reforzar
+ * 40" que al abrirlo son temas de 1º no entiende nada, y con razón.
+ *
+ * Si quedó trabajo registrado en otro curso es porque se equivocó de año al
+ * arrancar o porque cambió de curso: eso se arregla en el perfil, no
+ * mandándolo a repasar materias que no son suyas.
+ *
+ * `grade` va como parámetro REQUERIDO y no opcional a propósito: si fuera
+ * opcional, el próximo llamador lo omite y el bug vuelve sin que nadie se
+ * entere. Es la misma disciplina que `fetchLessonMaterial` en sections.ts.
+ *
+ * Sin las apagadas, además, porque mandarlo a repasar algo que no puede abrir
+ * es un callejón sin salida.
  *
  * Las materias van ordenadas por cuánto pesa lo que falló (la suma de fallos),
  * no alfabéticamente: la primera tiene que ser la que más lo necesita. Adentro
  * de cada una manda el más fallado, que es el orden en que ya vienen de
  * `/api/progress`.
  */
-export function agruparReforzar(subjects: Subject[], stats: Record<string, SubjectStats>) {
+export function agruparReforzar(
+  subjects: Subject[],
+  stats: Record<string, SubjectStats>,
+  grade: string,
+) {
   return subjects
-    .filter((s) => !s.disabled && (stats[s.id]?.weak.length ?? 0) > 0)
+    .filter((s) => s.grade === grade && !s.disabled && (stats[s.id]?.weak.length ?? 0) > 0)
     .map((s) => ({ s, temas: stats[s.id]!.weak }))
     .sort((a, b) =>
       b.temas.reduce((n, w) => n + w.misses, 0) - a.temas.reduce((n, w) => n + w.misses, 0) ||
@@ -367,10 +385,13 @@ export function agruparReforzar(subjects: Subject[], stats: Record<string, Subje
 }
 
 /** Cuántos temas hay para reforzar en total. Va en la chapita del nav. */
-export const contarReforzar = (subjects: Subject[], stats: Record<string, SubjectStats>) =>
-  agruparReforzar(subjects, stats).reduce((n, m) => n + m.temas.length, 0);
+export const contarReforzar = (
+  subjects: Subject[],
+  stats: Record<string, SubjectStats>,
+  grade: string,
+) => agruparReforzar(subjects, stats, grade).reduce((n, m) => n + m.temas.length, 0);
 
-export function Dashboard({ profile, subjects, stats, teacher, onAbrir, onEdit, onLogout }: { profile: Profile; subjects: Subject[]; stats: Record<string, SubjectStats>; teacher?: boolean; onAbrir: (id: string, a: Actividad) => void; onEdit: () => void; onLogout: () => void }) {
+export function Dashboard({ profile, subjects, stats, onAbrir, onEdit, onLogout }: { profile: Profile; subjects: Subject[]; stats: Record<string, SubjectStats>; onAbrir: (id: string, a: Actividad) => void; onEdit: () => void; onLogout: () => void }) {
   // TODAS las materias del curso, con el mismo peso. Antes se partían en
   // "prioritarias" (tarjetas grandes) y "otras" (pastillas chicas al pie, sin
   // avance a la vista), según lo que el alumno hubiera tildado en el onboarding.
@@ -386,7 +407,7 @@ export function Dashboard({ profile, subjects, stats, teacher, onAbrir, onEdit, 
   const apagadas = misSubjects.filter((s) => s.disabled).length;
 
   return (
-    <PanelShell nav={<PanelNav profile={profile} pendientes={contarReforzar(subjects, stats)} teacher={teacher} onEdit={onEdit} onLogout={onLogout} />}>
+    <PanelShell nav={<PanelNav profile={profile} pendientes={contarReforzar(subjects, stats, profile.grade)} onEdit={onEdit} onLogout={onLogout} />}>
       {/* CADA COSA SE DICE UNA VEZ. Acá decía "Hola, 7b-01 👋" y abajo "2° Medio
           · 6 materias · 1 en pausa", con el nav mostrando "7b-01 / 2° Medio" a
           tres centímetros: el usuario y el curso repetidos, uno al lado del
@@ -808,9 +829,9 @@ export function SubjectCard({ s, st, onAbrir }: { s: Subject; st?: SubjectStats;
  * APILAMIENTO. Un menú dibujado adentro solo puede competir contra sus
  * hermanos, y subirle el z-index no sirve porque el techo lo pone el ancestro.
  */
-function MenuAlumno({ profile, teacher, onPerfil, onConfig, onDocente, onLogout, onCerrar }: {
-  profile: Profile; teacher?: boolean;
-  onPerfil: () => void; onConfig: () => void; onDocente: () => void;
+function MenuAlumno({ profile, onPerfil, onConfig, onLogout, onCerrar }: {
+  profile: Profile;
+  onPerfil: () => void; onConfig: () => void;
   onLogout: () => void; onCerrar: () => void;
 }) {
   const fila = (icono: React.ReactNode, texto: string, onClick: () => void) => (
@@ -852,7 +873,8 @@ function MenuAlumno({ profile, teacher, onPerfil, onConfig, onDocente, onLogout,
         </div>
         <div style={{ height: 1, background: C.border, margin: "0 0 6px" }} />
         {fila(<IconUser size={17} />, "Tu perfil", onPerfil)}
-        {teacher && fila(<IconUsers size={17} />, "Panel del curso", onDocente)}
+        {/* El atajo al panel del curso se sacó acá también: ver el comentario
+            del pie del nav en columna. Las dos formas mostraban lo mismo. */}
         {fila(<IconSettings size={17} />, "Configuración", onConfig)}
         {fila(<IconPuerta size={17} />, "Salir", onLogout)}
       </div>

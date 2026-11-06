@@ -63,7 +63,9 @@
     "materias-cruzadas": "tsx --env-file-if-exists=../../.env src/materias-cruzadas.ts",
     "documentos-cruzados": "tsx --env-file-if-exists=../../.env src/documentos-cruzados.ts",
     "generacion-canonica": "tsx --env-file-if-exists=../../.env src/generacion-canonica.ts",
-    "apuntes-programa": "tsx --env-file-if-exists=../../.env src/apuntes-programa.ts"
+    "apuntes-programa": "tsx --env-file-if-exists=../../.env src/apuntes-programa.ts",
+    "latencia": "tsx --env-file-if-exists=../../.env src/latencia-chat.ts",
+    "prueba-diag": "tsx --env-file-if-exists=../../.env src/prueba-diag.ts"
   },
   "dependencies": {
     "@tutor-ia/core": "workspace:*",

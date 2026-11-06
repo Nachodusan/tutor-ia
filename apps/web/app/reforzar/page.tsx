@@ -17,7 +17,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PanelShell, PanelNav, contarReforzar, Centered } from "../panel";
+import { PanelShell, PanelNav, contarReforzar, agruparReforzar, Centered } from "../panel";
 import {
   C, FONT, HARD, Dots, IconCheck, IconArrow, IconChevron,
   subjectColor, subjectLabel,
@@ -25,7 +25,7 @@ import {
 import { CLASE_HUECO_RELOJ } from "../pomodoro";
 import { cursoBloqueado } from "@/lib/cursos";
 import { useAlumno, cerrarSesion } from "../usar-alumno";
-import type { Subject, WeakTopic } from "../tipos";
+import type { Subject, SubjectStats, WeakTopic } from "../tipos";
 
 interface TemaDelDia {
   slot: number; subjectId: string; subjectName: string;
@@ -35,7 +35,7 @@ interface TemaDelDia {
 
 export default function ReforzarPage() {
   const router = useRouter();
-  const { loaded, profile, subjects, stats, role } = useAlumno();
+  const { loaded, profile, subjects, stats } = useAlumno();
   const [hoy, setHoy] = useState<{ temas: TemaDelDia[]; pendientes: number } | null>(null);
   const [verTodo, setVerTodo] = useState(false);
 
@@ -66,12 +66,11 @@ export default function ReforzarPage() {
   const hechos = temas.filter((t) => t.hecho).length;
   const total = temas.length;
   const terminado = total > 0 && hechos === total;
-  const pendientes = hoy?.pendientes ?? contarReforzar(subjects, stats);
+  const pendientes = hoy?.pendientes ?? contarReforzar(subjects, stats, profile.grade);
 
   return (
     <PanelShell nav={
       <PanelNav profile={profile} pendientes={pendientes}
-        teacher={role === "teacher" || role === "admin"}
         onEdit={() => router.push("/?editar=1")}
         onLogout={() => { void cerrarSesion().then(() => router.replace("/login")); }} />
     }>
@@ -138,7 +137,7 @@ export default function ReforzarPage() {
             </span>
             {verTodo ? "Ocultar el resto" : `Ver todo lo que te falta (${pendientes})`}
           </button>
-          {verTodo && <TodoLoQueFalta subjects={subjects} stats={stats} onExplicar={explicar} />}
+          {verTodo && <TodoLoQueFalta subjects={subjects} stats={stats} grade={profile.grade} onExplicar={explicar} />}
         </>
       )}
     </PanelShell>
@@ -235,14 +234,16 @@ function Vacio({ hayPendientes, onVerTodo }: { hayPendientes: boolean; onVerTodo
 
 /** La lista completa, agrupada por materia. Es lo que antes era TODA la
  *  pantalla; ahora vive detrás de un toque. */
-function TodoLoQueFalta({ subjects, stats, onExplicar }: {
+function TodoLoQueFalta({ subjects, stats, grade, onExplicar }: {
   subjects: Subject[];
-  stats: Record<string, { weak: WeakTopic[] }>;
+  stats: Record<string, SubjectStats>;
+  grade: string;
   onExplicar: (t: { subjectId: string; topic: string }) => void;
 }) {
-  const grupos = subjects
-    .filter((s) => !s.disabled && (stats[s.id]?.weak.length ?? 0) > 0)
-    .map((s) => ({ s, temas: stats[s.id]!.weak }));
+  // Pasa por `agruparReforzar` y no repite el filtro: acá había una copia sin
+  // el curso, así que la chapita del nav podía decir un número y esta lista
+  // mostrar otro. Un solo lugar decide qué entra.
+  const grupos = agruparReforzar(subjects, stats, grade);
   return (
     <div style={{ display: "grid", gap: 18, marginBottom: 30 }}>
       {grupos.map(({ s, temas }) => (

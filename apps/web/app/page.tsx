@@ -33,7 +33,7 @@ function limpiarLocalStorageViejo() {
 
 export default function Home() {
   const router = useRouter();
-  const { loaded, profile, setProfile, subjects, stats, role } = useAlumno();
+  const { loaded, profile, setProfile, subjects, stats } = useAlumno();
   const [editing, setEditing] = useState(false);
 
   useEffect(() => { limpiarLocalStorageViejo(); }, []);
@@ -94,7 +94,6 @@ export default function Home() {
       profile={profile}
       subjects={subjects}
       stats={stats}
-      teacher={role === "teacher" || role === "admin"}
       // Directo a la actividad: la pantalla intermedia le preguntaba al alumno
       // algo que ya había contestado al elegir el ícono.
       onAbrir={(id, a: Actividad) => router.push(`/materia/${id}/${a}`)}

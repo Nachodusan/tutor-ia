@@ -1,57 +1,73 @@
 # HANDOFF — Tutor IA (para retomar en un chat nuevo)
 
-> Estado al **2026-08-27**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
+> Estado al **2026-08-29**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
 > Proyecto en `/Users/dusan/Documents/ia`. Rama **`main`**.
 > **El código ya está en git remoto**: `github.com/Nachodusan/tutor-ia`, PRIVADO, `main` por
 > defecto. El corpus NO está en git — va como asset de release
 > (`corpus-2026-08-23`, 205 MB, verificado por sha256). Ver §8.
 > **Leé también la memoria del proyecto** (`tutor-ia-estado.md` y las notas por feature).
 >
-> 🔴 **LO DE HOY (2026-08-27) ESTÁ SIN COMMITEAR.** 23 archivos entre modificados y
-> nuevos. La frase de arriba —"el código ya está en git remoto"— vale para todo lo
-> anterior, no para §11-§13. Antes de cualquier `git checkout .` o de clonar en otra
-> máquina, mirá `git status`: se pierde el trabajo del día entero.
+> 🔴 **LO DE 2026-08-28/29 ESTÁ SIN COMMITEAR.** 16 modificados y 2 nuevos. La frase de
+> arriba —"el código ya está en git remoto"— vale hasta §13 (commit `943d953`), no para
+> §14-§16. Antes de cualquier `git checkout .` o de clonar en otra máquina, mirá
+> `git status`: se pierde el trabajo de dos días.
 >
-> **Lo último es §11, §12 y §13** (2026-08-27). Antes de tocar el camino o los apuntes,
-> leelas: §12.8 explica un filtro que se revirtió DOS veces y por qué, y §13 el criterio de
-> anchos que reemplazó cuatro números puestos a ojo.
+> **Lo último es §14, §15 y §16** (2026-08-28/29):
+> · §14 el historial de conversaciones — la persistencia YA existía, faltaba la puerta.
+> · §15 la latencia — **el reranker no es lento, se calienta una vez**; y §15.4 lista
+>   CUATRO conclusiones que se sacaron mal, para que nadie las repita.
+> · §16 el avance del alumno — **el 100% está huérfano** y cada `build-sections` lo
+>   vuelve a poner en cero. Es lo más grave que hay abierto hoy.
+>
+> Y antes de tocar el camino o los apuntes, §12.8 explica un filtro que se revirtió DOS
+> veces y por qué; §13 el criterio de anchos que reemplazó cuatro números puestos a ojo.
 
-### El estado en números (verificado el 2026-08-27 con psql)
+### El estado en números (verificado el 2026-08-29 con psql)
 
 | | |
 |---|---:|
 | chunks (contenido + pedagogía) | 37.920 · 25.482 de contenido |
 | materias vivas | 35 |
 | paradas del camino (`book_sections` nivel 2) | 1.895 |
-| apuntes de lección | 60 |
-| paradas del programa con apunte | 38 |
+| apuntes (lección + paradas del programa) | 98 |
 | clases | 15 |
 | `curriculum_map` método `lector-v1` | 266 (39 sin `document_id`, a propósito) |
+| conversaciones guardadas · mensajes | 339 · 705 |
+| avance del alumno | 99 filas · **99 huérfanas (100%)** — ver §16.1 |
+| respuestas con latencia medida (`meta.ms`) | 314 |
 
 ### Lo próximo, en orden de retorno
 
-1. 🔴 **La aritmética del tutor no la verifica nadie.** Resuelve ejercicios desde el
+1. 🔴 **Cada `build-sections` borra el avance de TODOS los alumnos.** La clave del paso
+   depende del `ord` de la sección, y reconstruirlas lo reasigna: hoy el 100% del avance
+   guardado está huérfano y no se pudo recuperar. Las pantallas ya no mienten (§16.2), pero
+   la causa sigue viva. Ver §16.1.
+2. 🔴 **La aritmética del tutor no la verifica nadie.** Resuelve ejercicios desde el
    2026-08-16 y si se equivoca el error sale con el mismo tono seguro. SymPy sigue parkeado
    (`grading.ts` / `sympy_check.py`). Es el único lugar del producto donde el alumno puede
    recibir algo falso sin ninguna red. Ver §1.
-2. 🟡 **1.835 paradas sin apunte** (60 de 1.895). Se generan solas al abrirlas, pero el batch
+3. 🟢 **Precalentar el reranker al arrancar** — ~11 s menos en la PRIMERA pregunta del
+   alumno, sin tocar la calidad. Es lo más barato que queda. Ver §15.3.
+4. 🔴 **`a3-set.jsonl` sigue muerto** y sin él no se le puede creer a la tasa de alucinación
+   (§7).
+5. 🟡 **1.797 paradas sin apunte** (98 de 1.895). Se generan solas al abrirlas, pero el batch
    completo es una noche: `pnpm --filter @tutor-ia/eval apuntes --todas --aplicar`.
-3. 🟡 **`buscar-componentes` sobre las filas sin medir** (87 de 133 no tienen componentes).
+6. 🟡 **`buscar-componentes` sobre las filas sin medir** (87 de 133 no tienen componentes).
    Desbloquea DOS cosas a la vez: las 6 paradas del programa que quedaron sin apunte por una
    corrida fallada (§12.7) y el filtro anti-duplicados de §12.8, que no se puede reponer sin
    ese dato.
-4. 🟡 **6 apuntes marcados "por revisar"** (§12.6): menos de la mitad de sus puntos
+7. 🟡 **6 apuntes marcados "por revisar"** (§12.6): menos de la mitad de sus puntos
    respaldados. Quedan publicados con aviso hasta que alguien los lea. La consulta que los
    lista está en §12.6.
-5. 🟡 **16 filas viejas con el bloque "ojo"**: `limpiar-apuntes --aplicar` (§12.4).
-6. 🟡 **43 lecciones con el rango de páginas mal puesto** — tienen material a ±3 páginas, no
+8. 🟡 **16 filas viejas con el bloque "ojo"**: `limpiar-apuntes --aplicar` (§12.4).
+9. 🟡 **43 lecciones con el rango de páginas mal puesto** — tienen material a ±3 páginas, no
    les falta contenido (§12.7).
-7. 🟡 **19 de los 60 apuntes de LECCIÓN están por debajo de la mitad de respaldo** y nadie
-   los miró. Llevan el aviso ámbar igual (§12.6), pero la revisión falta.
-8. 🟡 **El apunte de "creación del universo" en Física no menciona las cosmovisiones**,
-   teniendo el artículo del Museo Precolombino colgado de esa misma materia (§12.6).
-9. 🔴 **`a3-set.jsonl` sigue muerto** y sin él no se le puede creer a la tasa de alucinación
-   (§7).
+10. 🟡 **19 de los 60 apuntes de LECCIÓN están por debajo de la mitad de respaldo** y nadie
+    los miró. Llevan el aviso ámbar igual (§12.6), pero la revisión falta.
+11. 🟡 **El apunte de "creación del universo" en Física no menciona las cosmovisiones**,
+    teniendo el artículo del Museo Precolombino colgado de esa misma materia (§12.6).
+12. 🟡 **Evitar el doble rerank de pedagogía** cuando el puente de vocabulario dispara la
+    segunda ronda de retrieval: son 40 de los 65 pasajes (§15.6).
 
 ---
 
@@ -3091,3 +3107,328 @@ que grita 400 veces se ignora, que es peor que no tenerlo — la misma lección 
 segundos y sin falsos positivos. La regla práctica: nunca backticks adentro de un
 literal; si el typecheck tira "Expected a semicolon" en un bloque de CSS o SQL,
 buscá el backtick antes que cualquier otra cosa.
+
+---
+
+## 14. EL HISTORIAL DE CONVERSACIONES (2026-08-28)
+
+Pedido del dueño: *"en la parte del chat quiero que se ponga un historial de
+conversaciones, para que el alumno tenga un orden y no se le amontone todo en un
+chat, y que quede guardado"*.
+
+### 14.1 La mitad ya estaba hecha, y nadie lo sabía
+
+`study_sessions` + `messages` venían guardando TODO desde el 3 de agosto, y
+`/api/conversations` ya sabía listarlas y abrirlas, acotado por `user_id`. Lo que
+no existía era **una pantalla que las mostrara**.
+
+Y como `sessionRef` es un `useRef` que arranca en `null`, al recargar el chat
+empezaba en blanco y el servidor abría una sesión nueva. Resultado medido antes
+de tocar nada: **337 conversaciones guardadas que el alumno nunca pudo volver a
+abrir**, y catorce con el mismo título porque cada visita empezaba de cero.
+
+O sea que esto no agregó persistencia: **le dio puerta a la que ya había**.
+
+### 14.2 Qué se hizo
+
+- **`apps/web/app/historial-chats.tsx`** (nuevo): la columna al costado arriba de
+  1024 px, cajón en portal abajo de eso. Agrupado por *Hoy / Ayer / Esta semana /
+  Este mes / Más atrás*, porque la pregunta con la que el alumno abre el
+  historial no es "¿cómo se llamaba?" sino **"¿dónde iba?"**.
+- **"Conversación nueva"**, que es lo que faltaba para que deje de amontonarse
+  todo en una. Va ABAJO de la lista (pedido del dueño): arriba era lo primero que
+  leía el ojo, cuando lo que se viene a hacer casi siempre es RETOMAR.
+- **Renombrar y borrar** (`PATCH` y `DELETE` nuevos en `/api/conversations`, los
+  dos con el mismo `where user_id` que el `GET` — es la única barrera que hay).
+- El chat carga los mensajes desde la BASE, no de memoria: el alumno puede volver
+  semanas después y desde otro aparato. Verificado: vuelven los sellos de
+  procedencia ("De tu libro") y las citas.
+
+### 14.3 Los títulos: 38 empezaban con "Explicame"
+
+El título salía de `body.question.slice(0, 80)`. Medido sobre las 337: **38
+empezaban con "Explicame"**, 13 con "Hola", 9 con "Profe", y **58 tocaban el tope
+de 80 y quedaban partidas al medio de una palabra**.
+
+`tituloDeConversacion()` (`apps/web/lib/conversations.ts`) saca el saludo y el
+pedido, saca la cortesía del final, **corta en un espacio** y arranca en
+mayúscula. Probado contra las 337 reales: **282 mejoran, 0 quedan cortadas**.
+
+> ⚠️ Las palabras de PREGUNTA no se sacan, a propósito. "¿Qué es la
+> fotosíntesis?" es un título perfecto; sacarle el "qué es" deja "la
+> fotosíntesis", que dice menos. Se sacan los SALUDOS y los PEDIDOS.
+
+En vivo: *"Hola profe, explicame qué es la amplitud de una onda por favor"* →
+**"Qué es la amplitud de una onda"**.
+
+### 14.4 Dos bugs de CSS que valen para el resto de la app
+
+1. **El estilo en línea le gana a la hoja.** La columna declaraba
+   `display: "flex"` inline, así que el `display: none` del media query no la
+   tocaba y se comía 268 de los 375 px del teléfono. Se resolvió **moviendo la
+   propiedad al CSS**, no con `!important`. Es la trampa que `panel.tsx:540` ya
+   tenía anotada.
+2. **`box-sizing` es `content-box`**: el proyecto no tiene reset global. El cajón
+   con `height: 100%` + `padding: 14px` medía 840 px en una pantalla de 812, y el
+   botón del pie quedaba cortado 14 px por debajo del borde. Se arregló con
+   `boxSizing: "border-box"` + `env(safe-area-inset-bottom)`.
+
+Y un detalle de convivencia: el cajón mide **300 px y no 320** porque el reloj de
+estudio flota fijo arriba a la derecha y arranca a los 316 en un teléfono de 375
+— con 320 su botón de cerrar quedaba debajo del reloj.
+
+### 14.5 La privacidad del docente sigue en pie
+
+Verificado: `/api/teacher/overview` no toca `messages` (consulta `book_sections`,
+`exam_attempts`, `student_plan_progress`, `student_profiles`,
+`student_weak_topics`, `subjects`, `users`). Nada de lo que se agregó acá le abre
+al docente una puerta a las conversaciones.
+
+### 14.6 Lo que esto habilita
+
+El dueño lo pidió pensando en *"ir integrando las mejores dudas para que la IA
+sea más eficiente"*. Cada mensaje ya guarda `grounded`, `citations`,
+`verification` y `meta` por separado, así que ahora que las charlas son
+direccionables se puede salir a buscar las mejores preguntas **sin tocar el
+esquema**.
+
+---
+
+## 15. LA LATENCIA DEL CHAT — el reranker no es lento, se calienta una vez (2026-08-28/29)
+
+Pedido del dueño: *"quiero optimizar el tiempo de respuesta del chat, está muy
+lento"*.
+
+### 15.1 La línea base ya estaba en la base
+
+`messages.meta.ms` venía guardando la latencia de cada respuesta desde siempre.
+Sobre **312 respuestas reales**:
+
+| | |
+|---|---:|
+| mínimo | 9,5 s |
+| **mediana** | **38,9 s** |
+| p90 | 114,4 s |
+| p99 | 216,7 s |
+| máximo | 240,5 s |
+
+### 15.2 El desglose, y qué NO era
+
+Se escribió un banco (`pnpm --filter @tutor-ia/eval latencia`) que corre la
+tubería real y la cronometra por etapa, más instrumentación con `RAG_TIMING=1`
+que emite `[emb]`, `[hyb]` y `[rr ]`.
+
+| etapa | mediana | veredicto |
+|---|---:|---|
+| SQL + pgvector | **10-131 ms** | no es el problema; el índice HNSW está y anda |
+| embeddings | ~500 ms | menor |
+| **reranker** | **el resto del retrieval** | **acá está todo** |
+| generación hasta el 1er token | 2-13 s | variable, ver §15.4 |
+
+En la corrida más limpia el retrieval fue **19,2 s de un total de 25,9 s — el
+81%**.
+
+### 15.3 EL HALLAZGO: es calentamiento, no lentitud
+
+El reranker parecía lentísimo y variable (949 ms a 7.794 ms para entradas
+idénticas). Medido en aislamiento, con la máquina libre:
+
+```
+en régimen (5 seguidas):  13.302 · 2.386 · 2.289 · 2.299 · 2.292 ms
+tras 30 s de reposo:       2.857 ms   (la siguiente: 2.297)
+tras 90 s de reposo:       3.165 ms   (la siguiente: 2.290)
+```
+
+**La primera pasada del modelo cuesta 13,3 s y todas las siguientes 2,3 s.** Y no
+se enfría: 90 segundos de reposo cuestan 0,9 s extra, nada. Es compilación de
+kernels de MPS en el primer forward, una sola vez.
+
+> **O sea que el reranker NO es lento: hay un peaje de ~11 s que se paga una vez,
+> y que cae justo sobre la PRIMERA pregunta de la sesión del alumno — el peor
+> lugar posible.**
+
+`rerank_server.py` no tiene ningún precalentado hoy (se buscó). Es lo próximo, y
+es lo de mejor relación entre lo que rinde y lo que arriesga: no toca la calidad,
+no cambia ningún score.
+
+### 15.4 ⚠️ CUATRO CONCLUSIONES QUE SE SACARON MAL, para no repetirlas
+
+Esta sesión se equivocó cuatro veces antes de llegar al hallazgo. Todas por el
+mismo vicio: **medir sin aislar**.
+
+1. **"El modelo escupe a 5 tokens/s".** Salió de dividir `length(content)` por
+   `meta.ms`, que le atribuye a la generación el tiempo del retrieval. La salida
+   real es de **70 a 169 caracteres/s**.
+2. **"El reranker ahoga al proceso de Node".** Se probó y es FALSO: con el
+   reranker trabajando en paralelo la generación sigue a 93-96 tok/s.
+3. **"Hay un 10× perdido entre el proveedor y la app".** Refutado por una segunda
+   corrida: mismo código y mismo prompt (`in=5138`) dieron 6 tok/s a las 16:00 y
+   77 tok/s veinte minutos después. **Es variabilidad del proveedor**, no un
+   problema nuestro. Y el prompt grande no cuesta: con 5.000 tokens de entrada el
+   primer token igual sale a 739 ms.
+4. **"Unir los dos reranks da −20%".** El A/B se corrió con DOS bancos a la vez
+   contra un sidecar de una sola vía (`GPU_LOCK = Semaphore(1)`), así que se
+   encolaron entre ellos. Contaminado.
+
+> **La regla que queda:** el sidecar serializa. Cualquier medición con más de un
+> proceso tocándolo mide la cola, no el algoritmo. Y **descartá siempre la
+> primera muestra**: es el calentamiento y se come la diferencia que estás
+> tratando de medir.
+
+### 15.5 Qué quedó y qué se revirtió
+
+**Se revirtió, por decisión del dueño:** el rerank unificado (contenido 25 +
+pedagogía 40 en un solo pedido). Estaba implementado y **verificado bit a bit**
+—rerankear A+B junto contra A y B por separado da diferencia `0,000e+0` y el
+mismo orden, así que no había riesgo de calidad—, pero el A/B limpio dio −20 %
+mientras que punta a punta no se movió (19,2 s contra 19,8 s de base). No se
+sostiene un refactor de `retrieve-teaching.ts` con una mejora que no aparece.
+
+**Quedó en el árbol:**
+- **Caché del embedding de la consulta** (`packages/rag/src/embeddings.ts`).
+  Guarda la PROMESA y no el valor, así dos pedidos concurrentes con el mismo
+  texto comparten una sola llamada a la API en vez de hacer dos idénticas. TTL de
+  60 s, tope de 256, y una promesa rechazada se borra para que el próximo turno
+  reintente.
+- **El banco y la instrumentación** (`packages/eval/src/latencia-chat.ts`,
+  `RAG_TIMING=1`). El banco separa retrieval / primer chunk / generación / NLI, y
+  esa distinción es la que ordena todo: el texto va en streaming, así que lo que
+  el alumno vive como pantalla en blanco es **retrieval + primer chunk**.
+
+### 15.6 El otro costo, que es grande y quedó abierto
+
+`puenteDeVocabulario` (la normalización de la consulta) **no está en el camino
+crítico**: solo corre cuando el gate falla. Pero cuando corre y rescata, **el
+retrieval entero corre una segunda vez** — segundo embedding, segundo rerank.
+
+| | |
+|---|---:|
+| el gate falla | 21,5 % de los turnos |
+| el puente rescata (`qNorm=true`) | 7,4 % |
+| mediana de esas respuestas | **62,7 s** contra 37,2 s del resto |
+
+Hacerlo especulativo (lanzarlo en paralelo siempre) ahorraría ~1,3 s en ese
+21,5 % —unos 0,3 s de promedio— a cambio de **una llamada extra al LLM en el
+100 %**. No cierra. Lo que sí valdría es no rerankear la pedagogía dos veces: son
+40 de los 65 pasajes y el puente no cambia qué guía docente aplica.
+
+### 15.7 Lo próximo, en orden
+
+1. **Precalentar el sidecar al arrancar.** ~11 s menos en la primera pregunta.
+2. **Evitar el doble rerank de pedagogía** en la segunda ronda del puente.
+3. Con **recall@5 medido** (y no antes): truncar los pasajes del reranker vale
+   2,4× —600 caracteres tardan 1,1 s contra 2,6 s de 1.665— pero
+   `rerank.ts` lo prohíbe por escrito y tiene razón: cambiaría el score de casi
+   todos los chunks.
+
+---
+
+## 16. EL AVANCE DEL ALUMNO — el número mentía, y el camino se borra solo (2026-08-29)
+
+Pedido del dueño: *"quiero una gráfica más visible del avance paso a paso"*.
+Antes de dibujar nada apareció que **el número que había que dibujar estaba mal**.
+
+### 16.1 🔴 EL 100% DEL AVANCE ESTÁ HUÉRFANO
+
+Para la misma materia, el mismo día:
+
+| pantalla | decía |
+|---|---|
+| El camino | **0 de 12** |
+| Tu resumen | **5 de 11 · 45 %** |
+
+Y de las 5 paradas que el alumno tenía marcadas, **0 existían en el plan
+vigente**. Medido sobre toda la base: **99 filas de avance, 99 huérfanas — el
+100 %**, en las tres materias que tienen avance.
+
+**La causa, con fechas:**
+
+| | |
+|---|---|
+| El alumno marcó su avance | 5 al 16 de agosto |
+| Se reconstruyeron las secciones | **23 al 26 de agosto** |
+
+`claveTema(document_id, ord, title)` depende del `ord`, y reconstruir
+`book_sections` lo reasigna. Una semana después, todas las claves cambiaron.
+
+**Y no se puede recuperar.** Se intentó: 89 de las 99 conservan su título en
+`lesson_notes`, pero **0 coinciden con un título del plan** (los títulos del plan
+los escribe el modelo, no salen del índice del libro) y solo 22 coinciden con una
+sección del libro.
+
+> 🔴 **ESTO SIGUE ABIERTO Y ES LA RAÍZ.** Mientras la clave dependa del `ord`,
+> **cada `build-sections` pone todo el avance de todos los alumnos en cero.** Es
+> la misma familia de falla que §8.2 ("el orden de los cinco pasos rompió los 34
+> caminos"); la protección que dejó `fase1-ingesta` cubre la INGESTA, no el
+> rebuild de secciones. El arreglo es que la clave cuelgue de algo estable
+> (documento + rango de páginas, por ejemplo) o que el rebuild migre el progreso.
+> Merece su propia sesión.
+>
+> Lo bueno: esto es anterior a tener alumnos reales. Se perdió avance de demo.
+
+### 16.2 Lo que sí se arregló
+
+**El número.** `/api/resumen` cuenta el avance **cruzándolo contra el plan
+vigente**, igual que el camino, en vez de contar filas sueltas. Y
+`hechas.lecciones` usa el mismo criterio: antes el número grande decía 9 con
+todas las materias en 0, a dos dedos de distancia. El avance que el plan ya no
+reconoce viaja como `huerfanos` para diagnóstico y **NO se le muestra al
+alumno**: decirle "tenés 9 pasos que ya no se reconocen" no le sirve de nada.
+
+**La gráfica.** Dos piezas, con los mismos datos y los mismos colores:
+- **La pista por materia**: un segmento por paso, en orden. Tres estados y nada
+  más — hecho (relleno), el que sigue (hueco con borde), lo que falta (gris). Y
+  debajo, el paso concreto con nombre: *"Seguís por 4. Estructura atómica"*. Un
+  porcentaje contesta *cuánto*; esto contesta **dónde**.
+- **"Todo tu camino"** arriba: la misma pieza con todas las materias, agrupadas y
+  con su color. Lo que falta va en el color de la materia MUY tenue y no en gris,
+  así aun sin nada hecho la tira muestra de qué está compuesto el año.
+
+> ⚠️ NO se traen los símbolos del camino (número · ! · ?). Contestan otra
+> pregunta —"¿tengo con qué estudiar esto?", §12.6— y en una tira de 9 px no hay
+> lugar para dos significados.
+
+### 16.3 🔴 EL ALUMNO TIENE UN SOLO CURSO, y tres pantallas no lo sabían
+
+El resumen mostraba una sección "De otros cursos" con Física 1º y Biología 1º
+colgando de un alumno de 4º Medio. Tirando del hilo apareció que era peor:
+
+| | |
+|---|---:|
+| Temas para reforzar de SU curso (4º Medio) | **0** |
+| Temas para reforzar de otro curso (1º Medio) | **229** |
+
+**La chapita "Reforzar 40" del nav era 100 % material ajeno** — Física 1º (23) y
+Biología 1º (17). Un chico de 4º la abría y encontraba temas de 1º.
+
+Arreglado en TRES capas, porque estaba en tres:
+1. **`/resumen`**: filtra estricto por curso, igual que el panel
+   (`panel.tsx:382`) y el perfil (`perfil/page.tsx:60`). Era la única pantalla
+   que se salía de la regla.
+2. **`agruparReforzar` / `contarReforzar`** reciben el curso como parámetro
+   **REQUERIDO**, no opcional — si fuera opcional el próximo llamador lo omite y
+   el bug vuelve callado. El typecheck marcó los cinco call sites de una.
+3. **`lib/repaso.ts`**: `candidatos()` y el contador del día. Sin esto el arreglo
+   de UI era cosmético — el servidor seguía sirviendo material de otro año. El
+   curso de una materia sale de sus documentos; la tabla subjects no lo guarda.
+
+Y la lista "ver todo" de Reforzar tenía una COPIA del filtro sin el curso; ahora
+pasa por `agruparReforzar`, así que un solo lugar decide qué entra.
+
+### 16.4 Dos bugs de layout que valen para otras pantallas
+
+1. **Un ítem de grilla no baja de su ancho MÍNIMO DE CONTENIDO.** El renglón
+   "Seguís por 1. Estructura y función de la noticia" va en `nowrap`, así que ese
+   mínimo pasaba a ser el título entero y estiraba la tarjeta: **64 px de scroll
+   horizontal a 375**. El `overflow: hidden` recorta lo que se ve pero no achica
+   el mínimo — eso lo hace `minWidth: 0`.
+2. **La pantalla se caía entera** si el bundle del navegador quedaba una versión
+   adelante de la API (`m.pasos` indefinido). Ahora degrada a una fila sin pista.
+   Un resumen sin gráfica es una degradación; un resumen en blanco es un bug.
+
+### 16.5 Los backticks, por tercera vez
+
+Caí otra vez en §13.6, ahora en un **comentario de SQL** adentro de un template
+literal (`` `subjects` ``). El typecheck lo agarra en segundos y
+`scripts/sql-backticks.sh` lo cubre. La regla no cambia: **nunca backticks
+adentro de un literal**.

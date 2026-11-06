@@ -10,6 +10,9 @@
 import { getSql, toVectorLiteral } from "@tutor-ia/db";
 import { embedQuery } from "./embeddings";
 
+/** Contador para medir la cascada. Ver `embedStats` en embeddings.ts. */
+export const hybridStats = { llamadas: 0, sqlMs: 0 };
+
 export interface HybridChunk {
   chunkId: string;
   documentId: string;
@@ -128,6 +131,7 @@ export async function retrieveHybridWithStats(
   const embedding = toVectorLiteral(await embedQuery(query));
 
   const role = opts.corpusRole ?? null;
+  const tSql = Date.now();
   const [dense, lexical] = await Promise.all([
     sql<Row[]>`
       select * from match_chunks_dense(${embedding}::vector, ${opts.userId}::uuid, ${subjects}::uuid[], ${pool}, ${role}, ${pausadas})
@@ -136,6 +140,11 @@ export async function retrieveHybridWithStats(
       select * from match_chunks_lexical(${query}, ${opts.userId}::uuid, ${subjects}::uuid[], ${pool}, ${role}, ${pausadas})
     `,
   ]);
+  hybridStats.llamadas++;
+  hybridStats.sqlMs += Date.now() - tSql;
+  if (process.env.RAG_TIMING === "1") {
+    console.log(`[hyb] ${Date.now() - tSql} ms · role=${role ?? "todos"} · materias=${subjects?.length ?? "todas"} · pool=${pool}`);
+  }
 
   const merged = new Map<string, HybridChunk>();
 

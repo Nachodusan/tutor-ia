@@ -31,6 +31,18 @@ export async function rerankHealthy(): Promise<boolean> {
   }
 }
 
+/**
+ * Contador de viajes al sidecar, para medir. Se lee con `RAG_TIMING=1` junto
+ * con `[emb]` y `[hyb]`; el banco es `pnpm --filter @tutor-ia/eval latencia`.
+ *
+ * Existe porque el reranker resultó ser el cuello del chat y no había forma de
+ * verlo: medido el 2026-08-28, el retrieval es ~19 s de una respuesta de ~26 s,
+ * y de esos 19 s casi todo es UNA llamada acá (65 pasajes, ~8,6 s). El SQL son
+ * 10-131 ms y los embeddings ~500 ms. Sin este log el tiempo desaparecía dentro
+ * de "retrieval" sin desglose.
+ */
+export const rerankStats = { llamadas: 0, pasajes: 0, ms: 0 };
+
 /** Puntúa cada pasaje contra la consulta. normalize=true → sigmoide 0-1. */
 export async function rerank(
   query: string,
@@ -38,6 +50,7 @@ export async function rerank(
   normalize = true,
 ): Promise<number[]> {
   if (passages.length === 0) return [];
+  const tRr = Date.now();
   const r = await fetch(`${BASE}/rerank`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -63,6 +76,12 @@ export async function rerank(
     );
   }
   const j = (await r.json()) as { scores: number[] };
+  rerankStats.llamadas++;
+  rerankStats.pasajes += passages.length;
+  rerankStats.ms += Date.now() - tRr;
+  if (process.env.RAG_TIMING === "1") {
+    console.log(`[rr ] ${Date.now() - tRr} ms · ${passages.length} pasajes · ${passages.reduce((n, p) => n + p.length, 0)} chars`);
+  }
   return j.scores;
 }
 

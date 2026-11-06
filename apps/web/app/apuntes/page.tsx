@@ -7,11 +7,15 @@
  * grabación de repaso — la única que no pide ojos, para escuchar en el camino
  * al colegio.
  *
- * ⚠️ NADA DE ESTO PROCESA TODAVÍA, y la pantalla lo dice en la cara —chapa
- * "Maqueta" arriba y aviso al tocar los botones—. Es deliberado: una pantalla
- * de producto que se ve terminada y calla que es un dibujo termina en manos de
- * un chico que sube la foto de su cuaderno y espera un mapa conceptual que no
- * va a llegar. Mientras sea maqueta, tiene que verse como maqueta.
+ * ⚠️ NADA DE ESTO PROCESA TODAVÍA, y la pantalla lo sigue diciendo: la bajada
+ * del encabezado ("todavía no procesa nada") y el cartel que aparece al tocar
+ * cualquiera de las cuatro formas. La chapa "MAQUETA" que había al lado del
+ * título se sacó el 2026-08-31 por pedido del dueño.
+ *
+ * El principio no cambió y conviene tenerlo a mano: una pantalla de producto
+ * que se ve terminada y calla que es un dibujo termina en manos de un chico que
+ * sube la foto de su cuaderno y espera un mapa conceptual que no va a llegar.
+ * Quedan DOS avisos; si se sacan esos, la pantalla pasa a mentir.
  *
  * Lo que sí es real por debajo, cuando se conecte: el corpus del alumno todavía
  * NO admite material propio (la ingesta es del libro del colegio), así que esto
@@ -28,7 +32,7 @@ import { useAlumno, cerrarSesion } from "../usar-alumno";
 
 export default function ApuntesPage() {
   const router = useRouter();
-  const { loaded, profile, subjects, stats, role } = useAlumno();
+  const { loaded, profile, subjects, stats } = useAlumno();
   const [aviso, setAviso] = useState(false);
 
   useEffect(() => {
@@ -39,18 +43,22 @@ export default function ApuntesPage() {
 
   return (
     <PanelShell nav={
-      <PanelNav profile={profile} pendientes={contarReforzar(subjects, stats)}
-        teacher={role === "teacher" || role === "admin"}
+      <PanelNav profile={profile} pendientes={contarReforzar(subjects, stats, profile.grade)}
         onEdit={() => router.push("/?editar=1")}
         onLogout={() => { void cerrarSesion().then(() => router.replace("/login")); }} />
     }>
       <header className={CLASE_HUECO_RELOJ} style={{ marginBottom: 22 }}>
+        {/* ⚠️ ACÁ HABÍA UNA CHAPA "MAQUETA" al lado del título y SE SACÓ por
+            pedido del dueño (2026-08-31).
+            El aviso NO desapareció, cambió de lugar: lo sigue diciendo la
+            bajada de acá abajo ("todavía no procesa nada") y el cartel que
+            aparece al tocar cualquiera de las cuatro formas. Si algún día se
+            sacan también esos dos, esta pantalla pasa a ser un dibujo que se
+            hace pasar por producto — y ahí un chico sube la foto de su cuaderno
+            y espera un mapa conceptual que no va a llegar. */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span style={{ fontFamily: FONT.round, fontSize: 24, fontWeight: 800, letterSpacing: -0.3 }}>
             Repasá con tus apuntes
-          </span>
-          <span style={{ background: C.warnBg, color: C.warnTx, border: `1.5px solid ${C.warnTx}`, borderRadius: 999, padding: "2px 10px", fontFamily: FONT.round, fontWeight: 800, fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.6 }}>
-            Maqueta
           </span>
         </div>
         <p style={{ color: C.dim, fontSize: 14, lineHeight: 1.55, margin: "4px 0 0", maxWidth: 620 }}>

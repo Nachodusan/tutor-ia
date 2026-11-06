@@ -153,8 +153,75 @@ export async function embed(
 }
 
 /** Conveniencia para una sola consulta. */
-export async function embedQuery(text: string): Promise<number[]> {
-  const [v] = await embed([text], "query");
-  if (!v) throw new Error("No se pudo generar el embedding de la consulta.");
-  return v;
+/**
+ * CONTADOR DE LLAMADAS, para poder medir. Se enciende con `RAG_TIMING=1`.
+ *
+ * Existe porque la primera medición de latencia del chat (2026-08-28) dio un
+ * retrieval de 16,7 s de mediana y no había forma de saber cuántas veces se
+ * embebía la MISMA pregunta adentro de una sola respuesta.
+ */
+export const embedStats = { llamadas: 0, ms: 0, cacheHits: 0 };
+const timing = () => process.env.RAG_TIMING === "1";
+
+/**
+ * MEMORIA DE UNA PREGUNTA, no un caché global.
+ *
+ * `retrieveHybrid` embebe la consulta en CADA llamada, y la cascada de alcance
+ * la llama hasta cinco veces por respuesta (curso → otro curso → área → otra
+ * materia, más la pedagogía). Con el embedding remoto a ~400 ms, eso son ~2 s
+ * de la misma llamada repetida, cada vez con el mismo texto y el mismo
+ * resultado.
+ *
+ * Es un `Map` chico con TTL corto y NO un caché de verdad a propósito:
+ *  · la clave es el texto exacto de la consulta, así que no hay riesgo de
+ *    devolver el vector de otra pregunta;
+ *  · vive segundos, lo que dura una respuesta, así que no hay que invalidarlo
+ *    si cambia `EMBEDDING_MODEL` en un despliegue;
+ *  · tiene tope de tamaño, así que no puede crecer sin control en un proceso
+ *    de servidor que vive días.
+ */
+const VIDA_MS = 60_000;
+const TOPE = 256;
+/**
+ * Se guarda la PROMESA, no el vector, y eso no es un detalle de estilo: el
+ * contenido y la pedagogía se piden en paralelo con la misma consulta. Con el
+ * valor, los dos entran mientras no hay nada guardado, los dos fallan el
+ * lookup y se hacen DOS llamadas idénticas a la API. Con la promesa, el
+ * segundo se cuelga de la primera. Es el mismo patrón que el `_nli_lock` del
+ * sidecar, que existe por la misma razón.
+ */
+const memoria = new Map<string, { p: Promise<number[]>; t: number }>();
+
+export function embedQuery(text: string): Promise<number[]> {
+  const clave = text.trim();
+  const ahora = Date.now();
+
+  const guardado = memoria.get(clave);
+  if (guardado && ahora - guardado.t < VIDA_MS) {
+    embedStats.cacheHits++;
+    if (timing()) console.log(`[emb] HIT (${clave.slice(0, 40)}…)`);
+    return guardado.p;
+  }
+
+  const t0 = ahora;
+  const p = embed([clave], "query").then(([v]) => {
+    if (!v) throw new Error("No se pudo generar el embedding de la consulta.");
+    embedStats.llamadas++;
+    embedStats.ms += Date.now() - t0;
+    if (timing()) console.log(`[emb] ${Date.now() - t0} ms (${clave.slice(0, 40)}…)`);
+    return v;
+  });
+
+  // Una promesa RECHAZADA no puede quedar guardada: el próximo turno se
+  // colgaría del mismo error en vez de reintentar.
+  p.catch(() => memoria.delete(clave));
+
+  // Poda simple: si se pasó del tope, se tira la entrada más vieja. Con TTL de
+  // 60 s y 256 entradas no se llega nunca en la práctica; es el seguro.
+  if (memoria.size >= TOPE) {
+    const masVieja = [...memoria.entries()].sort((a, b) => a[1].t - b[1].t)[0];
+    if (masVieja) memoria.delete(masVieja[0]);
+  }
+  memoria.set(clave, { p, t: ahora });
+  return p;
 }
