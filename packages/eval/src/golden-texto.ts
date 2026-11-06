@@ -328,7 +328,38 @@ const CON_CITAS = [
   "packages/eval/golden/golden-macrotipo.jsonl",
   "packages/eval/golden/a3-set.jsonl",
   "packages/eval/golden/subset-fidelidad.jsonl",
+
+  // Las corridas congeladas. Lo que vale acá son las métricas y los veredictos
+  // —se usan para comparar contra una corrida nueva—, no la prosa: el libro
+  // entró en `note` (copiado del golden) y en `result.answer` (el tutor citando
+  // la página). Pelarlas deja las respuestas con huecos, y eso es una pérdida
+  // real: ya no se puede volver a juzgar una respuesta vieja palabra por
+  // palabra. Se acepta porque el original entero vive en el espejo privado y
+  // publicar el repo con los libros adentro no se puede deshacer.
+  "packages/eval/baselines/2026-08-04-claims-audit.json",
+  "packages/eval/baselines/2026-08-04-claims-veredictos.json",
+  "packages/eval/baselines/2026-08-01-A-golden.json",
+  "packages/eval/baselines/2026-08-02-N1-golden-qnorm.json",
+  "packages/eval/baselines/2026-08-04-cascada-arreglada.json",
+  "packages/eval/baselines/2026-08-01-F-golden-OR.json",
+  "packages/eval/baselines/2026-08-01-N-neutralidad.json",
+  "packages/eval/baselines/2026-08-03-baseline-cascada.json",
+  "packages/eval/baselines/2026-08-05-fase0-answerability.json",
+  "packages/eval/baselines/2026-08-12-golden101-t0.json",
+  "packages/eval/baselines/2026-08-05-scope-audit-todas.json",
+  "packages/eval/baselines/2026-08-01-B-parafraseadas.json",
+  "packages/eval/baselines/2026-08-01-F-parafraseadas-OR.json",
+  "packages/eval/baselines/2026-08-02-FINAL-parafraseadas-stack.json",
+  "packages/eval/baselines/2026-08-02-N1-parafraseadas-qnorm.json",
 ];
+
+/**
+ * El único que NO se pela sino que se borra: `sidecar-libro.json` es el OCR
+ * completo de *Lengua y Literatura 8vo*, 344 páginas. No hay nada propio
+ * adentro que rescatar, y de paso lleva la ruta del escritorio de quien lo
+ * generó. Se va del historial y no vuelve.
+ */
+const SE_BORRA = ["packages/eval/sidecar-libro.json"];
 
 /**
  * ⚠️ ESTO ES DE IDA Y NO VUELVE, a diferencia de `--pelar`.
