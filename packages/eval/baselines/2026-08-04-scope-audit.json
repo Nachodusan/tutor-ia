@@ -1,0 +1,571 @@
+[
+  {
+    "id": "q027",
+    "pregunta": "¿Cuál es la fórmula para calcular el área de un triángulo?",
+    "notaDelGolden": "Es contenido de matemática/geometría, no aparece en un libro de Lengua y Literatura.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0,
+    "fragmentos": []
+  },
+  {
+    "id": "q028",
+    "pregunta": "¿En qué año ganó Chile la Copa América de fútbol por primera vez?",
+    "notaDelGolden": "Dato deportivo de actualidad, fuera del material de Lengua y Literatura.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0,
+    "fragmentos": []
+  },
+  {
+    "id": "q029",
+    "pregunta": "¿Cuántos huesos tiene el cuerpo humano de una persona adulta?",
+    "notaDelGolden": "Contenido de biología/anatomía, no está en el libro de Lengua.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0,
+    "fragmentos": []
+  },
+  {
+    "id": "q030",
+    "pregunta": "¿Cómo se convierten grados Celsius a Fahrenheit?",
+    "notaDelGolden": "Contenido de física/matemática, ajeno al libro de Lengua y Literatura.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.805596775501733,
+    "fragmentos": [
+      {
+        "de": "Ciencias Naturales 8º — texto del estudiante · 8B · pág. 109",
+        "texto": "",
+        "textoHash": "7e7f53ab3afd7c4c"
+      },
+      {
+        "de": "Ciencias Naturales 8º — texto del estudiante · 8B · pág. 110",
+        "texto": "",
+        "textoHash": "b53c7fa219e67b58"
+      },
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 178",
+        "texto": "",
+        "textoHash": "c034ab430fbf0439"
+      },
+      {
+        "de": "Ciencias Para La Ciudadanía 4º Medio — texto del estudiante · 4M · pág. 174",
+        "texto": "",
+        "textoHash": "3ff3835b750e78c8"
+      },
+      {
+        "de": "Ciencias Naturales 8º — texto del estudiante · 8B · pág. 108",
+        "texto": "",
+        "textoHash": "32745c55ac44bdf4"
+      }
+    ]
+  },
+  {
+    "id": "q031",
+    "pregunta": "¿Cuál es la capital de Australia y cuántos habitantes tiene?",
+    "notaDelGolden": "Dato de geografía mundial, no forma parte del material del libro.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0,
+    "fragmentos": []
+  },
+  {
+    "id": "q032",
+    "pregunta": "¿Cuánto tiempo hay que hervir un huevo para que quede duro?",
+    "notaDelGolden": "Consejo de cocina, completamente fuera del temario de Lengua.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.1601830257259994,
+    "fragmentos": [
+      {
+        "de": "Ciencias Naturales 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "0a3ac45d4d14879a"
+      },
+      {
+        "de": "Ciencias Naturales 3º — texto del estudiante · 3B · pág. 164",
+        "texto": "",
+        "textoHash": "6cc2c78cb1e077e2"
+      },
+      {
+        "de": "Ciencias Naturales 4º — texto del estudiante · 4B · pág. 106",
+        "texto": "",
+        "textoHash": "b8c82baff55381af"
+      },
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 131",
+        "texto": "",
+        "textoHash": "9dfae318ebcb5db3"
+      },
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 51",
+        "texto": "",
+        "textoHash": "6e4fd6e2b032bb9c"
+      },
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 129",
+        "texto": "",
+        "textoHash": "d2c9806bd6361369"
+      }
+    ]
+  },
+  {
+    "id": "q033",
+    "pregunta": "¿Cómo puedo programar un videojuego en Python paso a paso?",
+    "notaDelGolden": "Contenido de tecnología/programación, no aparece en el libro de Lengua.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0,
+    "fragmentos": []
+  },
+  {
+    "id": "q034",
+    "pregunta": "¿Qué es la fotosíntesis y qué necesitan las plantas para realizarla?",
+    "notaDelGolden": "Contenido de biología/ciencias naturales, ajeno al libro de Lengua y Literatura.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.9889690891370082,
+    "fragmentos": [
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 83",
+        "texto": "",
+        "textoHash": "97658679aeb66e1b"
+      },
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 87",
+        "texto": "",
+        "textoHash": "813e403e04c9b2a9"
+      },
+      {
+        "de": "Ciencias Naturales 8º — texto del estudiante · 8B · pág. 74",
+        "texto": "",
+        "textoHash": "dcd41399e6f2927e"
+      },
+      {
+        "de": "Biología 2º Medio — texto del estudiante · 2M · pág. 102",
+        "texto": "",
+        "textoHash": "617a26181749afd2"
+      },
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 85",
+        "texto": "",
+        "textoHash": "bb1a8bb457dab2fe"
+      }
+    ]
+  },
+  {
+    "id": "q035",
+    "pregunta": "¿Cuál fue el resultado de las últimas elecciones presidenciales en Chile?",
+    "notaDelGolden": "Actualidad política, no está en el material del libro escolar.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.8329242473744807,
+    "fragmentos": [
+      {
+        "de": "Educación Ciudadana 4º Medio — texto del estudiante · 4M · pág. 33",
+        "texto": "",
+        "textoHash": "e7e85d181f2114a3"
+      },
+      {
+        "de": "Educación Ciudadana 4º Medio — texto del estudiante · 4M · pág. 132",
+        "texto": "",
+        "textoHash": "a76cbbd72cf34ab2"
+      },
+      {
+        "de": "Educación Ciudadana 3º Medio — texto del estudiante · 3M · pág. 32",
+        "texto": "",
+        "textoHash": "4a19fda61e95acc8"
+      }
+    ]
+  },
+  {
+    "id": "q036",
+    "pregunta": "¿A qué velocidad viaja la luz en el vacío?",
+    "notaDelGolden": "Constante de física, no forma parte de un libro de Lengua y Literatura.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.6906618116359833,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 3º Medio — texto del estudiante · 3M · pág. 20",
+        "texto": "",
+        "textoHash": "863ecdad27347408"
+      },
+      {
+        "de": "Ciencias Naturales 3º — texto del estudiante · 3B · pág. 52",
+        "texto": "",
+        "textoHash": "366b754b1688bc75"
+      },
+      {
+        "de": "Lengua Y Literatura 3º Medio — texto del estudiante · 3M · pág. 22",
+        "texto": "",
+        "textoHash": "b73b0d6ceaec5463"
+      },
+      {
+        "de": "Ciencias Naturales 3º — texto del estudiante · 3B · pág. 54",
+        "texto": "",
+        "textoHash": "cb71b6432e3afa4a"
+      }
+    ]
+  },
+  {
+    "id": "q120",
+    "pregunta": "¿De qué trata la novela Cien años de soledad de Gabriel García Márquez?",
+    "notaDelGolden": "Near-miss literario: obra famosa en español plausible para un curso de Lengua, pero el corpus no la trata. El tutor debe abstenerse. Keywords verificadas con ILIKE en todo el corpus (0 filas): 'garcía márquez', 'garcia marquez', 'márquez', 'cien años de soledad', 'macondo', 'realismo mágico', 'buendía', 'buendia', 'aureliano', 'gabo'. Falsos positivos verificados: 'cien años' da 1 fila (relato policial de la señora Stevens, sin relación) y 'soledad' da 4 filas (usos comunes como 'sus soledades' o 'ermitaño: persona que vive en soledad').",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.8940059494113098,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 128",
+        "texto": "",
+        "textoHash": "0f3d8cc9baf92d42"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 121",
+        "texto": "",
+        "textoHash": "6299d1587136065d"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 128",
+        "texto": "",
+        "textoHash": "a03b2ade0ce202cb"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 223",
+        "texto": "",
+        "textoHash": "b19cb906d2ffc959"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 61",
+        "texto": "",
+        "textoHash": "643688e09bfabaf8"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 127",
+        "texto": "",
+        "textoHash": "689022d26a7cea4c"
+      }
+    ]
+  },
+  {
+    "id": "q121",
+    "pregunta": "¿Qué poemas de Pablo Neruda salen en el libro y de qué tratan?",
+    "notaDelGolden": "Near-miss fuerte: el libro tiene unidad de poesía (analiza 'El viajero de todos los mares'; 'poesía'/'poema' da 13 filas), pero Neruda no aparece. Debe abstenerse. Keywords verificadas (0 filas en todo el corpus): 'neruda', 'veinte poemas', 'residencia en la tierra'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.6291563390044613,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 2º Medio — texto del estudiante · 2M · pág. 28",
+        "texto": "",
+        "textoHash": "013263a283eb344f"
+      },
+      {
+        "de": "Lengua Y Literatura 7º — texto del estudiante · 7B · pág. 60",
+        "texto": "",
+        "textoHash": "47e09363c0e338f3"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 224",
+        "texto": "",
+        "textoHash": "84bead02921f78cd"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 225",
+        "texto": "",
+        "textoHash": "67c9c17d4a5ca876"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 1º — texto del estudiante – tomo 1 · 1B · pág. 270",
+        "texto": "",
+        "textoHash": "d28869f23f570568"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 3º — leo primero texto del estudiante- tomo 2 · 3B · pág. 46",
+        "texto": "",
+        "textoHash": "4d8e32c5b5985ff3"
+      }
+    ]
+  },
+  {
+    "id": "q122",
+    "pregunta": "¿Quién era Sancho Panza y qué relación tenía con don Quijote?",
+    "notaDelGolden": "Near-miss: clásico escolar plausible pero ausente del corpus. Debe abstenerse. Keywords verificadas (0 filas): 'quijote', 'cervantes', 'sancho', 'rocinante', 'dulcinea', 'hidalgo'. 'mancha' da 1 fila pero es falso positivo (una 'mancha rojiza' en un cuero, sin relación con La Mancha).",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.5702484296561878,
+    "fragmentos": [
+      {
+        "de": "Filosofía 4º Medio — texto del estudiante · 4M · pág. 62",
+        "texto": "",
+        "textoHash": "0554c52f993f7fe3"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 3º — texto del estudiante · 3B · pág. 123",
+        "texto": "",
+        "textoHash": "0ccfed0feedcf939"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 2º — texto del estudiante · 2B · pág. 194",
+        "texto": "",
+        "textoHash": "f85dc1a07edc8df9"
+      },
+      {
+        "de": "Lengua Y Literatura 7º — texto del estudiante · 7B · pág. 100",
+        "texto": "",
+        "textoHash": "7833a218029b364f"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 5º — texto del estudiante · 5B · pág. 108",
+        "texto": "",
+        "textoHash": "7b80694f58d34914"
+      }
+    ]
+  },
+  {
+    "id": "q123",
+    "pregunta": "En la parte del género policial, ¿qué se cuenta sobre Sherlock Holmes y su creador Arthur Conan Doyle?",
+    "notaDelGolden": "Near-miss muy fuerte: el libro SÍ cubre el género policial y habla de detectives ('detective' da 11 filas y 'policial' 13 filas de teoría del género), pero Sherlock Holmes y Conan Doyle no se mencionan nunca. Debe abstenerse. Keywords verificadas (0 filas): 'sherlock', 'holmes', 'conan doyle', 'doyle', 'watson', 'baker street'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.505238476379361,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 86",
+        "texto": "",
+        "textoHash": "d95da22556a34826"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "c42cac30aefba745"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "3bdb691e3cd8da36"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "b7cb0befeff2ae12"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "63924b09c91379ee"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 17",
+        "texto": "",
+        "textoHash": "19bf17c74f5508fa"
+      }
+    ]
+  },
+  {
+    "id": "q124",
+    "pregunta": "¿Qué pasa al final de Romeo y Julieta de Shakespeare?",
+    "notaDelGolden": "Near-miss: el libro tiene unidad de teatro (El ahogado de Neil Simon), pero no trata a Shakespeare. Debe abstenerse. Keywords verificadas (0 filas): 'shakespeare', 'romeo', 'verona', 'capuleto', 'montesco'. Ojo: 'julieta' da 1 fila pero es un falso positivo (Julieta Brodsky, ministra de las Culturas, en un artículo sobre el Premio Nacional de Artes Musicales); no tiene relación con la obra.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0,
+    "fragmentos": []
+  },
+  {
+    "id": "q125",
+    "pregunta": "¿Cómo logró Ulises volver a Ítaca en la Odisea de Homero?",
+    "notaDelGolden": "Near-miss: épica clásica plausible en Lengua de 8vo, ausente del corpus. Debe abstenerse. Keywords verificadas (0 filas): 'odisea', 'homero', 'ulises', 'ítaca', 'itaca', 'troya', 'penélope'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.7460012749536972,
+    "fragmentos": [
+      {
+        "de": "Lenguaje Y Comunicación 6º — texto del estudiante · 6B · pág. 148",
+        "texto": "",
+        "textoHash": "ab4eecbc825f1755"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 132",
+        "texto": "",
+        "textoHash": "86b9b6a61b5d1333"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 4º — leo primero texto del estudiante- tomo 2 · 4B · pág. 66",
+        "texto": "",
+        "textoHash": "5370bcced0e7c5e7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 109",
+        "texto": "",
+        "textoHash": "70c7f8b28184e53e"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 1º — texto del estudiante – tomo 2 · 1B · pág. 160",
+        "texto": "",
+        "textoHash": "b4a4c81360d900c7"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 1º — texto del estudiante – tomo 2 · 1B · pág. 157",
+        "texto": "",
+        "textoHash": "c7c3cfebefaebbc8"
+      }
+    ]
+  },
+  {
+    "id": "q126",
+    "pregunta": "¿Cómo es el mito griego del Minotauro y quién lo venció?",
+    "notaDelGolden": "Near-miss fuerte: el libro trata mitos LATINOAMERICANOS, no griegos. Debe abstenerse. Keywords verificadas (0 filas): 'minotauro', 'teseo', 'ariadna', 'zeus', 'mitología griega', 'mitologia griega', 'griego', 'griega'. Falsos positivos verificados: 'creta' da 1 fila por substring ('la secretaria de Estado'), 'laberinto' da 2 filas (uso metafórico en 'La última hoja': 'el laberinto de los lugares'). Solo existe una glosa de vocabulario 'sátiro: ser mitológico', que no cubre el mito del Minotauro.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.8000833005832548,
+    "fragmentos": [
+      {
+        "de": "Lenguaje Y Comunicación 4º — leo primero texto del estudiante- tomo 1 · 4B · pág. 103",
+        "texto": "",
+        "textoHash": "fb8e713d229ccd51"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 4º — leo primero texto del estudiante- tomo 1 · 4B · pág. 103",
+        "texto": "",
+        "textoHash": "d27e4554cfcba162"
+      },
+      {
+        "de": "Historia Geografía Y Ciencias Sociales 3º — texto del estudiante · 3B · pág. 94",
+        "texto": "",
+        "textoHash": "a4c06e66b986fb8f"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 4º — leo primero texto del estudiante- tomo 1 · 4B · pág. 105",
+        "texto": "",
+        "textoHash": "c7b94c63ed662c2b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 107",
+        "texto": "",
+        "textoHash": "26075c93de6d5836"
+      },
+      {
+        "de": "Historia Geografía Y Ciencias Sociales 3º — texto del estudiante · 3B · pág. 95",
+        "texto": "",
+        "textoHash": "81f3a521eb9217dc"
+      }
+    ]
+  },
+  {
+    "id": "q127",
+    "pregunta": "¿De qué planeta venía el Principito y qué le pidió al aviador cuando se conocieron?",
+    "notaDelGolden": "Near-miss: lectura escolar clásica plausible pero ausente del corpus. Debe abstenerse. Keywords verificadas (0 filas): 'principito', 'exupéry', 'exupery', 'aviador'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0,
+    "fragmentos": []
+  },
+  {
+    "id": "q128",
+    "pregunta": "¿Cuántos versos tiene un soneto y cómo se organizan sus estrofas?",
+    "notaDelGolden": "Near-miss fuerte: el libro tiene unidad de poesía pero no define la forma del soneto. Debe abstenerse. Keywords verificadas (0 filas): 'soneto', 'endecasílabo', 'endecasilabo', 'cuarteto', 'terceto', 'catorce versos'. 'estrofa' da 1 fila pero es análisis genérico de un poema concreto ('¿cómo se relaciona esa estrofa con la anterior?'), no define el soneto.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.9923779819971541,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 2º Medio — texto del estudiante · 2M · pág. 124",
+        "texto": "",
+        "textoHash": "f144082587f5ef78"
+      },
+      {
+        "de": "Lengua Y Literatura 2º Medio — texto del estudiante · 2M · pág. 154",
+        "texto": "",
+        "textoHash": "e205a3e93ae1cf80"
+      },
+      {
+        "de": "Lengua Y Literatura 2º Medio — texto del estudiante · 2M · pág. 124",
+        "texto": "",
+        "textoHash": "d8758ea610dde76e"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 160",
+        "texto": "",
+        "textoHash": "c1f871c9b19b265f"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 161",
+        "texto": "",
+        "textoHash": "5c0f88be0eb3d6fd"
+      },
+      {
+        "de": "Lengua Y Literatura 2º Medio — texto del estudiante · 2M · pág. 128",
+        "texto": "",
+        "textoHash": "a7491dc09ed9e9bf"
+      }
+    ]
+  },
+  {
+    "id": "q129",
+    "pregunta": "¿Cómo se usa el teorema de Pitágoras para calcular la hipotenusa de un triángulo rectángulo?",
+    "notaDelGolden": "Near-miss matemático: tema típico de 8vo pero ausente del apunte (que solo cubre fracciones, porcentajes, proporcionalidad, estadística, ecuaciones de primer grado y potencias — headings verificados en la base). Debe abstenerse. Distinto del tema prohibido q027 (fórmula del ÁREA del triángulo). Keywords verificadas (0 filas): 'pitágoras', 'pitagoras', 'hipotenusa', 'cateto', 'teorema', 'triángulo', 'triangulo'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.8470363684474386,
+    "fragmentos": [
+      {
+        "de": "Filosofía 4º Medio — texto del estudiante · 4M · pág. 75",
+        "texto": "",
+        "textoHash": "7c391cafb524de8d"
+      },
+      {
+        "de": "Filosofía 4º Medio — texto del estudiante · 4M · pág. 32",
+        "texto": "",
+        "textoHash": "f183cc25d786c8ce"
+      },
+      {
+        "de": "Ciencias Naturales 4º — texto del estudiante · 4B · pág. 1",
+        "texto": "",
+        "textoHash": "8f531b982e2880e0"
+      },
+      {
+        "de": "Ciencias Naturales 5º — texto del estudiante · 5B · pág. 1",
+        "texto": "",
+        "textoHash": "257eede71840b1ed"
+      }
+    ]
+  },
+  {
+    "id": "q130",
+    "pregunta": "¿Qué es el número pi y cómo se usa para calcular la circunferencia de un círculo?",
+    "notaDelGolden": "Near-miss matemático: geometría del círculo no está en el apunte (no hay ningún capítulo de geometría; 'geometr' da 0 filas en el doc de matemática). Debe abstenerse. Keywords verificadas (0 filas): 'círculo', 'circulo', 'circunferencia', 'número pi', 'numero pi', '3,14', 'diámetro', 'diametro', 'perímetro', 'perimetro'; 'área'/'area' da 0 filas en el doc de matemática. 'radio' da 5 filas pero son falsos positivos verificados uno a uno (radio/radioteatro en el libro de Lengua: La guerra de los mundos, fake news, entrevista en Radio Universidad de Concepción).",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0,
+    "fragmentos": []
+  },
+  {
+    "id": "q131",
+    "pregunta": "El apunte explica las ecuaciones de primer grado, pero ¿cómo se resuelve una ecuación de segundo grado?",
+    "notaDelGolden": "Near-miss muy fuerte: el capítulo 5 del apunte cubre SOLO ecuaciones de primer grado (verificado leyendo el chunk f986bfaa-a10e-41f9-b4b5-6035150b5a95 completo: 'una incógnita elevada a 1', regla de oro del despeje); no hay nada de cuadráticas. Debe abstenerse. Keywords verificadas (0 filas): 'cuadrática', 'cuadratica', 'segundo grado', 'discriminante'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0,
+    "fragmentos": []
+  },
+  {
+    "id": "q132",
+    "pregunta": "¿Cómo se calcula la raíz cuadrada de un número, por ejemplo la raíz de 144?",
+    "notaDelGolden": "Near-miss matemático: aunque el apunte tiene capítulo de potencias, no trata raíces (verificado leyendo el chunk de potencias 73791d65-2872-4784-917d-83b3b15550be completo: solo define potencia como multiplicación repetida, ejemplo 2⁴=16 y exponente 0). Debe abstenerse. Keywords verificadas (0 filas): 'raíz cuadrada', 'raiz cuadrada', 'radicación'; 'raíz'/'raiz' da 0 filas dentro del doc de matemática (las 2 filas del corpus son del libro de Lengua: 'música de raíz mapuche' y la raíz de la palabra 'vitalicia').",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0,
+    "fragmentos": []
+  },
+  {
+    "id": "q133",
+    "pregunta": "¿Cómo se escribe un número grande en notación científica usando potencias de 10?",
+    "notaDelGolden": "Near-miss muy fuerte: el apunte tiene capítulo de potencias (cap. 6) pero NO cubre notación científica (verificado leyendo el chunk 73791d65-2872-4784-917d-83b3b15550be completo: solo definición de potencia, ejemplo 2⁴=16 y exponente 0). Debe abstenerse. Keywords verificadas (0 filas en todo el corpus): 'notación científica', 'notacion cientifica', 'notación', 'notacion', 'científica', 'cientifica'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0,
+    "fragmentos": []
+  }
+]
