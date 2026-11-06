@@ -70,3 +70,10 @@ apps/web/public/propuestas/
 
 # Tareas largas en segundo plano (logs y marcadores). Ver scripts/tarea.sh
 .tareas/
+
+# Material de terceros: nunca versionar texto de los libros (ver LICENSE)
+packages/eval/golden/auditoria-snapshot.jsonl
+packages/eval/exp*-*.txt
+multiturn-results.json
+answerability.json
+generacion-canonica.json
