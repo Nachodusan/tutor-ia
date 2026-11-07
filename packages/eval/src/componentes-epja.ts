@@ -28,6 +28,7 @@ import { chatText } from "@tutor-ia/core";
 import { getSql, toJson } from "@tutor-ia/db";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { librosDir } from "./lib/libros";
 
 const sql = getSql();
 const arg = (n: string): string | undefined => {
@@ -35,7 +36,7 @@ const arg = (n: string): string | undefined => {
   return i >= 0 ? process.argv[i + 1] : undefined;
 };
 const APLICAR = process.argv.includes("--aplicar");
-const DIR = arg("dir") ?? "/Users/dusan/Documents/libros/media/programas_epja_2026";
+const DIR = arg("dir") ?? `${librosDir()}/media/programas_epja_2026`;
 
 /** Qué programa cubre qué (nivel, asignatura) del mapa. */
 const PROGRAMAS: { archivo: string; url: string; asignatura: RegExp; niveles: string[] }[] = [

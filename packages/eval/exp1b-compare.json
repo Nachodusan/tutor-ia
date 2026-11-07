@@ -1,7 +1,7 @@
 {
   "timestamp": "2026-07-14T23:10:36.635Z",
-  "input": "/Users/dusan/Desktop/Tomo_I_Lengua_y_Literatura8vo.pdf",
-  "sidecar": "/Users/dusan/Documents/ia/packages/eval/sidecar-libro.json",
+  "input": "<fuera-del-repo>/Tomo_I_Lengua_y_Literatura8vo.pdf",
+  "sidecar": "packages/eval/sidecar-libro.json",
   "old": {
     "chunks": 344,
     "avgTokens": 121,

@@ -1,7 +1,7 @@
 # HANDOFF — Tutor IA (para retomar en un chat nuevo)
 
 > Estado al **2026-08-29**. Corre en la Mac del usuario (**Apple M4, 16 GB**).
-> Proyecto en `/Users/dusan/Documents/ia`. Rama **`main`**.
+> Proyecto en `<raíz del repo>`. Rama **`main`**.
 > **El código ya está en git remoto**: `github.com/Nachodusan/tutor-ia`, PRIVADO, `main` por
 > defecto. El corpus NO está en git — va como asset de release
 > (`corpus-2026-08-23`, 205 MB, verificado por sha256). Ver §8.
@@ -159,7 +159,7 @@ que el chico tiene sobre la mesa.
 ## 2. Stack y servicios (CRÍTICO para arrancar)
 
 ```bash
-cd /Users/dusan/Documents/ia
+cd <raíz del repo>
 export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"   # Postgres es keg-only
 # ⚠️ DATABASE_URL no está seteada por defecto en la shell, y SIETE comandos de este
 #    documento son `psql "$DATABASE_URL" -f …`. Sin esta línea, todos fallan:
@@ -786,7 +786,7 @@ psql "$DATABASE_URL" -f packages/db/repair_jsonb_double_encoded.sql
 El smoke imprime `REASON` (tokens de razonamiento) y `LEAK` (si hubo que filtrar) — es la
 única forma de detectar que el switch de thinking no llegó.
 
-Libros: `/Users/dusan/Documents/libros/{basica,media}/<grado>/<materia>/*.pdf`. La
+Libros: `<LIBROS_DIR>/{basica,media}/<grado>/<materia>/*.pdf`. La
 clasificación la fija `packages/eval/corpus-manifest.csv` (columnas `tipo` e `indexado`):
 285 filas = 93 contenido + 125 pedagogía (los 218 que se ingieren) + 67 ejercicios
 (`indexado=no`, no entran). Disco y manifiesto tienen que coincidir o la ingesta aborta.
@@ -1516,7 +1516,7 @@ Probar los tres órdenes (lectura, columna, `y`) y quedarse con el de mejor mono
   `PUT /api/me/profile`. Dos decisiones de producto abiertas: ¿el temporizador corre dentro
   del camino o es pantalla aparte?, ¿el descanso es sugerencia o el tutor deja de responder?
 - 🔵 **El cruce con las bases curriculares del estado NO está empezado.** El documento
-  (`/Users/dusan/Documents/libros/WEB_bbcc EPJA_v16_0.pdf`) está analizado pero **no hay
+  (`<LIBROS_DIR>/WEB_bbcc EPJA_v16_0.pdf`) está analizado pero **no hay
   nada en la base**: no existen tablas de currículo, ni `extract_bases.py`, ni archivos
   extraídos. Lo medido: **29 páginas** de asignatura × nivel (57-61, 71-75, 82-85, 92-95,
   103-106, 115, 118, 122, 126, 131, 134, 137 — ojo, p.36/38/40 son ejemplos que reimprimen

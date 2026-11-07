@@ -37,9 +37,10 @@ import {
   titleFor,
   type ManifestRow,
 } from "./corpus-manifest";
+import { librosDir } from "./lib/libros";
 
 const HERE = new URL(".", import.meta.url).pathname;
-const ROOT = process.argv[2] ?? "/Users/dusan/Documents/libros";
+const ROOT = librosDir(process.argv[2]);   // ver lib/libros.ts: no hay default
 const MANIFEST = process.argv[3] ?? resolve(HERE, "../corpus-manifest.csv");
 const uid = process.env.EVAL_USER_ID!;
 const DRY = process.env.BATCH_DRY === "1";

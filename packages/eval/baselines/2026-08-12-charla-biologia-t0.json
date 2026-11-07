@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-08-13T01:03:50.050Z",
-  "golden": "/Users/dusan/Documents/ia/packages/eval/golden/charla-conversacional.jsonl",
+  "golden": "packages/eval/golden/charla-conversacional.jsonl",
   "engine": "deepinfra@api.deepinfra.com · Qwen/Qwen3.6-35B-A3B · temp=0 top_p=0.9 max_tokens=2048 reasoning=off",
   "usage": {
     "inputTokens": 73371,

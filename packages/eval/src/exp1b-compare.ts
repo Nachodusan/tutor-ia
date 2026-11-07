@@ -29,8 +29,15 @@ import {
 } from "@tutor-ia/rag";
 import { flag, summarizeFlags, type FlagSummary } from "./lib/signals";
 
-const PYTHON = "/Users/dusan/Documents/ia/packages/ingest-py/.venv/bin/python";
-const EXTRACT_PY = "/Users/dusan/Documents/ia/packages/ingest-py/extract.py";
+/**
+ * Las dos rutas están DENTRO del repo, así que se anclan al módulo y no al
+ * cwd: pnpm corre los scripts con el cwd en `packages/eval`. Antes eran rutas
+ * absolutas del escritorio de quien las escribió, o sea que este archivo no
+ * corría en ninguna otra máquina.
+ */
+const RAIZ = new URL("../../../", import.meta.url).pathname;
+const PYTHON = process.env.INGEST_PYTHON ?? `${RAIZ}packages/ingest-py/.venv/bin/python`;
+const EXTRACT_PY = `${RAIZ}packages/ingest-py/extract.py`;
 
 /** Contrato (1): salida de extract.py --json — UN objeto JSON por stdout. */
 interface SidecarDoc {

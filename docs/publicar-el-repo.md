@@ -78,19 +78,22 @@ git push --force origin main
 gh repo edit Nachodusan/tutor-ia --visibility public --accept-visibility-change-consequences
 ```
 
-## Dos cosas menores, para decidir
+## Lo que se limpió después de publicar
 
-**Rutas absolutas de la máquina.** `/Users/dusan/...` aparece en unos 20
-archivos rastreados (`HANDOFF.md`, varias baselines, algunos scripts). No es
-material de terceros ni una credencial: revela el nombre de usuario local, que
-ya se deduce de la cuenta de GitHub. Conviene limpiarlo en el árbol de trabajo
-por prolijidad; **no vale otra reescritura del historial**. La única que
-incomodaba de verdad era la del sidecar, que nombraba el PDF del libro en el
-escritorio, y ese archivo ya no está.
+**Rutas absolutas de la máquina.** `/Users/dusan/...` aparecía en 19 archivos
+rastreados, y en cinco de ellos no era prolijidad sino un archivo roto: las
+rutas apuntaban *dentro* del repo, así que `exp1b-compare.ts` y la ruta de
+whisper no corrían en ninguna otra máquina. Las de adentro pasaron a resolverse
+desde el módulo o desde la raíz del workspace; las del material, que vive
+afuera a propósito, pasaron a `LIBROS_DIR` (ver `.env.example` y
+`packages/eval/src/lib/libros.ts`), que falla con un mensaje claro en vez de
+buscar en una carpeta inexistente.
 
-**7 errores de typecheck** en 3 archivos rastreados —`podar-paradas.ts`,
-`generacion-canonica.ts`, `index-book.ts`— previos a este trabajo y ajenos a
-él. No son un problema de privacidad, pero en un repo de portafolio se ven.
+**La licencia no se detectaba.** GitHub mostraba `NOASSERTION` porque el
+`LICENSE` traía pegada abajo la nota sobre el material del Mineduc, y esos ~900
+caracteres extra tiran la coincidencia por debajo del umbral del detector. El
+`LICENSE` quedó con el texto MIT puro y la nota se mudó a
+[`NOTICE.md`](../NOTICE.md), enlazada desde el README.
 
 ## La red
 

@@ -6,7 +6,7 @@
  "plan": [
   {
    "moduloId": "museo-fu2016-1M",
-   "sidecarPath": "GENERAR con: packages/ingest-py/extract.py /Users/dusan/Documents/libros/media/museo_precolombino/fu2016_etnoastronomia_mapuche_pewenche.pdf",
+   "sidecarPath": "GENERAR con: packages/ingest-py/extract.py <LIBROS_DIR>/media/museo_precolombino/fu2016_etnoastronomia_mapuche_pewenche.pdf",
    "titulo": "Museo Chileno de Arte Precolombino · Las estrellas a través de las araucarias: la etnoastronomía mapuche-pewenche (R. Fu, Boletín Vol. 21 Nº2, 2016, CC BY 4.0)",
    "fuenteUrl": "https://boletinmuseoprecolombino.cl/",
    "subjectId": "7f16cf9a-5140-4858-b735-e9386f960121",
@@ -17,7 +17,7 @@
   },
   {
    "moduloId": "museo-fu2016-2M",
-   "sidecarPath": "GENERAR con: packages/ingest-py/extract.py /Users/dusan/Documents/libros/media/museo_precolombino/fu2016_etnoastronomia_mapuche_pewenche.pdf",
+   "sidecarPath": "GENERAR con: packages/ingest-py/extract.py <LIBROS_DIR>/media/museo_precolombino/fu2016_etnoastronomia_mapuche_pewenche.pdf",
    "titulo": "Museo Chileno de Arte Precolombino · Las estrellas a través de las araucarias: la etnoastronomía mapuche-pewenche (R. Fu, Boletín Vol. 21 Nº2, 2016, CC BY 4.0)",
    "fuenteUrl": "https://boletinmuseoprecolombino.cl/",
    "subjectId": "c822d409-6544-4cd8-b829-cc4eb6104d0f",

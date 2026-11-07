@@ -8,8 +8,9 @@
  */
 import { getSql } from "@tutor-ia/db";
 import { ingestCurriculum, type CorpusKind } from "@tutor-ia/rag";
+import { librosDir } from "./lib/libros";
 
-const DIR = "/Users/dusan/Documents/libros/basica/1_básico/ciencias_naturales";
+const DIR = `${librosDir()}/basica/1_básico/ciencias_naturales`;
 const GRADE = "1B";
 const SUBJECT_AREA = "ciencias_naturales";
 const FILES: { path: string; kind: CorpusKind; title: string }[] = [

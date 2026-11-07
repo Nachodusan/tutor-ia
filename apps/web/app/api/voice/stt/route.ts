@@ -1,18 +1,39 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { writeFile, rm, mkdtemp } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve, dirname } from "node:path";
 
 const execFileAsync = promisify(execFile);
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+/**
+ * La raíz del repo, buscando hacia arriba el marcador del workspace.
+ *
+ * ⚠️ NO alcanza con una ruta relativa a `process.cwd()`: Next corre esta ruta
+ * con el cwd en `apps/web` (`pnpm --filter @tutor-ia/web dev`), pero el mismo
+ * script arrancado de otra forma lo deja en la raíz. Acá vivía una ruta
+ * absoluta del escritorio de quien lo escribió, que en cualquier otra máquina
+ * era un archivo que no existe.
+ */
+function raizDelRepo(): string {
+  let d = process.cwd();
+  for (let i = 0; i < 6; i++) {
+    if (existsSync(join(d, "pnpm-workspace.yaml"))) return d;
+    const arriba = dirname(d);
+    if (arriba === d) break;
+    d = arriba;
+  }
+  return process.cwd();
+}
+
 // Todo local: ffmpeg (audio del navegador → wav 16k) + whisper.cpp (→ texto).
 const WHISPER_BIN = process.env.WHISPER_BIN ?? "whisper-cli";
 const WHISPER_MODEL =
   process.env.WHISPER_MODEL ??
-  "/Users/dusan/Documents/ia/packages/ingest-py/whisper-models/ggml-base.bin";
+  resolve(raizDelRepo(), "packages/ingest-py/whisper-models/ggml-base.bin");
 
 /**
  * Sobre AUDIO SIN VOZ, whisper no devuelve vacío: devuelve una ETIQUETA de

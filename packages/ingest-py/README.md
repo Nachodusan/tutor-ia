@@ -73,8 +73,8 @@ El worker spawnea el sidecar y consume stdout:
 import { spawn } from 'node:child_process';
 
 const py = spawn(
-  '/Users/dusan/Documents/ia/packages/ingest-py/.venv/bin/python',
-  ['/Users/dusan/Documents/ia/packages/ingest-py/extract.py', pdfPath],
+  'packages/ingest-py/.venv/bin/python',
+  ['packages/ingest-py/extract.py', pdfPath],
 );
 // acumular py.stdout → JSON.parse al cerrar; py.stderr → log de progreso
 // exit code !== 0 → fallo de extracción

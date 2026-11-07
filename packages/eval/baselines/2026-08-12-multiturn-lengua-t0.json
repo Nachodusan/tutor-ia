@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-08-13T01:00:28.941Z",
-  "golden": "/Users/dusan/Documents/ia/packages/eval/golden/conversations.jsonl",
+  "golden": "packages/eval/golden/conversations.jsonl",
   "engine": "deepinfra@api.deepinfra.com · Qwen/Qwen3.6-35B-A3B · temp=0 top_p=0.9 max_tokens=2048 reasoning=off",
   "usage": {
     "inputTokens": 412514,

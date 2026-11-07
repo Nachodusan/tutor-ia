@@ -19,21 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----------------------------------------------------------------------------
-NOTA SOBRE MATERIAL DE TERCEROS
-
-Esta licencia cubre EL CÓDIGO de este repositorio y nada más.
-
-El sistema está pensado para trabajar sobre textos escolares oficiales del
-Ministerio de Educación de Chile. Esos textos NO forman parte de este
-repositorio y no se distribuyen con él: el corpus vive fuera de git y los
-fixtures de evaluación guardan únicamente anclas (documento, página y un hash
-del fragmento), nunca el texto.
-
-Los derechos sobre esos textos son de sus autores y editoriales. Quien quiera
-correr el proyecto tiene que conseguir el material por su cuenta y asegurarse
-de tener derecho a usarlo.
-
-Si el proyecto llega a incluir material con licencia abierta —por ejemplo
-artículos CC BY— su atribución va junto al material, no acá.

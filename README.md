@@ -111,7 +111,8 @@ Anti-alucinaciones: [docs/anti-alucinaciones.md](docs/anti-alucinaciones.md) · 
 
 ## Licencia y material de terceros
 
-El **código** va con [licencia MIT](LICENSE).
+El **código** va con [licencia MIT](LICENSE). El material de terceros, en
+[`NOTICE.md`](NOTICE.md).
 
 Los **textos escolares** sobre los que trabaja el sistema son del Ministerio de
 Educación de Chile y de sus editoriales: **no están en este repositorio** y no

@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-08-01T21:11:32.505Z",
-  "golden": "/Users/dusan/Documents/ia/packages/eval/golden/questions.jsonl",
+  "golden": "packages/eval/golden/questions.jsonl",
   "promptPath": "TEACHING_SYSTEM + buildTeachingTurn (camino de /api/chat)",
   "engine": "deepinfra@api.deepinfra.com · Qwen/Qwen3.6-35B-A3B · temp=0.1 top_p=0.9 max_tokens=2048 reasoning=off",
   "rerankMinScore": 0.18,
