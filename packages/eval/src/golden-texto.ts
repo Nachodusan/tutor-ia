@@ -34,7 +34,7 @@
  *   pnpm --filter @tutor-ia/eval golden-texto --verificar   (no escribe nada)
  */
 import { createHash } from "node:crypto";
-import { execSync } from "node:child_process";
+import { execSync, execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { getSql } from "@tutor-ia/db";
 
@@ -292,6 +292,100 @@ async function auditarPorContenido(): Promise<
   return salida;
 }
 
+/**
+ * ⚠️ AUDITAR EL ÁRBOL DE TRABAJO NO SIRVE: lo que se publica es el HISTORIAL.
+ *
+ * `auditarPorContenido` recorre `git ls-files`, o sea los archivos como están
+ * hoy. Con eso armé una lista de 24 rutas y faltaban nueve, entre ellas tres
+ * de código fuente. No porque el detector falle, sino porque el texto estaba
+ * en versiones VIEJAS de archivos cuya versión actual ya estaba limpia. Un
+ * repo público publica todos los commits, no el último.
+ *
+ * Es la tercera vez que una lista incompleta sale de medir lo que no es: por
+ * nombre de campo en vez de por contenido, y ahora por árbol en vez de por
+ * historial. Esta función mide lo que se publica.
+ *
+ * Recorre los blobs de TODAS las refs. Ojo con eso: una rama o un tag viejos
+ * sostienen blobs que `main` ya no tiene, y aparecen acá aunque `main` esté
+ * limpio — por eso informa desde dónde se alcanza cada uno. Borrar la ref es
+ * el arreglo, no reescribir `main` otra vez.
+ */
+async function auditarHistorial(): Promise<void> {
+  const idx = await indiceDeGramas();
+
+  const enMain = new Set(
+    execSync("git rev-list --objects main", { cwd: RAIZ, encoding: "utf8", maxBuffer: 1 << 28 })
+      .split("\n").filter((l) => l.includes(" ")).map((l) => l.slice(0, 40)),
+  );
+
+  const vistos = new Set<string>();
+  const porRuta = new Map<string, { citas: number; palabras: number; rotulos: number; vers: number; main: boolean }>();
+  const objetos = execSync("git rev-list --objects --all", { cwd: RAIZ, encoding: "utf8", maxBuffer: 1 << 28 })
+    .split("\n").filter((l) => l.includes(" "));
+
+  let revisados = 0;
+  for (const linea of objetos) {
+    const sha = linea.slice(0, 40);
+    const ruta = linea.slice(41);
+    if (!/\.(json|jsonl|md|txt|csv|html|tsx?|mjs)$/.test(ruta)) continue;
+    if (vistos.has(sha)) continue;
+    vistos.add(sha);
+
+    let t: string;
+    try {
+      t = execFileSync("git", ["cat-file", "blob", sha], { cwd: RAIZ, encoding: "utf8", maxBuffer: 1 << 28 });
+    } catch { continue; }
+    revisados++;
+
+    // Prefiltro barato antes de medir en serio (ver `auditarPorContenido`).
+    const w = t.replace(/\s+/g, " ").trim().split(" ");
+    if (w.length < 40) continue;
+    let pegues = 0;
+    for (let i = 0; i + 8 <= w.length; i += 8) if (idx.has(gram(w, i))) pegues++;
+    if (pegues === 0) continue;
+
+    const tok = tokenizar(t);
+    const largos = tramosDeCorpus(tok, idx).filter(([a, b]) => b - a + 1 >= MIN_CITA);
+    const citas = largos.filter(([a]) => !enFilaDeTabla(t, tok[a]!.s));
+    if (citas.length === 0 && largos.length === 0) continue;
+
+    const prev = porRuta.get(ruta) ?? { citas: 0, palabras: 0, rotulos: 0, vers: 0, main: false };
+    porRuta.set(ruta, {
+      citas: prev.citas + citas.length,
+      palabras: prev.palabras + citas.reduce((n, [a, b]) => n + (b - a + 1), 0),
+      rotulos: prev.rotulos + (largos.length - citas.length),
+      vers: prev.vers + 1,
+      main: prev.main || enMain.has(sha),
+    });
+  }
+
+  const filas = [...porRuta.entries()].filter(([, v]) => v.citas > 0).sort((a, b) => b[1].palabras - a[1].palabras);
+  console.log(`  ${revisados} blobs de texto revisados en todas las refs\n`);
+  if (filas.length === 0) {
+    console.log("  ✓ ninguna versión de ningún archivo, en ningún commit, reproduce el libro");
+    process.exit(0);
+  }
+  console.log(`  ${filas.length} rutas con reproducción del libro en el historial:\n`);
+  console.log("   citas  palabras  vers  desde      ruta");
+  for (const [r, v] of filas)
+    console.log(
+      `  ${String(v.citas).padStart(6)}  ${String(v.palabras).padStart(8)}  ${String(v.vers).padStart(4)}  ` +
+      `${(v.main ? "main" : "ref vieja").padEnd(9)}  ${r}`,
+    );
+
+  const enRamaVieja = filas.filter(([, v]) => !v.main);
+  if (enRamaVieja.length > 0) {
+    console.log(`\n  ⚠ ${enRamaVieja.length} rutas NO están en main: las sostiene otra ref (una rama o un tag`);
+    console.log(`    viejos). Esas se arreglan borrando la ref y corriendo gc, no reescribiendo main.`);
+  }
+  const enMainSucias = filas.filter(([, v]) => v.main);
+  if (enMainSucias.length > 0) {
+    console.log("\n  Rutas para git filter-repo (las que sí están en main):\n");
+    console.log(enMainSucias.map(([r]) => `    --path ${r}`).join(" \\\n"));
+  }
+  process.exit(1);
+}
+
 const esJsonl = (f: string) => f.endsWith(".jsonl");
 const leer = (f: string): Json[] =>
   esJsonl(f)
@@ -321,6 +415,7 @@ const escribir = (f: string, docs: Json[]) =>
  */
 const CON_CITAS = [
   "docs/mapa-curricular.md",
+  "docs/contenidos-faltantes.md",
   "packages/eval/golden/questions.jsonl",
   "packages/eval/golden/questions-norm.jsonl",
   "packages/eval/golden/questions-parafraseadas.jsonl",
@@ -471,6 +566,7 @@ async function main() {
   if (modo === "--pelar-citas") { await pelarCitas(); process.exit(0); }
 
   if (modo === "--auditar") {
+    if (process.argv.includes("--historial")) { await auditarHistorial(); return; }
     const ruta = process.argv[process.argv.indexOf(modo) + 1];
     if (ruta && !ruta.startsWith("--")) { await mostrarCoincidencias(ruta); process.exit(0); }
     const r = await auditarPorContenido();
