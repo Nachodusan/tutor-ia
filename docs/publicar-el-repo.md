@@ -80,7 +80,7 @@ gh repo edit Nachodusan/tutor-ia --visibility public --accept-visibility-change-
 
 ## Lo que se limpió después de publicar
 
-**Rutas absolutas de la máquina.** `/Users/dusan/...` aparecía en 19 archivos
+**Rutas absolutas de la máquina.** `/Users/<usuario>/...` aparecía en 19 archivos
 rastreados, y en cinco de ellos no era prolijidad sino un archivo roto: las
 rutas apuntaban *dentro* del repo, así que `exp1b-compare.ts` y la ruta de
 whisper no corrían en ninguna otra máquina. Las de adentro pasaron a resolverse
