@@ -1,113 +1,112 @@
 # Publicar el repo — runbook
 
-Estado al 2026-11-06. El repo **sigue privado** y el remoto todavía tiene el
-historial viejo: nada se publicó. Los pasos van en orden y el último es el
-único irreversible.
+Estado al 2026-11-07. El historial local ya está limpio; **el remoto todavía
+tiene el viejo** y el repo sigue privado. Falta un `push --force` y el cambio
+de visibilidad, los dos únicos pasos irreversibles.
 
-Material preparado, fuera del repo:
+## Lo que ya se hizo
 
-- `~/Documents/tutor-ia-publicacion-20261106/limpios/` — las 23 versiones ya
-  peladas, que hay que devolver después del `filter-repo`.
-- `~/Documents/tutor-ia-publicacion-20261106/rutas-a-purgar.txt` — las 24 rutas.
-- `~/Documents/tutor-ia-RESPALDO-20261106.git` — espejo con el historial
-  ORIGINAL completo (228 commits, con los libros adentro). Es la red: nada de
-  lo que sigue destruye material, lo saca de lo que se publica.
+**El historial no reproduce los libros.** `golden-texto --auditar --historial`
+recorre los 1.005 blobs de texto de todas las refs y da limpio.
 
-## Lo que ya está hecho
+Cómo se llegó, porque el camino importa para no repetirlo:
 
-El árbol de trabajo está limpio: `golden-texto --auditar` no encuentra ninguna
-reproducción del libro en ningún archivo rastreado. Lo que falta es el
-**historial**, que todavía tiene 53 versiones viejas de esos archivos, 7,9 MB.
+1. **Tres listas incompletas**, todas por medir lo que no era. Primero por
+   nombre de campo (`texto`, `content`) en vez de por contenido: 3 archivos en
+   vez de 24. Después por árbol de trabajo en vez de por historial: 24 en vez
+   de 26, y faltaban `claims-audit.json` de la raíz y
+   `docs/contenidos-faltantes.md`. La auditoría que vale es la del historial,
+   porque un repo público publica todos los commits, no el último.
 
-## 1. Bajar el dump antes de borrarlo del release
+2. **Dos problemas que parecían uno.** De 35 rutas sucias, 9 no estaban en
+   `main`: las sostenían la rama `feat/bloques-aurora-plan-prueba` y el tag
+   `corpus-2026-08-23`, viejos. Sumaban 870.000 palabras y se fueron borrando
+   las refs, sin tocar `main`. Entre ellas estaba el blob de
+   `scope-audit-todas.json` con 140.544 palabras, que de lejos parecía un
+   problema de `main` y no lo era.
+
+3. **26 rutas fuera del historial** con `filter-repo`. Vuelven 24 peladas; no
+   vuelven `sidecar-libro.json` (344 páginas de OCR de un libro, más la ruta
+   del escritorio de quien lo generó) ni `claims-audit.json` de la raíz.
+
+4. **El umbral son 12 palabras**, compartido por el detector y el pelador.
+   Menos que eso coincide por casualidad: títulos de lección y definiciones
+   canónicas. Dentro de una celda de tabla no se pela nada, porque ahí vive el
+   título de la lección, que es una referencia igual que el número de página.
+
+Comprobado además: **cero claves** con patrón conocido en los 2.977 objetos del
+historial nuevo, y el repo bajó de 10,03 a 4,48 MiB.
+
+## Lo que falta
+
+### 1. Bajar el dump antes de borrarlo del release
 
 205 MB: la base entera, con los chunks de los libros, 339 conversaciones de
 alumnos y los hashes de contraseña. Hoy cuelga de un release del repo; cuando
-el repo pase a público, cuelga de un repo público.
+el repo pase a público, cuelga de un repo público. **Esto por sí solo anula
+todo lo anterior si se queda.**
 
 ```
 mkdir -p ~/Documents/tutor-ia-corpus && gh release download corpus-2026-08-23 --repo Nachodusan/tutor-ia --dir ~/Documents/tutor-ia-corpus
 ```
 
-Comprobar el archivo por su contenido, no por el tamaño:
-
 ```
 shasum -a 256 ~/Documents/tutor-ia-corpus/tutor-2026-08-23_1611.dump
 ```
 
-## 2. Borrar el release y su tag
+### 2. Borrar el release, su tag y la rama del remoto
+
+Las refs locales ya se borraron; estas son las del servidor.
 
 ```
 gh release delete corpus-2026-08-23 --repo Nachodusan/tutor-ia --cleanup-tag --yes
 ```
 
-## 3. Borrar la rama `feat/bloques-aurora-plan-prueba`
-
-Medido: **no tiene un solo commit que no esté en `main`**. No se pierde nada.
-
 ```
 git push origin --delete feat/bloques-aurora-plan-prueba
 ```
 
-```
-git branch -D feat/bloques-aurora-plan-prueba && git tag -d corpus-2026-08-23
-```
-
-## 4. Reescribir el historial
-
-Saca las 24 rutas de todos los commits. `--force` hace falta porque este repo
-ya pasó una vez por `filter-repo`.
-
-```
-git filter-repo --force --invert-paths --paths-from-file ~/Documents/tutor-ia-publicacion-20261106/rutas-a-purgar.txt
-```
-
-## 5. Devolver las versiones limpias
-
-`filter-repo` también las borró del árbol de trabajo. El sidecar no vuelve.
-
-```
-cp -R ~/Documents/tutor-ia-publicacion-20261106/limpios/. . && echo 'packages/eval/sidecar-libro.json' >> .gitignore && git add -A && git commit -m 'chore: vuelven los fixtures, ya sin texto de los libros'
-```
-
-## 6. Verificar ANTES de empujar
-
-Las dos pruebas que deciden. La primera mira el árbol; la segunda, el historial
-entero, que es la que importa acá.
-
-```
-pnpm --filter @tutor-ia/eval golden-texto --auditar
-```
-
-```
-git rev-list --objects --all -- $(tr '\n' ' ' < ~/Documents/tutor-ia-publicacion-20261106/rutas-a-purgar.txt) | wc -l
-```
-
-La segunda tiene que dar **0**: ninguna versión de esas rutas quedó en ningún
-commit. Si da otra cosa, el paso 4 no terminó y no hay que seguir.
-
-## 7. Reponer el remoto y empujar
-
-`filter-repo` borra `origin` a propósito, para que no se empuje sin querer.
-
-```
-git remote add origin https://github.com/Nachodusan/tutor-ia.git
-```
+### 3. Empujar el historial reescrito
 
 ```
 git push --force origin main
 ```
 
-## 8. Recién ahí, hacer público el repo
+### 4. Recién ahí, hacer público el repo
 
 ```
 gh repo edit Nachodusan/tutor-ia --visibility public --accept-visibility-change-consequences
 ```
 
-## Lo que queda por revisar antes del paso 8
+## Dos cosas menores, para decidir
 
-- El escaneo de secretos del historial viejo (1.140 blobs contra los patrones
-  de clave conocidos) quedó corriendo y **sin terminar**. Hay que verlo cerrado
-  en 0 antes de publicar.
-- El historial reescrito es un historial nuevo: conviene correrle el escaneo de
-  nuevo, no dar por bueno el del viejo.
+**Rutas absolutas de la máquina.** `/Users/dusan/...` aparece en unos 20
+archivos rastreados (`HANDOFF.md`, varias baselines, algunos scripts). No es
+material de terceros ni una credencial: revela el nombre de usuario local, que
+ya se deduce de la cuenta de GitHub. Conviene limpiarlo en el árbol de trabajo
+por prolijidad; **no vale otra reescritura del historial**. La única que
+incomodaba de verdad era la del sidecar, que nombraba el PDF del libro en el
+escritorio, y ese archivo ya no está.
+
+**7 errores de typecheck** en 3 archivos rastreados —`podar-paradas.ts`,
+`generacion-canonica.ts`, `index-book.ts`— previos a este trabajo y ajenos a
+él. No son un problema de privacidad, pero en un repo de portafolio se ven.
+
+## La red
+
+- `~/Documents/tutor-ia-RESPALDO-20261106.git` — espejo con el historial
+  ORIGINAL completo, con los libros adentro. Nada de lo anterior destruyó
+  material: lo sacó de lo que se publica.
+- `~/Documents/tutor-ia-publicacion-20261106/` — las 24 versiones peladas y la
+  lista de las 26 rutas.
+
+## La prueba que decide
+
+```
+pnpm --filter @tutor-ia/eval golden-texto --auditar --historial
+```
+
+Tiene que decir *"ninguna versión de ningún archivo, en ningún commit,
+reproduce el libro"*. Si en el futuro alguien corre `--rehidratar` y commitea
+sin pelar, el hook de `.githooks/pre-commit` lo frena; pero el hook mira el
+árbol, así que esta prueba sigue siendo la que vale antes de empujar.
