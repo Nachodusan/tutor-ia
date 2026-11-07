@@ -129,6 +129,17 @@ export class OpenAICompatProvider implements LLMProvider {
    * nuestro timeout o una cancelación externa. El error del SDK no lo dice
    * (ver retry.ts). Sin esto, un timeout se reintentaba como si fuera red.
    */
+  /**
+   * El modelo de ESTA llamada: `GenOptions.model` pisa el del constructor.
+   *
+   * Va también en los dos `logCall`, no solo en el cuerpo del request: un log
+   * que informa un modelo distinto del que se llamó convierte toda medición
+   * posterior en basura, y es el tipo de error que no avisa.
+   */
+  private modeloDe(opts: GenOptions | undefined): string {
+    return opts?.model ?? this.model;
+  }
+
   private toLLMError(
     err: unknown,
     attempt: number,
@@ -295,7 +306,7 @@ export class OpenAICompatProvider implements LLMProvider {
           const res = await conDeadline(
             this.client.chat.completions.create(
               {
-                model: this.model,
+                model: this.modeloDe(opts),
                 messages: toMessages(prompt),
                 ...(responseFormat ? { response_format: responseFormat } : {}),
                 ...toOpenAIParams(params),
@@ -333,7 +344,7 @@ export class OpenAICompatProvider implements LLMProvider {
       logCall({
         provider: PROVIDER,
         host: hostOf(this.baseUrl),
-        model: this.model,
+        model: this.modeloDe(opts),
         method,
         latencyMs: Date.now() - started,
         usage,
@@ -361,7 +372,7 @@ export class OpenAICompatProvider implements LLMProvider {
       try {
         return await this.client.chat.completions.create(
           {
-            model: this.model,
+            model: this.modeloDe(opts),
             messages: toMessages(prompt),
             stream: true,
             stream_options: { include_usage: true },
@@ -475,7 +486,7 @@ export class OpenAICompatProvider implements LLMProvider {
       logCall({
         provider: PROVIDER,
         host: hostOf(this.baseUrl),
-        model: this.model,
+        model: this.modeloDe(opts),
         method: "generateStream",
         latencyMs: Date.now() - started,
         usage,

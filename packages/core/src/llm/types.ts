@@ -21,6 +21,18 @@ export interface ChatMsg {
 export type LLMPrompt = string | ChatMsg[];
 
 export interface GenOptions {
+  /**
+   * Pisa el modelo del provider SOLO para esta llamada.
+   *
+   * Existe porque `generacion-canonica` pasaba `{ model: JUEZ_MODEL }` y acá no
+   * había tal campo: la opción se ignoraba en silencio, el juez corría con el
+   * MISMO modelo que generaba, y el script igual imprimía el nombre del juez
+   * como si lo hubiera usado. El typecheck lo marcaba desde el principio.
+   *
+   * El ID del modelo NO es igual entre proveedores: pasar uno que no existe del
+   * otro lado devuelve 404 (ver LLM_MODEL en .env.example).
+   */
+  model?: string;
   /** Si se omite, se usa el default CANÓNICO (idéntico en todos los providers). */
   temperature?: number;
   /** Tope de tokens de salida. Se omite → default canónico (ver params.ts). */

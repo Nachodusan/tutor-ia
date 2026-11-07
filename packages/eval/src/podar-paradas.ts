@@ -72,12 +72,16 @@ for (const [t, n] of [...porTitulo].sort((a, b) => b[1] - a[1])) {
 // poder abrirlos, pero ocupan y confunden cualquier conteo de cobertura.
 const claves = podadas.map((x) => x.key);
 if (claves.length > 0) {
-  const [{ n: apuntes }] = (await sql`
-    select count(*)::int as n from lesson_notes where topic_key = any(${claves})`) as unknown as { n: number }[];
-  const [{ n: clases }] = (await sql`
-    select count(*)::int as n from lesson_classes where topic_key = any(${claves})`) as unknown as { n: number }[];
-  const [{ n: progreso }] = (await sql`
-    select count(*)::int as n from student_plan_progress where topic_key = any(${claves})`) as unknown as { n: number }[];
+  // `count(*)` devuelve SIEMPRE una fila, pero el tipo del índice no lo sabe:
+  // desestructurar el [0] da `{n} | undefined`. El `?? 0` no tapa nada — si no
+  // hubiera fila, 0 es además el número correcto para mostrar.
+  const unaCuenta = (r: { n: number }[]) => r[0]?.n ?? 0;
+  const apuntes = unaCuenta((await sql`
+    select count(*)::int as n from lesson_notes where topic_key = any(${claves})`) as unknown as { n: number }[]);
+  const clases = unaCuenta((await sql`
+    select count(*)::int as n from lesson_classes where topic_key = any(${claves})`) as unknown as { n: number }[]);
+  const progreso = unaCuenta((await sql`
+    select count(*)::int as n from student_plan_progress where topic_key = any(${claves})`) as unknown as { n: number }[]);
   console.log(`\n${apuntes} apuntes y ${clases} clases quedaron sin parada que los abra.`);
   console.log(`${progreso} filas de avance del alumno apuntan a una parada podada (NO se tocan: son inertes).`);
   if (APLICAR && (apuntes > 0 || clases > 0)) {
