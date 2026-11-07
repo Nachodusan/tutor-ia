@@ -78,3 +78,6 @@ multiturn-results.json
 answerability.json
 generacion-canonica.json
 packages/eval/sidecar-libro.json
+
+# Los documentos de negocio quedan fuera: precios y estrategia no van en público.
+docs/negocio/

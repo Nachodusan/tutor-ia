@@ -9,8 +9,9 @@
  * de texto literal** repartidos en golden/, baselines/ y las planillas. Se
  * protegió la puerta y quedó la ventana abierta.
  *
- * Publicar el repo con eso adentro es redistribuir los libros. Y el propio plan
- * de empresa lo dice: "los derechos son de sus autores y editoriales".
+ * Publicar el repo con eso adentro es redistribuir los libros, y los derechos
+ * sobre ellos no son de este proyecto: son de sus autores y editoriales (ver
+ * NOTICE.md). No hace falta más razón que esa.
  *
  * ── LA IDEA: ANCLA + HASH, NO TEXTO ─────────────────────────────────────────
  *
