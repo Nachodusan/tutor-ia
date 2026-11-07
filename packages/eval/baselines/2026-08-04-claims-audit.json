@@ -1,0 +1,215 @@
+[
+  {
+    "id": "q006",
+    "pregunta": "¿Cuáles son los principales instrumentos de la música mapuche?",
+    "mode": "libro",
+    "scope": "curso",
+    "respuesta": "Mirá, la música mapuche es muy especial porque usa instrumentos que hacen sonidos distintos a los de otros lugares. Los principales son el kultrún, que es un tambor de percusión; la pifilca y la trutruca, que son instrumentos de viento. Básicamente, usan la voz y estos tres instrumentos para acompañar sus cantos y ceremonias. ¿Te imaginás cómo suena una trutruca, que es como una trompeta larga de madera?",
+    "claimsTotal": 5,
+    "sinRespaldo": [
+      {
+        "claim": "La trutruca es como una trompeta larga de madera.",
+        "label": "inferida",
+        "entailment": 0.26334160566329956,
+        "material": [
+          "[cita del libro: 296 palabras · 9ef1b49c0c3094ca]",
+          "[cita del libro: 204 palabras · 6914e817d4f61b76] musical mapuche.",
+          "[cita del libro: 330 palabras · 6f607556fe5b95ab] elaborada.",
+          "[cita del libro: 312 palabras · 2f2e4c27611268b7] nosotros”.",
+          "[cita del libro: 308 palabras · 1b1bc4093acf6789] internacional.",
+          "[cita del libro: 281 palabras · 687eeb525743b4bc] El ahogado."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "q009",
+    "pregunta": "En el relato policial de la señora Stevens, ¿quién resultó ser el asesino y de qué murió?",
+    "mode": "libro",
+    "scope": "curso",
+    "respuesta": "Mirá, en esa historia el asesino fue el doctor Pablo, uno de los hermanos. Él usó una idea muy astuta: puso veneno en los pancitos de hielo que se hacían en la heladera. Cuando la señora Stevens preparó su whisky con hielo, el veneno se disolvió en la bebida y la mató. Pero la parte más curiosa es que él mismo murió poco después, no por el veneno, sino por un síncope, que es como un paro cardíaco repentino. ¿Te imaginás la tensión de que el detective descubriera el truco del hielo? ¿Qué te parece que pasó con el frasco del veneno después de que Pablo lo usó?",
+    "claimsTotal": 4,
+    "sinRespaldo": [
+      {
+        "claim": "Él mismo murió poco después, no por el veneno, sino por un síncope, que es como un paro cardíaco repentino.",
+        "label": "fuera_del_material",
+        "entailment": 0.12004819512367249,
+        "material": [
+          "[cita del libro: 300 palabras · 2c810d21d69d3282]",
+          "[cita del libro: 276 palabras · c18edb5cbc37688f]",
+          "[cita del libro: 298 palabras · ab3ba209eac0911b]",
+          "[cita del libro: 264 palabras · 2c357f0eb5f4e97d]",
+          "[cita del libro: 256 palabras · 3aff900df0fc08b9]",
+          "[cita del libro: 392 palabras · 40b589dabb68e436] algo."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "q024",
+    "pregunta": "En el relato policial de la señora Stevens, primero se supone que se suicidó envenenándose; ¿qué veneno se creía usado y quién resultó ser en realidad el asesino?",
+    "mode": "libro",
+    "scope": "curso",
+    "respuesta": "Mirá, al principio todos pensaban que era cianuro, porque eso es lo que encontraron en el vaso. Pero el detective notó algo raro: el veneno no estaba en el whisky ni en el agua, sino en el hielo. Resulta que el doctor Pablo, uno de los hermanos, había puesto cianuro en el agua de la heladera. Cuando ella sacó el hielo para su bebida, este se derritió y liberó el veneno. Así que, aunque ella creía que era un suicidio, en realidad fue un asesinato muy ingenioso. ¿Te imaginás cómo se siente descubrir que una pista tan simple como el hielo puede cambiar todo el caso?",
+    "claimsTotal": 5,
+    "sinRespaldo": [
+      {
+        "claim": "El doctor Pablo, uno de los hermanos, había puesto cianuro en el agua de la heladera.",
+        "label": "fuera_del_material",
+        "entailment": 0.007948835380375385,
+        "material": [
+          "[cita del libro: 276 palabras · 9cda32be14ba0ef7] sea."
+        ]
+      },
+      {
+        "claim": "Cuando ella sacó el hielo para su bebida, este se derritió y liberó el veneno.",
+        "label": "fuera_del_material",
+        "entailment": 0.07546082139015198,
+        "material": [
+          "[cita del libro: 276 palabras · 9cda32be14ba0ef7] sea."
+        ]
+      },
+      {
+        "claim": "Resulta que el doctor Pablo... era el asesino.",
+        "label": "fuera_del_material",
+        "entailment": 0.009180258959531784,
+        "material": [
+          "[cita del libro: 276 palabras · 9cda32be14ba0ef7] sea."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "q025",
+    "pregunta": "El radioteatro 'La guerra de los mundos' provocó pánico entre los oyentes; ¿qué consecuencia legal intentaron promover los legisladores estadounidenses a raíz de ese supuesto pánico?",
+    "mode": "libro",
+    "scope": "curso",
+    "respuesta": "Mirá, la historia cuenta que, al creer que el programa de radio causó un caos generalizado, algunos políticos se asustaron tanto que quisieron castigar a los medios. Para frenar lo que ellos veían como un peligro, propusieron una ley que buscaba limitar la libertad de expresión y prohibir este tipo de transmisiones por considerarlas nocivas para la sociedad. ¿Te imaginás vivir en un lugar donde el gobierno puede prohibir lo que se emite en la radio solo por miedo a que la gente se asuste?",
+    "claimsTotal": 2,
+    "sinRespaldo": [
+      {
+        "claim": "Al creer que el programa de radio causó un caos generalizado, algunos políticos se asustaron tanto que quisieron castigar a los medios.",
+        "label": "fuera_del_material",
+        "entailment": 0.10368674248456955,
+        "material": [
+          "[cita del libro: 273 palabras · 7f8372327d10b352] qué deben"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "q026",
+    "pregunta": "Comparando el cuento de la mujer que imita a su marido y el poema 'El viajero de todos los mares', ¿en qué se diferencia la visión del amor de cada obra?",
+    "mode": "libro",
+    "scope": "curso",
+    "respuesta": "Mirá, en el cuento, el amor se muestra como una imitación extrema: la mujer intenta borrarse a sí misma para ser exactamente como su marido, hasta que él le prohíbe seguir con esas actitudes. Es una relación donde uno intenta copiar al otro. En cambio, en el poema, el amor es como un compañero de viaje que trae libertad y renovación, no una copia ni una sumisión. Mientras en el cuento hay una pérdida de identidad, en el poema hay un encuentro que permite crecer. ¿Te parece que imitar a alguien es una forma real de amar o más bien de buscar aprobación?",
+    "claimsTotal": 4,
+    "sinRespaldo": [
+      {
+        "claim": "En el poema, el amor es como un compañero de viaje que trae libertad y renovación.",
+        "label": "fuera_del_material",
+        "entailment": 0.10348079353570938,
+        "material": [
+          "[cita del libro: 330 palabras · de23296b092bb934] polvo."
+        ]
+      },
+      {
+        "claim": "En el poema, el amor no implica sumisión ni copia, sino un encuentro que permite crecer.",
+        "label": "fuera_del_material",
+        "entailment": 0.12553994357585907,
+        "material": [
+          "[cita del libro: 330 palabras · de23296b092bb934] polvo."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "q030",
+    "pregunta": "¿Cómo se convierten grados Celsius a Fahrenheit?",
+    "mode": "libro",
+    "scope": "otra_materia",
+    "respuesta": "Mirá, es como una receta simple. Para pasar de Celsius a Fahrenheit, primero multiplicás la temperatura por 1,8 y luego le sumás 32. Por ejemplo, si hace 0°C (el agua se congela), multiplicás 0 por 1,8 (que sigue siendo 0) y le sumás 32, así que son 32°F. Es una forma de medir lo mismo pero con números distintos. ¿Te animás a calcular cuántos grados Fahrenheit son 10°C?",
+    "claimsTotal": 2,
+    "sinRespaldo": [
+      {
+        "claim": "0°C equivale a 32°F.",
+        "label": "fuera_del_material",
+        "entailment": 0.3515532314777374,
+        "material": [
+          "[cita del libro: 268 palabras · 7e7f53ab3afd7c4c]",
+          "[cita del libro: 305 palabras · 94d5802fe71b5986] tengo?",
+          "[cita del libro: 318 palabras · c034ab430fbf0439]",
+          "[cita del libro: 288 palabras · 3ff3835b750e78c8]",
+          "[cita del libro: 280 palabras · 27b385d8b3422548] materiales?"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "q032",
+    "pregunta": "¿Cuánto tiempo hay que hervir un huevo para que quede duro?",
+    "mode": "libro",
+    "scope": "otra_materia",
+    "respuesta": "Esa es una pregunta práctica de cocina, pero en el material que estamos viendo no tenemos una tabla con tiempos exactos de cocción para recetas. Lo que sí analizamos es cómo cambia la digestión de un huevo según si está crudo, pasado por agua o duro, y cómo eso afecta al cuerpo.\n\nLa idea clave es que la preparación modifica la estructura del alimento. Por ejemplo, al hervirlo, las proteínas se endurecen, lo que hace que el cuerpo tarde más tiempo en digerirlo comparado con un huevo crudo.\n\n¿Te gustaría que exploremos por qué un huevo duro tarda más en digerirse que uno pasado por agua, basándonos en esos datos?",
+    "claimsTotal": 4,
+    "sinRespaldo": [
+      {
+        "claim": "Al hervir el huevo, las proteínas se endurecen, lo que hace que el cuerpo tarde más tiempo en digerirlo comparado con un huevo crudo.",
+        "label": "fuera_del_material",
+        "entailment": 0.09806890785694122,
+        "material": [
+          "[cita del libro: 320 palabras · 0a3ac45d4d14879a]",
+          "[cita del libro: 176 palabras · ec93484d3f6569ea] observaciones. Resultados Antecedentes",
+          "[cita del libro: 304 palabras · 9f89617f3f4b3ef5] física. La actividad",
+          "[cita del libro: 320 palabras · 9dfae318ebcb5db3]",
+          "[cita del libro: 318 palabras · 6e4fd6e2b032bb9c]",
+          "[cita del libro: 317 palabras · e7e6ce34d469836c] obtenidos:"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "q035",
+    "pregunta": "¿Cuál fue el resultado de las últimas elecciones presidenciales en Chile?",
+    "mode": "libro",
+    "scope": "otra_materia",
+    "respuesta": "Mirá, el material que tengo acá se centra mucho en cómo ha cambiado la participación de los votantes a lo largo de los años y en explicar el sistema electoral, pero no detalla los resultados específicos de cada elección. Sin embargo, sí menciona que la segunda vuelta de 2017, donde resultó electo Sebastián Piñera, tuvo una participación del 50%. Para saber quién ganó las últimas elecciones presidenciales, necesitaríamos consultar datos más recientes que no están en este texto. ¿Te gustaría que exploremos juntos cómo funciona el sistema D'Hont que se usa para contar esos votos?",
+    "claimsTotal": 6,
+    "sinRespaldo": [
+      {
+        "claim": "El material no detalla los resultados específicos de cada elección (quién ganó).",
+        "label": "fuera_del_material",
+        "entailment": 0.41513338685035706,
+        "material": [
+          "[cita del libro: 304 palabras · 2deb7e9c422ed85f] Tercera.",
+          "[cita del libro: 276 palabras · a76cbbd72cf34ab2]",
+          "[cita del libro: 200 palabras · 4a19fda61e95acc8]"
+        ]
+      },
+      {
+        "claim": "La segunda vuelta de 2017 tuvo una participación del 50%.",
+        "label": "fuera_del_material",
+        "entailment": 0.2731236517429352,
+        "material": [
+          "[cita del libro: 304 palabras · 2deb7e9c422ed85f] Tercera."
+        ]
+      },
+      {
+        "claim": "En la segunda vuelta de 2017 resultó electo Sebastián Piñera.",
+        "label": "fuera_del_material",
+        "entailment": 0.024591989815235138,
+        "material": [
+          "[cita del libro: 304 palabras · 2deb7e9c422ed85f] Tercera."
+        ]
+      },
+      {
+        "claim": "El sistema D'Hont se usa para contar esos votos.",
+        "label": "fuera_del_material",
+        "entailment": 0.38873422145843506,
+        "material": [
+          "[cita del libro: 304 palabras · 2deb7e9c422ed85f] Tercera."
+        ]
+      }
+    ]
+  }
+]

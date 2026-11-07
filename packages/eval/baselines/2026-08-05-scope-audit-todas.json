@@ -1,0 +1,3773 @@
+[
+  {
+    "id": "q001",
+    "tipo": "answerable",
+    "pregunta": "¿Quién reunió los fragmentos de la antigua leyenda y los plasmó en el libro sobre Tristán e Isolda?",
+    "notaDelGolden": "El académico y escritor francés Joseph Bédier reunió los fragmentos y escribió La historia de Tristán e Isolda.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9993877004625831,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "77f8b40eb367e4e0"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "dece0ad420225201"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 13",
+        "texto": "",
+        "textoHash": "b11b573eba6cd3e3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "256086f463bfd68b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      }
+    ]
+  },
+  {
+    "id": "q002",
+    "tipo": "answerable",
+    "pregunta": "¿En qué tipo de sociedad y en qué época se sitúa la leyenda de Tristán e Isolda?",
+    "notaDelGolden": "En la sociedad feudal, propia de la Edad Media (siglos V al XV).",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9930746692274546,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 18",
+        "texto": "",
+        "textoHash": "63c103af993767b5"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 18",
+        "texto": "",
+        "textoHash": "33cd0e304ea74726"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 16",
+        "texto": "",
+        "textoHash": "d5bab7f75849c06a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "dece0ad420225201"
+      }
+    ]
+  },
+  {
+    "id": "q003",
+    "tipo": "answerable",
+    "pregunta": "En el vocabulario, ¿qué significa la palabra 'vasallo'?",
+    "notaDelGolden": "Vasallo: servidor del rey.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.38428012150097574,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 15",
+        "texto": "",
+        "textoHash": "dae0044e2856916a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 16",
+        "texto": "",
+        "textoHash": "d5bab7f75849c06a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 67",
+        "texto": "",
+        "textoHash": "44972c0380f04452"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 78",
+        "texto": "",
+        "textoHash": "0e58487fbd023f73"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 18",
+        "texto": "",
+        "textoHash": "33cd0e304ea74726"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 31",
+        "texto": "",
+        "textoHash": "e01e7064b818c649"
+      }
+    ]
+  },
+  {
+    "id": "q004",
+    "tipo": "answerable",
+    "pregunta": "¿De qué nacionalidad era O. Henry y en qué años vivió?",
+    "notaDelGolden": "Fue estadounidense y vivió entre 1862 y 1910.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.6005375342434677,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 20",
+        "texto": "",
+        "textoHash": "feba2e5ecaa60b93"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 22",
+        "texto": "",
+        "textoHash": "dd57cf1615b8b6b3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 176",
+        "texto": "",
+        "textoHash": "774bc4a39e698151"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 21",
+        "texto": "",
+        "textoHash": "753d70605ead8825"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 153",
+        "texto": "",
+        "textoHash": "f259f48c49cd0142"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 78",
+        "texto": "",
+        "textoHash": "0e58487fbd023f73"
+      }
+    ]
+  },
+  {
+    "id": "q005",
+    "tipo": "answerable",
+    "pregunta": "En el cuento 'La última hoja', ¿cuál fue la obra maestra de Behrman?",
+    "notaDelGolden": "La última hoja de hiedra que pintó en la pared la noche en que cayó la hoja verdadera.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9885433225113782,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 27",
+        "texto": "",
+        "textoHash": "92386a8b91b98fab"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 26",
+        "texto": "",
+        "textoHash": "57896b441344c4ed"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 25",
+        "texto": "",
+        "textoHash": "2d07afed6fc81824"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 25",
+        "texto": "",
+        "textoHash": "d0e9070256c5d471"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 28",
+        "texto": "",
+        "textoHash": "5864ecc4d4382cff"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 27",
+        "texto": "",
+        "textoHash": "3699f2d508128a35"
+      }
+    ]
+  },
+  {
+    "id": "q006",
+    "tipo": "answerable",
+    "pregunta": "¿Cuáles son los principales instrumentos de la música mapuche?",
+    "notaDelGolden": "El kultrún (percusión), la pifilca y la trutruca (vientos).",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9825120690798905,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 39",
+        "texto": "",
+        "textoHash": "9ef1b49c0c3094ca"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 38",
+        "texto": "",
+        "textoHash": "fb138516a12dbac7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 39",
+        "texto": "",
+        "textoHash": "506ea1d0b622ab41"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 37",
+        "texto": "",
+        "textoHash": "931a2328bdcd12ca"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 38",
+        "texto": "",
+        "textoHash": "4f0611815ce45323"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 176",
+        "texto": "",
+        "textoHash": "774bc4a39e698151"
+      }
+    ]
+  },
+  {
+    "id": "q007",
+    "tipo": "answerable",
+    "pregunta": "¿Qué tipo de género periodístico es la entrevista y qué combina?",
+    "notaDelGolden": "Es un género periodístico híbrido que combina información y opinión.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9852520330495782,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 43",
+        "texto": "",
+        "textoHash": "e27a618f69a56d9f"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 36",
+        "texto": "",
+        "textoHash": "b37bbe903c366254"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 39",
+        "texto": "",
+        "textoHash": "9ef1b49c0c3094ca"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 40",
+        "texto": "",
+        "textoHash": "62bb2074ef9229a3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 128",
+        "texto": "",
+        "textoHash": "5728f0f1249e7746"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 129",
+        "texto": "",
+        "textoHash": "c3e6e8020d5f794a"
+      }
+    ]
+  },
+  {
+    "id": "q008",
+    "tipo": "answerable",
+    "pregunta": "En la obra 'El ahogado', ¿quién dice ser el ahogado?",
+    "notaDelGolden": "El Vagabundo, que afirma: 'Yo soy el ahogado, señor'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.8020137116524473,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 56",
+        "texto": "",
+        "textoHash": "66556dde774dd50a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 57",
+        "texto": "",
+        "textoHash": "16aaf72af534da09"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 54",
+        "texto": "",
+        "textoHash": "1f1702fd39431282"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 4",
+        "texto": "",
+        "textoHash": "7012739902bf9051"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 53",
+        "texto": "",
+        "textoHash": "24d32aaaf0ec56fd"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 62",
+        "texto": "",
+        "textoHash": "b87802326cd54660"
+      }
+    ]
+  },
+  {
+    "id": "q009",
+    "tipo": "answerable",
+    "pregunta": "En el relato policial de la señora Stevens, ¿quién resultó ser el asesino y de qué murió?",
+    "notaDelGolden": "El doctor Pablo, que murió de un síncope; en su armario había un frasco de veneno.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9646443771573557,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 70",
+        "texto": "",
+        "textoHash": "2c810d21d69d3282"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 66",
+        "texto": "",
+        "textoHash": "c18edb5cbc37688f"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 68",
+        "texto": "",
+        "textoHash": "ab3ba209eac0911b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 68",
+        "texto": "",
+        "textoHash": "2c357f0eb5f4e97d"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 66",
+        "texto": "",
+        "textoHash": "3aff900df0fc08b9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 69",
+        "texto": "",
+        "textoHash": "18846b06bf9c4202"
+      }
+    ]
+  },
+  {
+    "id": "q010",
+    "tipo": "answerable",
+    "pregunta": "¿Quién creó el inodoro de oro que fue robado del palacio Blenheim?",
+    "notaDelGolden": "El artista plástico italiano Maurizio Cattelan.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9995674615179484,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 73",
+        "texto": "",
+        "textoHash": "62170e4b69802bd1"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 176",
+        "texto": "",
+        "textoHash": "1d266d9f0b2c91d7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 73",
+        "texto": "",
+        "textoHash": "2a77847ef6c88b77"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "c42cac30aefba745"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 96",
+        "texto": "",
+        "textoHash": "6cd46a714bad6fb0"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 72",
+        "texto": "",
+        "textoHash": "e6762a68a32a63c4"
+      }
+    ]
+  },
+  {
+    "id": "q011",
+    "tipo": "answerable",
+    "pregunta": "¿Quién adaptó como radioteatro la novela 'La guerra de los mundos'?",
+    "notaDelGolden": "El actor y director estadounidense Orson Welles, en 1938.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.99944862371577,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 78",
+        "texto": "",
+        "textoHash": "0e58487fbd023f73"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 152",
+        "texto": "",
+        "textoHash": "59ad0192fd473eeb"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 80",
+        "texto": "",
+        "textoHash": "f3348b00c33ad58b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 79",
+        "texto": "",
+        "textoHash": "d44f43bf23ad874c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "f1f6432f8d1963c9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "15d6bfbafad2865c"
+      }
+    ]
+  },
+  {
+    "id": "q012",
+    "tipo": "answerable",
+    "pregunta": "¿Qué expresa el emisor cuando usa el modo indicativo?",
+    "notaDelGolden": "La acción como algo real y efectivo (o que sería cierta en determinada condición).",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.984879514735598,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 84",
+        "texto": "",
+        "textoHash": "d6ae79bdd96880f0"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 84",
+        "texto": "",
+        "textoHash": "4b1fa9cf8172d07c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 42",
+        "texto": "",
+        "textoHash": "0950756c6e650efb"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 168",
+        "texto": "",
+        "textoHash": "c4d99984568df87d"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 85",
+        "texto": "",
+        "textoHash": "e2c01c94c3bc91db"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 41",
+        "texto": "",
+        "textoHash": "be884c87c1845cf7"
+      }
+    ]
+  },
+  {
+    "id": "q013",
+    "tipo": "answerable",
+    "pregunta": "¿Qué tipos de narrador pueden encargarse de la narración en un relato policial?",
+    "notaDelGolden": "Un narrador omnisciente (voz externa) o un narrador protagonista o testigo.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9888435470006152,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "b7cb0befeff2ae12"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "c42cac30aefba745"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 72",
+        "texto": "",
+        "textoHash": "e6762a68a32a63c4"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "3bdb691e3cd8da36"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "63924b09c91379ee"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 73",
+        "texto": "",
+        "textoHash": "8005ed151046b241"
+      }
+    ]
+  },
+  {
+    "id": "q014",
+    "tipo": "answerable",
+    "pregunta": "En el poema 'El viajero de todos los mares', ¿cómo se representa el amor?",
+    "notaDelGolden": "Como una vida nueva, una experiencia que salva y da sentido pero no somete; libera con la llegada del otro.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9991895458512229,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 32",
+        "texto": "",
+        "textoHash": "bf6a4a05243619d7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 31",
+        "texto": "",
+        "textoHash": "e01e7064b818c649"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 33",
+        "texto": "",
+        "textoHash": "f98f180ff068e239"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 18",
+        "texto": "",
+        "textoHash": "33cd0e304ea74726"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 29",
+        "texto": "",
+        "textoHash": "5b0f1b275d6b9fb9"
+      }
+    ]
+  },
+  {
+    "id": "q015",
+    "tipo": "answerable",
+    "pregunta": "En el vocabulario, ¿qué significa la palabra 'atelier'?",
+    "notaDelGolden": "Atelier: taller o estudio de un artista.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.42017781737079096,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 23",
+        "texto": "",
+        "textoHash": "40d802814466b0e1"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 22",
+        "texto": "",
+        "textoHash": "dd57cf1615b8b6b3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 13",
+        "texto": "",
+        "textoHash": "b11b573eba6cd3e3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 36",
+        "texto": "",
+        "textoHash": "b37bbe903c366254"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 78",
+        "texto": "",
+        "textoHash": "0e58487fbd023f73"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 139",
+        "texto": "",
+        "textoHash": "d7bdd66b76ca64dc"
+      }
+    ]
+  },
+  {
+    "id": "q016",
+    "tipo": "adversarial",
+    "pregunta": "En el cuento del pintor anciano que muere por una enfermedad respiratoria, ¿qué obra realizó en secreto sobre el muro exterior justo antes de fallecer?",
+    "notaDelGolden": "Desfase de vocabulario: el libro dice 'neumonía' (la pregunta usa 'enfermedad respiratoria'), 'la pintó' (la pregunta usa 'realizó en secreto'), 'sobre la pared' (la pregunta usa 'muro exterior'). La respuesta contenida en el chunk es 'la última hoja de hiedra', obra maestra de Behrman.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0.027868207544088364,
+    "fragmentos": []
+  },
+  {
+    "id": "q017",
+    "tipo": "adversarial",
+    "pregunta": "¿Cómo se llama el tambor tradicional que se usa en la música del pueblo mapuche?",
+    "notaDelGolden": "Desfase de vocabulario: el libro dice 'kultrún (percusión)', la pregunta reemplaza el término técnico 'percusión' por el coloquial 'tambor'. La respuesta 'kultrún' está en el chunk.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.24852661624291925,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 38",
+        "texto": "",
+        "textoHash": "fb138516a12dbac7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 37",
+        "texto": "",
+        "textoHash": "931a2328bdcd12ca"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 39",
+        "texto": "",
+        "textoHash": "9ef1b49c0c3094ca"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 39",
+        "texto": "",
+        "textoHash": "506ea1d0b622ab41"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 38",
+        "texto": "",
+        "textoHash": "4f0611815ce45323"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 36",
+        "texto": "",
+        "textoHash": "b37bbe903c366254"
+      }
+    ]
+  },
+  {
+    "id": "q018",
+    "tipo": "adversarial",
+    "pregunta": "¿Qué autor de Francia recopiló los restos antiguos del relato de Tristán e Isolda y los publicó en forma de libro?",
+    "notaDelGolden": "Desfase de vocabulario: el libro dice 'el académico y escritor francés' (la pregunta usa 'autor de Francia'), 'reunió los fragmentos' (la pregunta usa 'recopiló los restos antiguos'), 'plasmó la leyenda en un libro' (la pregunta usa 'publicó en forma de libro'). Respuesta: Joseph Bédier.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9598889098159298,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 13",
+        "texto": "",
+        "textoHash": "b11b573eba6cd3e3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "77f8b40eb367e4e0"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "256086f463bfd68b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "dece0ad420225201"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 15",
+        "texto": "",
+        "textoHash": "77345cbf9477ed52"
+      }
+    ]
+  },
+  {
+    "id": "q019",
+    "tipo": "adversarial",
+    "pregunta": "¿Qué sustancia tóxica echó la señora Stevens dentro de su trago para quitarse la vida?",
+    "notaDelGolden": "Desfase de vocabulario: el libro dice 'veneno' y 'cianuro de potasio' (la pregunta usa 'sustancia tóxica'), 'arrojó... en esta mezcla' de 'agua con whisky' (la pregunta usa 'echó dentro de su trago'), 'antes de matarse' (la pregunta usa 'para quitarse la vida'). Respuesta: cianuro de potasio (medio gramo).",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9571045113180583,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 67",
+        "texto": "",
+        "textoHash": "44972c0380f04452"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 66",
+        "texto": "",
+        "textoHash": "3aff900df0fc08b9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 68",
+        "texto": "",
+        "textoHash": "ab3ba209eac0911b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 70",
+        "texto": "",
+        "textoHash": "58747d5e0727e15c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 70",
+        "texto": "",
+        "textoHash": "2c810d21d69d3282"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 66",
+        "texto": "",
+        "textoHash": "c18edb5cbc37688f"
+      }
+    ]
+  },
+  {
+    "id": "q020",
+    "tipo": "adversarial",
+    "pregunta": "¿Quién transformó en programa radial la novela de H. G. Wells sobre una invasión de marcianos, provocando terror y confusión en el público en 1938?",
+    "notaDelGolden": "Desfase de vocabulario: el libro dice 'adaptada como radioteatro' (la pregunta usa 'transformó en programa radial'), 'entraron en pánico / histeria colectiva' (la pregunta usa 'provocando terror y confusión'). Respuesta: Orson Welles (la novela es La guerra de los mundos).",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.960680468228329,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 78",
+        "texto": "",
+        "textoHash": "0e58487fbd023f73"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 80",
+        "texto": "",
+        "textoHash": "f3348b00c33ad58b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "f1f6432f8d1963c9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 79",
+        "texto": "",
+        "textoHash": "d44f43bf23ad874c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "15d6bfbafad2865c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 152",
+        "texto": "",
+        "textoHash": "59ad0192fd473eeb"
+      }
+    ]
+  },
+  {
+    "id": "q021",
+    "tipo": "adversarial",
+    "pregunta": "¿Qué escultor italiano, célebre por adherir una fruta a la muralla con cinta adhesiva, fabricó el váter de oro macizo que luego fue hurtado?",
+    "notaDelGolden": "Desfase de vocabulario: el libro dice 'plátano' (la pregunta usa 'fruta'), 'pegado con cinta aislante' (la pregunta usa 'adherir con cinta adhesiva'), 'inodoro/retrete de oro' (la pregunta usa 'váter'), 'robo/sustrajeron' (la pregunta usa 'hurtado'). Respuesta: Maurizio Cattelan.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.4129006029989484,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 73",
+        "texto": "",
+        "textoHash": "62170e4b69802bd1"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 73",
+        "texto": "",
+        "textoHash": "2a77847ef6c88b77"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 108",
+        "texto": "",
+        "textoHash": "44c645fdacbd97b4"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 159",
+        "texto": "",
+        "textoHash": "bba952e55d8b2ca8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 19",
+        "texto": "",
+        "textoHash": "7dd48ab69851e723"
+      }
+    ]
+  },
+  {
+    "id": "q022",
+    "tipo": "multi_hop",
+    "pregunta": "¿Quién reunió en un libro los fragmentos de la leyenda de Tristán e Isolda y en qué tipo de sociedad y época histórica se ambienta la historia?",
+    "notaDelGolden": "El chunk 2 aporta que el académico francés Joseph Bédier reunió los fragmentos y los plasmó en el libro 'La historia de Tristán e Isolda'; el chunk 5 aporta que la leyenda se sitúa en la sociedad feudal, propia de la Edad Media (siglos V al XV). Se necesitan ambos: uno da el autor/compilador, el otro el contexto histórico-social.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9981524394665068,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 18",
+        "texto": "",
+        "textoHash": "63c103af993767b5"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "dece0ad420225201"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 13",
+        "texto": "",
+        "textoHash": "b11b573eba6cd3e3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "77f8b40eb367e4e0"
+      }
+    ]
+  },
+  {
+    "id": "q023",
+    "tipo": "multi_hop",
+    "pregunta": "En la obra 'El ahogado', cuando el Vagabundo ofrece ahogarse a cambio de dinero, ¿cómo reacciona el Escritor y cómo reacciona en cambio el Policía ante la misma propuesta?",
+    "notaDelGolden": "El chunk 18 muestra al Escritor considerando la propuesta una locura ('¿Está loco?', 'está mal de la cabeza'); el chunk 19 muestra al Policía tratándolo como un negocio normal pero caro ('Es un robo. Eso no vale más de sesenta kopeks', menciona dos hermanos que por un rublo hacen un ahogamiento doble). Comparar ambas reacciones opuestas requiere los dos chunks.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9425319733760703,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 59",
+        "texto": "",
+        "textoHash": "b2a5077b1ce809bb"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 60",
+        "texto": "",
+        "textoHash": "982ef7f81a61d981"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 59",
+        "texto": "",
+        "textoHash": "5fe45cc1a1ba4914"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 56",
+        "texto": "",
+        "textoHash": "66556dde774dd50a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 57",
+        "texto": "",
+        "textoHash": "16aaf72af534da09"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 54",
+        "texto": "",
+        "textoHash": "1f1702fd39431282"
+      }
+    ]
+  },
+  {
+    "id": "q024",
+    "tipo": "multi_hop",
+    "pregunta": "En el relato policial de la señora Stevens, primero se supone que se suicidó envenenándose; ¿qué veneno se creía usado y quién resultó ser en realidad el asesino?",
+    "notaDelGolden": "El chunk 22 describe la hipótesis inicial del suicidio con cianuro de potasio disuelto en el whisky (y advierte que está 'cargado de absurdos psicológicos'); el chunk 24 revela al verdadero culpable, el doctor Pablo (el veterinario), en cuyo armario se halló un frasco de veneno y de quien se dice 'Fue el asesino más ingenioso que conocí'. Se necesita el chunk del suicidio aparente y el del desenlace.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9923235043846578,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 67",
+        "texto": "",
+        "textoHash": "44972c0380f04452"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 70",
+        "texto": "",
+        "textoHash": "2c810d21d69d3282"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 69",
+        "texto": "",
+        "textoHash": "18846b06bf9c4202"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 68",
+        "texto": "",
+        "textoHash": "ab3ba209eac0911b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 66",
+        "texto": "",
+        "textoHash": "3aff900df0fc08b9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 66",
+        "texto": "",
+        "textoHash": "c18edb5cbc37688f"
+      }
+    ]
+  },
+  {
+    "id": "q025",
+    "tipo": "multi_hop",
+    "pregunta": "El radioteatro 'La guerra de los mundos' provocó pánico entre los oyentes; ¿qué consecuencia legal intentaron promover los legisladores estadounidenses a raíz de ese supuesto pánico?",
+    "notaDelGolden": "El chunk 28 relata cómo el radioteatro de Orson Welles se presentó como noticiario y generó histeria colectiva/pánico; el chunk 29 aporta el argumento de que los legisladores estadounidenses intentaron promover leyes contra la libertad de expresión basándose en ese supuesto pánico. Conectar el hecho (pánico) con su consecuencia (leyes) requiere ambos chunks.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9884889865203002,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 82",
+        "texto": "",
+        "textoHash": "a60c1b6bde0148b7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "15d6bfbafad2865c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 78",
+        "texto": "",
+        "textoHash": "0e58487fbd023f73"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 80",
+        "texto": "",
+        "textoHash": "f3348b00c33ad58b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "f1f6432f8d1963c9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 79",
+        "texto": "",
+        "textoHash": "d44f43bf23ad874c"
+      }
+    ]
+  },
+  {
+    "id": "q026",
+    "tipo": "multi_hop",
+    "pregunta": "Comparando el cuento de la mujer que imita a su marido y el poema 'El viajero de todos los mares', ¿en qué se diferencia la visión del amor de cada obra?",
+    "notaDelGolden": "El chunk 1 muestra un amor que se marchita porque la mujer no puede ser igual al hombre amado ('es tan triste no ser igual a la persona amada'), un amor que somete/limita; el chunk 10 explica que en 'El viajero de todos los mares' el amor aparece como una vida nueva que salva y da sentido 'pero no somete', un amor que libera. El contraste entre amor que somete y amor que libera exige leer ambos.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9197459125692199,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 10",
+        "texto": "",
+        "textoHash": "c312a0131ce30260"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 32",
+        "texto": "",
+        "textoHash": "bf6a4a05243619d7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 29",
+        "texto": "",
+        "textoHash": "5b0f1b275d6b9fb9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 5",
+        "texto": "",
+        "textoHash": "d1d5ce38b238b818"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 18",
+        "texto": "",
+        "textoHash": "33cd0e304ea74726"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 19",
+        "texto": "",
+        "textoHash": "7dd48ab69851e723"
+      }
+    ]
+  },
+  {
+    "id": "q027",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cuál es la fórmula para calcular el área de un triángulo?",
+    "notaDelGolden": "Es contenido de matemática/geometría, no aparece en un libro de Lengua y Literatura.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0.002112454214422325,
+    "fragmentos": []
+  },
+  {
+    "id": "q028",
+    "tipo": "must_abstain",
+    "pregunta": "¿En qué año ganó Chile la Copa América de fútbol por primera vez?",
+    "notaDelGolden": "Dato deportivo de actualidad, fuera del material de Lengua y Literatura.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0.0016205096235923603,
+    "fragmentos": []
+  },
+  {
+    "id": "q029",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cuántos huesos tiene el cuerpo humano de una persona adulta?",
+    "notaDelGolden": "Contenido de biología/anatomía, no está en el libro de Lengua.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otro_curso",
+    "topScore": 0.15189721908684872,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 7º — texto del estudiante · 7B · pág. 161",
+        "texto": "",
+        "textoHash": "fd00e91cdd79fb13"
+      },
+      {
+        "de": "Lengua Y Literatura 7º — texto del estudiante · 7B · pág. 161",
+        "texto": "",
+        "textoHash": "708700a078c3bce5"
+      },
+      {
+        "de": "Lengua Y Literatura 7º — texto del estudiante · 7B · pág. 160",
+        "texto": "",
+        "textoHash": "80eef6e5cd7c69da"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 1º — texto del estudiante – tomo 1 · 1B · pág. 49",
+        "texto": "",
+        "textoHash": "fd6642fbef33291c"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 4º — texto del estudiante · 4B · pág. 208",
+        "texto": "",
+        "textoHash": "a3e00cba6c7dd497"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 5º — texto del estudiante · 5B · pág. 83",
+        "texto": "",
+        "textoHash": "7807a065174c2ba3"
+      }
+    ]
+  },
+  {
+    "id": "q030",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cómo se convierten grados Celsius a Fahrenheit?",
+    "notaDelGolden": "Contenido de física/matemática, ajeno al libro de Lengua y Literatura. || 2026-08-04: el corpus SÍ la cubre desde otra materia — Ciencias Naturales 8º pág. 109: la fórmula T(°F) = 1,8·T(°C) + 32. Responder citando ese libro es correcto; presentarlo como propio de Lengua, no.",
+    "expectModeActual": "libro",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.805596775501733,
+    "fragmentos": [
+      {
+        "de": "Ciencias Naturales 8º — texto del estudiante · 8B · pág. 109",
+        "texto": "",
+        "textoHash": "7e7f53ab3afd7c4c"
+      },
+      {
+        "de": "Ciencias Naturales 8º — texto del estudiante · 8B · pág. 110",
+        "texto": "",
+        "textoHash": "b53c7fa219e67b58"
+      },
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 178",
+        "texto": "",
+        "textoHash": "c034ab430fbf0439"
+      },
+      {
+        "de": "Ciencias Para La Ciudadanía 4º Medio — texto del estudiante · 4M · pág. 174",
+        "texto": "",
+        "textoHash": "3ff3835b750e78c8"
+      },
+      {
+        "de": "Ciencias Naturales 8º — texto del estudiante · 8B · pág. 108",
+        "texto": "",
+        "textoHash": "32745c55ac44bdf4"
+      }
+    ]
+  },
+  {
+    "id": "q031",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cuál es la capital de Australia y cuántos habitantes tiene?",
+    "notaDelGolden": "Dato de geografía mundial, no forma parte del material del libro.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0.0008575251232363229,
+    "fragmentos": []
+  },
+  {
+    "id": "q032",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cuánto tiempo hay que hervir un huevo para que quede duro?",
+    "notaDelGolden": "Consejo de cocina, completamente fuera del temario de Lengua.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.1601830257259994,
+    "fragmentos": [
+      {
+        "de": "Ciencias Naturales 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "0a3ac45d4d14879a"
+      },
+      {
+        "de": "Ciencias Naturales 3º — texto del estudiante · 3B · pág. 164",
+        "texto": "",
+        "textoHash": "6cc2c78cb1e077e2"
+      },
+      {
+        "de": "Ciencias Naturales 4º — texto del estudiante · 4B · pág. 106",
+        "texto": "",
+        "textoHash": "b8c82baff55381af"
+      },
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 131",
+        "texto": "",
+        "textoHash": "9dfae318ebcb5db3"
+      },
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 51",
+        "texto": "",
+        "textoHash": "6e4fd6e2b032bb9c"
+      },
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 129",
+        "texto": "",
+        "textoHash": "d2c9806bd6361369"
+      }
+    ]
+  },
+  {
+    "id": "q033",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cómo puedo programar un videojuego en Python paso a paso?",
+    "notaDelGolden": "Contenido de tecnología/programación, no aparece en el libro de Lengua.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0.000206379961676937,
+    "fragmentos": []
+  },
+  {
+    "id": "q034",
+    "tipo": "must_abstain",
+    "pregunta": "¿Qué es la fotosíntesis y qué necesitan las plantas para realizarla?",
+    "notaDelGolden": "Contenido de biología/ciencias naturales, ajeno al libro de Lengua y Literatura. || 2026-08-04: el corpus SÍ la cubre desde otra materia — Ciencias Naturales 6º pág. 83 y Biología 2º Medio pág. 102: la definición y los insumos. Responder citando ese libro es correcto; presentarlo como propio de Lengua, no.",
+    "expectModeActual": "libro",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.9889690891370082,
+    "fragmentos": [
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 83",
+        "texto": "",
+        "textoHash": "97658679aeb66e1b"
+      },
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 87",
+        "texto": "",
+        "textoHash": "813e403e04c9b2a9"
+      },
+      {
+        "de": "Ciencias Naturales 8º — texto del estudiante · 8B · pág. 74",
+        "texto": "",
+        "textoHash": "dcd41399e6f2927e"
+      },
+      {
+        "de": "Biología 2º Medio — texto del estudiante · 2M · pág. 102",
+        "texto": "",
+        "textoHash": "617a26181749afd2"
+      },
+      {
+        "de": "Ciencias Naturales 6º — texto del estudiante · 6B · pág. 85",
+        "texto": "",
+        "textoHash": "bb1a8bb457dab2fe"
+      }
+    ]
+  },
+  {
+    "id": "q035",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cuál fue el resultado de las últimas elecciones presidenciales en Chile?",
+    "notaDelGolden": "Actualidad política, no está en el material del libro escolar.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.8329242473744807,
+    "fragmentos": [
+      {
+        "de": "Educación Ciudadana 4º Medio — texto del estudiante · 4M · pág. 33",
+        "texto": "",
+        "textoHash": "e7e85d181f2114a3"
+      },
+      {
+        "de": "Educación Ciudadana 4º Medio — texto del estudiante · 4M · pág. 132",
+        "texto": "",
+        "textoHash": "a76cbbd72cf34ab2"
+      },
+      {
+        "de": "Educación Ciudadana 3º Medio — texto del estudiante · 3M · pág. 32",
+        "texto": "",
+        "textoHash": "4a19fda61e95acc8"
+      }
+    ]
+  },
+  {
+    "id": "q036",
+    "tipo": "must_abstain",
+    "pregunta": "¿A qué velocidad viaja la luz en el vacío?",
+    "notaDelGolden": "Constante de física, no forma parte de un libro de Lengua y Literatura. || 2026-08-04: el corpus SÍ la cubre desde otra materia — Lengua Y Literatura 3º Medio pág. 20: \"velocidad constante... trescientos mil kilómetros por segundo (en el vacío)\". Responder citando ese libro es correcto; presentarlo como propio de Lengua, no. || El libro que la cubre (Lengua Y Literatura 3º Medio) es de la MISMA asignatura, otro curso: el alcance correcto es otro_curso, no otra_materia.",
+    "expectModeActual": "libro",
+    "scopeQueDioElTutor": "otro_curso",
+    "topScore": 0.6906618116359833,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 3º Medio — texto del estudiante · 3M · pág. 20",
+        "texto": "",
+        "textoHash": "863ecdad27347408"
+      },
+      {
+        "de": "Lengua Y Literatura 4º Medio — texto del estudiante · 4M · pág. 22",
+        "texto": "",
+        "textoHash": "b73b0d6ceaec5463"
+      },
+      {
+        "de": "Lengua Y Literatura 3º Medio — texto del estudiante · 3M · pág. 20",
+        "texto": "",
+        "textoHash": "f14b3c8970b412de"
+      }
+    ]
+  },
+  {
+    "id": "q037",
+    "tipo": "false_premise",
+    "pregunta": "Como en el cuento 'La última hoja' de O. Henry, Johnsy termina muriendo de neumonía mientras el viejo Behrman se salva, ¿podés explicar por qué el autor decidió ese final tan triste para ella?",
+    "notaDelGolden": "Premisa falsa: el final es al revés. Johnsy se salva ('Su amiga está fuera de peligro. Usted ha vencido') y quien muere de neumonía es Behrman, tras pintar la última hoja.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.7272770041630966,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 28",
+        "texto": "",
+        "textoHash": "5864ecc4d4382cff"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 27",
+        "texto": "",
+        "textoHash": "92386a8b91b98fab"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 25",
+        "texto": "",
+        "textoHash": "2d07afed6fc81824"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 27",
+        "texto": "",
+        "textoHash": "3699f2d508128a35"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 26",
+        "texto": "",
+        "textoHash": "3ca135d4623786e7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 22",
+        "texto": "",
+        "textoHash": "dd57cf1615b8b6b3"
+      }
+    ]
+  },
+  {
+    "id": "q038",
+    "tipo": "false_premise",
+    "pregunta": "Ya que la obra dramática 'El ahogado' fue escrita por Antón Chéjov, ¿qué características del teatro de Chéjov se ven en el diálogo entre el Escritor y el Vagabundo?",
+    "notaDelGolden": "Premisa falsa: 'El ahogado' es de Neil Simon, no de Chéjov. Chéjov solo se menciona aparte, en un enlace para ver el montaje de otra obra suya.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.8654387665724564,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 54",
+        "texto": "",
+        "textoHash": "1f1702fd39431282"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 57",
+        "texto": "",
+        "textoHash": "16aaf72af534da09"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 56",
+        "texto": "",
+        "textoHash": "66556dde774dd50a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 52",
+        "texto": "",
+        "textoHash": "6ecf5bc3e5280fc9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 57",
+        "texto": "",
+        "textoHash": "6fa4fb6fe35cacd8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 60",
+        "texto": "",
+        "textoHash": "bbbb3c93cd603e31"
+      }
+    ]
+  },
+  {
+    "id": "q039",
+    "tipo": "false_premise",
+    "pregunta": "Sabiendo que Joseph Bédier escribió por primera vez la historia de Tristán e Isolda en el siglo XII como trovador provenzal, ¿por qué eligió el tema del amor cortés?",
+    "notaDelGolden": "Premisa falsa: Bédier fue un académico y escritor del siglo XX que reunió los fragmentos antiguos; los trovadores provenzales del siglo XII fueron quienes difundieron la historia, no Bédier.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.985288537184549,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 18",
+        "texto": "",
+        "textoHash": "33cd0e304ea74726"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "dece0ad420225201"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "256086f463bfd68b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 16",
+        "texto": "",
+        "textoHash": "d5bab7f75849c06a"
+      }
+    ]
+  },
+  {
+    "id": "q040",
+    "tipo": "false_premise",
+    "pregunta": "Como el kultrún es el principal instrumento de viento de la música mapuche, ¿qué sonido produce al soplarlo en las ceremonias?",
+    "notaDelGolden": "Premisa falsa: el kultrún es un instrumento de percusión. Los instrumentos de viento mencionados son la pifilca y la trutruca.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.8603820084223947,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 39",
+        "texto": "",
+        "textoHash": "9ef1b49c0c3094ca"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 39",
+        "texto": "",
+        "textoHash": "506ea1d0b622ab41"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 38",
+        "texto": "",
+        "textoHash": "fb138516a12dbac7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 37",
+        "texto": "",
+        "textoHash": "931a2328bdcd12ca"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 38",
+        "texto": "",
+        "textoHash": "4f0611815ce45323"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 42",
+        "texto": "",
+        "textoHash": "0950756c6e650efb"
+      }
+    ]
+  },
+  {
+    "id": "q041",
+    "tipo": "false_premise",
+    "pregunta": "Dado que la novela 'La guerra de los mundos' fue escrita por Orson Welles en 1938, ¿cómo se le ocurrió la idea de la invasión marciana?",
+    "notaDelGolden": "Premisa falsa: la novela es de H. G. Wells (1898). Orson Welles solo hizo la adaptación como radioteatro en 1938.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.8463944830224135,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 78",
+        "texto": "",
+        "textoHash": "0e58487fbd023f73"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 79",
+        "texto": "",
+        "textoHash": "d44f43bf23ad874c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 80",
+        "texto": "",
+        "textoHash": "f3348b00c33ad58b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "f1f6432f8d1963c9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "15d6bfbafad2865c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 152",
+        "texto": "",
+        "textoHash": "59ad0192fd473eeb"
+      }
+    ]
+  },
+  {
+    "id": "q042",
+    "tipo": "answerable",
+    "pregunta": "En el poema 'Dime si molesto' de Blanca Varela, ¿qué le contesta la hablante al hombre que entra preguntando si molesta?",
+    "notaDelGolden": "Respuesta en el chunk de la página 8: la hablante responde 'No solo molestas, contesté, pones patas arriba toda mi existencia. Bienvenido.'. El heading_path del chunk confirma título y autora: 'Dime si molesto › Blanca Varela', del libro 'Las cosas que digo son ciertas'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9573806114923407,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 7",
+        "texto": "",
+        "textoHash": "4549fe213d4dc805"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 9",
+        "texto": "",
+        "textoHash": "d43ecd718fea2f40"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 155",
+        "texto": "",
+        "textoHash": "72ce75c90022454d"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 33",
+        "texto": "",
+        "textoHash": "f98f180ff068e239"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 153",
+        "texto": "",
+        "textoHash": "87f6da73b1a152f9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 118",
+        "texto": "",
+        "textoHash": "8c964174caebd59d"
+      }
+    ]
+  },
+  {
+    "id": "q043",
+    "tipo": "answerable",
+    "pregunta": "En el poema 'Consejo de ancianos' de Óscar Hahn, ¿a quién le dicen que se cuide y cuándo?",
+    "notaDelGolden": "Chunk de la página 9 (heading_path 'Consejo de ancianos'): 'Óscar [cita del libro: 12 palabras · 4bd3ebbe508b7f0d] perdida', que podría atravesarle el corazón como un cuchillo de hueso.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.4644247214281251,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 9",
+        "texto": "",
+        "textoHash": "d43ecd718fea2f40"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 7",
+        "texto": "",
+        "textoHash": "4549fe213d4dc805"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 161",
+        "texto": "",
+        "textoHash": "5c0f88be0eb3d6fd"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 28",
+        "texto": "",
+        "textoHash": "5864ecc4d4382cff"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 153",
+        "texto": "",
+        "textoHash": "87f6da73b1a152f9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 155",
+        "texto": "",
+        "textoHash": "72ce75c90022454d"
+      }
+    ]
+  },
+  {
+    "id": "q044",
+    "tipo": "answerable",
+    "pregunta": "Según el libro, ¿qué significa interpretar una obra?",
+    "notaDelGolden": "Definición textual en el recuadro 'Recuerda que...' de la página 18: 'Interpretar es [cita del libro: 13 palabras · 7973d793e5c42da0] significado es abierto'. Las obras artísticas están siempre abiertas a la interpretación.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9085542915359455,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 10",
+        "texto": "",
+        "textoHash": "8ee09c1a275b304f"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 5",
+        "texto": "",
+        "textoHash": "d1d5ce38b238b818"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 43",
+        "texto": "",
+        "textoHash": "e27a618f69a56d9f"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 29",
+        "texto": "",
+        "textoHash": "5b0f1b275d6b9fb9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 32",
+        "texto": "",
+        "textoHash": "bf6a4a05243619d7"
+      }
+    ]
+  },
+  {
+    "id": "q045",
+    "tipo": "answerable",
+    "pregunta": "En la historia de Tristán e Isolda, ¿de qué acusaron injustamente los nobles a Tristán?",
+    "notaDelGolden": "Chunk de la página 21 (acontecimientos): 'Tristán [cita del libro: 16 palabras · b29c0b0422c3358f] Marcos de Cornualles'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9993781649050556,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 15",
+        "texto": "",
+        "textoHash": "dae0044e2856916a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 15",
+        "texto": "",
+        "textoHash": "77345cbf9477ed52"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "256086f463bfd68b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 16",
+        "texto": "",
+        "textoHash": "d5bab7f75849c06a"
+      }
+    ]
+  },
+  {
+    "id": "q046",
+    "tipo": "answerable",
+    "pregunta": "¿Cómo se llama el castillo del rey Marcos y dónde queda?",
+    "notaDelGolden": "Chunk de la página 22: Tristán lleva a Isolda 'a Tintagel, el castillo del rey Marcos en Cornualles'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.8710362989796612,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "256086f463bfd68b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 15",
+        "texto": "",
+        "textoHash": "dae0044e2856916a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "dece0ad420225201"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 96",
+        "texto": "",
+        "textoHash": "6cd46a714bad6fb0"
+      }
+    ]
+  },
+  {
+    "id": "q047",
+    "tipo": "answerable",
+    "pregunta": "¿Quién preparó el filtro de amor en la historia de Tristán e Isolda y con qué ingredientes lo hizo?",
+    "notaDelGolden": "Chunk de las páginas 28-30: 'su [cita del libro: 12 palabras · d2b845426133948c] un poderoso brebaje' destinado a que lo bebieran juntos el rey Marcos y la reina Isolda. El chunk de la página 22 confirma que 'la madre de Isolda prepara un filtro de amor'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9888832041491947,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "dece0ad420225201"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "77f8b40eb367e4e0"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "256086f463bfd68b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 18",
+        "texto": "",
+        "textoHash": "63c103af993767b5"
+      }
+    ]
+  },
+  {
+    "id": "q048",
+    "tipo": "answerable",
+    "pregunta": "En el vocabulario del capítulo de Tristán e Isolda, ¿qué significa la palabra 'singlar'?",
+    "notaDelGolden": "Chunk de vocabulario de la página 26: 'singlar: navegar'. (Distinta de las palabras ya usadas en el golden: vasallo y atelier.)",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9349641073499726,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 15",
+        "texto": "",
+        "textoHash": "dae0044e2856916a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 13",
+        "texto": "",
+        "textoHash": "b11b573eba6cd3e3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "256086f463bfd68b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 16",
+        "texto": "",
+        "textoHash": "d5bab7f75849c06a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      }
+    ]
+  },
+  {
+    "id": "q049",
+    "tipo": "answerable",
+    "pregunta": "Si el rey Marcos nunca bebió el vino de hierbas, ¿qué fue lo que le inspiró su amor por Isolda?",
+    "notaDelGolden": "Chunks de las páginas 40-43 y 43-44 (solapados): ambos contienen 'Pero él no [cita del libro: 20 palabras · 29cf2e19aa8c514c] de su corazón'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.993197334988885,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "dece0ad420225201"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "256086f463bfd68b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 16",
+        "texto": "",
+        "textoHash": "1a48766aac50dffe"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 15",
+        "texto": "",
+        "textoHash": "dae0044e2856916a"
+      }
+    ]
+  },
+  {
+    "id": "q050",
+    "tipo": "answerable",
+    "pregunta": "En el cuento 'La última hoja', ¿qué contaba Johnsy al revés mirando por la ventana y qué creía que iba a pasar cuando cayera la última?",
+    "notaDelGolden": "Chunk de las páginas 71-74: Johnsy cuenta al revés (doce, once, diez...) las hojas de la vieja enredadera de hiedra y dice 'Hojas. Sobre [cita del libro: 12 palabras · 3edd4f88ec7ec704] yo'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9969845904076926,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 24",
+        "texto": "",
+        "textoHash": "26549813b1f056c9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 26",
+        "texto": "",
+        "textoHash": "3ca135d4623786e7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 26",
+        "texto": "",
+        "textoHash": "57896b441344c4ed"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 25",
+        "texto": "",
+        "textoHash": "2d07afed6fc81824"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 27",
+        "texto": "",
+        "textoHash": "3699f2d508128a35"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 24",
+        "texto": "",
+        "textoHash": "c224dcee6665d3a8"
+      }
+    ]
+  },
+  {
+    "id": "q051",
+    "tipo": "answerable",
+    "pregunta": "En 'La última hoja', ¿quién es el 'devastador intruso' que recorrió el East Side fulminando a veintenas de víctimas?",
+    "notaDelGolden": "Chunk de las páginas 66-68: el narrador llama 'devastador intruso' al 'señor Neumonía', un 'viejo tramposo' que fulminó a Johnsy. Es la personificación de la neumonía.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9985413487003307,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 22",
+        "texto": "",
+        "textoHash": "4a39ad859ac285e3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 22",
+        "texto": "",
+        "textoHash": "dd57cf1615b8b6b3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 28",
+        "texto": "",
+        "textoHash": "5864ecc4d4382cff"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 27",
+        "texto": "",
+        "textoHash": "92386a8b91b98fab"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 26",
+        "texto": "",
+        "textoHash": "57896b441344c4ed"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 27",
+        "texto": "",
+        "textoHash": "3699f2d508128a35"
+      }
+    ]
+  },
+  {
+    "id": "q052",
+    "tipo": "answerable",
+    "pregunta": "Según la Lección 4 'En las raíces', ¿para qué voy a leer la entrevista a la destacada música?",
+    "notaDelGolden": "Chunk de las páginas 123-125 (heading_path 'Lección 4: En las raíces'): 'Leerás una [cita del libro: 32 palabras · 8433888f6e9f6078] tu propia entrevista'. La entrevistada es Elisa Avendaño.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9969484550216688,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 36",
+        "texto": "",
+        "textoHash": "b37bbe903c366254"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 37",
+        "texto": "",
+        "textoHash": "931a2328bdcd12ca"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 39",
+        "texto": "",
+        "textoHash": "506ea1d0b622ab41"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 39",
+        "texto": "",
+        "textoHash": "9ef1b49c0c3094ca"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 41",
+        "texto": "",
+        "textoHash": "9f2893993b411960"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 42",
+        "texto": "",
+        "textoHash": "0950756c6e650efb"
+      }
+    ]
+  },
+  {
+    "id": "q053",
+    "tipo": "answerable",
+    "pregunta": "¿Qué le pasó a la poeta Magda Portal cuando ganó los Juegos Florales de la Universidad de San Marco en 1923?",
+    "notaDelGolden": "Chunk de las páginas 107-110: 'En 1923 ganó [cita del libro: 20 palabras · b89376d27943a6d0] lugar', hecho que calificó como su 'primera discriminación por ser mujer'. El chunk de las páginas 105-106 identifica a la autora: 'Magda Portal Poeta peruana que vivió entre 1900 y 1989'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9230029457296299,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 32",
+        "texto": "",
+        "textoHash": "bf6a4a05243619d7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 31",
+        "texto": "",
+        "textoHash": "e01e7064b818c649"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 154",
+        "texto": "",
+        "textoHash": "69994f14c3706cd7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 118",
+        "texto": "",
+        "textoHash": "8c964174caebd59d"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 112",
+        "texto": "",
+        "textoHash": "e6f6329bd24bf3fe"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 5",
+        "texto": "",
+        "textoHash": "c604b0589c46c3a8"
+      }
+    ]
+  },
+  {
+    "id": "q054",
+    "tipo": "answerable",
+    "pregunta": "En el poema 'Amor a primera vista' de Wislawa Szymborska, ¿de qué están convencidos los dos enamorados?",
+    "notaDelGolden": "Chunk de las páginas 116-120: 'Amor a [cita del libro: 12 palabras · 08ace90429efe983] un sentimiento repentino'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9947666895721718,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 34",
+        "texto": "",
+        "textoHash": "be0fce8cb674f4e9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 33",
+        "texto": "",
+        "textoHash": "f98f180ff068e239"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 5",
+        "texto": "",
+        "textoHash": "41c6494a9acc5342"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 35",
+        "texto": "",
+        "textoHash": "4475e0b920433dd2"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 18",
+        "texto": "",
+        "textoHash": "33cd0e304ea74726"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 5",
+        "texto": "",
+        "textoHash": "c604b0589c46c3a8"
+      }
+    ]
+  },
+  {
+    "id": "q055",
+    "tipo": "answerable",
+    "pregunta": "¿De qué palabra del latín viene 'revitalizar' y qué quiere decir?",
+    "notaDelGolden": "Chunk de las páginas 126-127 (Amplío mi vocabulario): 'La palabra revitalizar [cita del libro: 16 palabras · b736e344cd28af4a] vitalidad a algo'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9545151700127148,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 36",
+        "texto": "",
+        "textoHash": "b37bbe903c366254"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 38",
+        "texto": "",
+        "textoHash": "4f0611815ce45323"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 132",
+        "texto": "",
+        "textoHash": "e9a213914e3a490e"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 103",
+        "texto": "",
+        "textoHash": "4c8eb16c269081e8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 133",
+        "texto": "",
+        "textoHash": "1839b7cfa1b1148a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 96",
+        "texto": "",
+        "textoHash": "6cd46a714bad6fb0"
+      }
+    ]
+  },
+  {
+    "id": "q056",
+    "tipo": "answerable",
+    "pregunta": "En las obras de teatro, ¿qué son las acotaciones y para qué las usa el dramaturgo?",
+    "notaDelGolden": "Son comentarios [cita del libro: 16 palabras · a161214d78c2bb04] personajes, etc.). Está en la sección de lectura dramatizada previa a 'El ahogado' (págs. 193-194), que además indica que se leen en tono neutro. VERIFICADO: el chunk contiene la definición verbatim.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9888227279551772,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 53",
+        "texto": "",
+        "textoHash": "24d32aaaf0ec56fd"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 4",
+        "texto": "",
+        "textoHash": "045254517a32f667"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 62",
+        "texto": "",
+        "textoHash": "b87802326cd54660"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 4",
+        "texto": "",
+        "textoHash": "9637ccd030302aab"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 63",
+        "texto": "",
+        "textoHash": "065742bfaca797ef"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 52",
+        "texto": "",
+        "textoHash": "6ecf5bc3e5280fc9"
+      }
+    ]
+  },
+  {
+    "id": "q057",
+    "tipo": "answerable",
+    "pregunta": "¿Cuál era la doble finalidad que tenía la comedia en sus orígenes?",
+    "notaDelGolden": "Divertir a la audiencia y, a la vez, educarla: al ridiculizar los vicios [cita del libro: 12 palabras · c49710c3d27ae640] los corrigiera. Está en los conceptos literarios trabajados tras 'El ahogado' (págs. 226-229), donde también se pregunta si 'El ahogado' es una comedia. VERIFICADO: texto verbatim en el chunk.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9914325569975108,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 4",
+        "texto": "",
+        "textoHash": "7012739902bf9051"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 62",
+        "texto": "",
+        "textoHash": "b87802326cd54660"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 52",
+        "texto": "",
+        "textoHash": "6ecf5bc3e5280fc9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 4",
+        "texto": "",
+        "textoHash": "045254517a32f667"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 4",
+        "texto": "",
+        "textoHash": "2044f9f888b9d77e"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 62",
+        "texto": "",
+        "textoHash": "e772d0be45941248"
+      }
+    ]
+  },
+  {
+    "id": "q058",
+    "tipo": "answerable",
+    "pregunta": "¿En qué época nació el género policial y qué caracterizaba a esa época?",
+    "notaDelGolden": "El policial es un subgénero narrativo que [cita del libro: 20 palabras · 3ac39b0fbbd8e6ac] Está en la sección 'Los relatos policiales' (pág. 262), que también presenta el crimen como enigma inicial. Distinto de q013, que pregunta por los tipos de narrador. VERIFICADO: texto verbatim en el chunk.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.6897622325028557,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "c42cac30aefba745"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "b7cb0befeff2ae12"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "63924b09c91379ee"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "3bdb691e3cd8da36"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 72",
+        "texto": "",
+        "textoHash": "e6762a68a32a63c4"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 105",
+        "texto": "",
+        "textoHash": "b1c4a61a77a68c6c"
+      }
+    ]
+  },
+  {
+    "id": "q059",
+    "tipo": "answerable",
+    "pregunta": "¿Qué cuento publicó Edgar Allan Poe en 1841 y cómo se llamaba el detective que aparece en él?",
+    "notaDelGolden": "En abril de 1841 Poe publicó 'Los crímenes de la calle Morgue' en el periódico Graham's de Filadelfia; su detective fundacional fue el chevalier Auguste Dupin, y el cuento está ambientado en París. Está en 'Breve historia del cuento policial' de Bartolomé Leal (págs. 234-236). VERIFICADO: el chunk nombra el cuento, la fecha y al chevalier Auguste Dupin.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9906529887155425,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "c42cac30aefba745"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "63924b09c91379ee"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 72",
+        "texto": "",
+        "textoHash": "e6762a68a32a63c4"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 86",
+        "texto": "",
+        "textoHash": "d95da22556a34826"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "3bdb691e3cd8da36"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "b7cb0befeff2ae12"
+      }
+    ]
+  },
+  {
+    "id": "q060",
+    "tipo": "answerable",
+    "pregunta": "¿En qué investigador de la vida real se cree que se inspiró Poe para crear al detective Auguste Dupin?",
+    "notaDelGolden": "En el investigador y criminalista francés Eugène-François Vidocq, un exdelincuente que se convirtió [cita del libro: 12 palabras · 89046ded8d048e14] Nacional de Francia. Dupin toma de él el escenario (París) y la capacidad de pensar como el asesino. Está en 'Y más allá del texto' (págs. 267-269). VERIFICADO: todos los datos están en el chunk.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9982621411233485,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 72",
+        "texto": "",
+        "textoHash": "e6762a68a32a63c4"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "c42cac30aefba745"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "63924b09c91379ee"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "3bdb691e3cd8da36"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 86",
+        "texto": "",
+        "textoHash": "d95da22556a34826"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 132",
+        "texto": "",
+        "textoHash": "86b9b6a61b5d1333"
+      }
+    ]
+  },
+  {
+    "id": "q061",
+    "tipo": "answerable",
+    "pregunta": "En la obra 'El ahogado', ¿quién es Popnichefsky y por qué es tan importante para el Vagabundo?",
+    "notaDelGolden": "Popnichefsky es el tipo que salta al agua y rescata al Vagabundo; es clave porque el Vagabundo no sabe nadar y hay que gritar su nombre cuando saque la cabeza por tercera vez. Popnichefsky espera hasta el último segundo para tirarse, lo que hace 'excitante' el espectáculo. Está en el diálogo de las págs. 220-222. VERIFICADO: 'El tipo que salta y me rescata. No sé nadar, señor' está verbatim en el chunk.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9831976923790288,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 60",
+        "texto": "",
+        "textoHash": "bbbb3c93cd603e31"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 54",
+        "texto": "",
+        "textoHash": "1f1702fd39431282"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 57",
+        "texto": "",
+        "textoHash": "16aaf72af534da09"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 56",
+        "texto": "",
+        "textoHash": "66556dde774dd50a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 4",
+        "texto": "",
+        "textoHash": "7012739902bf9051"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 62",
+        "texto": "",
+        "textoHash": "b87802326cd54660"
+      }
+    ]
+  },
+  {
+    "id": "q062",
+    "tipo": "answerable",
+    "pregunta": "En 'El ahogado', ¿el Vagabundo se ahoga de verdad? ¿En qué consiste realmente su espectáculo?",
+    "notaDelGolden": "No se ahoga de verdad: él 'caracteriza a un ahogado'. Salta al agua helada, chapotea, agita los brazos, grita socorro, se hunde ('gluglú') y sale flotando boca abajo como si estuviera hinchado. Cobra tres rublos por representaciones individuales y tiene tarifas especiales para grupos. Está en la pág. 207. Distinto de q008 (quién dice ser el ahogado) y de q023 (reacciones del Escritor y el Policía). VERIFICADO: descripción verbatim en el chunk.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9580173516326207,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 56",
+        "texto": "",
+        "textoHash": "66556dde774dd50a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 57",
+        "texto": "",
+        "textoHash": "16aaf72af534da09"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 60",
+        "texto": "",
+        "textoHash": "bbbb3c93cd603e31"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 59",
+        "texto": "",
+        "textoHash": "5fe45cc1a1ba4914"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 60",
+        "texto": "",
+        "textoHash": "982ef7f81a61d981"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 59",
+        "texto": "",
+        "textoHash": "b2a5077b1ce809bb"
+      }
+    ]
+  },
+  {
+    "id": "q063",
+    "tipo": "answerable",
+    "pregunta": "¿A qué obra pertenece la escena de 'El ahogado' y en qué parte de esa obra aparece?",
+    "notaDelGolden": "'El ahogado' es la primera escena del segundo acto de 'El buen doctor' (1973), obra compuesta por escenas autónomas inspiradas en relatos de Chéjov, ambientadas en la Rusia del siglo XIX y conectadas por el personaje del Escritor. Está en el recuadro informativo de las págs. 189-192. VERIFICADO: el chunk contiene todos estos datos verbatim.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.8070647263943134,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 53",
+        "texto": "",
+        "textoHash": "24d32aaaf0ec56fd"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 62",
+        "texto": "",
+        "textoHash": "b87802326cd54660"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 52",
+        "texto": "",
+        "textoHash": "6ecf5bc3e5280fc9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 63",
+        "texto": "",
+        "textoHash": "065742bfaca797ef"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 4",
+        "texto": "",
+        "textoHash": "045254517a32f667"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 4",
+        "texto": "",
+        "textoHash": "7012739902bf9051"
+      }
+    ]
+  },
+  {
+    "id": "q064",
+    "tipo": "answerable",
+    "pregunta": "En el texto sobre fake news, ¿qué era en realidad el video del huracán Irma que vieron más de 20 millones de personas en un día?",
+    "notaDelGolden": "Era en realidad una grabación de 2016 (o quizás anterior) [cita del libro: 12 palabras · 5da9293823834b66] distancia: no era un huracán ni ocurría en 2017. Incluso meteorólogos profesionales y medios lo dieron por genuino. Está en la introducción de 'Fake news: la nueva realidad' de Esteban Illades (págs. 300-303). VERIFICADO: el chunk dice verbatim 'visto por más de 20 millones de personas en solo 24 horas' y 'una grabación de 2016 —o quizás incluso antes— de un tornado'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9978689027271852,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 79",
+        "texto": "",
+        "textoHash": "d44f43bf23ad874c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 82",
+        "texto": "",
+        "textoHash": "f83c8ba54d3d3a02"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "15d6bfbafad2865c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 82",
+        "texto": "",
+        "textoHash": "a60c1b6bde0148b7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 78",
+        "texto": "",
+        "textoHash": "0e58487fbd023f73"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 80",
+        "texto": "",
+        "textoHash": "f3348b00c33ad58b"
+      }
+    ]
+  },
+  {
+    "id": "q065",
+    "tipo": "answerable",
+    "pregunta": "Según Brad Schwartz, ¿de verdad hubo un pánico masivo cuando se transmitió el radioteatro 'La guerra de los mundos'?",
+    "notaDelGolden": "No: Schwartz, autor de 'Broadcast Hysteria: Orson Welles's War of the Worlds and the Art of Fake News' (el libro más detallado sobre el tema), afirma que el miedo del que se habla jamás existió; la historia del pánico fue mitificada a lo largo de los años. Está en las págs. 303-304 del ensayo de Illades. Distinto de q011/q020 (adaptación de Welles) y q025 (legisladores). VERIFICADO: el chunk contiene la cita verbatim.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9979583897203893,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 80",
+        "texto": "",
+        "textoHash": "f3348b00c33ad58b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "f1f6432f8d1963c9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 78",
+        "texto": "",
+        "textoHash": "0e58487fbd023f73"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 79",
+        "texto": "",
+        "textoHash": "d44f43bf23ad874c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "15d6bfbafad2865c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 82",
+        "texto": "",
+        "textoHash": "a60c1b6bde0148b7"
+      }
+    ]
+  },
+  {
+    "id": "q066",
+    "tipo": "answerable",
+    "pregunta": "¿Qué hicieron Estelle y John Paultz cuando escucharon por la radio la llegada de los marcianos?",
+    "notaDelGolden": "Recogieron sus cosas y gastaron todos sus ahorros (apenas seis dólares tras la Gran Depresión) en pasajes de tren para escapar de los marcianos; recién lejos de casa supieron que era un programa de entretenimiento y tardaron días en volver, sin una moneda. Está en las págs. 304-305 del ensayo sobre fake news. VERIFICADO: todos los detalles están verbatim en el chunk.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9894346219573772,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 80",
+        "texto": "",
+        "textoHash": "f3348b00c33ad58b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "f1f6432f8d1963c9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 78",
+        "texto": "",
+        "textoHash": "0e58487fbd023f73"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "15d6bfbafad2865c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 79",
+        "texto": "",
+        "textoHash": "d44f43bf23ad874c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 136",
+        "texto": "",
+        "textoHash": "9f317a5bb6bfd09c"
+      }
+    ]
+  },
+  {
+    "id": "q067",
+    "tipo": "answerable",
+    "pregunta": "En la actividad de las imágenes creadas por una inteligencia artificial, ¿a partir de qué frase se diseñaron las imágenes?",
+    "notaDelGolden": "A partir de la frase 'perdido en una cueva': cada imagen representa una interpretación distinta que la IA hizo del mismo enunciado, y la actividad pide comparar elementos comunes y distintos. Está al inicio de la Lección 3 'Lo que vemos distinto' (págs. 277-279). VERIFICADO: la frase y la explicación están verbatim en el chunk, cuyo heading_path es 'Lección 3: Lo que vemos distinto'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9905637682066911,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 73",
+        "texto": "",
+        "textoHash": "2a77847ef6c88b77"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 13",
+        "texto": "",
+        "textoHash": "b11b573eba6cd3e3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 19",
+        "texto": "",
+        "textoHash": "7dd48ab69851e723"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 111",
+        "texto": "",
+        "textoHash": "b573fae2345c6095"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 140",
+        "texto": "",
+        "textoHash": "0c615123829125c8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 74",
+        "texto": "",
+        "textoHash": "6b9a375a9e42439a"
+      }
+    ]
+  },
+  {
+    "id": "q068",
+    "tipo": "answerable",
+    "pregunta": "Según el análisis que hace el libro, ¿de qué habla en el fondo el microcuento 'La cueva' de Fernando Iwasaki?",
+    "notaDelGolden": "El modelamiento plantea [cita del libro: 14 palabras · 65997a6277a7d1ab] infancia, crecimiento y adultez. La cama de los papás representa la seguridad de la infancia, la cueva lo desconocido, y la imposibilidad de volver sería la pérdida de la infancia. Está en la sección de interpretación de las págs. 285-287. VERIFICADO: el chunk dice verbatim 'el [cita del libro: 12 palabras · e9523d3cdcc97257] Infancia – Crecimiento - Adultez'; el título y autor constan en el heading_path 'La cueva › Fernando Iwasaki' del chunk del cuento (3ff68d72).",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.937531818654456,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 75",
+        "texto": "",
+        "textoHash": "a60d8fa2617181ce"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 76",
+        "texto": "",
+        "textoHash": "cd95c60c9b99d111"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 74",
+        "texto": "",
+        "textoHash": "6b9a375a9e42439a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 176",
+        "texto": "",
+        "textoHash": "1d266d9f0b2c91d7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 28",
+        "texto": "",
+        "textoHash": "5864ecc4d4382cff"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 147",
+        "texto": "",
+        "textoHash": "ea5d3b0285dce874"
+      }
+    ]
+  },
+  {
+    "id": "q069",
+    "tipo": "answerable",
+    "pregunta": "En el microcuento 'Hombre de palabras', ¿por qué a la policía le resultó imposible esclarecer el crimen?",
+    "notaDelGolden": "Porque entre las palabras que el asesino dejó en el escenario del crimen (por descuido o deliberadamente) había demasiadas conjunciones disyuntivas. Es el remate humorístico del microcuento de Ana Ibáñez (págs. 291-293), donde al morir la víctima brotan palabras de su pecho y el homicida huye con los bolsillos llenos de adjetivos, sustantivos y verbos. VERIFICADO: el chunk contiene el remate verbatim y su heading_path es 'Hombre de palabras Ana Ibáñez'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9948290810781756,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 77",
+        "texto": "",
+        "textoHash": "abb914c70fa5757b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 176",
+        "texto": "",
+        "textoHash": "1d266d9f0b2c91d7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "63924b09c91379ee"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 75",
+        "texto": "",
+        "textoHash": "a60d8fa2617181ce"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 76",
+        "texto": "",
+        "textoHash": "cd95c60c9b99d111"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 68",
+        "texto": "",
+        "textoHash": "ab3ba209eac0911b"
+      }
+    ]
+  },
+  {
+    "id": "q090",
+    "tipo": "multi_hop",
+    "pregunta": "En 'La historia de Tristán e Isolda', ¿qué efecto tenía el brebaje que preparó la madre de Isolda y quiénes terminaron bebiéndolo en el barco?",
+    "notaDelGolden": "VERIFICADO. El chunk 4ec0eaca (Cap. IV, p.28) describe la virtud del filtro: la madre de Isolda lo preparó con hierbas, flores y raíces mezcladas con vino, y 'aquellos que [cita del libro: 20 palabras · 4ca5e8b52aea3fc4] en la muerte'. El chunk b83df10b (p.33) revela quiénes lo bebieron: Brangel lanza la copa al mar gimiendo '¡Isolda, amiga, y vos, Tristán, lo que acabáis de beber es vuestra muerte!'. Se necesitan ambos: uno da el efecto, el otro identifica a los que lo bebieron.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9738232275601868,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "dece0ad420225201"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 13",
+        "texto": "",
+        "textoHash": "b11b573eba6cd3e3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 16",
+        "texto": "",
+        "textoHash": "1a48766aac50dffe"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 15",
+        "texto": "",
+        "textoHash": "dae0044e2856916a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 16",
+        "texto": "",
+        "textoHash": "d5bab7f75849c06a"
+      }
+    ]
+  },
+  {
+    "id": "q091",
+    "tipo": "multi_hop",
+    "pregunta": "¿En qué época y con qué forma de pensamiento nació el género policial, y cuál fue el cuento que lo inauguró y quién lo escribió?",
+    "notaDelGolden": "VERIFICADO. El chunk 3dec2e9d ('Los relatos policiales', p.262) dice que el policial 'nació a mediados del [cita del libro: 12 palabras · 464c0a67ef4bbba3] y el pensamiento científico'. El chunk 8d2fba5f ('Breve historia del cuento policial' de Bartolomé Leal, p.234) cuenta que en abril de 1841 Edgar Allan Poe publicó 'Los crímenes de la calle Morgue', cuento con detective fundacional (Auguste Dupin) que traía los ingredientes que caracterizarían al género. Un chunk aporta el contexto de época, el otro el cuento fundacional y su autor. No duplica q009/q013/q024, que son sobre el relato de la señora Stevens y tipos de narrador.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9699563457316738,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "c42cac30aefba745"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "b7cb0befeff2ae12"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "63924b09c91379ee"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "3bdb691e3cd8da36"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 72",
+        "texto": "",
+        "textoHash": "e6762a68a32a63c4"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 86",
+        "texto": "",
+        "textoHash": "d95da22556a34826"
+      }
+    ]
+  },
+  {
+    "id": "q092",
+    "tipo": "multi_hop",
+    "pregunta": "En la entrevista a Elisa Avendaño, ¿por qué se dice que su premio hace historia y quién presidía el jurado que se lo otorgó?",
+    "notaDelGolden": "VERIFICADO. El chunk 3a7242c9 (p.128) dice que la cantautora oriunda de Lautaro 'hace historia al ser la primera representante de pueblos originarios en recibir el galardón' (Premio Nacional de Música). El chunk 03883eb4 (p.131) informa que la Premio Nacional de Artes Musicales 2022 fue distinguida tras un fallo de mayoría dado a conocer por [cita del libro: 12 palabras · 2ed161551995cbe2] 'quien presidía el jurado'. Un chunk explica por qué es histórico, el otro identifica a la presidenta del jurado.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9934798052527053,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 37",
+        "texto": "",
+        "textoHash": "931a2328bdcd12ca"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 38",
+        "texto": "",
+        "textoHash": "4f0611815ce45323"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 36",
+        "texto": "",
+        "textoHash": "b37bbe903c366254"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 37",
+        "texto": "",
+        "textoHash": "a3fd659223bedc46"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 38",
+        "texto": "",
+        "textoHash": "fb138516a12dbac7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 42",
+        "texto": "",
+        "textoHash": "0950756c6e650efb"
+      }
+    ]
+  },
+  {
+    "id": "q093",
+    "tipo": "multi_hop",
+    "pregunta": "Según el ensayo de Illades sobre las fake news, ¿qué sostiene Brad Schwartz sobre el pánico que habría causado 'La guerra de los mundos' y qué estudio terminó convirtiendo ese mito en 'verdad'?",
+    "notaDelGolden": "VERIFICADO. El chunk a237b2fa (p.303) presenta la historia mitificada del pánico y la afirmación de Brad Schwartz (autor de 'Broadcast Hysteria: Orson Welles's War of the Worlds and the Art of Fake News') de que 'el miedo del que se habla jamás existió. Ocurrió, pero por motivos distintos'. El chunk c7c5f257 (p.306) explica que 'dos años más tarde, la Universidad de Princeton publicó un estudio... [cita del libro: 20 palabras · fd811f11f2785945] por Hadley Cantril'. No duplica q025, que conecta el pánico con las leyes propuestas por legisladores usando otros chunks (2c8f5536, 086918e9).",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9929694946870806,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "f1f6432f8d1963c9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 80",
+        "texto": "",
+        "textoHash": "f3348b00c33ad58b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 79",
+        "texto": "",
+        "textoHash": "d44f43bf23ad874c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 81",
+        "texto": "",
+        "textoHash": "15d6bfbafad2865c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 78",
+        "texto": "",
+        "textoHash": "0e58487fbd023f73"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 82",
+        "texto": "",
+        "textoHash": "a60c1b6bde0148b7"
+      }
+    ]
+  },
+  {
+    "id": "q094",
+    "tipo": "multi_hop",
+    "pregunta": "Comparando los microcuentos 'La cueva' de Fernando Iwasaki y 'Ropa usada' de Pía Barros, ¿cómo termina el niño que explora bajo la cama y qué le pasa al hombre que compra la chaqueta de cuero?",
+    "notaDelGolden": "VERIFICADO. El chunk 3ff68d72 (p.281) contiene el final de 'La cueva': 'cuando se gastaron las pilas ya fue imposible volver... mi pijama [cita del libro: 17 palabras · a7d5fe7f4c7b8017] muerto'. El chunk d8c63cd9 (p.342) contiene el final de 'Ropa usada': la bala 'hace un giro en ciento ochenta grados', 'ingresa, conocedora, en el orificio' de la chaqueta, el hombre 'congela la sonrisa ante el impacto' y la dependienta corre a desvestirlo y cuelga de nuevo la chaqueta, 'aguardando'. Comparar ambos desenlaces exige los dos chunks.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.6651118302522422,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 75",
+        "texto": "",
+        "textoHash": "a60d8fa2617181ce"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 74",
+        "texto": "",
+        "textoHash": "6b9a375a9e42439a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 89",
+        "texto": "",
+        "textoHash": "da540daca4b31068"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 176",
+        "texto": "",
+        "textoHash": "1d266d9f0b2c91d7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 76",
+        "texto": "",
+        "textoHash": "cd95c60c9b99d111"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 23",
+        "texto": "",
+        "textoHash": "40d802814466b0e1"
+      }
+    ]
+  },
+  {
+    "id": "q095",
+    "tipo": "multi_hop",
+    "pregunta": "¿Qué advertencia sobre el amor recibe Adán en el poema 'Consejo de ancianos' de Óscar Hahn y, en cambio, cómo recibe al otro la voz del poema 'Dime si molesto' de Blanca Varela?",
+    "notaDelGolden": "VERIFICADO. El chunk c3076a51 (p.9) contiene el poema de Óscar Hahn: 'Cuídate Adán cuando salgas al mundo en busca de la costilla perdida... podría atravesarte el corazón como un cuchillo de hueso'. El chunk ada54ef3 (p.8, heading 'Dime si molesto › Blanca Varela') contiene: 'No solo molestas... pones patas arriba toda mi existencia. Bienvenido'. El contraste (amor como amenaza vs. amor aceptado pese al trastorno) requiere ambos chunks. No duplica q026, que compara el cuento de Kawabata con 'El viajero de todos los mares'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.8989723694187303,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 7",
+        "texto": "",
+        "textoHash": "4549fe213d4dc805"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 9",
+        "texto": "",
+        "textoHash": "d43ecd718fea2f40"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 18",
+        "texto": "",
+        "textoHash": "33cd0e304ea74726"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 33",
+        "texto": "",
+        "textoHash": "f98f180ff068e239"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 29",
+        "texto": "",
+        "textoHash": "5b0f1b275d6b9fb9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 5",
+        "texto": "",
+        "textoHash": "d1d5ce38b238b818"
+      }
+    ]
+  },
+  {
+    "id": "q096",
+    "tipo": "multi_hop",
+    "pregunta": "Cuando escribo un texto argumentativo, ¿qué expresa el emisor con el modo subjuntivo y en qué se diferencia de lo que expresa con el modo imperativo?",
+    "notaDelGolden": "VERIFICADO CON CORRECCIÓN. El chunk 835a0de9 (p.323) define el subjuntivo: '2. SUBJUNTIVO — El emisor expresa una acción posible, deseada o hipotética'. El chunk 6a169339 (p.324) define el imperativo: 'El emisor expresa una orden o una petición' con ejemplos ('Escribe / Escriban') y 'se conjuga solamente en presente y en segunda persona singular o plural'. Corrección: se quitó del expect_answer el ejemplo 'Puede que escriba', que no está en el contenido del chunk 835a0de9 (quedó cortado en el heading de otro chunk, c7e295a6). La comparación exige ambos chunks. No duplica q012, que pregunta solo por el indicativo.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9980048867815641,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 84",
+        "texto": "",
+        "textoHash": "d6ae79bdd96880f0"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 84",
+        "texto": "",
+        "textoHash": "4b1fa9cf8172d07c"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 85",
+        "texto": "",
+        "textoHash": "e2c01c94c3bc91db"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 83",
+        "texto": "",
+        "textoHash": "06e88ba4e36b7c48"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 82",
+        "texto": "",
+        "textoHash": "f83c8ba54d3d3a02"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 166",
+        "texto": "",
+        "textoHash": "465b99ace2a7fcbc"
+      }
+    ]
+  },
+  {
+    "id": "q097",
+    "tipo": "multi_hop",
+    "pregunta": "En el relato 'La caravana', ¿a quiénes quiere rogar Igluma para que protejan y devuelvan a los caravaneros, y a qué cultura originaria del norte de Chile corresponde este relato según el libro?",
+    "notaDelGolden": "VERIFICADO. El chunk c145dae6 (p.172) contiene el diálogo: 'Chamán ¿podemos [cita del libro: 12 palabras · 257f3b2e80cd7a30] nuestros queridos?', y el chamán menciona 'nuestra Madre y los taitas en las estrellas'. El chunk 9379ec12 (p.175, misma sección 'La caravana' de María Ester Campillay) presenta el contexto cultural: 'La cultura diaguita floreció [cita del libro: 20 palabras · 35d786875591de8c] partir del siglo XII'. Un chunk da la escena del ruego, el otro la cultura a la que pertenece el relato.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.970896553398753,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 47",
+        "texto": "",
+        "textoHash": "be0628f0f2b9dc10"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 47",
+        "texto": "",
+        "textoHash": "b87d61733bb909fe"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 46",
+        "texto": "",
+        "textoHash": "5eabb832ab71c976"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 46",
+        "texto": "",
+        "textoHash": "9caea3bd2278550f"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 120",
+        "texto": "",
+        "textoHash": "985597b559509e24"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 126",
+        "texto": "",
+        "textoHash": "b8913ed686e5540f"
+      }
+    ]
+  },
+  {
+    "id": "q100",
+    "tipo": "adversarial",
+    "pregunta": "En la historia de Tristán e Isolda, ¿quién fabricó la poción mágica que hace que dos personas se enamoren para siempre y con qué la hizo?",
+    "notaDelGolden": "Desfase de vocabulario: el libro dice 'brebaje' y 'filtro' (la pregunta usa 'poción mágica'), 'preparó/elaboró' (la pregunta usa 'fabricó/la hizo') y 'se amarán con todos los sentidos y con todo su pensamiento, para siempre' (la pregunta usa 'se enamoren para siempre'). La respuesta está en el chunk del Capítulo IV ('El filtro'): la madre de Isolda recogió hierbas, flores y raíces, las mezcló con vino y preparó el poderoso brebaje gracias a su ciencia y su magia. Verificado contra la base: el chunk contiene textualmente todos estos datos.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9381172740647191,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "dece0ad420225201"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "256086f463bfd68b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 13",
+        "texto": "",
+        "textoHash": "b11b573eba6cd3e3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 16",
+        "texto": "",
+        "textoHash": "1a48766aac50dffe"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      }
+    ]
+  },
+  {
+    "id": "q101",
+    "tipo": "adversarial",
+    "pregunta": "¿Cómo se llamaba el investigador que resuelve el caso de los asesinatos de la calle Morgue en los relatos de Edgar Allan Poe?",
+    "notaDelGolden": "Desfase de vocabulario: el libro dice 'detective' y 'detective fundacional' (la pregunta usa 'investigador'), 'Los crímenes de la calle Morgue' (la pregunta usa 'asesinatos de la calle Morgue') y 'un detective que investiga y aplica un proceso de deducción' (la pregunta usa 'resuelve el caso'). Respuesta en el chunk de 'Breve historia del cuento policial': 'Dicho detective fundacional se llamó el chevalier Auguste Dupin'. Verificado contra la base.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9349414588460595,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "c42cac30aefba745"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 72",
+        "texto": "",
+        "textoHash": "e6762a68a32a63c4"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "3bdb691e3cd8da36"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 86",
+        "texto": "",
+        "textoHash": "d95da22556a34826"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "63924b09c91379ee"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "b7cb0befeff2ae12"
+      }
+    ]
+  },
+  {
+    "id": "q102",
+    "tipo": "adversarial",
+    "pregunta": "En las historias de detectives, ¿qué nombre recibe la excusa con la que un acusado demuestra que es inocente porque estaba en otra parte cuando ocurrió el delito?",
+    "notaDelGolden": "Desfase de vocabulario: el libro define 'coartada' como 'argumento de inculpabilidad de un sospechoso por hallarse en el momento del crimen en otro lugar'; la pregunta usa 'excusa con la que demuestra que es inocente' (vs 'argumento de inculpabilidad'), 'acusado' (vs 'sospechoso') y 'delito' (vs 'crimen'). Respuesta: coartada, en la sección 'Amplío mi vocabulario' sobre palabras de la investigación policial. Verificado contra la base.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.5819889912456159,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 65",
+        "texto": "",
+        "textoHash": "21c00b8ee25877d4"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "63924b09c91379ee"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "b7cb0befeff2ae12"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "3bdb691e3cd8da36"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "c42cac30aefba745"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 72",
+        "texto": "",
+        "textoHash": "e6762a68a32a63c4"
+      }
+    ]
+  },
+  {
+    "id": "q103",
+    "tipo": "adversarial",
+    "pregunta": "¿En qué año se aceptó oficialmente a los diaguitas como una de las etnias indígenas de Chile?",
+    "notaDelGolden": "Desfase de vocabulario: el libro dice 'en 2006 fueron reconocidos como pueblo originario de Chile'; la pregunta usa 'se aceptó oficialmente' (vs 'fueron reconocidos') y 'etnias indígenas' (vs 'pueblo originario'). Respuesta: en 2006, en el chunk sobre la cultura diaguita que acompaña al cuento 'La caravana'. Verificado contra la base: el chunk contiene la frase exacta.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.8927672047727633,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 47",
+        "texto": "",
+        "textoHash": "b87d61733bb909fe"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 48",
+        "texto": "",
+        "textoHash": "07f72bc0be3f43d8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 126",
+        "texto": "",
+        "textoHash": "b8913ed686e5540f"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 46",
+        "texto": "",
+        "textoHash": "9caea3bd2278550f"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 117",
+        "texto": "",
+        "textoHash": "c9d51d59957a4170"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 121",
+        "texto": "",
+        "textoHash": "ccbac88e4b28b490"
+      }
+    ]
+  },
+  {
+    "id": "q104",
+    "tipo": "adversarial",
+    "pregunta": "Cuando recién apareció la comedia, ¿qué doble propósito tenía con el público que iba a verla?",
+    "notaDelGolden": "Desfase de vocabulario: el libro dice 'en sus orígenes tenía una doble finalidad: divertir a la audiencia y, a la vez, educarla'; la pregunta usa 'cuando recién apareció' (vs 'en sus orígenes'), 'propósito' (vs 'finalidad') y 'público que iba a verla' (vs 'audiencia'/'espectador'). Respuesta: divertir y educar; al ridiculizar los vicios [cita del libro: 12 palabras · c49710c3d27ae640] los corrigiera. Verificado contra la base.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.4616353362618389,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 4",
+        "texto": "",
+        "textoHash": "7012739902bf9051"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 62",
+        "texto": "",
+        "textoHash": "b87802326cd54660"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 52",
+        "texto": "",
+        "textoHash": "6ecf5bc3e5280fc9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 4",
+        "texto": "",
+        "textoHash": "045254517a32f667"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 96",
+        "texto": "",
+        "textoHash": "6cd46a714bad6fb0"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 22",
+        "texto": "",
+        "textoHash": "dd57cf1615b8b6b3"
+      }
+    ]
+  },
+  {
+    "id": "q115",
+    "tipo": "false_premise",
+    "pregunta": "Ya que el rey Marcos era el padre de Tristán, ¿por qué los nobles lo acusan de querer robarle el trono a su propio papá?",
+    "notaDelGolden": "Premisa falsa: el rey Marcos de Cornualles no es el padre de Tristán sino su TÍO. El chunk b8eb3e90-b461-4d01-8d64-e847dda6626d dice: 'Tristán [cita del libro: 16 palabras · b29c0b0422c3358f] Marcos de Cornualles'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9835199420540144,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 15",
+        "texto": "",
+        "textoHash": "dae0044e2856916a"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 15",
+        "texto": "",
+        "textoHash": "77345cbf9477ed52"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "256086f463bfd68b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 16",
+        "texto": "",
+        "textoHash": "d5bab7f75849c06a"
+      }
+    ]
+  },
+  {
+    "id": "q116",
+    "tipo": "false_premise",
+    "pregunta": "Como Isolda preparó el filtro de amor a propósito para que Tristán se enamorara de ella, ¿en qué momento del viaje se lo dio a tomar?",
+    "notaDelGolden": "Premisa falsa doble: el brebaje no lo preparó Isolda sino su MADRE (chunk 4ec0eaca: 'su madre recogió hierbas, flores y raíces... y preparó un poderoso brebaje'), y estaba destinado a que lo bebieran juntos el rey Marcos e Isolda en su noche de bodas, custodiado por Brangel. Tristán e Isolda lo bebieron POR ERROR (chunk 8c988210: 'Solo debía beberlo con vos el rey Marcos, pero el Enemigo se ha burlado de nosotros tres y ya habéis vaciado la copa').",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9728542637631822,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "dece0ad420225201"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 12",
+        "texto": "",
+        "textoHash": "e2a2c55e4838bad6"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "76fa028c3ce932e8"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 14",
+        "texto": "",
+        "textoHash": "77f8b40eb367e4e0"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 17",
+        "texto": "",
+        "textoHash": "256086f463bfd68b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 15",
+        "texto": "",
+        "textoHash": "dae0044e2856916a"
+      }
+    ]
+  },
+  {
+    "id": "q117",
+    "tipo": "false_premise",
+    "pregunta": "En el cuento 'Los crímenes de la calle Morgue' el detective que resuelve el caso es Sherlock Holmes, ¿cierto? ¿Cómo llega a la solución?",
+    "notaDelGolden": "Premisa falsa: el detective no es Sherlock Holmes (que no aparece en el material: 0 resultados para 'sherlock'/'holmes' en el corpus) sino el chevalier Auguste Dupin, el 'detective fundacional' creado por Edgar Allan Poe, quien publicó el cuento en abril de 1841 en el periódico Graham's de Filadelfia. Está en el chunk 8d2fba5f-b9d3-46be-8bfd-c13d68dc1415 ('Breve historia del cuento policial' de Bartolomé Leal).",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.6548139248860865,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "c42cac30aefba745"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 86",
+        "texto": "",
+        "textoHash": "d95da22556a34826"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "3bdb691e3cd8da36"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "63924b09c91379ee"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 72",
+        "texto": "",
+        "textoHash": "e6762a68a32a63c4"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "b7cb0befeff2ae12"
+      }
+    ]
+  },
+  {
+    "id": "q118",
+    "tipo": "false_premise",
+    "pregunta": "Ya que 'El crimen casi perfecto' es un cuento de Agatha Christie, ¿qué elementos típicos de sus novelas aparecen en el caso de la señora Stevens?",
+    "notaDelGolden": "Premisa falsa: 'El crimen casi perfecto' no es de Agatha Christie (que no aparece en el material: 0 resultados para 'agatha'/'christie' en el corpus) sino de Roberto Arlt. El chunk 31e937c0-c94a-4662-803b-067b9116a27d encabeza el cuento: 'El crimen casi perfecto Roberto Arlt' y menciona el caso de la señora Stevens.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.36223464551916607,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 66",
+        "texto": "",
+        "textoHash": "c18edb5cbc37688f"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 68",
+        "texto": "",
+        "textoHash": "2c357f0eb5f4e97d"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 69",
+        "texto": "",
+        "textoHash": "18846b06bf9c4202"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 66",
+        "texto": "",
+        "textoHash": "3aff900df0fc08b9"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 68",
+        "texto": "",
+        "textoHash": "ab3ba209eac0911b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 70",
+        "texto": "",
+        "textoHash": "58747d5e0727e15c"
+      }
+    ]
+  },
+  {
+    "id": "q119",
+    "tipo": "false_premise",
+    "pregunta": "Como Elisa Avendaño ganó el Premio Nacional de Literatura, ¿qué dijo en la entrevista sobre la importancia del idioma mapuche?",
+    "notaDelGolden": "Premisa falsa: Elisa Avendaño ganó el Premio Nacional de MÚSICA (categoría Artes Musicales), no el de Literatura. El chunk 3a7242c9-3f70-4d7d-b663-fa9fee9d4ae3 la presenta como 'Elisa Avendaño, Premio Nacional de Música' y detalla que es la primera representante de pueblos originarios en recibirlo. Lo del idioma sí es real y el tutor puede responderlo tras corregir: 'Lo primero es retomar el idioma; sin idioma no hay música mapuche'.",
+    "expectModeActual": null,
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.9936411943829129,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 37",
+        "texto": "",
+        "textoHash": "931a2328bdcd12ca"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 36",
+        "texto": "",
+        "textoHash": "b37bbe903c366254"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 38",
+        "texto": "",
+        "textoHash": "fb138516a12dbac7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 39",
+        "texto": "",
+        "textoHash": "506ea1d0b622ab41"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 38",
+        "texto": "",
+        "textoHash": "4f0611815ce45323"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 42",
+        "texto": "",
+        "textoHash": "0950756c6e650efb"
+      }
+    ]
+  },
+  {
+    "id": "q120",
+    "tipo": "must_abstain",
+    "pregunta": "¿De qué trata la novela Cien años de soledad de Gabriel García Márquez?",
+    "notaDelGolden": "Near-miss literario: obra famosa en español plausible para un curso de Lengua, pero el corpus no la trata. El tutor debe abstenerse. Keywords verificadas con ILIKE en todo el corpus (0 filas): 'garcía márquez', 'garcia marquez', 'márquez', 'cien años de soledad', 'macondo', 'realismo mágico', 'buendía', 'buendia', 'aureliano', 'gabo'. Falsos positivos verificados: 'cien años' da 1 fila (relato policial de la señora Stevens, sin relación) y 'soledad' da 4 filas (usos comunes como 'sus soledades' o 'ermitaño: persona que vive en soledad').",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otro_curso",
+    "topScore": 0.8940059494113098,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 128",
+        "texto": "",
+        "textoHash": "0f3d8cc9baf92d42"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 121",
+        "texto": "",
+        "textoHash": "6299d1587136065d"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 128",
+        "texto": "",
+        "textoHash": "a03b2ade0ce202cb"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 223",
+        "texto": "",
+        "textoHash": "b19cb906d2ffc959"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 61",
+        "texto": "",
+        "textoHash": "643688e09bfabaf8"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 61",
+        "texto": "",
+        "textoHash": "f5329e9c8bb88604"
+      }
+    ]
+  },
+  {
+    "id": "q121",
+    "tipo": "must_abstain",
+    "pregunta": "¿Qué poemas de Pablo Neruda salen en el libro y de qué tratan?",
+    "notaDelGolden": "Near-miss fuerte: el libro tiene unidad de poesía (analiza 'El viajero de todos los mares'; 'poesía'/'poema' da 13 filas), pero Neruda no aparece. Debe abstenerse. Keywords verificadas (0 filas en todo el corpus): 'neruda', 'veinte poemas', 'residencia en la tierra'. || 2026-08-04: el corpus SÍ la cubre desde otra materia — Lengua Y Literatura 2º Medio pág. 28: un poema de Neruda completo, con atribución. Responder citando ese libro es correcto; presentarlo como propio de Lengua, no. || El libro que la cubre (Lengua Y Literatura 2º Medio) es de la MISMA asignatura, otro curso: el alcance correcto es otro_curso, no otra_materia.",
+    "expectModeActual": "libro",
+    "scopeQueDioElTutor": "otro_curso",
+    "topScore": 0.6291563390044613,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 2º Medio — texto del estudiante · 2M · pág. 28",
+        "texto": "",
+        "textoHash": "013263a283eb344f"
+      },
+      {
+        "de": "Lengua Y Literatura 7º — texto del estudiante · 7B · pág. 60",
+        "texto": "",
+        "textoHash": "47e09363c0e338f3"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 224",
+        "texto": "",
+        "textoHash": "84bead02921f78cd"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 225",
+        "texto": "",
+        "textoHash": "67c9c17d4a5ca876"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 1º — texto del estudiante – tomo 1 · 1B · pág. 270",
+        "texto": "",
+        "textoHash": "d28869f23f570568"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 3º — leo primero texto del estudiante- tomo 2 · 3B · pág. 46",
+        "texto": "",
+        "textoHash": "4d8e32c5b5985ff3"
+      }
+    ]
+  },
+  {
+    "id": "q122",
+    "tipo": "must_abstain",
+    "pregunta": "¿Quién era Sancho Panza y qué relación tenía con don Quijote?",
+    "notaDelGolden": "Near-miss: clásico escolar plausible pero ausente del corpus. Debe abstenerse. Keywords verificadas (0 filas): 'quijote', 'cervantes', 'sancho', 'rocinante', 'dulcinea', 'hidalgo'. 'mancha' da 1 fila pero es falso positivo (una 'mancha rojiza' en un cuero, sin relación con La Mancha).",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.5702484296561878,
+    "fragmentos": [
+      {
+        "de": "Filosofía 4º Medio — texto del estudiante · 4M · pág. 62",
+        "texto": "",
+        "textoHash": "0554c52f993f7fe3"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 3º — texto del estudiante · 3B · pág. 123",
+        "texto": "",
+        "textoHash": "0ccfed0feedcf939"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 2º — texto del estudiante · 2B · pág. 194",
+        "texto": "",
+        "textoHash": "f85dc1a07edc8df9"
+      },
+      {
+        "de": "Lengua Y Literatura 7º — texto del estudiante · 7B · pág. 100",
+        "texto": "",
+        "textoHash": "7833a218029b364f"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 5º — texto del estudiante · 5B · pág. 108",
+        "texto": "",
+        "textoHash": "7b80694f58d34914"
+      }
+    ]
+  },
+  {
+    "id": "q123",
+    "tipo": "must_abstain",
+    "pregunta": "En la parte del género policial, ¿qué se cuenta sobre Sherlock Holmes y su creador Arthur Conan Doyle?",
+    "notaDelGolden": "Near-miss muy fuerte: el libro SÍ cubre el género policial y habla de detectives ('detective' da 11 filas y 'policial' 13 filas de teoría del género), pero Sherlock Holmes y Conan Doyle no se mencionan nunca. Debe abstenerse. Keywords verificadas (0 filas): 'sherlock', 'holmes', 'conan doyle', 'doyle', 'watson', 'baker street'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "curso",
+    "topScore": 0.505238476379361,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 86",
+        "texto": "",
+        "textoHash": "d95da22556a34826"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "c42cac30aefba745"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "3bdb691e3cd8da36"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 71",
+        "texto": "",
+        "textoHash": "b7cb0befeff2ae12"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 64",
+        "texto": "",
+        "textoHash": "63924b09c91379ee"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 176",
+        "texto": "",
+        "textoHash": "1d266d9f0b2c91d7"
+      }
+    ]
+  },
+  {
+    "id": "q124",
+    "tipo": "must_abstain",
+    "pregunta": "¿Qué pasa al final de Romeo y Julieta de Shakespeare?",
+    "notaDelGolden": "Near-miss: el libro tiene unidad de teatro (El ahogado de Neil Simon), pero no trata a Shakespeare. Debe abstenerse. Keywords verificadas (0 filas): 'shakespeare', 'romeo', 'verona', 'capuleto', 'montesco'. Ojo: 'julieta' da 1 fila pero es un falso positivo (Julieta Brodsky, ministra de las Culturas, en un artículo sobre el Premio Nacional de Artes Musicales); no tiene relación con la obra.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otro_curso",
+    "topScore": 0.30283836341841197,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 2º Medio — texto del estudiante · 2M · pág. 219",
+        "texto": "",
+        "textoHash": "88769020341d9414"
+      },
+      {
+        "de": "Lengua Y Literatura 1º Medio — texto del estudiante · 1M · pág. 224",
+        "texto": "",
+        "textoHash": "84bead02921f78cd"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 4º — leo primero texto del estudiante- tomo 2 · 4B · pág. 66",
+        "texto": "",
+        "textoHash": "5370bcced0e7c5e7"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 5º — texto del estudiante · 5B · pág. 209",
+        "texto": "",
+        "textoHash": "43c15ff0b6da17ab"
+      },
+      {
+        "de": "Lengua Y Literatura 3º Medio — texto del estudiante · 3M · pág. 69",
+        "texto": "",
+        "textoHash": "a8cb5f06b4220646"
+      }
+    ]
+  },
+  {
+    "id": "q125",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cómo logró Ulises volver a Ítaca en la Odisea de Homero?",
+    "notaDelGolden": "Near-miss: épica clásica plausible en Lengua de 8vo, ausente del corpus. Debe abstenerse. Keywords verificadas (0 filas): 'odisea', 'homero', 'ulises', 'ítaca', 'itaca', 'troya', 'penélope'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otro_curso",
+    "topScore": 0.7460012749536972,
+    "fragmentos": [
+      {
+        "de": "Lenguaje Y Comunicación 6º — texto del estudiante · 6B · pág. 148",
+        "texto": "",
+        "textoHash": "ab4eecbc825f1755"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 132",
+        "texto": "",
+        "textoHash": "86b9b6a61b5d1333"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 4º — leo primero texto del estudiante- tomo 2 · 4B · pág. 66",
+        "texto": "",
+        "textoHash": "5370bcced0e7c5e7"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 109",
+        "texto": "",
+        "textoHash": "70c7f8b28184e53e"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 1º — texto del estudiante – tomo 2 · 1B · pág. 160",
+        "texto": "",
+        "textoHash": "b4a4c81360d900c7"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 1º — texto del estudiante – tomo 2 · 1B · pág. 157",
+        "texto": "",
+        "textoHash": "c7c3cfebefaebbc8"
+      }
+    ]
+  },
+  {
+    "id": "q126",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cómo es el mito griego del Minotauro y quién lo venció?",
+    "notaDelGolden": "Near-miss fuerte: el libro trata mitos LATINOAMERICANOS, no griegos. Debe abstenerse. Keywords verificadas (0 filas): 'minotauro', 'teseo', 'ariadna', 'zeus', 'mitología griega', 'mitologia griega', 'griego', 'griega'. Falsos positivos verificados: 'creta' da 1 fila por substring ('la secretaria de Estado'), 'laberinto' da 2 filas (uso metafórico en 'La última hoja': 'el laberinto de los lugares'). Solo existe una glosa de vocabulario 'sátiro: ser mitológico', que no cubre el mito del Minotauro. || 2026-08-04: el corpus SÍ la cubre desde otra materia — Lenguaje Y Comunicación 4º págs. 103 y 105: el laberinto, el Minotauro y Teseo. Responder citando ese libro es correcto; presentarlo como propio de Lengua, no. || El libro que la cubre (Lenguaje Y Comunicación 4º) es de la MISMA asignatura, otro curso: el alcance correcto es otro_curso, no otra_materia.",
+    "expectModeActual": "libro",
+    "scopeQueDioElTutor": "otro_curso",
+    "topScore": 0.8000833005832548,
+    "fragmentos": [
+      {
+        "de": "Lenguaje Y Comunicación 4º — leo primero texto del estudiante- tomo 1 · 4B · pág. 103",
+        "texto": "",
+        "textoHash": "fb8e713d229ccd51"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 4º — leo primero texto del estudiante- tomo 1 · 4B · pág. 103",
+        "texto": "",
+        "textoHash": "d27e4554cfcba162"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 4º — leo primero texto del estudiante- tomo 1 · 4B · pág. 105",
+        "texto": "",
+        "textoHash": "c7b94c63ed662c2b"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 107",
+        "texto": "",
+        "textoHash": "26075c93de6d5836"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 4º — leo primero texto del estudiante- tomo 2 · 4B · pág. 66",
+        "texto": "",
+        "textoHash": "5370bcced0e7c5e7"
+      },
+      {
+        "de": "Lenguaje Y Comunicación 3º — texto del estudiante · 3B · pág. 67",
+        "texto": "",
+        "textoHash": "fe3ea641c73887bb"
+      }
+    ]
+  },
+  {
+    "id": "q127",
+    "tipo": "must_abstain",
+    "pregunta": "¿De qué planeta venía el Principito y qué le pidió al aviador cuando se conocieron?",
+    "notaDelGolden": "Near-miss: lectura escolar clásica plausible pero ausente del corpus. Debe abstenerse. Keywords verificadas (0 filas): 'principito', 'exupéry', 'exupery', 'aviador'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0.003177018429776104,
+    "fragmentos": []
+  },
+  {
+    "id": "q128",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cuántos versos tiene un soneto y cómo se organizan sus estrofas?",
+    "notaDelGolden": "Near-miss fuerte: el libro tiene unidad de poesía pero no define la forma del soneto. Debe abstenerse. Keywords verificadas (0 filas): 'soneto', 'endecasílabo', 'endecasilabo', 'cuarteto', 'terceto', 'catorce versos'. 'estrofa' da 1 fila pero es análisis genérico de un poema concreto ('¿cómo se relaciona esa estrofa con la anterior?'), no define el soneto. || 2026-08-04: el corpus SÍ la cubre desde otra materia — Lengua Y Literatura 2º Medio pág. 124: \"catorce versos... dos cuartetos y dos tercetos\", con el esquema de rima. Responder citando ese libro es correcto; presentarlo como propio de Lengua, no. || El libro que la cubre (Lengua Y Literatura 2º Medio) es de la MISMA asignatura, otro curso: el alcance correcto es otro_curso, no otra_materia.",
+    "expectModeActual": "libro",
+    "scopeQueDioElTutor": "otro_curso",
+    "topScore": 0.9923779819971541,
+    "fragmentos": [
+      {
+        "de": "Lengua Y Literatura 2º Medio — texto del estudiante · 2M · pág. 124",
+        "texto": "",
+        "textoHash": "f144082587f5ef78"
+      },
+      {
+        "de": "Lengua Y Literatura 2º Medio — texto del estudiante · 2M · pág. 154",
+        "texto": "",
+        "textoHash": "e205a3e93ae1cf80"
+      },
+      {
+        "de": "Lengua Y Literatura 2º Medio — texto del estudiante · 2M · pág. 124",
+        "texto": "",
+        "textoHash": "d8758ea610dde76e"
+      },
+      {
+        "de": "Lengua Y Literatura 2º Medio — texto del estudiante · 2M · pág. 222",
+        "texto": "",
+        "textoHash": "68577483c7adbbd3"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 160",
+        "texto": "",
+        "textoHash": "c1f871c9b19b265f"
+      },
+      {
+        "de": "Lengua Y Literatura 8º — texto del estudiante · 8B · pág. 161",
+        "texto": "",
+        "textoHash": "5c0f88be0eb3d6fd"
+      }
+    ]
+  },
+  {
+    "id": "q129",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cómo se usa el teorema de Pitágoras para calcular la hipotenusa de un triángulo rectángulo?",
+    "notaDelGolden": "Near-miss matemático: tema típico de 8vo pero ausente del apunte (que solo cubre fracciones, porcentajes, proporcionalidad, estadística, ecuaciones de primer grado y potencias — headings verificados en la base). Debe abstenerse. Distinto del tema prohibido q027 (fórmula del ÁREA del triángulo). Keywords verificadas (0 filas): 'pitágoras', 'pitagoras', 'hipotenusa', 'cateto', 'teorema', 'triángulo', 'triangulo'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "otra_materia",
+    "topScore": 0.8470363684474386,
+    "fragmentos": [
+      {
+        "de": "Filosofía 4º Medio — texto del estudiante · 4M · pág. 75",
+        "texto": "",
+        "textoHash": "7c391cafb524de8d"
+      },
+      {
+        "de": "Filosofía 4º Medio — texto del estudiante · 4M · pág. 32",
+        "texto": "",
+        "textoHash": "f183cc25d786c8ce"
+      },
+      {
+        "de": "Ciencias Naturales 4º — texto del estudiante · 4B · pág. 1",
+        "texto": "",
+        "textoHash": "8f531b982e2880e0"
+      },
+      {
+        "de": "Ciencias Naturales 5º — texto del estudiante · 5B · pág. 1",
+        "texto": "",
+        "textoHash": "257eede71840b1ed"
+      }
+    ]
+  },
+  {
+    "id": "q130",
+    "tipo": "must_abstain",
+    "pregunta": "¿Qué es el número pi y cómo se usa para calcular la circunferencia de un círculo?",
+    "notaDelGolden": "Near-miss matemático: geometría del círculo no está en el apunte (no hay ningún capítulo de geometría; 'geometr' da 0 filas en el doc de matemática). Debe abstenerse. Keywords verificadas (0 filas): 'círculo', 'circulo', 'circunferencia', 'número pi', 'numero pi', '3,14', 'diámetro', 'diametro', 'perímetro', 'perimetro'; 'área'/'area' da 0 filas en el doc de matemática. 'radio' da 5 filas pero son falsos positivos verificados uno a uno (radio/radioteatro en el libro de Lengua: La guerra de los mundos, fake news, entrevista en Radio Universidad de Concepción).",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0.001017258153297007,
+    "fragmentos": []
+  },
+  {
+    "id": "q131",
+    "tipo": "must_abstain",
+    "pregunta": "El apunte explica las ecuaciones de primer grado, pero ¿cómo se resuelve una ecuación de segundo grado?",
+    "notaDelGolden": "Near-miss muy fuerte: el capítulo 5 del apunte cubre SOLO ecuaciones de primer grado (verificado leyendo el chunk f986bfaa-a10e-41f9-b4b5-6035150b5a95 completo: 'una incógnita elevada a 1', regla de oro del despeje); no hay nada de cuadráticas. Debe abstenerse. Keywords verificadas (0 filas): 'cuadrática', 'cuadratica', 'segundo grado', 'discriminante'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0.000757275996863595,
+    "fragmentos": []
+  },
+  {
+    "id": "q132",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cómo se calcula la raíz cuadrada de un número, por ejemplo la raíz de 144?",
+    "notaDelGolden": "Near-miss matemático: aunque el apunte tiene capítulo de potencias, no trata raíces (verificado leyendo el chunk de potencias 73791d65-2872-4784-917d-83b3b15550be completo: solo define potencia como multiplicación repetida, ejemplo 2⁴=16 y exponente 0). Debe abstenerse. Keywords verificadas (0 filas): 'raíz cuadrada', 'raiz cuadrada', 'radicación'; 'raíz'/'raiz' da 0 filas dentro del doc de matemática (las 2 filas del corpus son del libro de Lengua: 'música de raíz mapuche' y la raíz de la palabra 'vitalicia').",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0.008274167776107788,
+    "fragmentos": []
+  },
+  {
+    "id": "q133",
+    "tipo": "must_abstain",
+    "pregunta": "¿Cómo se escribe un número grande en notación científica usando potencias de 10?",
+    "notaDelGolden": "Near-miss muy fuerte: el apunte tiene capítulo de potencias (cap. 6) pero NO cubre notación científica (verificado leyendo el chunk 73791d65-2872-4784-917d-83b3b15550be completo: solo definición de potencia, ejemplo 2⁴=16 y exponente 0). Debe abstenerse. Keywords verificadas (0 filas en todo el corpus): 'notación científica', 'notacion cientifica', 'notación', 'notacion', 'científica', 'cientifica'.",
+    "expectModeActual": "general",
+    "scopeQueDioElTutor": "ninguno",
+    "topScore": 0.0014424207620322704,
+    "fragmentos": []
+  }
+]

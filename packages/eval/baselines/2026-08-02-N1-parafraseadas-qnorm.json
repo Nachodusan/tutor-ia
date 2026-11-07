@@ -1,0 +1,2788 @@
+{
+  "generatedAt": "2026-08-02T04:37:05.646Z",
+  "golden": "/Users/dusan/Documents/ia/packages/eval/golden/questions-parafraseadas.jsonl",
+  "promptPath": "TEACHING_SYSTEM + buildTeachingTurn (camino de /api/chat)",
+  "engine": "deepinfra@api.deepinfra.com · Qwen/Qwen3.6-35B-A3B · temp=0.1 top_p=0.9 max_tokens=2048 reasoning=off",
+  "rerankMinScore": 0.18,
+  "maxTokensPerRun": 0,
+  "goldenSha256": "d316f13b37d6fc737ad100af28a27af1dca5141a108537095f9daba97dcb28bf",
+  "corpusChunkCount": 29202,
+  "corpusMaxCreatedAt": "2026-07-17 01:57:59.616715-04",
+  "retrieval": {
+    "poolPerSide": 20,
+    "candidatePool": 25,
+    "contentK": 6,
+    "ranker": "ce"
+  },
+  "usage": {
+    "inputTokens": 404387,
+    "outputTokens": 15190,
+    "totalTokens": 419577,
+    "reasoningTokens": 0,
+    "calls": 85,
+    "retries": 0
+  },
+  "claims": {
+    "total": 156,
+    "sinRespaldo": 23,
+    "tasa": 0.14743589743589744
+  },
+  "userId": "00000000-0000-0000-0000-000000000001",
+  "subjectId": "d81a7baf-47d2-4ad4-9b71-80a6598da47e",
+  "metrics": {
+    "recallAt5": 0.6201550387596899,
+    "citationPrecision": 0.44961240310077527,
+    "hallucinationRate": 0.38235294117647056,
+    "falseAbstentionRate": 0.20930232558139536,
+    "trueAbstentionRate": 0
+  },
+  "metricsEvaluables": {
+    "recallAt5": 0.6201550387596899,
+    "citationPrecision": 0.44961240310077527,
+    "hallucinationRate": 0.38235294117647056,
+    "falseAbstentionRate": 0.20930232558139536,
+    "trueAbstentionRate": 0
+  },
+  "nTotales": 43,
+  "nEvaluables": 43,
+  "targets": [
+    {
+      "key": "recallAt5",
+      "goal": 0.9,
+      "cmp": ">=",
+      "value": 0.6201550387596899,
+      "ok": false
+    },
+    {
+      "key": "citationPrecision",
+      "goal": 0.8,
+      "cmp": ">=",
+      "value": 0.44961240310077527,
+      "ok": false
+    },
+    {
+      "key": "hallucinationRate",
+      "goal": 0.02,
+      "cmp": "<=",
+      "value": 0.38235294117647056,
+      "ok": false
+    },
+    {
+      "key": "falseAbstentionRate",
+      "goal": 0.1,
+      "cmp": "<=",
+      "value": 0.20930232558139536,
+      "ok": false
+    },
+    {
+      "key": "trueAbstentionRate",
+      "goal": 0.95,
+      "cmp": ">=",
+      "value": 0,
+      "ok": false
+    }
+  ],
+  "allOk": false,
+  "perQuestion": [
+    {
+      "id": "q001",
+      "type": "answerable",
+      "q": "oye pero si la historia esa de los dos enamorados es re vieja, quien la escribio despues en un libro",
+      "expect_chunks": [
+        "a5cd2606-1a6d-4219-bccd-d7578c65beeb"
+      ],
+      "note": "El académico y escritor francés Joseph Bédier reunió los fragmentos y escribió La historia de Tristán e Isolda.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "7ccc5574-f091-4b5a-8d7d-3c6ae4b3a07f"
+        ],
+        "mapeo": "7ccc5574→a5cd2606@1.00"
+      },
+      "q_original": "¿Quién reunió los fragmentos de la antigua leyenda y los plasmó en el libro sobre Tristán e Isolda?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [],
+        "expectedIds": [
+          "a5cd2606-1a6d-4219-bccd-d7578c65beeb"
+        ],
+        "abstained": true,
+        "hallucinated": false,
+        "hallucinationKnown": false,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": false,
+        "cause": "gate",
+        "topScore": 0.034177310882942964,
+        "citableSource": "none",
+        "selfAbstained": false,
+        "ms": 18758,
+        "msProd": 18758,
+        "answer": "",
+        "claimsTotal": 0,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q002",
+      "type": "answerable",
+      "q": "en que tiempo pasa la historia de tristan? y como era la gente en esa epoca po",
+      "expect_chunks": [
+        "7723a51f-d0aa-40e1-9090-9efd09b33970",
+        "f8071bb9-3fdd-49b5-a669-135d93b0d353"
+      ],
+      "note": "En la sociedad feudal, propia de la Edad Media (siglos V al XV).",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "cdd0ae0a-56ca-4534-a364-ee74731f13f0"
+        ],
+        "mapeo": "cdd0ae0a→7723a51f+f8071bb9@0.70"
+      },
+      "q_original": "¿En qué tipo de sociedad y en qué época se sitúa la leyenda de Tristán e Isolda?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "a5cd2606-1a6d-4219-bccd-d7578c65beeb",
+          "7723a51f-d0aa-40e1-9090-9efd09b33970",
+          "28f7b203-ceb4-4f7e-b7ca-e1064fc8de25",
+          "c2413a16-7c89-43c2-9419-88ea347f3971",
+          "b88bc35d-5fde-4d8d-a7e1-54b9c52d753a",
+          "67912ece-afc9-4792-9494-e07a0dbac9df"
+        ],
+        "expectedIds": [
+          "7723a51f-d0aa-40e1-9090-9efd09b33970",
+          "f8071bb9-3fdd-49b5-a669-135d93b0d353"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.40941063115367965,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 23790,
+        "msProd": 8248,
+        "answer": "La historia de Tristán e Isolda ocurre en la Edad Media, específicamente en la sociedad feudal. En esa época, la gente vivía bajo un sistema muy estricto donde el rey y los nobles tenían el poder, y las costumbres estaban muy marcadas por la lealtad y el honor. Por eso, cuando Tristán lleva a Isolda sin que ella quiera, se considera un acto grave, y el matrimonio era visto como un acuerdo político o social más que como una elección romántica libre. ¿Te imaginás cómo sería vivir en un lugar donde no podías elegir con quién casarte y tenías que obedecer a los nobles sin cuestionar?",
+        "claimsTotal": 6,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9949068427085876,
+            "contradiction": 0.29592907428741455,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.13214875757694244,
+            "contradiction": 0.935631275177002,
+            "supported": false,
+            "contradicted": true
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q003",
+      "type": "answerable",
+      "q": "que es un vasallo? lo lei y no cacho",
+      "expect_chunks": [
+        "b88bc35d-5fde-4d8d-a7e1-54b9c52d753a",
+        "28f7b203-ceb4-4f7e-b7ca-e1064fc8de25"
+      ],
+      "note": "Vasallo: servidor del rey.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "a1355454-6f70-4c07-a3c1-7af31bdf5818"
+        ],
+        "mapeo": "a1355454→b88bc35d+28f7b203@0.57"
+      },
+      "q_original": "En el vocabulario, ¿qué significa la palabra 'vasallo'?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "ed3e72b7-d736-428f-9b14-8dc42c4696a9",
+          "b88bc35d-5fde-4d8d-a7e1-54b9c52d753a",
+          "bf2f87f0-6798-4ddc-aab4-c5d3f032503f",
+          "f8071bb9-3fdd-49b5-a669-135d93b0d353",
+          "27b8d075-25b1-40c4-921d-365e19a0bd0c",
+          "01905066-5529-413f-954b-a57439ed4883"
+        ],
+        "expectedIds": [
+          "b88bc35d-5fde-4d8d-a7e1-54b9c52d753a",
+          "28f7b203-ceb4-4f7e-b7ca-e1064fc8de25"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.4551158031343564,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 23944,
+        "msProd": 13749,
+        "answer": "Imaginate que vivís en una época de reyes y castillos. Un vasallo es básicamente un servidor o un guerrero que le jura lealtad a un señor, como un rey o un noble. A cambio de protección y tierras, él le obedece y lo defiende. En la historia, Tristán se llama así porque siente que debe obedecer y amar a Isolda, aunque ella es la esposa de su tío el rey. Es como decir: \"soy su servidor y mi lugar es servirlo\". ¿Te hace sentido esa relación de dependencia y lealtad?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 1,
+        "prodVerdicts": [
+          {
+            "entailment": 0.21030114591121674,
+            "contradiction": 0.9964942336082458,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.0715186595916748,
+            "contradiction": 0.9694967865943909,
+            "supported": false,
+            "contradicted": true
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q004",
+      "type": "answerable",
+      "q": "el que escribio lo de la hoja de donde era y cuando vivio",
+      "expect_chunks": [
+        "a346f329-e970-4404-869b-790598be3e66"
+      ],
+      "note": "Fue estadounidense y vivió entre 1862 y 1910.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "c5d89ca6-73aa-4894-b7e9-7b17fd60a95e"
+        ],
+        "mapeo": "c5d89ca6→a346f329@0.94"
+      },
+      "q_original": "¿De qué nacionalidad era O. Henry y en qué años vivió?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [],
+        "expectedIds": [
+          "a346f329-e970-4404-869b-790598be3e66"
+        ],
+        "abstained": true,
+        "hallucinated": false,
+        "hallucinationKnown": false,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": false,
+        "cause": "gate",
+        "topScore": 0.011879717842132294,
+        "citableSource": "none",
+        "selfAbstained": false,
+        "ms": 12028,
+        "msProd": 12028,
+        "answer": "",
+        "claimsTotal": 0,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q005",
+      "type": "answerable",
+      "q": "cual fue la mejor obra q iso el viejo pintor al final",
+      "expect_chunks": [
+        "a6cfe687-1b04-46f5-bf8f-39d1ab8d94b1",
+        "405b5c0d-a2f4-43d6-89e8-aaeb9a519be2"
+      ],
+      "note": "La última hoja de hiedra que pintó en la pared la noche en que cayó la hoja verdadera.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "fd5967d4-a33c-47a2-a34e-4212ea21bb51"
+        ],
+        "mapeo": "fd5967d4→a6cfe687+405b5c0d@0.75"
+      },
+      "q_original": "En el cuento 'La última hoja', ¿cuál fue la obra maestra de Behrman?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "95939f66-163a-40df-8b83-d09a9a85832e",
+          "4410d2b9-6a05-4f32-a897-a47d5f1f4594",
+          "7484933a-25c0-46b8-b95a-d6604eea6f75",
+          "a6cfe687-1b04-46f5-bf8f-39d1ab8d94b1",
+          "8c078b68-9faa-471e-8b26-35b00a6475e5",
+          "a9948f0f-8b2d-4058-b984-50c568f76def"
+        ],
+        "expectedIds": [
+          "a6cfe687-1b04-46f5-bf8f-39d1ab8d94b1",
+          "405b5c0d-a2f4-43d6-89e8-aaeb9a519be2"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": true,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.37530614066821955,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 29980,
+        "msProd": 14713,
+        "answer": "Mirá, el viejo Behrman siempre hablaba de su \"obra maestra\" pero nunca la pintaba. Al final, esa obra fue la hoja de hiedra que dibujó en la pared durante la tormenta. No fue un cuadro en un museo, sino ese trazo que engañó a Johnsy para que creyera que la vida valía la pena y, con eso, salvó su vida aunque le costó la suya. ¿Te parece que una hoja pintada puede considerarse arte si logra cambiar el destino de alguien?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 2,
+        "prodVerdicts": [
+          {
+            "entailment": 0.07412640005350113,
+            "contradiction": 0.9984791874885559,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.025355130434036255,
+            "contradiction": 0.8757527470588684,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.02066551148891449,
+            "contradiction": 0.6491447687149048,
+            "supported": false,
+            "contradicted": true
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q006",
+      "type": "answerable",
+      "q": "con que instrumentos tocan los mapuche",
+      "expect_chunks": [
+        "961fa04d-06cf-4173-b0ff-4662d167f9b5",
+        "8c5f2134-aa86-49cb-b7ff-43b983575d7b"
+      ],
+      "note": "El kultrún (percusión), la pifilca y la trutruca (vientos).",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "aebd5b9e-44cd-491f-9e45-334503580690"
+        ],
+        "mapeo": "aebd5b9e→961fa04d+8c5f2134@0.70"
+      },
+      "q_original": "¿Cuáles son los principales instrumentos de la música mapuche?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "8c5f2134-aa86-49cb-b7ff-43b983575d7b",
+          "3b3a5c88-a405-4b5d-a5c6-5157b9acdb15",
+          "961fa04d-06cf-4173-b0ff-4662d167f9b5",
+          "e7951830-9d53-47a3-aec4-c59a63386403",
+          "698a9f06-e896-4f48-a617-ee0b6f25bfbc",
+          "17ff1b84-f2c6-4552-b42b-e787e38c35c8"
+        ],
+        "expectedIds": [
+          "961fa04d-06cf-4173-b0ff-4662d167f9b5",
+          "8c5f2134-aa86-49cb-b7ff-43b983575d7b"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.7096174176316835,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 22212,
+        "msProd": 11115,
+        "answer": "Mirá, la música mapuche es muy especial porque no es solo para bailar, sino que es parte de sus ceremonias y de cómo se comunican con lo sagrado. Para hacer ese sonido tan particular, usan instrumentos que vienen de la tierra. Los principales son el kultrún, que es un tambor de percusión, y dos instrumentos de viento: la pifilca y la trutruca. ¿Te imaginás cómo suena una flauta larga hecha de madera o caña? Eso sería algo parecido a la pifilca. ¿Sabías cuál de estos instrumentos creés que produce un sonido más agudo y cuál uno más grave y profundo?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.15804767608642578,
+            "contradiction": 0.025492601096630096,
+            "supported": false,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.9955333471298218,
+            "contradiction": 0.18633009493350983,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.9832188487052917,
+            "contradiction": 0.9784162044525146,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q007",
+      "type": "answerable",
+      "q": "una entrevista q tipo de texto es? xq mezcla cosas creo",
+      "expect_chunks": [
+        "d74562b8-5d20-4455-bc5a-259dab33cd22"
+      ],
+      "note": "Es un género periodístico híbrido que combina información y opinión.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "da8cff3b-5eb7-473b-a461-f29d17db0ef0"
+        ],
+        "mapeo": "da8cff3b→d74562b8@1.00"
+      },
+      "q_original": "¿Qué tipo de género periodístico es la entrevista y qué combina?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "d74562b8-5d20-4455-bc5a-259dab33cd22",
+          "0273a784-7037-4966-998e-a7334443f732",
+          "79d947ec-4a73-4785-81be-0619fbe8ff7a",
+          "ae738438-5dbe-4a70-bc4f-9901d4049351",
+          "8c5f2134-aa86-49cb-b7ff-43b983575d7b",
+          "c2168fd3-fc73-4a16-a12b-4e3bdfe0c839"
+        ],
+        "expectedIds": [
+          "d74562b8-5d20-4455-bc5a-259dab33cd22"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.23589382958895208,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 30416,
+        "msProd": 19526,
+        "answer": "La entrevista es un género periodístico híbrido, lo que significa que mezcla dos cosas: información y opinión. Por un lado, el periodista busca datos reales sobre la vida o el trabajo de alguien (hechos), y por otro, esa persona comparte sus ideas, sentimientos o puntos de vista (opiniones). Es como una conversación planificada donde se entrelazan lo que pasó y lo que la gente piensa al respecto. ¿Te parece que en una entrevista a un músico, por ejemplo, predominan más los datos biográficos o las opiniones sobre su arte?",
+        "claimsTotal": 5,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9976112842559814,
+            "contradiction": 0.0632365494966507,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.8581188917160034,
+            "contradiction": 0.10621870309114456,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q008",
+      "type": "answerable",
+      "q": "en la obra del tipo que se tira al agua, quien dice q el es el que se ahoga",
+      "expect_chunks": [
+        "3c3a807c-e442-45d7-85a2-981f88df949f"
+      ],
+      "note": "El Vagabundo, que afirma: 'Yo soy el ahogado, señor'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "d66432dd-13d0-448a-a9d2-bbeefb491afb"
+        ],
+        "mapeo": "d66432dd→3c3a807c@1.00"
+      },
+      "q_original": "En la obra 'El ahogado', ¿quién dice ser el ahogado?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "8020a8f5-6b85-475f-8a4c-2ac0f774749f",
+          "d3f21970-4f6e-47c9-bd0c-8deb56995aad",
+          "3c3a807c-e442-45d7-85a2-981f88df949f",
+          "f9332c2d-1763-4319-be77-022e1f6bdc89",
+          "b0ed3802-c09e-4571-9d25-70fba5240bb3",
+          "bd5f18bd-8d4c-4700-aae9-b3b96319413b"
+        ],
+        "expectedIds": [
+          "3c3a807c-e442-45d7-85a2-981f88df949f"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.9031290079161541,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 29202,
+        "msProd": 16605,
+        "answer": "Mirá, en esa obra hay dos formas de ver lo mismo. El Vagabundo dice que él es el \"ahogado\" porque es su trabajo actuar esa escena, como si fuera un actor. Pero el Escritor piensa que es un loco que quiere suicidarse por dinero. La diferencia es que uno lo hace por necesidad y el otro lo ve como una locura peligrosa. ¿Te parece que el Escritor tiene razón al asustarse o el Vagabundo solo está exagerando para ganar plata?",
+        "claimsTotal": 3,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9983748197555542,
+            "contradiction": 0.296743780374527,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q009",
+      "type": "answerable",
+      "q": "en el caso ese de la señora al final quien lo mato y de q murio",
+      "expect_chunks": [
+        "a66eccd2-c117-4730-8c47-a5d182ed485e"
+      ],
+      "note": "El doctor Pablo, que murió de un síncope; en su armario había un frasco de veneno.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "f9254a68-0b61-4aa0-98f4-75df752796e7"
+        ],
+        "mapeo": "f9254a68→a66eccd2@1.00"
+      },
+      "q_original": "En el relato policial de la señora Stevens, ¿quién resultó ser el asesino y de qué murió?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "ea96b6bd-a3c4-4b7e-833b-40a3097a11e3",
+          "5cf3bb85-fbab-4348-b5f7-78e2db9aaf1e",
+          "17f6292d-12c6-48ce-af5a-3e23bf4b437e",
+          "a66eccd2-c117-4730-8c47-a5d182ed485e",
+          "27b8d075-25b1-40c4-921d-365e19a0bd0c",
+          "dfddcda7-3c94-40a6-be6a-5253d7893eb5"
+        ],
+        "expectedIds": [
+          "a66eccd2-c117-4730-8c47-a5d182ed485e"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.8866345380968591,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 41738,
+        "msProd": 14443,
+        "answer": "Mirá, al principio todo parecía un suicidio porque la señora Stevens estaba sola y tenía el diario en la mano. Pero el detective notó algo raro: nadie entró al departamento y el veneno no estaba en las botellas. La clave estaba en el hielo. Su hermano Pablo, el veterinario, había puesto veneno en el agua de la heladera. Cuando ella sacó un cubito para su whisky, el veneno se disolvió en la bebida y ella murió sin saberlo. Fue un crimen muy ingenioso porque parecía un accidente. ¿Te imaginás cómo se sentiría el detective al descubrir que el \"suicidio\" era en realidad un asesinato planeado?",
+        "claimsTotal": 8,
+        "claimsSinRespaldo": 5,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9858630299568176,
+            "contradiction": 0.8917217254638672,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.01568443886935711,
+            "contradiction": 0.9953433275222778,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.9205424785614014,
+            "contradiction": 0.9888344407081604,
+            "supported": true,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.05288361757993698,
+            "contradiction": 0.9356507062911987,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.09237434715032578,
+            "contradiction": 0.9156090617179871,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.2463337481021881,
+            "contradiction": 0.8991549015045166,
+            "supported": false,
+            "contradicted": true
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q010",
+      "type": "answerable",
+      "q": "kien iso el wc de oro q se robaron",
+      "expect_chunks": [
+        "ac473d78-9f7b-4559-bb42-b615e9ead1c0"
+      ],
+      "note": "El artista plástico italiano Maurizio Cattelan.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "dd2a71a9-42e0-48c3-b01d-96b08a5cb9b8"
+        ],
+        "mapeo": "dd2a71a9→ac473d78@0.82"
+      },
+      "q_original": "¿Quién creó el inodoro de oro que fue robado del palacio Blenheim?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "ac473d78-9f7b-4559-bb42-b615e9ead1c0",
+          "d68c6243-524e-4554-9c9b-c935012893f4",
+          "b0f250ba-8442-41b2-a33e-68601ab046cf",
+          "a5cd2606-1a6d-4219-bccd-d7578c65beeb",
+          "f93c601d-8f4d-47d1-ba1a-39393db0d139",
+          "d4774934-0245-476d-bd07-6dacf6b02944"
+        ],
+        "expectedIds": [
+          "ac473d78-9f7b-4559-bb42-b615e9ead1c0"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.28592628854435037,
+        "citableSource": "content",
+        "selfAbstained": true,
+        "ms": 28615,
+        "msProd": 7442,
+        "answer": "Mirá, el material no dice el nombre de la persona que diseñó el inodoro, pero sí aclara que fue creado por el artista italiano Maurizio Cattelan. Él es famoso por obras provocadoras, como ese plátano pegado a la pared. La idea era generar escándalo y crítica sobre el arte y el dinero, no solo hacer un baño funcional.\n\n¿Se te ocurre por qué un artista elegiría un objeto tan cotidiano y vulgar, como un retrete, para hacerlo de oro macizo?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.864835798740387,
+            "contradiction": 0.9746932983398438,
+            "supported": true,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.4015645384788513,
+            "contradiction": 0.9249122142791748,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.37701693177223206,
+            "contradiction": 0.9566770195960999,
+            "supported": false,
+            "contradicted": true
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q011",
+      "type": "answerable",
+      "q": "quien fue el q paso el libro de los marcianos a la radio",
+      "expect_chunks": [
+        "46f9ba04-16d0-4c76-a71e-a79180f7948d"
+      ],
+      "note": "El actor y director estadounidense Orson Welles, en 1938.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "2c8f5536-8e2a-46a8-b78a-88f2ddd0d736"
+        ],
+        "mapeo": "2c8f5536→46f9ba04@0.74"
+      },
+      "q_original": "¿Quién adaptó como radioteatro la novela 'La guerra de los mundos'?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [],
+        "expectedIds": [
+          "46f9ba04-16d0-4c76-a71e-a79180f7948d"
+        ],
+        "abstained": true,
+        "hallucinated": false,
+        "hallucinationKnown": false,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": false,
+        "cause": "gate",
+        "topScore": 0.08771314458392761,
+        "citableSource": "none",
+        "selfAbstained": false,
+        "ms": 11863,
+        "msProd": 11863,
+        "answer": "",
+        "claimsTotal": 0,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q012",
+      "type": "answerable",
+      "q": "no entiendo pa q sirve el indicativo, o sea q estoy diciendo cuando lo uso",
+      "expect_chunks": [
+        "8a12669e-73bc-4b6a-9d0a-14ed95f85f68"
+      ],
+      "note": "La acción como algo real y efectivo (o que sería cierta en determinada condición).",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "835a0de9-1c48-41b6-95cf-6f1fe7550014"
+        ],
+        "mapeo": "835a0de9→8a12669e@0.79"
+      },
+      "q_original": "¿Qué expresa el emisor cuando usa el modo indicativo?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [],
+        "expectedIds": [
+          "8a12669e-73bc-4b6a-9d0a-14ed95f85f68"
+        ],
+        "abstained": true,
+        "hallucinated": false,
+        "hallucinationKnown": false,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": false,
+        "cause": "gate",
+        "topScore": 0.005201787208603019,
+        "citableSource": "none",
+        "selfAbstained": false,
+        "ms": 12369,
+        "msProd": 12369,
+        "answer": "",
+        "claimsTotal": 0,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q013",
+      "type": "answerable",
+      "q": "en los cuentos de detectives quien puede ir contando la historia",
+      "expect_chunks": [
+        "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+        "7bd7bd62-9e5f-42b3-b7cb-a4a6a5d2d329"
+      ],
+      "note": "Un narrador omnisciente (voz externa) o un narrador protagonista o testigo.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "787d2819-4f38-46b2-8bb3-cad8623d9ea7"
+        ],
+        "mapeo": "787d2819→ac70b2c1+7bd7bd62@0.80"
+      },
+      "q_original": "¿Qué tipos de narrador pueden encargarse de la narración en un relato policial?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "cd902a57-d768-4591-b828-8f90326fe192",
+          "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+          "78de3274-337a-4332-a001-c98e466101fb",
+          "7bd7bd62-9e5f-42b3-b7cb-a4a6a5d2d329",
+          "d4774934-0245-476d-bd07-6dacf6b02944",
+          "7b13d089-9f98-4547-acd0-535672bc33d0"
+        ],
+        "expectedIds": [
+          "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+          "7bd7bd62-9e5f-42b3-b7cb-a4a6a5d2d329"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.9334873367821293,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 17095,
+        "msProd": 7570,
+        "answer": "En los cuentos policiales, la historia puede ser contada por diferentes voces. Por un lado, está el narrador omnisciente, que es como una cámara invisible que lo sabe todo, hasta lo que piensan los personajes. Por otro, puede ser el propio detective o un testigo quien cuente lo que ve y vive, pero desde su propia perspectiva limitada. ¿Te imaginas cómo cambiaría la intriga si el misterio lo cuenta el mismo asesino en lugar del detective?",
+        "claimsTotal": 5,
+        "claimsSinRespaldo": 2,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9831353425979614,
+            "contradiction": 0.4812208414077759,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.17302460968494415,
+            "contradiction": 0.13249918818473816,
+            "supported": false,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q014",
+      "type": "answerable",
+      "q": "en el poema del q viaja por los mares, como muestra el amor",
+      "expect_chunks": [
+        "7a10a6a2-351a-476b-98a5-163ac62c9938",
+        "247d2d3f-fcbd-482d-bdc2-44000521b063"
+      ],
+      "note": "Como una vida nueva, una experiencia que salva y da sentido pero no somete; libera con la llegada del otro.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "d7ed2d4f-7565-482d-b073-3afba537d1ca"
+        ],
+        "mapeo": "d7ed2d4f→7a10a6a2+247d2d3f@0.81"
+      },
+      "q_original": "En el poema 'El viajero de todos los mares', ¿cómo se representa el amor?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "7a10a6a2-351a-476b-98a5-163ac62c9938",
+          "e2a4141b-df09-415d-8f9d-35e39a0b6193",
+          "76d9bdc2-8e17-4049-9956-e51363c9d27e",
+          "247d2d3f-fcbd-482d-bdc2-44000521b063",
+          "28f7b203-ceb4-4f7e-b7ca-e1064fc8de25",
+          "45e5e24e-c54a-47d6-859d-f6fc1dffdf2c"
+        ],
+        "expectedIds": [
+          "7a10a6a2-351a-476b-98a5-163ac62c9938",
+          "247d2d3f-fcbd-482d-bdc2-44000521b063"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.8547493861753098,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 30598,
+        "msProd": 7855,
+        "answer": "Mirá, en ese poema el amor no se muestra como algo que te ata o te encierra, sino como una fuerza que te libera. La autora lo compara con un \"viajero de todos los mares\", lo que sugiere que es un compañero de viaje que te ayuda a salir de la tristeza y la indiferencia para descubrir una vida nueva y llena de sentido. Es como si el amor te diera las alas para explorar el mundo sin perder tu libertad. ¿Te imaginás cómo sería tener a alguien que te acompañe en tus aventuras pero que nunca te impida ser tú mismo?",
+        "claimsTotal": 5,
+        "claimsSinRespaldo": 1,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9473558664321899,
+            "contradiction": 0.14434070885181427,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q015",
+      "type": "answerable",
+      "q": "que es un atelier? sale en el vocabulario",
+      "expect_chunks": [
+        "4410d2b9-6a05-4f32-a897-a47d5f1f4594"
+      ],
+      "note": "Atelier: taller o estudio de un artista.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "b897436f-5bd0-4971-b9d4-a444dfb1ffd7"
+        ],
+        "mapeo": "b897436f→4410d2b9@0.41"
+      },
+      "q_original": "En el vocabulario, ¿qué significa la palabra 'atelier'?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "9fbb9a9e-186d-4631-8c77-bd90e02dceb8",
+          "116a476c-f509-410b-b754-e13057fc7526",
+          "3f159222-0c90-4dcf-b76d-a1ab0a64ea1c",
+          "79d947ec-4a73-4785-81be-0619fbe8ff7a",
+          "b1af421d-4823-482e-a732-c5f449e852c5",
+          "b0ed3802-c09e-4571-9d25-70fba5240bb3"
+        ],
+        "expectedIds": [
+          "4410d2b9-6a05-4f32-a897-a47d5f1f4594"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.24384934758548749,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 18658,
+        "msProd": 7989,
+        "answer": "¡Hola! Mirá, en el texto aparece esa palabra cuando habla de Sue y su amiga. Un **atelier** es simplemente el taller o estudio de un artista, ese lugar donde pintan, dibujan o crean su arte. En la historia, Sue y Johnsy comparten un atelier, que es básicamente su espacio de trabajo y vida juntas. ¿Te imaginás cómo sería tu propio atelier si fueras artista?",
+        "claimsTotal": 3,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9984695315361023,
+            "contradiction": 0.7428683042526245,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.8964623808860779,
+            "contradiction": 0.6565895676612854,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.8701916933059692,
+            "contradiction": 0.5515697598457336,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q042",
+      "type": "answerable",
+      "q": "en el poema ese q el tipo entra y pregunta si molesta, ella q le dice",
+      "expect_chunks": [
+        "52819e24-5d55-41ed-bfca-37e1d45f4f0d"
+      ],
+      "expect_answer": "Le contesta: 'No solo molestas, pones patas arriba toda mi existencia. Bienvenido.'",
+      "note": "Respuesta en el chunk de la página 8: la hablante responde 'No solo molestas, contesté, pones patas arriba toda mi existencia. Bienvenido.'. El heading_path del chunk confirma título y autora: 'Dime si molesto › Blanca Varela', del libro 'Las cosas que digo son ciertas'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "ada54ef3-8423-4b82-b84d-ebfe7376f095"
+        ],
+        "mapeo": "ada54ef3→52819e24@0.82"
+      },
+      "q_original": "En el poema 'Dime si molesto' de Blanca Varela, ¿qué le contesta la hablante al hombre que entra preguntando si molesta?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "52819e24-5d55-41ed-bfca-37e1d45f4f0d",
+          "615e5f0c-c525-4244-9250-6b625adde336",
+          "4d6a8c03-213e-4991-bcb1-1cefadf8a97a",
+          "76d9bdc2-8e17-4049-9956-e51363c9d27e",
+          "091f7774-43c4-4331-a0b9-f49a86f4f942",
+          "06a9f52f-f87c-4d14-ad79-a7d1975c44bf"
+        ],
+        "expectedIds": [
+          "52819e24-5d55-41ed-bfca-37e1d45f4f0d"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.31953860547357776,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 22339,
+        "msProd": 7786,
+        "answer": "En ese poema, cuando él entra y pregunta \"¿Dime si molesto?\", ella no le dice que no. Al contrario, le responde que no solo lo molesta, sino que \"pone patas arriba toda mi existencia\". Básicamente, le está diciendo que su llegada es un caos total, pero termina con un \"Bienvenido\", lo que sugiere que, aunque desordene su vida, lo desea. ¿Te parece que esa mezcla de caos y bienvenida refleja un amor intenso o más bien una relación complicada?",
+        "claimsTotal": 3,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.602769136428833,
+            "contradiction": 0.7944576144218445,
+            "supported": true,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.8471670150756836,
+            "contradiction": 0.939700722694397,
+            "supported": true,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.8782192468643188,
+            "contradiction": 0.0658140629529953,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q043",
+      "type": "answerable",
+      "q": "aver en el poema de los viejos, a quien le dicen q se cuide y en q momento",
+      "expect_chunks": [
+        "52819e24-5d55-41ed-bfca-37e1d45f4f0d"
+      ],
+      "expect_answer": "A Adán, cuando salga al mundo en busca de la costilla perdida.",
+      "note": "Chunk de la página 9 (heading_path 'Consejo de ancianos'): 'Óscar [cita del libro: 12 palabras · 4bd3ebbe508b7f0d] perdida', que podría atravesarle el corazón como un cuchillo de hueso.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "c3076a51-b7de-4b11-97ad-915e2f1fa7c0"
+        ],
+        "mapeo": "c3076a51→52819e24@0.87"
+      },
+      "q_original": "En el poema 'Consejo de ancianos' de Óscar Hahn, ¿a quién le dicen que se cuide y cuándo?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [],
+        "expectedIds": [
+          "52819e24-5d55-41ed-bfca-37e1d45f4f0d"
+        ],
+        "abstained": true,
+        "hallucinated": false,
+        "hallucinationKnown": false,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": false,
+        "cause": "gate",
+        "topScore": 0.011705182887590993,
+        "citableSource": "none",
+        "selfAbstained": false,
+        "ms": 12640,
+        "msProd": 12640,
+        "answer": "",
+        "claimsTotal": 0,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q044",
+      "type": "answerable",
+      "q": "el profe dijo interpretar pero no cacho q significa eso, q hay q hacer",
+      "expect_chunks": [
+        "71453201-fb45-4ef9-9b90-a683b4d35d20"
+      ],
+      "expect_answer": "Interpretar es [cita del libro: 16 palabras · 42f47cd958f657ef]",
+      "note": "Definición textual en el recuadro 'Recuerda que...' de la página 18: 'Interpretar es [cita del libro: 13 palabras · 7973d793e5c42da0] significado es abierto'. Las obras artísticas están siempre abiertas a la interpretación.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "a6055100-a697-4e65-9f49-c768b594f695"
+        ],
+        "mapeo": "a6055100→71453201@0.88"
+      },
+      "q_original": "Según el libro, ¿qué significa interpretar una obra?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "a5cd2606-1a6d-4219-bccd-d7578c65beeb",
+          "71453201-fb45-4ef9-9b90-a683b4d35d20",
+          "01387cd5-ed07-435f-8ba1-582d2881bf6f",
+          "9f167c7a-61e4-4b11-a6b5-bc96b06360cc",
+          "c0b5a1c2-1c70-4ed5-9375-d7dadf3538ec",
+          "8e97febd-781c-4fa9-bf3a-596c2b960694"
+        ],
+        "expectedIds": [
+          "71453201-fb45-4ef9-9b90-a683b4d35d20"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.734662741464362,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 42385,
+        "msProd": 14265,
+        "answer": "Imaginate que mirás una foto de un bosque. Para vos puede ser un lugar misterioso, para otro una zona de recreación. Interpretar es justo eso: construir tu propio sentido de una obra, porque su significado no es fijo, sino abierto. No hay una única respuesta correcta, sino que vos, como lector, usás lo que leés y lo que vivís para darle sentido. Por ejemplo, si leés que un personaje llora, podés interpretar que está triste, o quizás que está de alegría. ¿Te animás a contarme qué te parece a vos cuando escuchás esa palabra \"interpretar\"?",
+        "claimsTotal": 3,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.5189093947410583,
+            "contradiction": 0.20539088547229767,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.9134467244148254,
+            "contradiction": 0.5806708335876465,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.9003636240959167,
+            "contradiction": 0.0218576118350029,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.9937242865562439,
+            "contradiction": 0.024862537160515785,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q045",
+      "type": "answerable",
+      "q": "de q lo culparon a tristan los otros si no avia echo nada",
+      "expect_chunks": [
+        "a5cd2606-1a6d-4219-bccd-d7578c65beeb"
+      ],
+      "expect_answer": "De querer robar el trono de su tío, el rey Marcos de Cornualles.",
+      "note": "Chunk de la página 21 (acontecimientos): 'Tristán [cita del libro: 16 palabras · b29c0b0422c3358f] Marcos de Cornualles'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "b8eb3e90-b461-4d01-8d64-e847dda6626d"
+        ],
+        "mapeo": "b8eb3e90→a5cd2606@0.83"
+      },
+      "q_original": "En la historia de Tristán e Isolda, ¿de qué acusaron injustamente los nobles a Tristán?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "b88bc35d-5fde-4d8d-a7e1-54b9c52d753a",
+          "bf2f87f0-6798-4ddc-aab4-c5d3f032503f",
+          "28f7b203-ceb4-4f7e-b7ca-e1064fc8de25",
+          "ed3e72b7-d736-428f-9b14-8dc42c4696a9",
+          "67912ece-afc9-4792-9494-e07a0dbac9df",
+          "22215061-438c-4d65-a797-d1bec9c75df0"
+        ],
+        "expectedIds": [
+          "a5cd2606-1a6d-4219-bccd-d7578c65beeb"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.2403702428658063,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 16789,
+        "msProd": 7637,
+        "answer": "Es cierto, suena injusto. En el texto, Tristán se siente traicionado porque lo acusaron de querer la tierra de su tío, el rey Marcos, cuando en realidad él estaba luchando por traer a Isolda para salvar al reino. Es como si te culparan de robar una manzana cuando en realidad solo querías compartirla con todos.\n\n¿Te parece que la culpa de Tristán es real o es solo un pretexto para esconder lo que realmente siente?",
+        "claimsTotal": 3,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.4773472845554352,
+            "contradiction": 0.9294060468673706,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.7722776532173157,
+            "contradiction": 0.6931395530700684,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q046",
+      "type": "answerable",
+      "q": "como se llama el castillo del rey y donde queda",
+      "expect_chunks": [
+        "a5cd2606-1a6d-4219-bccd-d7578c65beeb"
+      ],
+      "expect_answer": "Se llama Tintagel y queda en Cornualles.",
+      "note": "Chunk de la página 22: Tristán lleva a Isolda 'a Tintagel, el castillo del rey Marcos en Cornualles'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "620c0019-fe9d-4fdd-8cc6-cfe2bbea977b"
+        ],
+        "mapeo": "620c0019→a5cd2606@0.85"
+      },
+      "q_original": "¿Cómo se llama el castillo del rey Marcos y dónde queda?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "a5cd2606-1a6d-4219-bccd-d7578c65beeb",
+          "67912ece-afc9-4792-9494-e07a0dbac9df",
+          "22f1f8fa-b239-4d84-967c-d179fa98484e",
+          "717b4b67-c464-46bc-af5c-6537722b2803",
+          "a7b43a99-5e93-4ece-8c97-b88b5841baa3",
+          "de084d07-0a47-41f2-bd3d-4f7942913e32"
+        ],
+        "expectedIds": [
+          "a5cd2606-1a6d-4219-bccd-d7578c65beeb"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.2733058214802156,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 24309,
+        "msProd": 7882,
+        "answer": "¡Hola! Mirá, en la historia de Tristán e Isolda, el castillo se llama Tintagel. Es la residencia del rey Marcos, el tío de Tristán, y está ubicado en Cornualles. Es ahí donde Isolda llega con Tristán para casarse con el rey, aunque como ya sabés, las cosas no salen como estaban planeadas. ¿Te acordás por qué razón Tristán llevó a Isolda hasta ese castillo?",
+        "claimsTotal": 5,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9940206408500671,
+            "contradiction": 0.9891971945762634,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.9930810332298279,
+            "contradiction": 0.9699427485466003,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.9154278039932251,
+            "contradiction": 0.27764594554901123,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q047",
+      "type": "answerable",
+      "q": "quien hizo la pocion de amor y con q cosas la hizo",
+      "expect_chunks": [
+        "c2413a16-7c89-43c2-9419-88ea347f3971",
+        "a5cd2606-1a6d-4219-bccd-d7578c65beeb"
+      ],
+      "expect_answer": "La madre de Isolda, que recogió hierbas, flores y raíces y las mezcló con vino.",
+      "note": "Chunk de las páginas 28-30: 'su [cita del libro: 12 palabras · d2b845426133948c] un poderoso brebaje' destinado a que lo bebieran juntos el rey Marcos y la reina Isolda. El chunk de la página 22 confirma que 'la madre de Isolda prepara un filtro de amor'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "4ec0eaca-fe65-4b8e-b89d-3d1d91027800",
+          "620c0019-fe9d-4fdd-8cc6-cfe2bbea977b"
+        ],
+        "mapeo": "4ec0eaca→c2413a16@0.88 620c0019→c2413a16+a5cd2606@0.85"
+      },
+      "q_original": "¿Quién preparó el filtro de amor en la historia de Tristán e Isolda y con qué ingredientes lo hizo?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [],
+        "expectedIds": [
+          "c2413a16-7c89-43c2-9419-88ea347f3971",
+          "a5cd2606-1a6d-4219-bccd-d7578c65beeb"
+        ],
+        "abstained": true,
+        "hallucinated": false,
+        "hallucinationKnown": false,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": false,
+        "cause": "gate",
+        "topScore": 0.03702421914718748,
+        "citableSource": "none",
+        "selfAbstained": false,
+        "ms": 12320,
+        "msProd": 12320,
+        "answer": "",
+        "claimsTotal": 0,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q048",
+      "type": "answerable",
+      "q": "que significa singlar? no cacho esa palabra",
+      "expect_chunks": [
+        "c2413a16-7c89-43c2-9419-88ea347f3971",
+        "b88bc35d-5fde-4d8d-a7e1-54b9c52d753a"
+      ],
+      "expect_answer": "Singlar significa navegar.",
+      "note": "Chunk de vocabulario de la página 26: 'singlar: navegar'. (Distinta de las palabras ya usadas en el golden: vasallo y atelier.)",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "1e48464c-0a8a-4290-aee6-821d80caf445"
+        ],
+        "mapeo": "1e48464c→c2413a16+b88bc35d@0.50"
+      },
+      "q_original": "En el vocabulario del capítulo de Tristán e Isolda, ¿qué significa la palabra 'singlar'?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "b88bc35d-5fde-4d8d-a7e1-54b9c52d753a",
+          "d3106e51-426c-48e0-92a7-535b18a68b51",
+          "27b8d075-25b1-40c4-921d-365e19a0bd0c",
+          "9059a24f-6332-43fc-b5cc-4e4c34341d1e",
+          "a6cd964a-e771-4d1b-91c9-72cc97bde421",
+          "c2413a16-7c89-43c2-9419-88ea347f3971"
+        ],
+        "expectedIds": [
+          "c2413a16-7c89-43c2-9419-88ea347f3971",
+          "b88bc35d-5fde-4d8d-a7e1-54b9c52d753a"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.21778170763308216,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 18364,
+        "msProd": 7821,
+        "answer": "Mirá, en el texto de Tristán e Isolda, \"singlar\" es un término antiguo que significa navegar o ir en barco. Básicamente, describe el movimiento de la nave cuando avanza por el agua. Es como cuando decimos que el barco \"surca\" las olas o simplemente \"navega\".\n\n¿Te queda claro que se refiere al acto de navegar, o querés que lo veamos en otra parte del cuento?",
+        "claimsTotal": 3,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9323304891586304,
+            "contradiction": 0.8074015974998474,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.9920037388801575,
+            "contradiction": 0.9913528561592102,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q049",
+      "type": "answerable",
+      "q": "no entiendo, si el rey nunca tomo la pocion xq se enamoro igual",
+      "expect_chunks": [
+        "67912ece-afc9-4792-9494-e07a0dbac9df",
+        "28f7b203-ceb4-4f7e-b7ca-e1064fc8de25"
+      ],
+      "expect_answer": "Tan solo la tierna nobleza de su corazón; ni pócima ni sortilegio le inspiraron el amor.",
+      "note": "Chunks de las páginas 40-43 y 43-44 (solapados): ambos contienen 'Pero él no [cita del libro: 20 palabras · 29cf2e19aa8c514c] de su corazón'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "e0ae46a8-9438-4ad2-a9b0-a0e33920509f",
+          "a455d436-39af-459f-af31-ba191803c1b1"
+        ],
+        "mapeo": "e0ae46a8→67912ece+28f7b203@0.78 a455d436→28f7b203@0.79"
+      },
+      "q_original": "Si el rey Marcos nunca bebió el vino de hierbas, ¿qué fue lo que le inspiró su amor por Isolda?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [],
+        "expectedIds": [
+          "67912ece-afc9-4792-9494-e07a0dbac9df",
+          "28f7b203-ceb4-4f7e-b7ca-e1064fc8de25"
+        ],
+        "abstained": true,
+        "hallucinated": false,
+        "hallucinationKnown": false,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": false,
+        "cause": "gate",
+        "topScore": 0.006927462699135214,
+        "citableSource": "none",
+        "selfAbstained": false,
+        "ms": 12474,
+        "msProd": 12474,
+        "answer": "",
+        "claimsTotal": 0,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q050",
+      "type": "answerable",
+      "q": "la chica enferma q miraba por la bentana, q iba contando y q pensaba q iba a pasar",
+      "expect_chunks": [
+        "61a7069e-503a-4e81-bcb1-d0096c18124a"
+      ],
+      "expect_answer": "Contaba las hojas de la enredadera de hiedra que iban cayendo, y creía que cuando cayera la última hoja ella también moriría ('también yo me iré').",
+      "note": "Chunk de las páginas 71-74: Johnsy cuenta al revés (doce, once, diez...) las hojas de la vieja enredadera de hiedra y dice 'Hojas. Sobre [cita del libro: 12 palabras · 3edd4f88ec7ec704] yo'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "1a738611-22a8-45ef-a363-7514a3e25830"
+        ],
+        "mapeo": "1a738611→61a7069e@0.94"
+      },
+      "q_original": "En el cuento 'La última hoja', ¿qué contaba Johnsy al revés mirando por la ventana y qué creía que iba a pasar cuando cayera la última?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "61a7069e-503a-4e81-bcb1-d0096c18124a",
+          "d70faaf2-bee5-49b0-9c81-3a64441e1957",
+          "116a476c-f509-410b-b754-e13057fc7526",
+          "8ca0bba5-0c94-48be-8b63-5dbc5adf4b0d",
+          "b06d7c34-07c1-4f1e-b577-940d54dcb022",
+          "cd902a57-d768-4591-b828-8f90326fe192"
+        ],
+        "expectedIds": [
+          "61a7069e-503a-4e81-bcb1-d0096c18124a"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.3809959497277101,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 14791,
+        "msProd": 7421,
+        "answer": "Mirá, esa chica es Johnsy y está muy triste por su enfermedad. Ella cree que su vida depende de las hojas de la hiedra que caen afuera: piensa que cuando caiga la última, ella también morirá. Es como si hubiera puesto toda su esperanza en algo que no puede controlar, lo que la hace sentirse cada vez más débil. ¿Te parece que contar las hojas la ayuda a mejorar o, por el contrario, la hace sentirse peor?",
+        "claimsTotal": 7,
+        "claimsSinRespaldo": 2,
+        "prodVerdicts": [
+          {
+            "entailment": 0.2294793426990509,
+            "contradiction": 0.9428536891937256,
+            "supported": false,
+            "contradicted": true
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q051",
+      "type": "answerable",
+      "q": "quien es el q anda matando gente en el barrio en el cuento de la hoja",
+      "expect_chunks": [
+        "679e157c-dc38-4f11-8cad-fd6ad23de131",
+        "116a476c-f509-410b-b754-e13057fc7526"
+      ],
+      "expect_answer": "El señor Neumonía, es decir, la enfermedad de la neumonía personificada, que atacó a Johnsy.",
+      "note": "Chunk de las páginas 66-68: el narrador llama 'devastador intruso' al 'señor Neumonía', un 'viejo tramposo' que fulminó a Johnsy. Es la personificación de la neumonía.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "a1d872bb-369a-45e9-9ec3-40e79d720257"
+        ],
+        "mapeo": "a1d872bb→679e157c+116a476c@0.54"
+      },
+      "q_original": "En 'La última hoja', ¿quién es el 'devastador intruso' que recorrió el East Side fulminando a veintenas de víctimas?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [],
+        "expectedIds": [
+          "679e157c-dc38-4f11-8cad-fd6ad23de131",
+          "116a476c-f509-410b-b754-e13057fc7526"
+        ],
+        "abstained": true,
+        "hallucinated": false,
+        "hallucinationKnown": false,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": false,
+        "cause": "gate",
+        "topScore": 0.02149024059745629,
+        "citableSource": "none",
+        "selfAbstained": false,
+        "ms": 12084,
+        "msProd": 12084,
+        "answer": "",
+        "claimsTotal": 0,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q052",
+      "type": "answerable",
+      "q": "para q hay q leer la entrevista de la señora q toca musica",
+      "expect_chunks": [
+        "ee0bf148-8828-4288-9e65-b75d11e68989",
+        "79d947ec-4a73-4785-81be-0619fbe8ff7a"
+      ],
+      "expect_answer": "Para conocer su trabajo y evaluar si la información que entrega el texto es suficiente para comprender y valorar su obra, y a partir de eso producir una entrevista propia.",
+      "note": "Chunk de las páginas 123-125 (heading_path 'Lección 4: En las raíces'): 'Leerás una [cita del libro: 32 palabras · 8433888f6e9f6078] tu propia entrevista'. La entrevistada es Elisa Avendaño.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "8d65ff5b-6b7b-4a10-ae0e-9117e350dda6"
+        ],
+        "mapeo": "8d65ff5b→ee0bf148+79d947ec@0.93"
+      },
+      "q_original": "Según la Lección 4 'En las raíces', ¿para qué voy a leer la entrevista a la destacada música?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "79d947ec-4a73-4785-81be-0619fbe8ff7a",
+          "a6d23d78-dd48-430a-9884-a9b6b16dcfb4",
+          "8c5f2134-aa86-49cb-b7ff-43b983575d7b",
+          "ae738438-5dbe-4a70-bc4f-9901d4049351",
+          "e7951830-9d53-47a3-aec4-c59a63386403",
+          "c2168fd3-fc73-4a16-a12b-4e3bdfe0c839"
+        ],
+        "expectedIds": [
+          "ee0bf148-8828-4288-9e65-b75d11e68989",
+          "79d947ec-4a73-4785-81be-0619fbe8ff7a"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.3226405249448356,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 35350,
+        "msProd": 14914,
+        "answer": "Mirá, leer esa entrevista no es solo para saber quiénes son los músicos, sino para entender cómo se construye una conversación real. Fijate que el periodista no hace preguntas al azar; cada una tiene un propósito: quiere destacar la historia de Elisa y su música mapuche. Además, vas a ver que él usa muchos nombres y apellidos para no repetir, y ella habla de sus opiniones y experiencias. La clave es distinguir qué es un dato real (como que ganó un premio) y qué es su opinión personal (como que la música es transversal a la vida). ¿Te parece más fácil identificar las opiniones cuando las frases empiezan con \"yo creo\" o \"para mí\"?",
+        "claimsTotal": 9,
+        "claimsSinRespaldo": 1,
+        "prodVerdicts": [
+          {
+            "entailment": 0.6095880270004272,
+            "contradiction": 0.43901246786117554,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.9195069074630737,
+            "contradiction": 0.7522715330123901,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.8031077980995178,
+            "contradiction": 0.895554780960083,
+            "supported": true,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.5536805391311646,
+            "contradiction": 0.19942736625671387,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q053",
+      "type": "answerable",
+      "q": "q le pazo a la poeta cuando gano el concurso ese en el 23",
+      "expect_chunks": [
+        "7a10a6a2-351a-476b-98a5-163ac62c9938",
+        "247d2d3f-fcbd-482d-bdc2-44000521b063",
+        "e2a4141b-df09-415d-8f9d-35e39a0b6193"
+      ],
+      "expect_answer": "Por ser mujer no se le entregó formalmente el primer lugar; ella calificó ese hecho como su 'primera discriminación por ser mujer'.",
+      "note": "Chunk de las páginas 107-110: 'En 1923 ganó [cita del libro: 20 palabras · b89376d27943a6d0] lugar', hecho que calificó como su 'primera discriminación por ser mujer'. El chunk de las páginas 105-106 identifica a la autora: 'Magda Portal Poeta peruana que vivió entre 1900 y 1989'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "b5f2c869-51c1-4909-8194-3062cda74180",
+          "0ddae416-f9ae-4eba-a5f9-86ae4b2237d7"
+        ],
+        "mapeo": "b5f2c869→7a10a6a2+247d2d3f@0.53 0ddae416→7a10a6a2+e2a4141b@0.39"
+      },
+      "q_original": "¿Qué le pasó a la poeta Magda Portal cuando ganó los Juegos Florales de la Universidad de San Marco en 1923?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "7a10a6a2-351a-476b-98a5-163ac62c9938",
+          "9a338122-5796-4b4c-873d-c0214096e6c2",
+          "772e3a60-ff57-49a1-86d6-b60382911657",
+          "42967c9c-cd70-4c44-bbe1-bc39ea2a1b81",
+          "e2a4141b-df09-415d-8f9d-35e39a0b6193",
+          "76d9bdc2-8e17-4049-9956-e51363c9d27e"
+        ],
+        "expectedIds": [
+          "7a10a6a2-351a-476b-98a5-163ac62c9938",
+          "247d2d3f-fcbd-482d-bdc2-44000521b063",
+          "e2a4141b-df09-415d-8f9d-35e39a0b6193"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.19770560812823929,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 31190,
+        "msProd": 7789,
+        "answer": "Mirá, Magda Portal ganó el primer lugar en los Juegos Florales de 1923, pero como era mujer, no le entregaron el premio formalmente. Ella lo vivió como una discriminación injusta, su \"primera discriminación por ser mujer\", lo que la motivó a defender los derechos femeninos y el feminismo. ¿Te parece justo que le hayan quitado el reconocimiento solo por su género?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9074786305427551,
+            "contradiction": 0.7271959185600281,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q054",
+      "type": "answerable",
+      "q": "en el poema de los dos q se conocen, de q estan tan seguros ellos",
+      "expect_chunks": [
+        "37f68c0e-3cd3-4a58-a62e-12a5e00a9cf7",
+        "888d380a-621d-453f-af24-067598192b0e"
+      ],
+      "expect_answer": "De que los ha unido un sentimiento repentino (aunque la casualidad ya jugaba con ellos desde hace mucho tiempo).",
+      "note": "Chunk de las páginas 116-120: 'Amor a [cita del libro: 12 palabras · 08ace90429efe983] un sentimiento repentino'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "9a3d661d-8cc9-4f1e-bea5-abc9c236bef0"
+        ],
+        "mapeo": "9a3d661d→37f68c0e+888d380a@0.62"
+      },
+      "q_original": "En el poema 'Amor a primera vista' de Wislawa Szymborska, ¿de qué están convencidos los dos enamorados?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "37f68c0e-3cd3-4a58-a62e-12a5e00a9cf7",
+          "76d9bdc2-8e17-4049-9956-e51363c9d27e",
+          "772e3a60-ff57-49a1-86d6-b60382911657",
+          "51b442d5-b579-4a81-8279-f20bdb0ed0a5",
+          "16e2e821-bd05-49bc-b978-1eeae87f9028",
+          "f2cc61a5-adb6-41d6-87b6-8fcf1583faa3"
+        ],
+        "expectedIds": [
+          "37f68c0e-3cd3-4a58-a62e-12a5e00a9cf7",
+          "888d380a-621d-453f-af24-067598192b0e"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.2783027982778612,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 32186,
+        "msProd": 18338,
+        "answer": "En ese poema, la autora nos dice que esos dos están tan seguros de que el amor los unió de golpe, pero en realidad es una ilusión. Ella sugiere que quizás ya se habían cruzado mil veces antes, en escaleras, puertas o teléfonos, sin darse cuenta. La \"seguridad\" que sienten es bonita, pero la autora prefiere la \"inseguridad\" de no saber si todo fue casualidad o destino. ¿Te parece que es más romántico creer que fue un destino escrito o aceptar que fue pura casualidad?",
+        "claimsTotal": 6,
+        "claimsSinRespaldo": 1,
+        "prodVerdicts": [
+          {
+            "entailment": 0.5449146032333374,
+            "contradiction": 0.9750370979309082,
+            "supported": true,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.12296193093061447,
+            "contradiction": 0.9593878388404846,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.017884645611047745,
+            "contradiction": 0.08755799382925034,
+            "supported": false,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q055",
+      "type": "answerable",
+      "q": "de donde viene la palabra revitalizar y q significa",
+      "expect_chunks": [
+        "79d947ec-4a73-4785-81be-0619fbe8ff7a",
+        "d3106e51-426c-48e0-92a7-535b18a68b51"
+      ],
+      "expect_answer": "Viene del vocablo latín 'vita', que significa vida, y quiere decir dar mayor fuerza o vitalidad a algo.",
+      "note": "Chunk de las páginas 126-127 (Amplío mi vocabulario): 'La palabra revitalizar [cita del libro: 16 palabras · b736e344cd28af4a] vitalidad a algo'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "b9dd4265-c82f-40ff-aa27-762cfebfed93"
+        ],
+        "mapeo": "b9dd4265→79d947ec+d3106e51@0.73"
+      },
+      "q_original": "¿De qué palabra del latín viene 'revitalizar' y qué quiere decir?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "79d947ec-4a73-4785-81be-0619fbe8ff7a",
+          "d3106e51-426c-48e0-92a7-535b18a68b51",
+          "b7275a3d-0d50-4e31-9b17-5a54cd5567bd",
+          "3f618813-3771-4532-9d53-3fddfc2c125c",
+          "6e278217-bc04-418f-bcc4-7dda1bc03dcc",
+          "7157a5d4-992b-40a0-9d71-7166d4ecf610"
+        ],
+        "expectedIds": [
+          "79d947ec-4a73-4785-81be-0619fbe8ff7a",
+          "d3106e51-426c-48e0-92a7-535b18a68b51"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.947270023373189,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 24225,
+        "msProd": 8362,
+        "answer": "La palabra revitalizar viene del latín *vita*, que significa vida. Básicamente, significa darle mayor fuerza o vitalidad a algo, como si le devolvieras la vida. Por ejemplo, cuando una artista ayuda a que la cultura mapuche llegue a las nuevas generaciones, está contribuyendo a revitalizar esa cultura, es decir, a que siga viva y fuerte. ¿Se te ocurre alguna otra situación en la que alguien pueda \"revitalizar\" algo?",
+        "claimsTotal": 3,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9951947331428528,
+            "contradiction": 0.3993241488933563,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.9268443584442139,
+            "contradiction": 0.0311378613114357,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q056",
+      "type": "answerable",
+      "q": "que son las acotaciones en una obra de teatro y pa q sirven",
+      "expect_chunks": [
+        "b1af421d-4823-482e-a732-c5f449e852c5"
+      ],
+      "expect_answer": "[cita del libro: 12 palabras · ac81d93b781bdf5e] la puesta en escena, por ejemplo la vestimenta o los gestos de los personajes.",
+      "note": "Son comentarios [cita del libro: 16 palabras · a161214d78c2bb04] personajes, etc.). Está en la sección de lectura dramatizada previa a 'El ahogado' (págs. 193-194), que además indica que se leen en tono neutro. VERIFICADO: el chunk contiene la definición verbatim.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "81033c98-0ac5-4706-9488-5148a40f5bfe"
+        ],
+        "mapeo": "81033c98→b1af421d@0.91"
+      },
+      "q_original": "En las obras de teatro, ¿qué son las acotaciones y para qué las usa el dramaturgo?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "b1af421d-4823-482e-a732-c5f449e852c5",
+          "397b9776-a4e9-4d6e-8b9d-3d57f328ee51",
+          "3548cc47-e9dc-47c2-bf81-2a9e17a31d4f",
+          "a9101ec1-68e0-45a1-b138-81aec73aea86",
+          "f1d35260-bfd7-4759-9122-2cdf18c21896",
+          "9107b0e3-64bc-4bb4-ad34-fee170fee46c"
+        ],
+        "expectedIds": [
+          "b1af421d-4823-482e-a732-c5f449e852c5"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.5851394254961582,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 34994,
+        "msProd": 9359,
+        "answer": "Las acotaciones son como las instrucciones del director o las notas que deja el autor entre paréntesis o en cursiva. No son lo que dicen los personajes, sino detalles sobre cómo se ven, qué hacen o cómo es el lugar. Por ejemplo, si leés \"el Escritor queda perplejo\", eso te dice cómo está su cara o su cuerpo, no lo que habla. Sirven para que, al leer o representar la obra, sepas qué pasa en el escenario y qué sienten los personajes sin que tengan que decirlo con palabras. Si mirás una escena, ¿podrías imaginarte qué gesto haría un personaje si la acotación dice que está \"perplejo\"?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.758886456489563,
+            "contradiction": 0.9820522665977478,
+            "supported": true,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.5151976943016052,
+            "contradiction": 0.6806058883666992,
+            "supported": true,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.9989656209945679,
+            "contradiction": 0.6471911072731018,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q057",
+      "type": "answerable",
+      "q": "pa q servia la comedia antes? escuche q tenia como dos cosas",
+      "expect_chunks": [
+        "a9101ec1-68e0-45a1-b138-81aec73aea86",
+        "397b9776-a4e9-4d6e-8b9d-3d57f328ee51"
+      ],
+      "expect_answer": "Divertir a la audiencia y a la vez educarla: al ridiculizar los vicios [cita del libro: 12 palabras · c49710c3d27ae640] los corrigiera.",
+      "note": "Divertir a la audiencia y, a la vez, educarla: al ridiculizar los vicios [cita del libro: 12 palabras · c49710c3d27ae640] los corrigiera. Está en los conceptos literarios trabajados tras 'El ahogado' (págs. 226-229), donde también se pregunta si 'El ahogado' es una comedia. VERIFICADO: texto verbatim en el chunk.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "c555faca-4f42-4d69-b7a3-83bbbc901c27"
+        ],
+        "mapeo": "c555faca→a9101ec1+397b9776@0.64"
+      },
+      "q_original": "¿Cuál era la doble finalidad que tenía la comedia en sus orígenes?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [],
+        "expectedIds": [
+          "a9101ec1-68e0-45a1-b138-81aec73aea86",
+          "397b9776-a4e9-4d6e-8b9d-3d57f328ee51"
+        ],
+        "abstained": true,
+        "hallucinated": false,
+        "hallucinationKnown": false,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": false,
+        "cause": "gate",
+        "topScore": 0.0017401824761833994,
+        "citableSource": "none",
+        "selfAbstained": false,
+        "ms": 12607,
+        "msProd": 12607,
+        "answer": "",
+        "claimsTotal": 0,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q058",
+      "type": "answerable",
+      "q": "me perdi con lo de los detectives, cuando empezaron esos cuentos y q pasaba en esa epoca",
+      "expect_chunks": [
+        "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+        "7bd7bd62-9e5f-42b3-b7cb-a4a6a5d2d329"
+      ],
+      "expect_answer": "Nació a mediados del [cita del libro: 16 palabras · 01f37b9576e1b3cf]",
+      "note": "El policial es un subgénero narrativo que [cita del libro: 20 palabras · 3ac39b0fbbd8e6ac] Está en la sección 'Los relatos policiales' (pág. 262), que también presenta el crimen como enigma inicial. Distinto de q013, que pregunta por los tipos de narrador. VERIFICADO: texto verbatim en el chunk.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "3dec2e9d-42db-42fe-8ca2-6b97e3b44518"
+        ],
+        "mapeo": "3dec2e9d→ac70b2c1+7bd7bd62@0.67"
+      },
+      "q_original": "¿En qué época nació el género policial y qué caracterizaba a esa época?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "cd902a57-d768-4591-b828-8f90326fe192",
+          "78de3274-337a-4332-a001-c98e466101fb",
+          "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+          "d4774934-0245-476d-bd07-6dacf6b02944",
+          "a3f84d62-3431-4dcb-a961-a79ae7219515",
+          "7bd7bd62-9e5f-42b3-b7cb-a4a6a5d2d329"
+        ],
+        "expectedIds": [
+          "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+          "7bd7bd62-9e5f-42b3-b7cb-a4a6a5d2d329"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.34020254915886217,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 16648,
+        "msProd": 8157,
+        "answer": "Imaginate que vivís en una época donde la gente confiaba mucho en la razón y la ciencia, como cuando resolvemos un problema de matemáticas paso a paso. Ahí nació el cuento policial, con un autor llamado Edgar Allan Poe. Él creó a un detective llamado Dupin que no usaba fuerza, sino su inteligencia para deducir quién era el culpable, como si fuera un rompecabezas. ¿Te imaginás cómo sería investigar un crimen pensando como el asesino, en vez de solo correr por la ciudad?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9954928159713745,
+            "contradiction": 0.9965446591377258,
+            "supported": true,
+            "contradicted": true
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q059",
+      "type": "answerable",
+      "q": "q cuento escribio poe en 1841 y como se llamava el detective",
+      "expect_chunks": [
+        "cd902a57-d768-4591-b828-8f90326fe192",
+        "d4774934-0245-476d-bd07-6dacf6b02944"
+      ],
+      "expect_answer": "Publicó 'Los crímenes de la calle Morgue' y su detective se llamaba el chevalier Auguste Dupin.",
+      "note": "En abril de 1841 Poe publicó 'Los crímenes de la calle Morgue' en el periódico Graham's de Filadelfia; su detective fundacional fue el chevalier Auguste Dupin, y el cuento está ambientado en París. Está en 'Breve historia del cuento policial' de Bartolomé Leal (págs. 234-236). VERIFICADO: el chunk nombra el cuento, la fecha y al chevalier Auguste Dupin.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "8d2fba5f-b9d3-46be-8bfd-c13d68dc1415"
+        ],
+        "mapeo": "8d2fba5f→cd902a57+d4774934@0.60"
+      },
+      "q_original": "¿Qué cuento publicó Edgar Allan Poe en 1841 y cómo se llamaba el detective que aparece en él?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "cd902a57-d768-4591-b828-8f90326fe192",
+          "d4774934-0245-476d-bd07-6dacf6b02944",
+          "7bd7bd62-9e5f-42b3-b7cb-a4a6a5d2d329",
+          "78de3274-337a-4332-a001-c98e466101fb",
+          "7b13d089-9f98-4547-acd0-535672bc33d0",
+          "ac70b2c1-e6b7-476e-97f2-890d3d0507e1"
+        ],
+        "expectedIds": [
+          "cd902a57-d768-4591-b828-8f90326fe192",
+          "d4774934-0245-476d-bd07-6dacf6b02944"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.978116783811389,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 19598,
+        "msProd": 8354,
+        "answer": "¿Te acordás de esos detectives que resuelven todo con pura lógica? Bueno, en 1841, Edgar Allan Poe escribió el cuento que dio origen a este género, se llamaba \"Los crímenes de la calle Morgue\". En esa historia aparecía un personaje muy especial, un detective llamado Auguste Dupin, que era la base para todos los que vendrían después. ¿Sabías que este Dupin se inspiraba en un investigador real de París?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.21218451857566833,
+            "contradiction": 0.6447409391403198,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.03366152197122574,
+            "contradiction": 0.015475977212190628,
+            "supported": false,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q060",
+      "type": "answerable",
+      "q": "en quien se baso poe pa inventar a su detective? dicen q existio de verdad",
+      "expect_chunks": [
+        "78de3274-337a-4332-a001-c98e466101fb"
+      ],
+      "expect_answer": "En Eugène-François Vidocq, investigador y criminalista francés que fundó la Brigada de Seguridad, antecedente de la Policía Nacional de Francia.",
+      "note": "En el investigador y criminalista francés Eugène-François Vidocq, un exdelincuente que se convirtió [cita del libro: 12 palabras · 89046ded8d048e14] Nacional de Francia. Dupin toma de él el escenario (París) y la capacidad de pensar como el asesino. Está en 'Y más allá del texto' (págs. 267-269). VERIFICADO: todos los datos están en el chunk.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "62ea7ad9-1882-4639-8469-4b834ed8dcb7"
+        ],
+        "mapeo": "62ea7ad9→78de3274@0.94"
+      },
+      "q_original": "¿En qué investigador de la vida real se cree que se inspiró Poe para crear al detective Auguste Dupin?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "78de3274-337a-4332-a001-c98e466101fb",
+          "7bd7bd62-9e5f-42b3-b7cb-a4a6a5d2d329",
+          "cd902a57-d768-4591-b828-8f90326fe192",
+          "d4774934-0245-476d-bd07-6dacf6b02944",
+          "ac70b2c1-e6b7-476e-97f2-890d3d0507e1",
+          "193d3747-5a44-4e65-a0bc-36c0089f7000"
+        ],
+        "expectedIds": [
+          "78de3274-337a-4332-a001-c98e466101fb"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.7275810738983568,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 18635,
+        "msProd": 8937,
+        "answer": "¡Buena pregunta! Sí, es cierto. El detective Auguste Dupin, de Poe, se inspiró en un personaje real llamado Eugène-François Vidocq. Este tipo fue una mezcla rara: primero fue delincuente y luego se convirtió en policía, fundando la Brigada de Seguridad en Francia. Lo más interesante es que Poe le copió la habilidad de ponerse en la mente del criminal para pensar como él. ¿Te imaginás cómo sería tener que pensar como el asesino para atraparlo?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.10857518017292023,
+            "contradiction": 0.5817195773124695,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.2156217396259308,
+            "contradiction": 0.4842880368232727,
+            "supported": false,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q061",
+      "type": "answerable",
+      "q": "quien es popnichefsky y xq le importa tanto al vagabundo",
+      "expect_chunks": [
+        "8020a8f5-6b85-475f-8a4c-2ac0f774749f"
+      ],
+      "expect_answer": "Es el hombre que salta al agua y rescata al Vagabundo; es importante porque el Vagabundo no sabe nadar, y hay que gritar su nombre para que lo saque.",
+      "note": "Popnichefsky es el tipo que salta al agua y rescata al Vagabundo; es clave porque el Vagabundo no sabe nadar y hay que gritar su nombre cuando saque la cabeza por tercera vez. Popnichefsky espera hasta el último segundo para tirarse, lo que hace 'excitante' el espectáculo. Está en el diálogo de las págs. 220-222. VERIFICADO: 'El tipo que salta y me rescata. No sé nadar, señor' está verbatim en el chunk.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "de59af0f-a4e3-481f-8d41-f0ee7cfa1217"
+        ],
+        "mapeo": "de59af0f→8020a8f5@0.95"
+      },
+      "q_original": "En la obra 'El ahogado', ¿quién es Popnichefsky y por qué es tan importante para el Vagabundo?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "8020a8f5-6b85-475f-8a4c-2ac0f774749f",
+          "94b5518e-71dc-4845-9fd6-f5ddfa5d00d2",
+          "3c3a807c-e442-45d7-85a2-981f88df949f",
+          "28e33a50-b261-40cc-8aa5-1e1f33b84de3",
+          "bd5f18bd-8d4c-4700-aae9-b3b96319413b",
+          "b0ed3802-c09e-4571-9d25-70fba5240bb3"
+        ],
+        "expectedIds": [
+          "8020a8f5-6b85-475f-8a4c-2ac0f774749f"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.8165873816914335,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 25776,
+        "msProd": 8741,
+        "answer": "Popnichefsky es el nombre que el Vagabundo le da a la persona que lo va a \"rescatar\" del agua. Lo interesante es que, como él no sabe nadar, Popnichefsky es quien evita que se ahogue de verdad. Le importa tanto porque es el clímax de su \"espectáculo\": sin ese rescate dramático al final, no habría tensión ni emoción para el público que paga por verlo. Es el momento justo en que la vida y la muerte se encuentran, y eso es lo que hace que la actuación valga la pena. ¿Te parece que el Vagabundo disfruta el peligro o solo le interesa el dinero que le pagan por actuar?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.30297449231147766,
+            "contradiction": 0.8046838045120239,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.09000342339277267,
+            "contradiction": 0.8701793551445007,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.0076666041277348995,
+            "contradiction": 0.0463310144841671,
+            "supported": false,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.7035688161849976,
+            "contradiction": 0.14879220724105835,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q062",
+      "type": "answerable",
+      "q": "me perdi con el del ahogado, se muere o no se muere? no cacho q hace",
+      "expect_chunks": [
+        "d3f21970-4f6e-47c9-bd0c-8deb56995aad"
+      ],
+      "expect_answer": "No, es una actuación: 'caracteriza a un ahogado'. Salta al agua helada, chapotea, grita socorro, se hunde y sale flotando boca abajo, como si estuviera hinchado.",
+      "note": "No se ahoga de verdad: él 'caracteriza a un ahogado'. Salta al agua helada, chapotea, agita los brazos, grita socorro, se hunde ('gluglú') y sale flotando boca abajo como si estuviera hinchado. Cobra tres rublos por representaciones individuales y tiene tarifas especiales para grupos. Está en la pág. 207. Distinto de q008 (quién dice ser el ahogado) y de q023 (reacciones del Escritor y el Policía). VERIFICADO: descripción verbatim en el chunk.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "4eccfd92-4238-4560-a445-1178be0bc797"
+        ],
+        "mapeo": "4eccfd92→d3f21970@0.83"
+      },
+      "q_original": "En 'El ahogado', ¿el Vagabundo se ahoga de verdad? ¿En qué consiste realmente su espectáculo?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "b1af421d-4823-482e-a732-c5f449e852c5",
+          "a9101ec1-68e0-45a1-b138-81aec73aea86",
+          "d3f21970-4f6e-47c9-bd0c-8deb56995aad",
+          "397b9776-a4e9-4d6e-8b9d-3d57f328ee51",
+          "9107b0e3-64bc-4bb4-ad34-fee170fee46c",
+          "3548cc47-e9dc-47c2-bf81-2a9e17a31d4f"
+        ],
+        "expectedIds": [
+          "d3f21970-4f6e-47c9-bd0c-8deb56995aad"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.41748148768444493,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 34077,
+        "msProd": 14793,
+        "answer": "Mirá, no se muere de verdad. Es un truco. Ese tipo es un vagabundo que se hace pasar por un muerto para cobrarle dinero al escritor. Él dice que salta al agua, hace ruido y sale flotando como si estuviera hinchado, pero es solo una actuación para ganar tres rublos. Es como cuando actuás en el recreo y fingís que algo pasó. ¿Ves la diferencia entre lo que él hace (fingir) y lo que pasa de verdad?",
+        "claimsTotal": 5,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.8224939107894897,
+            "contradiction": 0.9845410585403442,
+            "supported": true,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.026171362027525902,
+            "contradiction": 0.5438510179519653,
+            "supported": false,
+            "contradicted": true
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q063",
+      "type": "answerable",
+      "q": "de q obra sacaron la escena del ahogado y en q parte va",
+      "expect_chunks": [
+        "07731f06-500f-4480-84e3-822871b5b75a",
+        "2ea9077d-e4d3-4326-a59c-d48f9fc4f157"
+      ],
+      "expect_answer": "Pertenece a 'El buen doctor' (1973) y es la primera escena del segundo acto.",
+      "note": "'El ahogado' es la primera escena del segundo acto de 'El buen doctor' (1973), obra compuesta por escenas autónomas inspiradas en relatos de Chéjov, ambientadas en la Rusia del siglo XIX y conectadas por el personaje del Escritor. Está en el recuadro informativo de las págs. 189-192. VERIFICADO: el chunk contiene todos estos datos verbatim.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "29dc1679-1197-40e6-b707-5cc3a4e46862"
+        ],
+        "mapeo": "29dc1679→07731f06+2ea9077d@0.49"
+      },
+      "q_original": "¿A qué obra pertenece la escena de 'El ahogado' y en qué parte de esa obra aparece?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "b1af421d-4823-482e-a732-c5f449e852c5",
+          "2ea9077d-e4d3-4326-a59c-d48f9fc4f157",
+          "a9101ec1-68e0-45a1-b138-81aec73aea86",
+          "3548cc47-e9dc-47c2-bf81-2a9e17a31d4f",
+          "397b9776-a4e9-4d6e-8b9d-3d57f328ee51",
+          "d3f21970-4f6e-47c9-bd0c-8deb56995aad"
+        ],
+        "expectedIds": [
+          "07731f06-500f-4480-84e3-822871b5b75a",
+          "2ea9077d-e4d3-4326-a59c-d48f9fc4f157"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.3405502386472412,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 31779,
+        "msProd": 8122,
+        "answer": "La escena del ahogado está en la obra \"El buen doctor\", escrita por Neil Simon. Él se inspiró en los cuentos de Antón Chéjov, que es el escritor ruso que aparece en la historia. Esta escena en particular es la primera del segundo acto. ¿Te acordás quién es el personaje que representa a Chéjov en la obra?",
+        "claimsTotal": 5,
+        "claimsSinRespaldo": 2,
+        "prodVerdicts": [
+          {
+            "entailment": 0.4030721187591553,
+            "contradiction": 0.9517606496810913,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.8410000801086426,
+            "contradiction": 0.056805193424224854,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.9978061318397522,
+            "contradiction": 0.820381224155426,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q064",
+      "type": "answerable",
+      "q": "el video del huracan q vieron millones, q era en realidad",
+      "expect_chunks": [
+        "abfdff69-99df-4bea-aa50-315bb29ea21c"
+      ],
+      "expect_answer": "Era una grabación de 2016 (o anterior) de un tornado en un país a miles de kilómetros: no era un huracán ni ocurrió en 2017.",
+      "note": "Era en realidad una grabación de 2016 (o quizás anterior) [cita del libro: 12 palabras · 5da9293823834b66] distancia: no era un huracán ni ocurría en 2017. Incluso meteorólogos profesionales y medios lo dieron por genuino. Está en la introducción de 'Fake news: la nueva realidad' de Esteban Illades (págs. 300-303). VERIFICADO: el chunk dice verbatim 'visto por más de 20 millones de personas en solo 24 horas' y 'una grabación de 2016 —o quizás incluso antes— de un tornado'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "f92ebd24-0ef4-44d0-bbbc-34c0f1cac7dd"
+        ],
+        "mapeo": "f92ebd24→abfdff69@0.84"
+      },
+      "q_original": "En el texto sobre fake news, ¿qué era en realidad el video del huracán Irma que vieron más de 20 millones de personas en un día?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "abfdff69-99df-4bea-aa50-315bb29ea21c",
+          "46f9ba04-16d0-4c76-a71e-a79180f7948d",
+          "ddb94f73-bbff-49b9-af0a-ac65c5613806",
+          "2ea9077d-e4d3-4326-a59c-d48f9fc4f157",
+          "e0f741c3-58af-473d-a02e-a4a6c6e1a94f",
+          "78de3274-337a-4332-a001-c98e466101fb"
+        ],
+        "expectedIds": [
+          "abfdff69-99df-4bea-aa50-315bb29ea21c"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.8087412578928271,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 21371,
+        "msProd": 8442,
+        "answer": "Ese video que se hizo viral no mostraba el huracán Irma, sino que era una grabación vieja de un tornado en otro país, con marcas en español que no coincidían con el lugar que decían. Es un ejemplo perfecto de cómo las *fake news* aprovechan el miedo y la prisa para que la gente comparta sin verificar, sembrando pánico como pasó años atrás con la transmisión de radio de La guerra de los mundos. ¿Te parece que la gente debería detenerse un segundo antes de compartir algo que le parece increíble o aterrador?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 1,
+        "prodVerdicts": [
+          {
+            "entailment": 0.2028978019952774,
+            "contradiction": 0.9711344838142395,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.812519907951355,
+            "contradiction": 0.9911530613899231,
+            "supported": true,
+            "contradicted": true
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q065",
+      "type": "answerable",
+      "q": "de verdad la gente se volvio loca con lo de los marcianos en la radio",
+      "expect_chunks": [
+        "29a462d9-54ee-4dc0-9a37-a90bd73112fd"
+      ],
+      "expect_answer": "No: Brad Schwartz afirma que el miedo del que se habla jamás existió; la historia del pánico se fue mitificando con los años.",
+      "note": "No: Schwartz, autor de 'Broadcast Hysteria: Orson Welles's War of the Worlds and the Art of Fake News' (el libro más detallado sobre el tema), afirma que el miedo del que se habla jamás existió; la historia del pánico fue mitificada a lo largo de los años. Está en las págs. 303-304 del ensayo de Illades. Distinto de q011/q020 (adaptación de Welles) y q025 (legisladores). VERIFICADO: el chunk contiene la cita verbatim.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "a237b2fa-68e5-4e9d-a46b-72dc012707ba"
+        ],
+        "mapeo": "a237b2fa→29a462d9@0.89"
+      },
+      "q_original": "Según Brad Schwartz, ¿de verdad hubo un pánico masivo cuando se transmitió el radioteatro 'La guerra de los mundos'?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "29a462d9-54ee-4dc0-9a37-a90bd73112fd",
+          "46f9ba04-16d0-4c76-a71e-a79180f7948d",
+          "ddb94f73-bbff-49b9-af0a-ac65c5613806",
+          "834fc5d5-8c63-431b-9f22-455be2cfa8d4",
+          "abfdff69-99df-4bea-aa50-315bb29ea21c",
+          "0dae9f58-9d2b-44e2-a102-f801db190b21"
+        ],
+        "expectedIds": [
+          "29a462d9-54ee-4dc0-9a37-a90bd73112fd"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.4244699898895058,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 22766,
+        "msProd": 8345,
+        "answer": "Es una creencia muy común, pero la realidad es que el pánico generalizado es más un mito que un hecho. La mayoría de la gente no salió corriendo a las calles; de hecho, muchos oyentes se dieron cuenta de que era una obra de teatro o simplemente no prestaron atención. El verdadero problema no fue el miedo de la gente, sino cómo los diarios y los expertos posteriores exageraron la historia para hacerla sonar más impactante, creando una leyenda urbana que se repite hasta hoy. ¿Te imaginas por qué sería más fácil creer en un pánico masivo que en una reacción tranquila y racional?",
+        "claimsTotal": 6,
+        "claimsSinRespaldo": 3,
+        "prodVerdicts": [
+          {
+            "entailment": 0.01540947612375021,
+            "contradiction": 0.009105891920626163,
+            "supported": false,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.19322314858436584,
+            "contradiction": 0.9577997922897339,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.005683954805135727,
+            "contradiction": 0.05227617919445038,
+            "supported": false,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q066",
+      "type": "answerable",
+      "q": "q iso la pareja esa cuando escucharon en la radio q benian los marcianos",
+      "expect_chunks": [
+        "29a462d9-54ee-4dc0-9a37-a90bd73112fd"
+      ],
+      "expect_answer": "Gastaron todos sus ahorros (seis dólares) en pasajes de tren para escapar de los marcianos; al descubrir que era un programa de entretenimiento, tardaron días en volver a casa sin dinero.",
+      "note": "Recogieron sus cosas y gastaron todos sus ahorros (apenas seis dólares tras la Gran Depresión) en pasajes de tren para escapar de los marcianos; recién lejos de casa supieron que era un programa de entretenimiento y tardaron días en volver, sin una moneda. Está en las págs. 304-305 del ensayo sobre fake news. VERIFICADO: todos los detalles están verbatim en el chunk.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "547920f0-738c-4aeb-adf0-ca86c20aa207"
+        ],
+        "mapeo": "547920f0→29a462d9@0.95"
+      },
+      "q_original": "¿Qué hicieron Estelle y John Paultz cuando escucharon por la radio la llegada de los marcianos?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "29a462d9-54ee-4dc0-9a37-a90bd73112fd",
+          "46f9ba04-16d0-4c76-a71e-a79180f7948d",
+          "a5cd2606-1a6d-4219-bccd-d7578c65beeb",
+          "96c184a7-d2bc-4544-83ec-b5161da8926d",
+          "28f7b203-ceb4-4f7e-b7ca-e1064fc8de25",
+          "e0f741c3-58af-473d-a02e-a4a6c6e1a94f"
+        ],
+        "expectedIds": [
+          "29a462d9-54ee-4dc0-9a37-a90bd73112fd"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.293714989214483,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 18555,
+        "msProd": 8452,
+        "answer": "Mirá, la pareja de la que habla el texto, los Paultz, hizo algo muy drástico. Como creyeron que los marcianos los iban a invadir, salieron corriendo de sus casas y gastaron todo el dinero que tenían, que era muy poco, en pasajes de tren para huir lejos de ahí.\n\nLa idea es que el miedo los hizo tomar una decisión extrema sin pensar, y al final descubrieron que era solo una obra de teatro. ¿Te parece que actuaron por miedo real o porque no prestaron atención a las advertencias iniciales?",
+        "claimsTotal": 6,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.985397458076477,
+            "contradiction": 0.5868096351623535,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.11281722784042358,
+            "contradiction": 0.9645532965660095,
+            "supported": false,
+            "contradicted": true
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q067",
+      "type": "answerable",
+      "q": "las imagenes q hizo la inteligencia artificial, de q frase salieron",
+      "expect_chunks": [
+        "8e97febd-781c-4fa9-bf3a-596c2b960694",
+        "b0f250ba-8442-41b2-a33e-68601ab046cf"
+      ],
+      "expect_answer": "A partir de la frase 'perdido en una cueva'; cada imagen es una interpretación distinta del mismo enunciado.",
+      "note": "A partir de la frase 'perdido en una cueva': cada imagen representa una interpretación distinta que la IA hizo del mismo enunciado, y la actividad pide comparar elementos comunes y distintos. Está al inicio de la Lección 3 'Lo que vemos distinto' (págs. 277-279). VERIFICADO: la frase y la explicación están verbatim en el chunk, cuyo heading_path es 'Lección 3: Lo que vemos distinto'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "d7da8311-9430-46f0-97b3-a4a6901ffbe5"
+        ],
+        "mapeo": "d7da8311→8e97febd+b0f250ba@0.52"
+      },
+      "q_original": "En la actividad de las imágenes creadas por una inteligencia artificial, ¿a partir de qué frase se diseñaron las imágenes?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "b0f250ba-8442-41b2-a33e-68601ab046cf",
+          "1e9c9418-1bd0-4280-b831-b23d4b64de15",
+          "03f304b0-3c86-44d8-ac39-4e5ea47aa6af",
+          "0316c117-6c61-4d58-9715-036d5ff0bd5b",
+          "ea18a736-2446-4461-abcb-dc240bfae3e5",
+          "0dae9f58-9d2b-44e2-a102-f801db190b21"
+        ],
+        "expectedIds": [
+          "8e97febd-781c-4fa9-bf3a-596c2b960694",
+          "b0f250ba-8442-41b2-a33e-68601ab046cf"
+        ],
+        "abstained": false,
+        "hallucinated": false,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.8677327101531147,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 17058,
+        "msProd": 8099,
+        "answer": "Esas imágenes salieron de la frase “perdido en una cueva”. La inteligencia artificial tomó esas palabras y las convirtió en dibujos, pero como cada programa tiene su propia forma de entender, cada imagen es una interpretación distinta de lo mismo. Es como cuando tú lees un cuento y te imaginas a los personajes de una manera, y tu amigo los imagina diferente; la IA hace algo parecido, pero con datos y números. ¿Te parece raro que una máquina pueda \"imaginar\" cosas solo con leer un texto?",
+        "claimsTotal": 5,
+        "claimsSinRespaldo": 0,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9942797422409058,
+            "contradiction": 0.6025415658950806,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.815845787525177,
+            "contradiction": 0.05148111283779144,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q068",
+      "type": "answerable",
+      "q": "el cuento de la cueva no lo entendi ni ahi, de q habla en realidad",
+      "expect_chunks": [
+        "1170d688-92a8-4f2b-bfb7-52e2a83389e2",
+        "f6e8e142-70d1-4588-8f83-7517f1ab43d0"
+      ],
+      "expect_answer": "Habla sobre el tránsito entre las distintas etapas de la vida: infancia, crecimiento y adultez; la imposibilidad de volver representa la pérdida de la infancia.",
+      "note": "El modelamiento plantea [cita del libro: 14 palabras · 65997a6277a7d1ab] infancia, crecimiento y adultez. La cama de los papás representa la seguridad de la infancia, la cueva lo desconocido, y la imposibilidad de volver sería la pérdida de la infancia. Está en la sección de interpretación de las págs. 285-287. VERIFICADO: el chunk dice verbatim 'el [cita del libro: 12 palabras · e9523d3cdcc97257] Infancia – Crecimiento - Adultez'; el título y autor constan en el heading_path 'La cueva › Fernando Iwasaki' del chunk del cuento (3ff68d72).",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "703c6a4f-e5fb-49c2-bbca-90909fe42c97"
+        ],
+        "mapeo": "703c6a4f→1170d688+f6e8e142@0.61"
+      },
+      "q_original": "Según el análisis que hace el libro, ¿de qué habla en el fondo el microcuento 'La cueva' de Fernando Iwasaki?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "1170d688-92a8-4f2b-bfb7-52e2a83389e2",
+          "8e97febd-781c-4fa9-bf3a-596c2b960694",
+          "d68c6243-524e-4554-9c9b-c935012893f4",
+          "c0b5a1c2-1c70-4ed5-9375-d7dadf3538ec",
+          "f6e8e142-70d1-4588-8f83-7517f1ab43d0",
+          "ecb2c64f-f014-43ba-b079-8325e2940281"
+        ],
+        "expectedIds": [
+          "1170d688-92a8-4f2b-bfb7-52e2a83389e2",
+          "f6e8e142-70d1-4588-8f83-7517f1ab43d0"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": true,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.5763370333093584,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 28093,
+        "msProd": 7838,
+        "answer": "Imaginate que estás jugando en tu habitación y, de repente, la puerta se cierra y no la podés abrir. Al principio es divertido, pero después te das cuenta de que ya no sos ese niño pequeño. El cuento usa esa \"cueva\" para hablar de cómo crecemos: pasamos de la seguridad de los padres a la soledad de la vida adulta, donde ya no podemos volver atrás. Es como si la infancia fuera un lugar al que ya no se puede entrar. ¿Te parece que el protagonista siente nostalgia o más bien miedo de haber crecido?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 1,
+        "prodVerdicts": [
+          {
+            "entailment": 0.20191119611263275,
+            "contradiction": 0.7491899132728577,
+            "supported": false,
+            "contradicted": true
+          },
+          {
+            "entailment": 0.6656373143196106,
+            "contradiction": 0.9828488230705261,
+            "supported": true,
+            "contradicted": true
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    },
+    {
+      "id": "q069",
+      "type": "answerable",
+      "q": "en el cuento del hombre de palabras xq la policia no pudo resolverlo",
+      "expect_chunks": [
+        "fcaf52e1-b13b-4423-a55b-8117be2ffad7",
+        "7fd3086e-8f27-48c7-9d0e-3abe7be8cedb"
+      ],
+      "expect_answer": "Porque en el escenario del crimen, entre las palabras que dejó el asesino, había demasiadas conjunciones disyuntivas.",
+      "note": "Porque entre las palabras que el asesino dejó en el escenario del crimen (por descuido o deliberadamente) había demasiadas conjunciones disyuntivas. Es el remate humorístico del microcuento de Ana Ibáñez (págs. 291-293), donde al morir la víctima brotan palabras de su pecho y el homicida huye con los bolsillos llenos de adjetivos, sustantivos y verbos. VERIFICADO: el chunk contiene el remate verbatim y su heading_path es 'Hombre de palabras Ana Ibáñez'.",
+      "reanchored_from": {
+        "doc": "Tomo_I_Lengua_y_Literatura8vo.pdf",
+        "chunks": [
+          "9ffdaa1c-13a5-4079-bc7d-4d2d355e44fe"
+        ],
+        "mapeo": "9ffdaa1c→fcaf52e1+7fd3086e@0.79"
+      },
+      "q_original": "En el microcuento 'Hombre de palabras', ¿por qué a la policía le resultó imposible esclarecer el crimen?",
+      "paraphrase_note": "Reformulada en habla de alumno chileno de 13-14. Redactada SOLO desde la pregunta original, sin mirar el chunk esperado, para no filtrar el vocabulario del libro. Mismo expect_chunks.",
+      "result": {
+        "type": "answerable",
+        "retrievedIds": [
+          "fcaf52e1-b13b-4423-a55b-8117be2ffad7",
+          "cd902a57-d768-4591-b828-8f90326fe192",
+          "d68c6243-524e-4554-9c9b-c935012893f4",
+          "d4774934-0245-476d-bd07-6dacf6b02944",
+          "78de3274-337a-4332-a001-c98e466101fb",
+          "7b13d089-9f98-4547-acd0-535672bc33d0"
+        ],
+        "expectedIds": [
+          "fcaf52e1-b13b-4423-a55b-8117be2ffad7",
+          "7fd3086e-8f27-48c7-9d0e-3abe7be8cedb"
+        ],
+        "abstained": false,
+        "hallucinated": true,
+        "hallucinationKnown": true,
+        "errored": false,
+        "hallucinatedA2Only": false,
+        "hallucinatedProd": false,
+        "prodKnown": true,
+        "cause": "answered",
+        "topScore": 0.3727874725890237,
+        "citableSource": "content",
+        "selfAbstained": false,
+        "ms": 24017,
+        "msProd": 7767,
+        "answer": "En el cuento, el asesino dejó tantas palabras sueltas que la policía se perdió. Había demasiadas \"conjunciones disyuntivas\", que son palabras como \"o\" o \"ya sea... ya sea\". Esas palabras crean dudas y opciones múltiples, así que los detectives no podían saber qué camino tomar para encontrar la verdad. ¿Te imaginas si te dijeran \"el culpable es Juan o Pedro\" y no supieras cuál era?",
+        "claimsTotal": 4,
+        "claimsSinRespaldo": 1,
+        "prodVerdicts": [
+          {
+            "entailment": 0.9495347738265991,
+            "contradiction": 0.7455447912216187,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.7544952034950256,
+            "contradiction": 0.6284066438674927,
+            "supported": true,
+            "contradicted": false
+          },
+          {
+            "entailment": 0.9953252077102661,
+            "contradiction": 0.7510833144187927,
+            "supported": true,
+            "contradicted": false
+          }
+        ],
+        "retrievalTimeout": false
+      }
+    }
+  ]
+}

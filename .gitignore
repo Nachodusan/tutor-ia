@@ -77,3 +77,4 @@ packages/eval/exp*-*.txt
 multiturn-results.json
 answerability.json
 generacion-canonica.json
+packages/eval/sidecar-libro.json
