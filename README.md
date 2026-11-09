@@ -1,133 +1,148 @@
-# Tutor IA — facilitador de aprendizaje
+# Tutor IA — a study tutor that teaches from the student's own coursebook
 
-Un tutor que ayuda al estudiante a **aprender** con su material oficial: enseña
-**como enseña su libro** —con el mismo método y los mismos ejemplos—, **resuelve
-ejercicios paso a paso**, cita la fuente, verifica que entienda y **se adapta** si
-no comprende.
+> [Versión en español](README.es.md)
 
-- 🧠 **Facilitador conceptual** — explica el tema con analogías y ejemplos; **cita página/sección** o **se abstiene** si no está en el material.
-- 🔁 **Enseñanza adaptativa** — si el estudiante no entiende, **cambia de método** (otra explicación, otro ejemplo, otra actividad), no repite lo mismo.
-- 🛡️ **Anti-alucinación estricto** — solo afirma lo respaldado por el material; ante la duda, se abstiene. Ver [docs/anti-alucinaciones.md](docs/anti-alucinaciones.md).
+A tutor that helps a student **learn** from their official material: it teaches
+**the way their book teaches** — same method, same examples — walks through
+exercises, cites the source, checks understanding, and **changes approach** when
+the student doesn't follow.
 
-> ⚠️ **Esto ya NO es "100% local".** El proveedor local (Ollama) se eliminó del
-> proyecto: **la generación y los embeddings** van a una **API remota compatible
-> con OpenAI** (DeepInfra). Siguen en tu máquina el material, Postgres/pgvector y
-> el sidecar de reranker + NLI. **Consecuencia operativa: sin red no hay tutor y
-> tampoco hay búsqueda.** Antes un corte de internet tumbaba solo la generación y
-> el retrieval seguía andando con embeddings locales; hoy el alumno se queda sin
-> nada. Hace falta `DEEPINFRA_API_KEY`.
+- **Conceptual facilitator** — explains with analogies and examples, and **cites
+  page/section** or **abstains** when the answer isn't in the material.
+- **Adaptive teaching** — if the student doesn't understand, it switches method
+  (different explanation, different example, different activity) rather than
+  repeating itself.
+- **Strict anti-hallucination** — it only asserts what the material supports; when
+  in doubt it abstains. See [docs/anti-alucinaciones.md](docs/anti-alucinaciones.md).
 
-> **Fuera de scope (medido):** resolver ejercicios / matemática. El de-risking
-> (`exp5`, 2026-07) mostró que un 7B local tenía topada esa capacidad (grading
-> ~78%, math ~75%) y el scaffolding no la rescata. El producto se enfoca en lo que
-> hace bien: **facilitar la comprensión conceptual**. SymPy queda solo como
-> verificación opcional. (Aquel motor local ya no está en el proyecto y el script
-> `exp5` se borró junto con él; la decisión de scope se mantiene.)
+> **Not local anymore.** The local provider (Ollama) was removed: generation *and*
+> embeddings now go to an OpenAI-compatible remote API (DeepInfra). The material,
+> Postgres/pgvector and the reranker + NLI sidecar still run on your machine.
+> **Operational consequence: no network, no tutor and no search.** A
+> `DEEPINFRA_API_KEY` is required.
 
-## Arquitectura: RAG de doble corpus tipado
+> **Out of scope, and measured.** Solving exercises and mathematics. A de-risking
+> experiment (`exp5`, July 2026) showed a local 7B had capped out there (grading
+> ~78%, math ~75%) and scaffolding didn't rescue it. The product focuses on what it
+> does well: **conceptual understanding**. SymPy remains only as optional
+> verification.
 
-El material oficial viene en **pares por materia/grado**: el **Texto del Estudiante**
-(el "qué") y la **Guía Didáctica del Docente / GDD** (el "cómo"). Se ingestan con
-**roles distintos**:
+## Architecture: typed dual-corpus RAG
 
-- **Contenido** (texto del estudiante) → fuente de verdad **citable**.
-- **Pedagogía** (GDD) → chunks tipados por bloque (`ideas_previas`,
-  `ambiente_aprendizaje`, `habilidad`, `evaluacion`, `solucionario`…), anclados al
-  **Objetivo de Aprendizaje (OA)**. Guían **cómo** enseñar, no qué afirmar.
+Official material arrives in **pairs per subject and grade**: the **Student Text**
+(the *what*) and the **Teacher's Guide** (the *how*). They are ingested with
+**different roles**:
 
-Al enseñar un tema, el retrieval trae **contenido** (por relevancia, con gate de
-abstención) + **pedagogía** matcheada (por OA + relevancia semántica). En grados
-bajos, muy visuales, el contenido a veces vive en la GDD: el grounding usa **ambos
-corpus oficiales** (contenido preferido, GDD de respaldo), sin romper el anti-alucinación.
+- **Content** (student text) → the **citable** source of truth.
+- **Pedagogy** (teacher's guide) → chunks typed by block (`ideas_previas`,
+  `ambiente_aprendizaje`, `habilidad`, `evaluacion`, `solucionario`…), anchored to
+  the **Learning Objective**. These guide *how* to teach, never *what* to assert.
 
-Monorepo TypeScript (pnpm + Turborepo):
+When teaching a topic, retrieval pulls **content** (by relevance, through an
+abstention gate) plus **matched pedagogy** (by learning objective + semantic
+relevance). In lower, highly visual grades the content sometimes lives in the
+teacher's guide, so grounding uses **both official corpora** — content preferred,
+guide as backup — without weakening the anti-hallucination rules.
+
+TypeScript monorepo (pnpm + Turborepo):
 
 ```
-apps/web/         → Next.js (UI + API: chat de estudio, subida de material)
+apps/web/         → Next.js (UI + API: study chat, material upload)
 packages/
-  core/           → capa de proveedor de LLM (API remota), prompts del facilitador, orquestación de enseñanza
-  rag/            → ingesta doble corpus, chunking tipado, retrieval híbrido + reranker + NLI
-  db/             → esquema Postgres/pgvector
-  eval/           → harness de medición (grounding, adaptatividad, calidad pedagógica)
-  ingest-py/      → sidecars Python: extracción de currículum, reranker + NLI, SymPy
+  core/           → LLM provider layer, facilitator prompts, teaching orchestration
+  rag/            → dual-corpus ingestion, typed chunking, hybrid retrieval + reranker + NLI
+  db/             → Postgres/pgvector schema
+  eval/           → measurement harness (grounding, adaptivity, pedagogical quality)
+  ingest-py/      → Python sidecars: curriculum extraction, reranker + NLI, SymPy
 ```
 
-**Remoto (API compatible con OpenAI, un solo proveedor):** generación con el modelo
-por defecto del proveedor (`Qwen/Qwen3.6-35B-A3B` en DeepInfra) y embeddings
-`BAAI/bge-m3` (1024 dims). **Local:** reranker `bge-reranker-v2-m3` + NLI
-`mDeBERTa-v3-xnli` (verificación direccional), servidos por un sidecar Python en MPS
-(`rerank_server.py`, puerto 8790), y datos + vectores en **Postgres nativo con
-pgvector** (sin Docker).
+**Remote** (one OpenAI-compatible provider): generation with the provider default
+(`Qwen/Qwen3.6-35B-A3B` on DeepInfra) and `BAAI/bge-m3` embeddings (1024 dims).
+**Local**: `bge-reranker-v2-m3` reranker + `mDeBERTa-v3-xnli` NLI for directional
+verification, served by a Python sidecar on MPS (`rerank_server.py`, port 8790),
+with data and vectors in **native Postgres with pgvector** — no Docker.
 
-## Puesta en marcha
+## Evaluation
 
-Requisitos: Node ≥ 20, pnpm, [Postgres nativo](https://postgresapp.com) (o
-`brew install postgresql@17 pgvector`) y una **`DEEPINFRA_API_KEY`** en el `.env`.
-**Sin Docker.**
+Own harness with a golden set anchored to real chunks:
+
+| | |
+|---|---|
+| **recall@5** | 88% |
+| **Corpus** | ~38,000 chunks across 35 subjects |
+| **Measured** | grounding, hallucination rate, latency |
+| **Fixtures** | store only document, page and a hash — never the source text |
+
+Human validation runs as a separate blind double-annotation study:
+[auditoria-tutor](https://github.com/Nachodusan/auditoria-tutor).
+
+## Getting started
+
+Requirements: Node ≥ 20, pnpm, [native Postgres](https://postgresapp.com) (or
+`brew install postgresql@17 pgvector`) and a **`DEEPINFRA_API_KEY`** in `.env`.
+**No Docker.**
 
 ```bash
 cp .env.example .env
-# Poné tu DEEPINFRA_API_KEY en .env: sin ella no hay generación NI embeddings,
-# o sea que tampoco hay búsqueda.
-bash scripts/setup-local.sh   # Postgres nativo + esquema + seed
+# Set DEEPINFRA_API_KEY in .env: without it there is no generation AND no
+# embeddings, which means no search either.
+bash scripts/setup-local.sh   # native Postgres + schema + seed
 pnpm install
-# Sidecar LOCAL de reranker + NLI (arrancar a mano; sirve /rerank y /nli en :8790):
+# LOCAL reranker + NLI sidecar (start manually; serves /rerank and /nli on :8790):
 nohup ./packages/ingest-py/.venv/bin/python packages/ingest-py/rerank_server.py &
 pnpm dev
 ```
 
-`setup-local.sh` aplica `schema.sql`, `schema_student_model.sql`, `schema_hybrid.sql`,
-`schema_dual_corpus.sql` y `seed.sql`.
+`setup-local.sh` applies `schema.sql`, `schema_student_model.sql`,
+`schema_hybrid.sql`, `schema_dual_corpus.sql` and `seed.sql`.
 
-> `LLM_PROVIDER` solo acepta `deepinfra` (o vacío). Si quedó un `LLM_PROVIDER=ollama`
-> de un `.env` viejo, el arranque falla con un mensaje que lo explica en vez de
-> intentar hablarle a un servicio que ya no existe.
+> `LLM_PROVIDER` only accepts `deepinfra` (or empty). A stale `LLM_PROVIDER=ollama`
+> from an older `.env` fails at startup with an explanatory message instead of
+> trying to reach a service that no longer exists.
 
-> **Modo offline: no hay.** Embeddings y generación son remotos; sin red, el alumno
-> no puede ni preguntar ni buscar en su material.
+> **There is no offline mode.** Embeddings and generation are remote; with no
+> network the student can neither ask nor search their own material.
 
-## Estado / Roadmap
+## Status / Roadmap
 
-**Fundamentado (anti-alucinación) — sólido y en producción:**
-- [x] Ingesta estructural + retrieval híbrido (denso+léxico+RRF) + reranker como gate de abstención
-- [x] Verificación **NLI direccional** por oración (contradicciones, sin respaldo) — en el chat real
-- [x] Detección de **premisa falsa** (no le sigue la corriente a suposiciones falsas)
-- [x] Eval endurecido (golden anclado a chunks reales, set etiquetado)
+**Grounding (anti-hallucination) — solid, in production:**
+- [x] Structural ingestion + hybrid retrieval (dense + lexical + RRF) + reranker as abstention gate
+- [x] Per-sentence **directional NLI** verification (contradictions, unsupported claims) — in the live chat
+- [x] **False-premise detection** (does not play along with false assumptions)
+- [x] Hardened eval (golden set anchored to real chunks, labelled set)
 
-**Facilitador conceptual (Plan v3) — piloto validado:**
-- [x] Esquema de **doble corpus tipado** (`schema_dual_corpus.sql`)
-- [x] Ingesta tipada de contenido + pedagogía (`extract_curriculum.py`, `ingest-curriculum.ts`)
-- [x] Retrieval tipado (contenido + pedagogía por OA/semántica)
-- [x] Prompt del **facilitador** con enseñanza adaptativa (`TEACHING_SYSTEM`, `teaching.ts`)
-- [x] **Piloto E2E** (Ciencias Naturales 1º Básico): `pnpm --filter @tutor-ia/eval pilot-session`
-- [ ] Evals de calidad pedagógica / adaptatividad (`exp6`)
-- [ ] Wire del web route (`/api/chat`) al teaching path
-- [ ] Batch de ingesta (480 libros)
+**Conceptual facilitator (Plan v3) — pilot validated:**
+- [x] **Typed dual-corpus** schema (`schema_dual_corpus.sql`)
+- [x] Typed ingestion of content + pedagogy (`extract_curriculum.py`, `ingest-curriculum.ts`)
+- [x] Typed retrieval (content + pedagogy by objective/semantics)
+- [x] **Facilitator** prompt with adaptive teaching (`TEACHING_SYSTEM`, `teaching.ts`)
+- [x] **E2E pilot** (Natural Sciences, 1st grade): `pnpm --filter @tutor-ia/eval pilot-session`
+- [ ] Pedagogical quality / adaptivity evals (`exp6`)
+- [ ] Wire the web route (`/api/chat`) to the teaching path
+- [ ] Batch ingestion (480 books)
 
-**De-riskeado y descartado:** resolver ejercicios / matemática (`exp5`) — fuera de
-scope. El script se borró junto con el proveedor local que medía; la conclusión queda.
+**De-risked and dropped:** solving exercises / mathematics (`exp5`) — out of scope.
 
-Anti-alucinaciones: [docs/anti-alucinaciones.md](docs/anti-alucinaciones.md) · Estado detallado: `HANDOFF.md`
+Anti-hallucination: [docs/anti-alucinaciones.md](docs/anti-alucinaciones.md) · Detailed status: `HANDOFF.md`
 
-## Licencia y material de terceros
+## Licence and third-party material
 
-El **código** va con [licencia MIT](LICENSE). El material de terceros, en
-[`NOTICE.md`](NOTICE.md).
+**Code** is [MIT](LICENSE). Third-party material is listed in [`NOTICE.md`](NOTICE.md).
 
-Los **textos escolares** sobre los que trabaja el sistema son del Ministerio de
-Educación de Chile y de sus editoriales: **no están en este repositorio** y no
-se distribuyen con él. El corpus vive fuera de git y los fixtures de evaluación
-guardan solo el ancla de cada fragmento —documento, página y un hash— nunca el
-texto. Para correr el proyecto hay que conseguir el material por cuenta propia.
+The **school textbooks** the system works on belong to Chile's Ministry of
+Education and its publishers: **they are not in this repository** and are not
+distributed with it. The corpus lives outside git, and evaluation fixtures store
+only each chunk's anchor — document, page and a hash — never the text. Running the
+project requires sourcing the material yourself.
 
-Si trabajás con el corpus cargado y necesitás los fixtures completos:
+If you work with the corpus loaded and need the full fixtures:
 
 ```bash
-pnpm --filter @tutor-ia/eval golden-texto --rehidratar   # trae el texto desde tu base
-pnpm --filter @tutor-ia/eval golden-texto --pelar        # lo saca antes de commitear
+pnpm --filter @tutor-ia/eval golden-texto --rehidratar   # pull text from your database
+pnpm --filter @tutor-ia/eval golden-texto --pelar        # strip it before committing
 ```
 
-Para que lo rehidratado no vuelva al repo por descuido, instalá el guardián una vez:
+So rehydrated text never lands in the repo by accident, install the guard once:
 
 ```bash
 git config core.hooksPath .githooks
